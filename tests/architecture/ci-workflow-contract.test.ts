@@ -6,12 +6,6 @@ const CI_WORKFLOW_PATH = ".github/workflows/ci.yml";
 const LEFTHOOK_CONFIG_PATH = "lefthook.yml";
 const PRETTIER_CONFIG_PATH = "prettier.config.mjs";
 const SEMGREP_CONFIG_PATH = "semgrep.yml";
-// Vitest 已覆盖治理测试；CI 只需额外运行 scanner 和 Storybook build。
-const COMPONENT_PROOF_COMMANDS = [
-  "pnpm component:governance",
-  "pnpm exec storybook build",
-] as const;
-const FULL_COMPONENT_CHECK_COMMAND = "pnpm component:check";
 interface SemgrepRulePaths {
   readonly include?: readonly string[];
   readonly exclude?: readonly string[];
@@ -76,32 +70,7 @@ function collectRunCommands(node: unknown, found: string[] = []): string[] {
   return found;
 }
 
-function getQualityJob(workflow: string): string {
-  const qualityStart = workflow.indexOf("  quality:");
-  const testsStart = workflow.indexOf("\n  tests:", qualityStart);
-
-  expect(qualityStart, "quality job must exist in CI workflow").toBeGreaterThan(
-    -1,
-  );
-  expect(testsStart, "tests job must follow quality job").toBeGreaterThan(
-    qualityStart,
-  );
-
-  return workflow.slice(qualityStart, testsStart);
-}
-
 describe("CI workflow contract", () => {
-  it("runs component governance and Storybook build in the quality job", () => {
-    const workflow = readCiWorkflow();
-    const qualityJob = getQualityJob(workflow);
-
-    for (const command of COMPONENT_PROOF_COMMANDS) {
-      expect(qualityJob).toContain(command);
-    }
-
-    expect(qualityJob).not.toContain(FULL_COMPONENT_CHECK_COMMAND);
-  });
-
   it("runs an honestly named preview configuration smoke in the quality job", () => {
     const qualitySteps = readCiWorkflowConfig().jobs?.quality?.steps ?? [];
 

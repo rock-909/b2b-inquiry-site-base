@@ -43,7 +43,6 @@ const eslintConfig = [
       "coverage/**",
       "dist/**",
       "build/**",
-      "storybook-static/**",
       ".codex/**",
       ".omx/**",
       ".eslintcache-audit",

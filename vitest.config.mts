@@ -40,7 +40,6 @@ export default defineConfig({
       "build",
       "coverage",
       "**/*.d.ts",
-      "**/*.stories.{js,jsx,ts,tsx}",
       // 排除setup文件和工具文件
       "**/setup.{js,jsx,ts,tsx}",
       "**/test-utils.{js,jsx,ts,tsx}",
@@ -69,7 +68,6 @@ export default defineConfig({
       // match. Keep only src-relevant excludes.
       exclude: [
         "**/*.d.ts",
-        "**/*.stories.{js,jsx,ts,tsx}",
         "**/*.test.{js,jsx,ts,tsx}",
         "**/*.spec.{js,jsx,ts,tsx}",
         "src/test/**",

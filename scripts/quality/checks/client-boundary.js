@@ -20,8 +20,6 @@ const CLIENT_BOUNDARY_EXCLUDED_DIR_NAMES = new Set([
   "spec",
   "specs",
   "stories",
-  "storybook",
-  ".storybook",
 ]);
 const CLIENT_BOUNDARY_EXCLUDED_FILE_PATTERN =
   /\.(?:mock|spec|stories|story|test)\.[cm]?(?:ts|tsx)$/u;

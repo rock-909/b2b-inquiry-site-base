@@ -138,10 +138,6 @@ describe("client-boundary-budget", () => {
       "src/components/live.story.tsx": '"use client";\nexport const Story = 1;',
       "src/components/stories/live.tsx":
         '"use client";\nexport const StoryDir = 1;',
-      "src/components/storybook/preview.tsx":
-        '"use client";\nexport const StorybookPreview = 1;',
-      "src/components/.storybook/preview.tsx":
-        '"use client";\nexport const DotStorybookPreview = 1;',
       "src/components/mocks/live.tsx":
         '"use client";\nexport const MockDir = 1;',
       "src/components/__tests__/nested.tsx":

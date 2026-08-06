@@ -93,9 +93,6 @@ temp/
 test-results/
 playwright-report/
 
-# Storybook
-storybook-static/
-
 # Vercel
 .vercel/
 

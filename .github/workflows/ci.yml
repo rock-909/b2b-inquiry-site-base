@@ -66,12 +66,6 @@ jobs:
       - name: Client boundary 检查
         run: node scripts/starter-checks.js client-boundary
 
-      - name: Component governance scan
-        run: pnpm component:governance
-
-      - name: Storybook build check
-        run: pnpm exec storybook build
-
       - name: Dependency cruiser architecture check
         run: pnpm exec dependency-cruiser src --config .dependency-cruiser.js -T err
 

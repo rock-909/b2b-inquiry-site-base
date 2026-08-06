@@ -4,10 +4,6 @@
     "files": [".open-next/**", ".next/**"],
     "overrides": [
       {
-        "files": ["storybook-static/**"],
-        "rules": ["deslop/unused-file"]
-      },
-      {
         "files": ["package.json"],
         "rules": ["deslop/unused-dev-dependency"]
       },
@@ -85,8 +81,7 @@
           "src/app/[locale]/contact/contact-page-sections.tsx",
           "src/components/layout/header.tsx",
           "src/components/layout/mobile-navigation-interactive.tsx",
-          "src/components/ui/theme-switcher.tsx",
-          "src/stories/color-directions.stories.tsx"
+          "src/components/ui/theme-switcher.tsx"
         ],
         "rules": ["react-doctor/design-no-redundant-size-axes"]
       },
@@ -102,7 +97,6 @@
         "files": [
           "src/components/seo/__tests__/json-ld-script.test.ts",
           "src/config/__tests__/standards-consistency.test.ts",
-          "tests/architecture/component-governance.test.ts",
           "tests/unit/content-page-placeholders.test.ts",
           "tests/unit/scripts/proof-lane-contract.test.ts"
         ],

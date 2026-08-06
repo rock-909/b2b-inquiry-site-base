@@ -13,7 +13,6 @@ Commands:
   translations        Check catalog message pack and compat translation shapes
   message-key-usage   Check message catalog leaves against real consumers
   validate-production-config Validate production and public-launch config gates
-  component-governance Check component registry, Storybook, and UI wrapper drift
   content-readiness   Check buyer-visible catalog residue (--strict-client-launch promotes launch blockers to errors)
   client-boundary     Check top-level use client budget (--build-artifacts after pnpm build)
   prerender-static    Check localized Next.js build output stays prerendered
@@ -52,8 +51,6 @@ const COMMAND_HANDLERS = {
     require("./quality/checks/message-key-usage").runMessageKeyUsageCheck(),
   "validate-production-config": () =>
     require("./quality/checks/production-config").runValidateProductionConfigCli(),
-  "component-governance": () =>
-    require("./quality/checks/component-governance").runComponentGovernanceCli(),
   "content-readiness": (args) =>
     require("./quality/checks/content-readiness").runContentReadinessCli(args),
   "client-boundary": (args) =>

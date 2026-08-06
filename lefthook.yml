@@ -32,7 +32,7 @@ pre-commit:
     # 改动运行时代码时，要求每个文件都有相关测试并执行这些测试。
     test-related:
       run: |
-        # Stories/fixtures 由 Storybook + 类型检查证明；纯类型和 setup 文件由全量车道证明。
+        # stories/fixtures 由类型检查证明；纯类型和 setup 文件由全量车道证明。
         FILES=$(git diff --cached --name-only --diff-filter=ACM \
           | grep -E '^src/.+\.(ts|tsx)$' \
           | grep -v '\.test\.' | grep -v '\.spec\.' | grep -v '__tests__' \

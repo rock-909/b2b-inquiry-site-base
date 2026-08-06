@@ -69,7 +69,6 @@ describe("package proof command surface", () => {
   const COMPOSITE_RELEASE_SCRIPTS = [
     "release:verify",
     "content:check",
-    "component:check",
     "website:check",
   ] as const;
   const LEAF_RELEASE_SCRIPTS = ["website:build:cf"] as const;

@@ -75,7 +75,6 @@ const GENERATED_DIR_NAMES = new Set([
   "generated",
   "node_modules",
   "reports",
-  "storybook-static",
 ]);
 const EXCLUDED_FILE_PATTERN =
   /(?:^|\/)(?:__tests__|__mocks__)(?:\/|$)|\.(?:test|spec)\.[^.]+$/u;

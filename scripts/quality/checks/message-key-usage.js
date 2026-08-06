@@ -47,7 +47,7 @@ const SOURCE_EXTENSIONS = new Set([
   ".ts",
   ".tsx",
 ]);
-const SOURCE_ROOTS = [".storybook", "content", "scripts", "src", "tests"];
+const SOURCE_ROOTS = ["content", "scripts", "src", "tests"];
 const SELF_FILES = new Set([
   "scripts/quality/checks/message-key-usage.js",
   "scripts/quality/checks/message-key-consumers.js",

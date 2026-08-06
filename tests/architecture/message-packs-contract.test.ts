@@ -60,17 +60,12 @@ describe("physical message packs", () => {
       "utf8",
     );
     const nextIntlTypes = fs.readFileSync("src/types/next-intl.d.ts", "utf8");
-    const storybook = fs.readFileSync(
-      "src/lib/i18n/storybook-messages.ts",
-      "utf8",
-    );
 
     expect(loader).toContain("@/lib/i18n/composed-messages");
     expect(composed).toContain("@messages/base/en/messages.json");
     expect(composed).toContain("@messages/profiles/b2b-lead/en/messages.json");
     expect(composed).toContain("@messages/profiles/catalog/en/messages.json");
     expect(nextIntlTypes).toContain("@messages/base/en/messages.json");
-    expect(storybook).toContain("@/lib/i18n/composed-messages");
   });
 
   it("keeps the shared composition helper aligned with pack merge order", () => {
