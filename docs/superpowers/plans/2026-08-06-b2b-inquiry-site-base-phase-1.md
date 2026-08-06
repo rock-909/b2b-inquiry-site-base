@@ -100,6 +100,8 @@ Expected: 第二个 commit 只增加 provenance、设计规格和实施计划，
 
 ### Task 2: 建立独立项目身份和 sentinel 配置
 
+**Status:** Completed in `516918f`; review corrections completed in `cf8acb6`.
+
 **Files:**
 - Modify: `package.json`
 - Modify: `pnpm-lock.yaml`
@@ -121,7 +123,7 @@ Expected: 第二个 commit 只增加 provenance、设计规格和实施计划，
 - Modify: `src/config/paths/**`
 - Modify: `.github/workflows/*.yml`
 
-- [ ] **Step 1: 写独立身份合同测试**
+- [x] **Step 1: 写独立身份合同测试**
 
 Create `tests/architecture/base-identity.test.ts`，使用真实导出断言：
 
@@ -139,11 +141,11 @@ describe("base identity", () => {
 
 字段名以 `src/config/single-site.ts` 当前真实导出为准；不得新增第二套身份对象。
 
-- [ ] **Step 2: 写 offering 权威真相合同测试**
+- [x] **Step 2: 写 offering 权威真相合同测试**
 
 Create `src/config/__tests__/offerings.test.ts`，断言 `src/config/offerings.ts` 只导出一个薄的 offerings 数组，元素至少包含 canonical `id` 和 `name`。第一版 reference site 可包含一个明显虚构的 `custom-fabrication`，也允许空数组支持纯 general inquiry；不要新增 profile、schema builder 或资源名生成器。
 
-- [ ] **Step 3: 运行测试确认先红**
+- [x] **Step 3: 运行测试确认先红**
 
 Run:
 
@@ -153,7 +155,7 @@ pnpm exec vitest run tests/architecture/base-identity.test.ts src/config/__tests
 
 Expected: 因当前仍是 Tucsenberg 身份而 FAIL。
 
-- [ ] **Step 4: 直接替换现有权威入口**
+- [x] **Step 4: 直接替换现有权威入口**
 
 将 package 名改为 `b2b-inquiry-site-base`，站点示例身份改为 `Northstar Industrial Reference`，域名使用 `https://example.invalid`，公开邮箱使用 `sales@example.invalid`。Worker 和 R2 名使用明显 sentinel：
 
@@ -166,7 +168,7 @@ b2b-inquiry-site-base-next-cache-production
 
 不创建 `SiteProfile`、环境 profile 或资源名生成器。
 
-- [ ] **Step 5: strict sentinel 必须真实失败**
+- [x] **Step 5: strict sentinel 必须真实失败**
 
 Run:
 
@@ -176,7 +178,7 @@ PUBLIC_LAUNCH_STRICT=true APP_ENV=production NODE_ENV=production node scripts/st
 
 Expected: exit non-zero，并分开列出两类红灯：sentinel blockers（`example.invalid`、示例品牌/邮箱、sentinel 资源名等必须替换的位置）和缺生产 secret/binding 的环境 readiness blockers。sentinel blockers 是模板阶段预期红灯；缺 secret 不能被当作 sentinel 已证明的替代品。
 
-- [ ] **Step 6: 身份和 offering 测试转绿**
+- [x] **Step 6: 身份和 offering 测试转绿**
 
 Run:
 
@@ -186,27 +188,18 @@ pnpm exec vitest run tests/architecture/base-identity.test.ts src/config/__tests
 
 Expected: PASS。
 
-### Task 3: 移出 Tucsenberg 专属业务和 UI estate
+### Task 3: 移出 Storybook 和 UI 治理 estate
 
 **Files:**
-- Move to Trash: `src/app/[locale]/products/**`
-- Move to Trash: `src/app/[locale]/guides/**`
-- Move to Trash: `src/app/[locale]/oem-wholesale/**`
-- Move to Trash: `src/app/[locale]/warranty/**`
-- Move to Trash: `src/components/products/**`
-- Move to Trash: `src/constants/tucsenberg-product-*.ts`
-- Move to Trash: `src/constants/product-catalog.ts`
-- Move to Trash: `src/config/single-site-product-catalog.ts`
-- Move to Trash: `content/pages/en/flood-barrier-*.mdx`
-- Move to Trash: `content/pages/en/oem-wholesale.mdx`
-- Move to Trash: `content/pages/en/warranty.mdx`
-- Move to Trash: `public/downloads/**`
-- Move to Trash: `public/images/tucsenberg-*`
 - Move to Trash: `.storybook/**`
 - Move to Trash: `src/stories/**`
 - Move to Trash: `src/**/*.stories.tsx`
 - Move to Trash: `src/components/component-governance.registry.json`
+- Move to Trash: `scripts/component-governance-registry-truth.js`
+- Move to Trash: `scripts/quality/checks/component-governance.js`
+- Move to Trash: 对应 Storybook/component-governance tests
 - Modify: `package.json`
+- Modify: `pnpm-lock.yaml`
 - Modify: `.github/workflows/ci.yml`
 - Modify: `scripts/starter-checks.js`
 - Modify: `knip.json`
@@ -217,38 +210,56 @@ Expected: PASS。
 
 - [ ] **Step 2: 删除对应引用和专属测试**
 
-随运行对象移出产品路由、产品组件、catalog messages、Storybook、component governance 的 tests、scripts、package scripts 和依赖。不要把专属测试改名伪装成通用测试。
+随运行对象移出 Storybook、component governance 的 tests、scripts、package scripts、CI step 和依赖。不要把专属测试改名伪装成通用测试。
 
 - [ ] **Step 3: 确认不存在旧入口引用**
 
 Run:
 
 ```bash
-rg -n "single-site-product-catalog|tucsenberg-product|component-governance|storybook|/products|oem-wholesale|flood-barrier" src tests scripts package.json .github content messages
+rg -n "component-governance|storybook" src tests scripts package.json .github knip.json
 ```
 
-Expected: 只允许出现在一次性迁移记录或明确说明历史来源的文档中；运行时、测试和门禁引用为零。
+Expected: 运行代码、测试、package scripts、CI 和 Knip 中引用为零。不要在本任务处理产品运行面。
 
-### Task 4: 建立薄的中性 reference site
+### Task 4: 移出产品运行面并建立薄的中性 reference site
 
 **Files:**
+- Move to Trash: `src/app/[locale]/products/**`
+- Move to Trash: `src/app/[locale]/guides/**`
+- Move to Trash: `src/app/[locale]/oem-wholesale/**`
+- Move to Trash: `src/app/[locale]/warranty/**`
+- Move to Trash: `src/components/products/**`
+- Move to Trash: `src/constants/tucsenberg-product-*.ts`
+- Move to Trash: `src/config/single-site-product-catalog.ts`
+- Move to Trash: `src/config/single-site-page-expression.ts`
+- Move to Trash: `content/pages/en/flood-barrier-*.mdx`
+- Move to Trash: `content/pages/en/oem-wholesale.mdx`
+- Move to Trash: `content/pages/en/warranty.mdx`
+- Move to Trash: 对应 route/component/config tests
+- Move to Trash: `messages/profiles/catalog/**`
 - Modify: `src/app/[locale]/page.tsx`
 - Modify: `src/app/[locale]/about/**`
 - Modify: `src/app/[locale]/contact/**`
 - Modify: `src/app/[locale]/request-quote/**`
 - Modify: `src/app/sitemap.ts`
-- Modify: `content/pages/en/about.mdx`
-- Modify: `content/pages/en/contact.mdx`
-- Modify: `content/pages/en/privacy.mdx`
-- Modify: `content/pages/en/terms.mdx`
+- Modify: `src/middleware.ts`
+- Modify: `src/config/{pages.config,single-site,single-site-links,single-site-navigation,single-site-seo}.ts`
+- Modify: `src/config/paths/{types,paths-config,utils}.ts`
+- Modify: `src/lib/navigation.ts`
+- Modify: `content/pages/en/{about,contact,privacy,terms}.mdx`
 - Modify: `messages/base/en/messages.json`
 - Modify: `messages/profiles/b2b-lead/en/messages.json`
 - Modify: `messages/message-packs.json`
+- Modify: `src/lib/i18n/composed-messages.ts`
+- Modify: `src/types/next-intl.d.ts`
 - Modify: `src/config/offerings.ts`
 - Modify: `src/config/__tests__/offerings.test.ts`
 - Modify: `src/components/layout/**`
 - Modify: `src/components/footer/**`
 - Move to Trash: 任何中性页面不再调用的产品 sections/grid 组件及其测试
+
+`src/constants/product-catalog.ts` 仍被旧询盘链路使用，本任务暂不移出；到 Task 5 与 `product-identity.ts`、`product-inquiry-kinds.ts` 一起退出。`public/downloads/**` 和 `public/images/tucsenberg-*` 暂留到 Task 6，与 asset/header/Lighthouse 门禁同批处理。
 
 - [ ] **Step 1: 先写核心路由行为测试**
 
@@ -266,27 +277,31 @@ unknown route -> 404
 
 不建立 route registry；测试读取真实路由和真实页面输出。
 
-- [ ] **Step 2: 写最薄中性首页**
+- [ ] **Step 2: 移出产品运行面并同步真实引用**
+
+将列出的产品路由、组件、常量、配置、catalog messages 和业务 MDX 移到 Trash；同步更新 sitemap、middleware、导航、SEO、paths、layout/footer 和 message composition。不得先加兼容 re-export 或 product/service mode。
+
+- [ ] **Step 3: 写最薄中性首页**
 
 首页只包含 hero、简短价值说明和询盘 CTA。买家可见文案放在 messages/content 现有入口，不创建 section schema。
 
-- [ ] **Step 3: 把内容换成明显虚构 sentinel**
+- [ ] **Step 4: 把内容换成明显虚构 sentinel**
 
 About、Contact、Privacy、Terms 必须明确是 reference content，并让 strict production gate 阻止直接上线。法律文本不得写成可直接复用的正式法律意见。
 
-- [ ] **Step 4: 写最薄 offerings 显示规则**
+- [ ] **Step 5: 写最薄 offerings 显示规则**
 
 如果 reference site 展示 offering，数据只能来自 `src/config/offerings.ts` 的 canonical 数组。空 offerings 数组时隐藏 offering-specific UI，但 general inquiry 仍可用。不要创建 route registry、profile、schema builder 或动态表单搭建器。
 
-- [ ] **Step 5: 运行聚焦测试**
+- [ ] **Step 6: 运行聚焦测试**
 
 Run:
 
 ```bash
-pnpm exec vitest run src/app src/config/__tests__/offerings.test.ts tests/unit/routes tests/architecture/static-public-pages-contract.test.ts
+pnpm exec vitest run src/app src/config src/components/layout src/components/footer tests/unit/routes tests/architecture/static-public-pages-contract.test.ts
 ```
 
-Expected: 核心路由、metadata、sitemap 和 404 相关测试 PASS。
+Expected: 核心路由、metadata、sitemap、404、导航和 message composition 相关测试 PASS。
 
 ### Task 5: 中性化询盘字段闭包
 
