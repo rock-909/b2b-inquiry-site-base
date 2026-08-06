@@ -13,17 +13,25 @@ describe("offerings", () => {
       "OFFERINGS",
       "getOfferingById",
     ]);
-    expect(offeringsModule.OFFERINGS).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: expect.any(String) as string,
-          name: expect.any(String) as string,
-        }),
-      ]),
-    );
-    expect(
-      offeringsModule.getOfferingById(offeringsModule.OFFERINGS[0]?.id),
-    ).toBe(offeringsModule.OFFERINGS[0]);
+    const offeringIds = new Set<string>();
+    for (const offering of offeringsModule.OFFERINGS) {
+      expect(offering).toEqual({
+        id: expect.any(String) as string,
+        name: expect.any(String) as string,
+      });
+      expect(offering.id.trim()).toBe(offering.id);
+      expect(offering.name.trim()).toBe(offering.name);
+      expect(offeringIds.has(offering.id)).toBe(false);
+      offeringIds.add(offering.id);
+    }
+
+    const [firstOffering] = offeringsModule.OFFERINGS;
+    if (firstOffering !== undefined) {
+      expect(offeringsModule.getOfferingById(firstOffering.id)).toBe(
+        firstOffering,
+      );
+    }
+
     expect(offeringsModule.getOfferingById("missing-offering")).toBeUndefined();
   });
 });

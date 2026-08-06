@@ -13,6 +13,7 @@ import { load } from "js-yaml";
 import ts from "typescript";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  isSentinelBlocker,
   shouldValidateProductionRuntimeContract,
   validateProductionConfig,
   validateProductionRuntimeContract,
@@ -675,6 +676,24 @@ describe("public launch trust content guard", () => {
     expect(result.stderr).toContain(
       "Production rate limiting requires Upstash Redis",
     );
+  });
+
+  it("keeps missing wrangler production vars out of sentinel classification", () => {
+    expect(
+      isSentinelBlocker(
+        "wrangler.jsonc env.production.vars is missing; production deploy config cannot be public-launch validated.",
+      ),
+    ).toBe(false);
+    expect(
+      isSentinelBlocker(
+        "wrangler.jsonc name is not public-launch ready (replace the template Worker name before production deploy).",
+      ),
+    ).toBe(true);
+    expect(
+      isSentinelBlocker(
+        "wrangler.jsonc env.production.r2_buckets NEXT_INC_CACHE_R2_BUCKET is not public-launch ready (replace the template R2 bucket name before production deploy).",
+      ),
+    ).toBe(true);
   });
 
   it("treats workers.dev and example.invalid as non-launch public URLs", () => {

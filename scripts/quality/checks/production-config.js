@@ -517,11 +517,10 @@ function validateProductionConfig(env = process.env) {
 
 function isSentinelBlocker(message) {
   return (
-    message.includes("public-launch ready") ||
+    message.includes("is not public-launch ready") ||
     message.includes("not configured for production") ||
     message.includes("SITE_CONFIG.") ||
-    message.includes("brandAssets.") ||
-    message.includes("wrangler.jsonc")
+    message.includes("brandAssets.")
   );
 }
 
@@ -563,6 +562,7 @@ function runValidateProductionConfigCli() {
 }
 
 module.exports = {
+  isSentinelBlocker,
   runValidateProductionConfigCli,
   shouldValidateProductionRuntimeContract,
   validateProductionConfig,
