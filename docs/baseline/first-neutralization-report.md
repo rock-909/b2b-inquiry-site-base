@@ -2,7 +2,7 @@
 
 - Donor SHA: `dcb9e2bbed164b484e1c8cbc1b08c7f140e84405`
 - Neutralization input SHA: `4198274e0c88c054049afd54d19bdaa50d1422d5`
-- Candidate implementation SHA: pending the implementation commit.
+- Candidate implementation SHA: `f7b4a0f81de44e60b04043b3e813287afbc117df`
 - Verified on: `2026-08-06`
 - Current status: `INDEPENDENT_NEUTRAL_BASE_CANDIDATE`
 
@@ -54,4 +54,3 @@ The sentinel blockers prove that this repository cannot be mistaken for a client
 - Clean-room rewrite review: not done.
 - Mutation proof: not done.
 - Real owner acceptance / public launch evidence: not done.
-- The candidate implementation SHA will be recorded in a follow-up documentation commit after the implementation commit exists.
