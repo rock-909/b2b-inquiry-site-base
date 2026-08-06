@@ -236,8 +236,9 @@ Expected: 运行代码、测试、package scripts、CI 和 Knip 中引用为零�
 - Move to Trash: `src/app/[locale]/warranty/**`
 - Move to Trash: `src/components/products/**`
 - Move to Trash: `src/constants/tucsenberg-product-*.ts`
-- Move to Trash: `src/config/single-site-product-catalog.ts`
 - Move to Trash: `src/config/single-site-page-expression.ts`
+- Move to Trash: `src/components/content/trade-landing-shell.tsx`
+- Move to Trash: `src/components/content/__tests__/trade-landing-shell.test.tsx`
 - Move to Trash: `content/pages/en/flood-barrier-*.mdx`
 - Move to Trash: `content/pages/en/oem-wholesale.mdx`
 - Move to Trash: `content/pages/en/warranty.mdx`
@@ -247,6 +248,7 @@ Expected: 运行代码、测试、package scripts、CI 和 Knip 中引用为零�
 - Modify: `src/app/[locale]/about/**`
 - Modify: `src/app/[locale]/contact/**`
 - Modify: `src/app/[locale]/request-quote/**`
+- Modify: `src/app/[locale]/static-mdx-page.tsx`
 - Modify: `src/app/sitemap.ts`
 - Modify: `src/middleware.ts`
 - Modify: `src/config/{pages.config,single-site,single-site-links,single-site-navigation,single-site-seo}.ts`
@@ -258,13 +260,14 @@ Expected: 运行代码、测试、package scripts、CI 和 Knip 中引用为零�
 - Modify: `messages/message-packs.json`
 - Modify: `src/lib/i18n/composed-messages.ts`
 - Modify: `src/types/next-intl.d.ts`
+- Modify: `src/lib/content-manifest.generated.ts`
 - Modify: `src/config/offerings.ts`
 - Modify: `src/config/__tests__/offerings.test.ts`
 - Modify: `src/components/layout/**`
 - Modify: `src/components/footer/**`
 - Move to Trash: 任何中性页面不再调用的产品 sections/grid 组件及其测试
 
-`src/constants/product-catalog.ts` 仍被旧询盘链路使用，本任务暂不移出；到 Task 5 与 `product-identity.ts`、`product-inquiry-kinds.ts` 一起退出。`public/downloads/**` 和 `public/images/tucsenberg-*` 暂留到 Task 6，与 asset/header/Lighthouse 门禁同批处理。
+`src/config/single-site-product-catalog.ts` 与 `src/constants/product-catalog.ts` 仍被旧询盘链路使用，本任务暂不移出；到 Task 5 与 `product-identity.ts`、`product-inquiry-kinds.ts` 一起退出。`public/downloads/**` 和 `public/images/tucsenberg-*` 暂留到 Task 6，与 asset/header/Lighthouse 门禁同批处理。
 
 - [ ] **Step 1: 先写核心路由行为测试**
 
@@ -321,6 +324,7 @@ Expected: 核心路由、metadata、sitemap、404、导航和 message compositio
 - Modify: `src/lib/lead-pipeline/inquiry-handoff.ts`
 - Modify: `src/lib/lead-pipeline/utils.ts`
 - Move to Trash: `src/constants/product-catalog.ts`
+- Move to Trash: `src/config/single-site-product-catalog.ts`
 - Move to Trash: `src/lib/lead-pipeline/product-identity.ts`
 - Move to Trash: `src/lib/lead-pipeline/product-inquiry-kinds.ts`
 - Modify: `src/lib/email/email-data-schema.ts`
@@ -365,7 +369,7 @@ Expected: 新字段合同因旧 product model 而 FAIL。
 
 - [ ] **Step 3: 最小改造真实链路**
 
-删除旧 `src/constants/product-catalog.ts`、`catalogProductId`、`productInquiryKind`、`productName` 和 `Product Inquiry` 分支，使用可选 `interest`、`offeringId`。`offeringId` 只作为不可信输入进入服务端解析，未知 ID 拒绝；下游 email/Airtable 只接收 canonical offering id/name。保持既有安全边界和 provider 容错语义，不添加动态 schema、provider interface 或兼容 wrapper。
+删除旧 `src/config/single-site-product-catalog.ts`、`src/constants/product-catalog.ts`、`catalogProductId`、`productInquiryKind`、`productName` 和 `Product Inquiry` 分支，使用可选 `interest`、`offeringId`。`offeringId` 只作为不可信输入进入服务端解析，未知 ID 拒绝；下游 email/Airtable 只接收 canonical offering id/name。保持既有安全边界和 provider 容错语义，不添加动态 schema、provider interface 或兼容 wrapper。
 
 - [ ] **Step 4: 询盘聚焦测试转绿**
 
