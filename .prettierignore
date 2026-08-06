@@ -1,0 +1,134 @@
+# Dependencies
+node_modules/
+.pnpm/
+
+# Build outputs
+.next/
+.next-lighthouse/
+out/
+dist/
+build/
+
+# Conductor local collaboration artifacts
+.context/
+
+# Generated files
+*.min.js
+*.min.css
+*.generated.ts
+
+# Reports and generated content
+reports/
+logs/
+coverage/
+.lighthouseci/
+
+# Lock files
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git files
+.git/
+.gitignore
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+
+# Binary files
+*.ico
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# Generated documentation
+*.html
+*.pdf
+
+# Backup files
+*.backup
+*.bak
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Database files
+*.db
+*.sqlite
+
+# Cache directories
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Husky hooks
+.husky/_/
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Storybook
+storybook-static/
+
+# Vercel
+.vercel/
+
+# Turbo
+.turbo/
+
+# Documentation and markdown files with code examples
+*.md
+docs/
+.augment/
+
+# Configuration files that may contain non-standard syntax
+*.dot
+*.yml
+*.yaml
+
+# Content files
+content/
+
+# Local MCP config (may contain comments / non-standard JSON)
+.mcp.json
+
+# Claude Code local settings
+.claude/
+
+# Next.js docs (third-party, do not format)
+.next-docs/
+
+# Semgrep generated reports
+semgrep-*.json
+
+# Local tool data (not project code)
+.firecrawl/
+
+# CommonJS service files (legacy format)
+src/services/*-cjs.js

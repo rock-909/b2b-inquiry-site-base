@@ -1,0 +1,64 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "tucsenberg-site",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-05-04",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  // Wrangler-level minification via esbuild. OpenNext split-function minify
+  // remains disabled in open-next.config.ts until it has fresh preview proof.
+  // Bundle size follows the Cloudflare Workers Free baseline; paid plans are optional.
+  "minify": true,
+  // Drop __name() annotations from minified output for additional gzip savings.
+  "keep_names": false,
+  // Keep cold starts close to the visitor when Cloudflare can infer placement.
+  "placement": { "mode": "smart" },
+  // Static assets (OpenNext output)
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS",
+  },
+
+  // No cron triggers in current phase.
+
+  "env": {
+    "preview": {
+      "r2_buckets": [
+        {
+          "binding": "NEXT_INC_CACHE_R2_BUCKET",
+          "bucket_name": "tucsenberg-site-cache-preview",
+        },
+      ],
+      "vars": {
+        "APP_ENV": "preview",
+        "DEPLOYMENT_PLATFORM": "cloudflare",
+        "NEXT_PUBLIC_BASE_URL": "https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev",
+        "NEXT_PUBLIC_SITE_URL": "https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev",
+        "NEXT_PUBLIC_DEPLOYMENT_PLATFORM": "cloudflare",
+        "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAADvC8KDbJ54402pb",
+        "TURNSTILE_ALLOWED_HOSTS": "localhost,127.0.0.1,tucsenberg-site-preview.faints-pudgier-9r.workers.dev",
+      },
+    },
+    "production": {
+      "r2_buckets": [
+        {
+          "binding": "NEXT_INC_CACHE_R2_BUCKET",
+          "bucket_name": "tucsenberg-site-cache-production",
+        },
+      ],
+      "vars": {
+        "APP_ENV": "production",
+        "DEPLOYMENT_PLATFORM": "cloudflare",
+        // Placeholder until the production domain is explicitly signed off.
+        "NEXT_PUBLIC_BASE_URL": "https://tucsenberg-site-production.example.invalid",
+        "NEXT_PUBLIC_SITE_URL": "https://tucsenberg-site-production.example.invalid",
+        "NEXT_PUBLIC_DEPLOYMENT_PLATFORM": "cloudflare",
+        "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAADvC8KDbJ54402pb",
+        "NEXT_PUBLIC_TEST_MODE": "false",
+        "SECURITY_HEADERS_ENABLED": "true",
+        "NEXT_PUBLIC_SECURITY_MODE": "strict",
+        "TURNSTILE_ALLOWED_HOSTS": "tucsenberg.com,www.tucsenberg.com,tucsenberg-site-production.faints-pudgier-9r.workers.dev",
+      },
+    },
+  },
+}

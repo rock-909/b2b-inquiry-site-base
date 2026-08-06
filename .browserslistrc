@@ -1,0 +1,14 @@
+[production]
+# Target modern evergreen browsers to reduce polyfills
+Chrome >= 112
+Firefox >= 113
+Safari >= 16
+iOS >= 16
+Edge >= 112
+not dead
+not op_mini all
+
+[development]
+# Fast refresh/dev tooling typically on Chrome
+last 1 Chrome version
+

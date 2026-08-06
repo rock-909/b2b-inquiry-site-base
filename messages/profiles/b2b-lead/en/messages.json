@@ -1,0 +1,109 @@
+{
+  "contact": {
+    "title": "Contact",
+    "description": "Fastest route: the RFQ form asks the questions we would ask anyway.",
+    "inquiryHandoff": {
+      "title": "Fastest route",
+      "description": "The RFQ form asks the questions we would ask anyway, so we can reply sooner with a quote or only the missing essentials.",
+      "items": {
+        "need": {
+          "title": "What you are protecting",
+          "description": "Door, garage, driveway, loading dock, perimeter, stock or resale order, or other."
+        },
+        "context": {
+          "title": "Dimensions",
+          "description": "Opening width x height or run length, mounting surface or ground type, plus photos or drawings if available."
+        },
+        "timing": {
+          "title": "Market and port",
+          "description": "Quantity, market, delivery port and timeline help us reply within 12 hours — with a quote when details are enough, or only the missing essentials."
+        }
+      }
+    },
+    "panel": {
+      "contactTitle": "Email & RFQ",
+      "email": "Email",
+      "emailUnavailable": "Use the RFQ form if email is unavailable.",
+      "phone": "Phone",
+      "hoursTitle": "Time zone",
+      "weekdays": "China",
+      "saturday": "Follow-up",
+      "sunday": "US/EU hours",
+      "closed": "Closed",
+      "responseTitle": "What happens next",
+      "responseTimeLabel": "Reply within",
+      "responseTimeValue": "12 hours",
+      "bestForLabel": "Quote when",
+      "bestForValue": "Details are sufficient",
+      "prepareLabel": "Fastest route",
+      "prepareValue": "Use the RFQ form; it asks the questions we'd ask anyway."
+    }
+  },
+  "requestQuote": {
+    "metadata": {
+      "title": "Request a Quote — Reply Within 12 Hours",
+      "description": "Send dimensions, quantities, market and timeline. We reply within 12 hours. If the details are sufficient, the reply includes a quote. Otherwise, we ask only for the missing essentials."
+    },
+    "page": {
+      "heading": "Get real numbers",
+      "intro": "Two required fields, one optional message — send what you know and we reply within 12 hours. If the details are sufficient, the reply includes a quote. Otherwise, we ask only for the missing essentials.",
+      "afterSubmitTitle": "After you submit",
+      "confidenceTitle": "Quote confidence",
+      "confidenceWarranty": "Written product-specific warranty terms",
+      "confidenceSamples": "Sample fees credited",
+      "confidencePricing": "No published-price games — the quote is the price conversation"
+    }
+  },
+  "inquiry": {
+    "form": {
+      "optional": "optional",
+      "fullName": "Full name",
+      "email": "Email address",
+      "message": "Message",
+      "messageHint": "Optional — share product interest, opening sizes, quantity, delivery country or port, or just say hello.",
+      "contextLabel": "Product interest from your link",
+      "submit": "Send inquiry",
+      "submitting": "Sending...",
+      "success": "Received. We reply within 12 hours. If the details are sufficient, the reply includes a quote. Otherwise, we ask only for the missing essentials. You'll hear from a person, not a sequence.",
+      "referenceLabel": "Reference",
+      "privacyNotice": "By submitting this form, you agree to our Privacy Policy and Terms of Service.",
+      "noJsExplanation": "The secure inquiry form needs JavaScript because bot verification cannot run without it.",
+      "noJsEmailPrefix": "Email us directly at",
+      "contactAriaLabel": "Contact inquiry",
+      "requestQuoteAriaLabel": "Request a quote",
+      "turnstile": {
+        "unavailable": "Security verification is temporarily unavailable.",
+        "loadFailed": "Security verification failed to load.",
+        "slowToLoad": "Security verification is taking longer than usual.",
+        "devBypass": "Dev mode: Turnstile verification bypassed",
+        "testMode": "Bot protection disabled in test mode",
+        "rescueBeforeEmail": "Email us instead —",
+        "rescueAfterEmail": "Reply within 12 hours.",
+        "rescueSubject": "Quote request"
+      },
+      "errors": {
+        "fieldSummary": "Please review the highlighted fields and try again.",
+        "securitySummary": "Security verification did not complete. Please try again.",
+        "serverSummary": "We could not send your inquiry right now. Please try again shortly.",
+        "fullName": {
+          "required": "Full name is required",
+          "invalid": "Full name contains invalid characters",
+          "tooLong": "Full name must be 100 characters or fewer"
+        },
+        "email": {
+          "required": "Email address is required",
+          "invalid": "Please enter a valid email address",
+          "tooLong": "Email must be 254 characters or fewer"
+        },
+        "message": {
+          "invalid": "Message contains invalid characters",
+          "tooLong": "Message must be 2000 characters or fewer"
+        }
+      }
+    }
+  },
+  "faq": {
+    "sectionTitle": "Frequently Asked Questions",
+    "items": {}
+  }
+}

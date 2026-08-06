@@ -1,0 +1,130 @@
+# 本地 Git 质量门禁。
+pre-commit:
+  parallel: true
+  commands:
+    # 只检查暂存文件，不修改工作区。
+    format-check:
+      glob: "*.{js,jsx,ts,tsx,json,md,mdx,yml,yaml,css,scss,html}"
+      run: pnpm exec prettier --check {staged_files}
+      fail_text: '代码格式检查失败 - 请运行 pnpm exec prettier --write <files> 修复格式问题'
+
+    # TypeScript 类型检查。
+    type-check:
+      run: pnpm type-check
+      fail_text: 'TypeScript类型检查失败 - 请修复类型错误后重新提交'
+
+    # ESLint 检查。
+    quality-check:
+      run: pnpm lint:check
+      fail_text: '代码质量检查失败 - 发现新的质量问题，请修复后重新提交'
+
+    # 多语言同步检查
+    i18n-sync:
+      run: |
+        if git diff --cached --name-only | grep -E '^(messages/|content/|i18n\.(json|ts)$|src/.+i18n|translation\.config\.js)' >/dev/null; then
+          node scripts/starter-checks.js translations
+        else
+          echo "跳过 i18n 同步检查（无相关变更）"; exit 0;
+        fi
+      fail_text: '翻译验证失败 - 请同步 messages 物理包与内容文件'
+      stage_fixed: false
+
+    # 改动运行时代码时，要求每个文件都有相关测试并执行这些测试。
+    test-related:
+      run: |
+        # Stories/fixtures 由 Storybook + 类型检查证明；纯类型和 setup 文件由全量车道证明。
+        FILES=$(git diff --cached --name-only --diff-filter=ACM \
+          | grep -E '^src/.+\.(ts|tsx)$' \
+          | grep -v '\.test\.' | grep -v '\.spec\.' | grep -v '__tests__' \
+          | grep -v '\.stories\.tsx$' \
+          | grep -v '\.fixtures\.ts$' \
+          | grep -vE '^src/types/|-types\.ts$|\.types\.ts$' \
+          | grep -v '^src/test/setup' || true)
+        if [ -z "$FILES" ]; then
+          echo "✅ 相关测试检查跳过 (本次没有需要单测覆盖的源码变更)"; exit 0;
+        fi
+        # 逐个检查，避免一个有测试的文件掩盖同批次中没有测试的文件。
+        UNCOVERED=""
+        for FILE in $FILES; do
+          if pnpm vitest related "$FILE" --run --passWithNoTests --reporter=dot 2>&1 \
+            | grep -q "No test files found"; then
+            UNCOVERED="$UNCOVERED $FILE"
+          fi
+        done
+        if [ -n "$UNCOVERED" ]; then
+          echo "";
+          echo "❌ 改动的源文件里，有文件没有任何相关测试：";
+          for FILE in $UNCOVERED; do echo "     $FILE"; done
+          echo "";
+          echo "💡 补一个测试。真的该由别的车道证明，就说清是哪条，并把排除规则写在";
+          echo "   上面那个过滤器里——附上理由，别默默放行。";
+          exit 1;
+        fi
+        echo "🧪 运行相关测试..."
+        OUTPUT=$(pnpm vitest related $FILES --run --passWithNoTests --reporter=dot 2>&1) || {
+          echo "$OUTPUT";
+          echo ""; echo "❌ 相关测试失败 - 可能原因:";
+          echo "  1. 组件 DOM 结构变更，但测试中的 getByRole/getByText 未同步";
+          echo "  2. 接口属性变更，但 Mock 配置未更新";
+          echo "  3. 函数签名变更，但测试断言未更新";
+          echo ""; echo "💡 请检查并同步更新对应的测试文件";
+          exit 1;
+        }
+        echo "✅ 相关测试通过"
+      fail_text: '相关测试失败 - 请确认改动行为有对应测试覆盖'
+      stage_fixed: false
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm exec commitlint --edit {1}
+      fail_text:
+        '提交信息不符合规范 - 请使用约定式提交格式：type(scope): description'
+
+pre-push:
+  parallel: false  # 串行执行，确保构建先完成
+  commands:
+    # 构建验证；紧急场景可用 RUN_FAST_PUSH=1 跳过。
+    build-check:
+      run: |
+        if [ "$RUN_FAST_PUSH" = "1" ]; then
+          echo "⏭️  RUN_FAST_PUSH=1: 跳过构建验证（仅用于紧急推送）";
+        else
+          node scripts/starter-checks.js content-manifest --check && node scripts/starter-checks.js content-slugs --strict-frontmatter && node scripts/starter-checks.js validate-production-config && pnpm build && node scripts/starter-checks.js client-boundary --build-artifacts
+        fi
+      fail_text: '构建验证失败 - 请修复构建错误后再推送'
+
+    # 翻译验证始终执行。
+    translation-check:
+      run: node scripts/starter-checks.js translations
+      fail_text: '翻译验证失败 - 请确保所有翻译文件同步'
+
+    # 架构和循环依赖检查；紧急场景可跳过。
+    arch-check:
+      run: |
+        if [ "$RUN_FAST_PUSH" = "1" ]; then
+          echo "⏭️  RUN_FAST_PUSH=1: 跳过架构检查（仅用于紧急推送，CI/后续本地请补跑）";
+        else
+          pnpm exec dependency-cruiser src --config .dependency-cruiser.js -T err
+        fi
+      fail_text: '架构检查失败 - 发现循环依赖或架构违规'
+
+    # 生产依赖安全审计；紧急场景可跳过。
+    security-check:
+      run: |
+        if [ "$RUN_FAST_PUSH" = "1" ]; then
+          echo "⏭️  RUN_FAST_PUSH=1: 跳过依赖安全审计 pnpm audit（仅用于紧急推送）。注意：PR CI 不跑 pnpm audit，只有 Semgrep 源码扫描；依赖 CVE 仅由每周 weekly-audit 工作流兜底——请尽快本地补跑";
+        else
+          pnpm audit --prod --audit-level moderate
+        fi
+      fail_text: '安全检查失败 - 发现安全漏洞，请修复后推送'
+
+    # 全仓扫描未使用文件、导出和依赖；有意的公共面用 @public JSDoc 放行。
+    dead-export-check:
+      run: |
+        if [ "$RUN_FAST_PUSH" = "1" ]; then
+          echo "⏭️  RUN_FAST_PUSH=1: 跳过死导出扫描（CI quality 作业会跑 pnpm knip:check 兜底）";
+        else
+          pnpm knip:check
+        fi
+      fail_text: '死导出检查失败 - 发现零引用导出。删除它，或（若是有意的治理/公共面）用 @public JSDoc 具名放行'

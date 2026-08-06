@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "components": {
+    "breadcrumb": {
+      "story": "required",
+      "radixLayer": "primitive",
+      "clientBoundary": "server-safe"
+    },
+    "button": {
+      "story": "required",
+      "radixLayer": "primitive",
+      "clientBoundary": "server-safe"
+    },
+    "card": {
+      "story": "required",
+      "radixLayer": "local",
+      "clientBoundary": "server-safe"
+    },
+    "lazy-island-error-boundary": {
+      "story": "required",
+      "radixLayer": "local",
+      "clientBoundary": "client"
+    },
+    "section-head": {
+      "story": "required",
+      "radixLayer": "local",
+      "clientBoundary": "server-safe"
+    },
+    "separator": {
+      "story": "required",
+      "radixLayer": "local",
+      "clientBoundary": "client"
+    },
+    "sheet": {
+      "story": "required",
+      "radixLayer": "primitive",
+      "clientBoundary": "client"
+    },
+    "status-callout": {
+      "story": "required",
+      "radixLayer": "local",
+      "clientBoundary": "server-safe"
+    },
+    "theme-switcher": {
+      "story": "required",
+      "radixLayer": "local",
+      "clientBoundary": "client"
+    }
+  }
+}

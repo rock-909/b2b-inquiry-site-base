@@ -1,0 +1,50 @@
+module.exports = {
+  extends: ["@commitlint/config-conventional"],
+  rules: {
+    "type-enum": [
+      2,
+      "always",
+      [
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "test",
+        "chore",
+        "perf",
+        "ci",
+        "build",
+        "revert",
+      ],
+    ],
+    "subject-max-length": [2, "always", 72],
+    "subject-case": [2, "always", "lower-case"],
+    "body-max-line-length": [2, "always", 100],
+    "header-max-length": [2, "always", 100],
+    "scope-case": [2, "always", "lower-case"],
+    "subject-empty": [2, "never"],
+    "type-empty": [2, "never"],
+    "type-case": [2, "always", "lower-case"],
+  },
+  prompt: {
+    questions: {
+      type: {
+        description: "选择提交类型",
+        enum: {
+          feat: { description: "新功能" },
+          fix: { description: "修复bug" },
+          docs: { description: "文档更新" },
+          style: { description: "代码格式调整" },
+          refactor: { description: "代码重构" },
+          test: { description: "测试相关" },
+          chore: { description: "构建或辅助工具变动" },
+          perf: { description: "性能优化" },
+          ci: { description: "CI配置" },
+          build: { description: "构建系统" },
+          revert: { description: "回滚提交" },
+        },
+      },
+    },
+  },
+};

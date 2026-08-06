@@ -1,0 +1,4 @@
+interface:
+  display_name: "Intent Review"
+  short_description: "Pre-merge judgement: does this PR do what it was asked to do"
+  default_prompt: "Use $intent-review to judge the current PR against the requirement behind it — reconstruct what was asked, then check the merge diff for what is missing, what nobody asked for, whether it fits this repo's way of solving things, and what could still break. Output the requirement table and a verdict."

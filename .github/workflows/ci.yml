@@ -1,0 +1,299 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, "pr/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: 基础质量
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          submodules: false
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: 设置 pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: ESLint 检查
+        run: pnpm lint:check
+
+      - name: React Doctor
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            pnpm react:doctor --base "origin/${{ github.base_ref }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            pnpm react:doctor --base "${{ github.event.before }}"
+          else
+            pnpm react:doctor --base "$(git rev-parse HEAD^)"
+          fi
+
+      - name: TypeScript 检查
+        run: pnpm type-check
+
+      - name: 测试 TypeScript 检查
+        run: pnpm type-check:tests
+
+      - name: 内容结构检查
+        run: pnpm content:check
+
+      - name: preview config smoke
+        run: APP_ENV=preview node scripts/starter-checks.js validate-production-config
+
+      - name: Client boundary 检查
+        run: node scripts/starter-checks.js client-boundary
+
+      - name: Component governance scan
+        run: pnpm component:governance
+
+      - name: Storybook build check
+        run: pnpm exec storybook build
+
+      - name: Dependency cruiser architecture check
+        run: pnpm exec dependency-cruiser src --config .dependency-cruiser.js -T err
+
+      - name: Dead-export / dead-file scan (knip)
+        run: pnpm knip:check
+
+      - name: Vitest 收集面对账
+        run: node scripts/starter-checks.js vitest-collection
+
+      - name: 门禁子命令车道对账
+        run: node scripts/starter-checks.js subcommand-lanes
+
+  tests:
+    name: 单元与集成测试
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 25
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          submodules: false
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: 设置 pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 运行测试
+        run: pnpm test
+
+  e2e:
+    name: Tucsenberg 浏览器冒烟
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 35
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: 设置 pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 安装 Playwright 浏览器
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: 生产构建
+        run: pnpm build
+        env:
+          NODE_ENV: production
+          APP_ENV: preview
+          PLAYWRIGHT_TEST: "true"
+          NEXT_PUBLIC_TEST_MODE: "true"
+          NEXT_PUBLIC_BASE_URL: http://localhost:3000
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          # Turnstile 的测试占位读的是 NEXT_PUBLIC_APP_ENV，不是 APP_ENV。
+          NEXT_PUBLIC_APP_ENV: preview
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
+          TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"
+
+      # 不点名文件：点名过的三份清单（这里、daily-e2e、playwright.config）各不相同，
+      # 结果有 3 个用例文件哪个 workflow 都没跑到。改成让 testDir 说了算。
+      - name: 运行 Tucsenberg E2E
+        run: pnpm exec playwright test
+
+  semgrep:
+    name: Semgrep 安全扫描
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 10
+    container: semgrep/semgrep:1.162.0
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: 运行 Semgrep
+        # 扫描全仓，包括实际执行的脚本和根配置。
+        run: semgrep scan --error --severity ERROR --config semgrep.yml .
+
+  cloudflare-build:
+    name: Cloudflare 构建证明
+    runs-on: ubuntu-latest
+    needs: quality
+    timeout-minutes: 25
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v6
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: 设置 pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".node-version"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      - name: 分析构建（保留 sourcemap，供 client-boundary 使用）
+        run: pnpm build
+        env:
+          NODE_ENV: production
+          APP_ENV: preview
+          NEXT_PUBLIC_SITE_URL: ${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev' }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION || secrets.GOOGLE_SITE_VERIFICATION }}
+
+      - name: InquiryForm client chunk boundary
+        run: node scripts/starter-checks.js client-boundary --build-artifacts
+
+      - name: Localized prerender behavior check
+        run: node scripts/starter-checks.js prerender-static
+
+      - name: Cloudflare/OpenNext 构建
+        run: pnpm website:build:cf
+        env:
+          NODE_ENV: production
+          APP_ENV: preview
+          DEPLOYMENT_PLATFORM: cloudflare
+          NEXT_PUBLIC_DEPLOYMENT_PLATFORM: cloudflare
+          NEXT_PUBLIC_SITE_URL: ${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev' }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION || secrets.GOOGLE_SITE_VERIFICATION }}
+
+      - name: 验证 Cloudflare artifact config
+        run: node scripts/quality/checks/cloudflare-artifact-config.js
+
+      # 使用本作业生成的 .open-next/assets 验证静态资源响应头。
+      - name: Cloudflare 静态资源响应头
+        run: node scripts/starter-checks.js cf-static-asset-headers
+
+      - name: Cloudflare/Wrangler dry-run
+        if: ${{ github.event_name != 'pull_request' }}
+        run: pnpm exec wrangler deploy --dry-run --env preview
+        env:
+          NODE_ENV: production
+          APP_ENV: preview
+          DEPLOYMENT_PLATFORM: cloudflare
+          NEXT_PUBLIC_DEPLOYMENT_PLATFORM: cloudflare
+          NEXT_PUBLIC_SITE_URL: ${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev' }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION || secrets.GOOGLE_SITE_VERIFICATION }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Cloudflare Free budget note
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          {
+            echo "## Cloudflare Free budget"
+            echo
+            echo "Pull request CI does not prove the Cloudflare Free gzip budget."
+            echo "This run proves the Next.js and Cloudflare/OpenNext build path only."
+            echo "Before merge, record a workflow_dispatch CI run or pnpm release:verify result on the exact head SHA."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  ci-summary:
+    name: CI 汇总
+    runs-on: ubuntu-latest
+    needs: [quality, tests, e2e, semgrep, cloudflare-build]
+    if: always()
+    timeout-minutes: 5
+
+    steps:
+      - name: 检查所有作业状态
+        run: |
+          {
+            echo "## CI Jobs"
+            echo
+            echo "| Job | Result |"
+            echo "| --- | --- |"
+            echo "| 基础质量 | ${{ needs.quality.result }} |"
+            echo "| 单元与集成测试 | ${{ needs.tests.result }} |"
+            echo "| Tucsenberg 浏览器冒烟 | ${{ needs.e2e.result }} |"
+            echo "| Semgrep 安全扫描 | ${{ needs.semgrep.result }} |"
+            echo "| Cloudflare 构建证明 | ${{ needs.cloudflare-build.result }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "${{ needs.quality.result }}" != "success" ||
+                "${{ needs.tests.result }}" != "success" ||
+                "${{ needs.e2e.result }}" != "success" ||
+                "${{ needs.semgrep.result }}" != "success" ||
+                "${{ needs.cloudflare-build.result }}" != "success" ]]; then
+            echo "CI failed"
+            exit 1
+          fi

@@ -1,0 +1,114 @@
+{
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme",
+    "switchToSystem": "Switch to system theme"
+  },
+  "accessibility": {
+    "skipToContent": "Skip to main content",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu",
+    "mainNavigation": "Main navigation",
+    "mobileNavigation": "Mobile navigation menu",
+    "themeSelector": "Theme selector",
+    "footerNavigation": "Footer navigation",
+    "breadcrumb": "Breadcrumb"
+  },
+  "cookie": {
+    "title": "Cookie Preferences",
+    "description": "We use cookies to enhance your browsing experience and analyze site traffic.",
+    "learnMore": "Privacy policy",
+    "acceptAll": "Accept All",
+    "rejectAll": "Reject All",
+    "manage": "Manage",
+    "close": "Close",
+    "cancel": "Cancel",
+    "savePreferences": "Save Preferences",
+    "preferences": {
+      "title": "Cookie Preferences",
+      "description": "Choose which cookies you want to allow. Essential cookies are always enabled."
+    },
+    "categories": {
+      "necessary": "Essential",
+      "necessaryDesc": "Required for the website to function properly. Cannot be disabled.",
+      "analytics": "Analytics",
+      "analyticsDesc": "Help us understand how visitors interact with our website.",
+      "marketing": "Marketing",
+      "marketingDesc": "Used to deliver personalized content and advertisements."
+    }
+  },
+  "structured-data": {
+    "organization": {
+      "name": "{companyName}",
+      "description": "Factory-direct flood barrier supply from China",
+      "social": {
+        "twitter": "",
+        "linkedin": ""
+      }
+    },
+    "website": {
+      "name": "{siteName}",
+      "description": "Factory-direct flood barrier supply from China"
+    },
+    "article": {
+      "defaultAuthor": "{companyName}"
+    }
+  },
+  "apiErrors": {
+    "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later.",
+    "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again later.",
+    "INVALID_JSON_BODY": "Invalid request format.",
+    "PAYLOAD_TOO_LARGE": "The request payload is too large.",
+    "TURNSTILE_REQUIRED": "Security verification required.",
+    "TURNSTILE_REJECTED": "Security verification failed. Please try again.",
+    "TURNSTILE_UNAVAILABLE": "Security verification is temporarily unavailable. Please try again later.",
+    "UNKNOWN_ERROR": "An unknown error occurred.",
+    "INTERNAL_SERVER_ERROR": "An unexpected error occurred. Please try again later.",
+    "INVALID_REQUEST": "Some required fields are missing or invalid.",
+    "UNSUPPORTED_MEDIA_TYPE": "Unsupported content type.",
+    "INQUIRY_VALIDATION_FAILED": "Please review your inquiry details and try again.",
+    "INQUIRY_PROCESSING_ERROR": "We could not send your inquiry right now. Please try again later."
+  },
+  "errors": {
+    "products": {
+      "title": "Failed to load product information",
+      "description": "We couldn't load the product details. Please try again or return to the homepage to browse other content.",
+      "tryAgain": "Try again",
+      "goHome": "Back to homepage"
+    },
+    "contact": {
+      "title": "Contact form temporarily unavailable",
+      "description": "Our team will look into this issue immediately. You can try again later or contact us through other channels.",
+      "tryAgain": "Try again",
+      "goHome": "Back to homepage"
+    },
+    "notFound": {
+      "title": "Page not found",
+      "description": "The page you're looking for doesn't exist or has been moved.",
+      "goHome": "Back to homepage"
+    }
+  },
+  "legal": {
+    "effectiveDate": "Effective Date",
+    "lastUpdated": "Last Updated",
+    "tableOfContents": "Table of Contents",
+    "articleAuthorLine": "Written by the Tucsenberg team — factory-direct supplier of the flood barrier systems covered in this guide."
+  },
+  "emailTemplates": {
+    "common": {
+      "fields": {
+        "contactName": "Contact Name",
+        "email": "Email",
+        "product": "Product",
+        "reference": "Reference",
+        "requirements": "Requirements"
+      }
+    },
+    "productInquiry": {
+      "title": "New Product Inquiry",
+      "preview": "New product inquiry received.",
+      "footer": "This inquiry was submitted through the Tucsenberg website.",
+      "subject": "Product Inquiry: {productName}"
+    }
+  }
+}

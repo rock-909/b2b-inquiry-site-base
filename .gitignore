@@ -1,0 +1,70 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+.next-lighthouse/
+next-env.d.ts
+storybook-static/
+
+# Cache
+.eslintcache
+*.tsbuildinfo
+.turbo/
+__pycache__/
+*.py[cod]
+
+# Environment
+.env
+.env.local
+.env.test
+.env.*.local
+.dev.vars
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test & Reports
+reports/
+test-results/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Cloudflare
+.open-next/
+.wrangler/
+
+# Local MCP config (may contain secrets)
+.mcp.json
+.lighthouseci/
+
+# Claude/Codex local state
+.grok/
+.impeccable/
+skills-lock.json
+.claude/settings.local.json
+.claude/launch.json
+.claude/skills-backup-*/
+.claude/skills-reference-*/
+.claude/worktrees/
+.codex/auth.json
+.codex/history.jsonl
+.codex/log/
+.codex/*.sqlite*
+.codex/agents/
+.codex/shell_snapshots/
+
+# Superpowers local state only; process records use the tracked root plans/ directory.
+.superpowers/
+.worktrees/

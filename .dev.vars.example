@@ -1,0 +1,28 @@
+# Cloudflare Workers 本地开发环境变量
+# Cloudflare local preview minimal example.
+# 复制此文件为 .dev.vars 并填入实际值
+# .dev.vars 已在 .gitignore 中，不会被提交
+#
+# This file is only the local Workers preview surface. Use .env.example and
+# docs/开发与维护.md as the full env contract, then copy only the
+# server-only values needed for the preview you are actually testing.
+
+NODE_ENV=development
+NEXTJS_ENV=development
+NEXT_PUBLIC_BASE_URL=http://localhost:8787
+NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare
+DEPLOYMENT_PLATFORM=cloudflare
+
+# Lead path values. Copy from .env.local, Cloudflare dashboard, or secrets.
+# RESEND_API_KEY=
+# AIRTABLE_API_KEY=
+# AIRTABLE_BASE_ID=
+# AIRTABLE_TABLE_NAME=
+# TURNSTILE_SECRET_KEY=
+# NEXT_PUBLIC_TURNSTILE_SITE_KEY=
+
+# Runtime security and Cloudflare compatibility values.
+# Keep these server-only unless the key explicitly starts with NEXT_PUBLIC_.
+# RATE_LIMIT_PEPPER=
+# UPSTASH_REDIS_REST_URL=
+# UPSTASH_REDIS_REST_TOKEN=

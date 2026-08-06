@@ -1,0 +1,79 @@
+name: Daily E2E
+
+on:
+  schedule:
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-e2e
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: Coverage-mapped browser proof
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: ".node-version"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Build production app
+        run: pnpm build
+        env:
+          NODE_ENV: production
+          APP_ENV: preview
+          PLAYWRIGHT_TEST: "true"
+          NEXT_PUBLIC_TEST_MODE: "true"
+          NEXT_PUBLIC_BASE_URL: http://localhost:3000
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          # Turnstile 的测试占位读的是 NEXT_PUBLIC_APP_ENV，不是 APP_ENV。
+          NEXT_PUBLIC_APP_ENV: preview
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
+          TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"
+          SECURITY_HEADERS_ENABLED: "false"
+
+      # 同 ci.yml：不点名文件，testDir 下的用例全跑。这条 lane 的区别是浏览器矩阵
+      # 全开 + 零重试，用来把 ci.yml 里被重试盖掉的首次失败暴露出来。
+      - name: Run daily E2E
+        run: pnpm exec playwright test
+        env:
+          CI_DAILY: "true"
+          # Zero Playwright retries so a first-attempt browser failure stays red.
+          CI_FLAKE_SAMPLING: "1"
+          PLAYWRIGHT_PROFILE_LANE: all
+
+      - name: Upload Playwright artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: daily-e2e-artifacts
+          path: |
+            reports/playwright-report
+            reports/playwright-results.json
+            reports/playwright-results.xml
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7

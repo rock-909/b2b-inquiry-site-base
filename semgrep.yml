@@ -1,0 +1,358 @@
+rules:
+  - id: nextjs-unsafe-dangerouslySetInnerHTML
+    # 匹配任意 JSX 元素上的 dangerouslySetInnerHTML（含带空格/模板串/obj.prop 形态）。
+    # 旧的 pattern-regex 把 Semgrep 元变量语法 $VAR 误写进正则，\$ 只匹配字面美元符号，
+    # 真实代码永不命中。改为真 Semgrep JSX pattern，强制"单一可审计位置"约束：
+    # 任何新的 dangerouslySetInnerHTML 都必须显式 nosemgrep 注明理由。
+    pattern: |
+      <$EL dangerouslySetInnerHTML=... />
+    message: '避免使用dangerouslySetInnerHTML，存在XSS风险'
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [nextjs, react]
+      cwe: 'CWE-79: Cross-site Scripting (XSS)'
+      owasp: 'A03:2021 - Injection'
+
+  - id: hardcoded-api-keys
+    pattern-regex: "(api[_-]?key|secret[_-]?key|access[_-]?token)\\s*[=:]\\s*['\"][a-zA-Z0-9_-]{20,}['\"]"
+    message: '检测到硬编码的API密钥或访问令牌'
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [nodejs]
+      cwe: 'CWE-798: Use of Hard-coded Credentials'
+      owasp: 'A07:2021 - Identification and Authentication Failures'
+
+  - id: unsafe-eval-usage
+    # Unscoped, so it also covers eval() inside Server Actions. A separate
+    # `nextjs-unsafe-server-action` rule used to claim that case; its pattern
+    # never matched a single file, and this one did.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: Function(...)
+      - pattern: new Function(...)
+    message: '避免使用eval()或Function构造器，存在代码注入风险'
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [nodejs]
+      cwe:
+        'CWE-95: Improper Neutralization of Directives in Dynamically Evaluated Code'
+      owasp: 'A03:2021 - Injection'
+
+  - id: nextjs-unsafe-redirect
+    pattern-either:
+      - pattern: |
+          router.push($URL)
+      - pattern: |
+          router.replace($URL)
+      - pattern: |
+          redirect($URL)
+    message: '确保重定向URL经过验证，防止开放重定向攻击'
+    languages: [typescript, javascript]
+    # ERROR so CI (`--severity ERROR`) actually enforces it. The pattern is broad
+    # and will also match intentional literal redirects; annotate those with
+    # `// nosemgrep: nextjs-unsafe-redirect` and a reason.
+    severity: ERROR
+    paths:
+      exclude:
+        - "**/__tests__/**"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+    metadata:
+      category: security
+      technology: [nextjs]
+      cwe: 'CWE-601: URL Redirection to Untrusted Site'
+      owasp: 'A01:2021 - Broken Access Control'
+
+  - id: insecure-random-generation
+    patterns:
+      - pattern: Math.random()
+    paths:
+      exclude:
+        - "**/__tests__/**"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+        - "**/scripts/**"
+        - "**/tests/**"
+        - "**/content/**"
+    message: '避免使用不安全的随机数生成方法，使用crypto.randomBytes()或crypto.getRandomValues()'
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [nodejs]
+      cwe:
+        'CWE-338: Use of Cryptographically Weak Pseudo-Random Number Generator'
+      owasp: 'A02:2021 - Cryptographic Failures'
+
+  - id: nextjs-unsafe-html-injection
+    pattern-either:
+      - pattern: |
+          $EL.innerHTML = $VAR
+      - pattern: |
+          $EL.outerHTML = $VAR
+    message: '避免直接设置innerHTML/outerHTML，存在XSS风险'
+    languages: [typescript, javascript]
+    severity: ERROR
+    paths:
+      exclude:
+        - "**/__tests__/**"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+    metadata:
+      category: security
+      technology: [nextjs, react]
+      cwe: 'CWE-79: Cross-site Scripting (XSS)'
+      owasp: 'A03:2021 - Injection'
+
+  - id: weak-crypto-algorithm
+    pattern-either:
+      - pattern: crypto.createHash('md5')
+      - pattern: crypto.createHash('sha1')
+      - pattern: crypto.createHmac('md5', $KEY)
+      - pattern: crypto.createHmac('sha1', $KEY)
+    message: '避免使用弱加密算法MD5和SHA1，推荐使用SHA-256或更强的算法'
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [nodejs]
+      cwe: 'CWE-327: Use of a Broken or Risky Cryptographic Algorithm'
+      owasp: 'A02:2021 - Cryptographic Failures'
+
+  - id: sql-injection-risk
+    pattern-either:
+      - pattern: |
+          $DB.query($QUERY + $VAR)
+      - pattern: |
+          $DB.execute($QUERY + $VAR)
+      - pattern: |
+          $DB.raw($QUERY + $VAR)
+    message: '可能存在SQL注入风险，使用参数化查询或ORM'
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [nodejs, database]
+      cwe: 'CWE-89: SQL Injection'
+      owasp: 'A03:2021 - Injection'
+
+  - id: environment-variable-exposure
+    pattern-regex: "console\\.(log|info|debug|warn|error)\\(.*process\\.env\\..*\\)"
+    message: '避免在日志中暴露环境变量，可能包含敏感信息'
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [nodejs]
+      cwe: 'CWE-532: Insertion of Sensitive Information into Log File'
+      owasp: 'A09:2021 - Security Logging and Monitoring Failures'
+
+  - id: object-injection-untrusted-key-write
+    patterns:
+      - pattern-either:
+          - patterns:
+              - pattern: |
+                  $OBJ[$BODY.$FIELD] = $VALUE
+              - metavariable-regex:
+                  metavariable: $BODY
+                  regex: "^(body|payload|requestBody|requestJson|json)$"
+          - pattern: |
+              $OBJ[$REQ.nextUrl.searchParams.get(...)] = $VALUE
+          - pattern: |
+              $OBJ[$REQ.nextUrl.searchParams.get(...) ?? $FALLBACK] = $VALUE
+          - patterns:
+              - pattern-inside: |
+                  const $BODY = await $REQ.json()
+                  ...
+              - pattern: |
+                  $OBJ[$BODY.$FIELD] = $VALUE
+          - patterns:
+              - pattern-inside: |
+                  const $KEY = $REQ.nextUrl.searchParams.get(...)
+                  ...
+              - pattern: |
+                  $OBJ[$KEY] = $VALUE
+          - patterns:
+              - pattern-inside: |
+                  const $KEY = $URL.searchParams.get(...)
+                  ...
+              - pattern: |
+                  $OBJ[$KEY] = $VALUE
+      - pattern-not-inside: |
+          if ($ALLOWED.includes($KEY)) {
+            ...
+          }
+      - pattern-not-inside: |
+          if ($KEY !== null && $ALLOWED.includes($KEY)) {
+            ...
+          }
+      - pattern-not-inside: |
+          if ($KEY && $ALLOWED.includes($KEY)) {
+            ...
+          }
+      - pattern-not-inside: |
+          if ($ALLOWED.has($KEY)) {
+            ...
+          }
+      - pattern-not-inside: |
+          if ($KEY !== null && $ALLOWED.has($KEY)) {
+            ...
+          }
+      - pattern-not-inside: |
+          if ($ALLOWED.indexOf($KEY) !== -1) {
+            ...
+          }
+      - pattern-not-inside: |
+          if ($ALLOWED.indexOf($KEY) >= 0) {
+            ...
+          }
+      - pattern-not-inside: |
+          if (!$ALLOWED.includes($KEY)) {
+            return ...
+          }
+          ...
+      - pattern-not-inside: |
+          if ($KEY === null || !$ALLOWED.includes($KEY)) {
+            return ...
+          }
+          ...
+      - pattern-not-inside: |
+          if (!$ALLOWED.has($KEY)) {
+            return ...
+          }
+          ...
+      - pattern-not-inside: |
+          if ($KEY === null || !$ALLOWED.has($KEY)) {
+            return ...
+          }
+          ...
+      - pattern-not-inside: |
+          if ($ALLOWED.includes($BODY.$FIELD)) {
+            ...
+          }
+      - pattern-not-inside: |
+          if ($ALLOWED.has($BODY.$FIELD)) {
+            ...
+          }
+    paths:
+      exclude:
+        - "**/__tests__/**"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+        - "**/scripts/**"
+    message: "Untrusted request/query/body field is used as an object write key; validate against an explicit key allowlist first."
+    languages: [typescript, javascript]
+    severity: ERROR
+    metadata:
+      category: security
+      technology: [nodejs, nextjs]
+      cwe: "CWE-915: Improperly Controlled Modification of Dynamically-Determined Object Attributes"
+      owasp: "A03:2021 - Injection"
+
+  - id: no-raw-request-json-in-api
+    pattern: |
+      await $REQ.json()
+    message: 'API 路由中避免直接使用 request.json()，请走 safeParseJson'
+    languages: [typescript, javascript]
+    severity: ERROR
+    paths:
+      include:
+        - "src/app/api/**/*.ts"
+        - "src/app/api/**/*.tsx"
+      exclude:
+        - "**/__tests__/**"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+    metadata:
+      category: correctness
+      technology: [nextjs]
+
+  - id: env-access-bypass-in-config
+    patterns:
+      - pattern-either:
+          - pattern: process.env.$VAR
+          - pattern: process.env[$KEY]
+      - pattern-not: process.env.NODE_ENV
+      - pattern-not: process.env["NODE_ENV"]
+      - pattern-not: process.env['NODE_ENV']
+    message: 'src/config 下避免直接读 process.env，优先通过 env.ts 统一访问'
+    languages: [typescript, javascript]
+    severity: ERROR
+    paths:
+      include:
+        - "src/config/**/*.ts"
+        - "src/config/**/*.tsx"
+      exclude:
+        - "**/__tests__/**"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+        # next.config.ts 直接导入此模块；这里保留 raw process.env 是有意的
+        # 框架边界例外，不应逼着它依赖 env.ts。
+        - "src/config/security.ts"
+    metadata:
+      category: maintainability
+      technology: [nodejs]
+
+  - id: raw-proxy-header-read-outside-trusted-entry
+    pattern-either:
+      - pattern: headers().get("cf-connecting-ip")
+      - pattern: headers().get("x-forwarded-for")
+      - pattern: $REQ.headers.get("cf-connecting-ip")
+      - pattern: $REQ.headers.get("x-forwarded-for")
+      - pattern: $HEADERS.get("cf-connecting-ip")
+      - pattern: $HEADERS.get("x-forwarded-for")
+    message: '不要在业务代码直接信任原始代理头；Cloudflare/header-only 上下文请走 getClientIP()/getClientIPFromHeaders() 或 x-internal-client-ip'
+    languages: [typescript, javascript]
+    severity: ERROR
+    paths:
+      exclude:
+        - "**/__tests__/**"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+        - "src/middleware.ts"
+        - "src/lib/security/client-ip.ts"
+    metadata:
+      category: security
+      technology: [nextjs, cloudflare]
+
+  - id: api-route-free-text-error-response
+    pattern-either:
+      - pattern: |
+          NextResponse.json({ ..., error: $VAL, ... }, ...)
+      - pattern: |
+          NextResponse.json({ ..., message: $VAL, ... }, ...)
+    message: '公开 API route 避免返回自由文本 error/message；优先用 createApiErrorResponse()/createApiSuccessResponse() 或统一 errorCode contract'
+    languages: [typescript, javascript]
+    severity: ERROR
+    paths:
+      include:
+        - "src/app/api/**/*.ts"
+        - "src/app/api/**/*.tsx"
+      exclude:
+        - "**/__tests__/**"
+        - "**/*.test.*"
+        - "**/*.spec.*"
+        - "src/app/api/csp-report/**"
+    metadata:
+      category: correctness
+      technology: [nextjs]
+
+  - id: starter-lead-route-missing-safe-json-body
+    message: '公开 inquiry lead-writing route 必须显式使用 safeParseJson()，保留 JSON body size gate 和统一错误码'
+    languages: [generic]
+    severity: ERROR
+    patterns:
+      - pattern-regex: '(?s).+'
+      - pattern-not-regex: '(?s).*safeParseJson\s*<'
+    paths:
+      include:
+        - "src/app/api/inquiry/route.ts"
+    metadata:
+      category: correctness
+      technology: [nextjs]

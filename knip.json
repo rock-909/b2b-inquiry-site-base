@@ -1,0 +1,30 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/**/*.{js,mjs,ts}",
+    "tests/**/*.{ts,tsx}",
+    "src/**/__tests__/**/*.{ts,tsx}",
+    "src/test/fixtures/console-gate/*.fixture.ts",
+    "src/**/*.stories.{ts,tsx}",
+    "*.config.{js,mjs,ts,mts}",
+    "open-next.config.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "scripts/**/*.{js,mjs,ts}"],
+  "ignoreExportsUsedInFile": true,
+  "ignore": ["src/test/css-stub.ts"],
+  "ignoreDependencies": ["@tailwindcss/typography"],
+  "rules": {
+    "files": "error",
+    "dependencies": "error",
+    "devDependencies": "off",
+    "unlisted": "off",
+    "binaries": "off",
+    "unresolved": "off",
+    "types": "off",
+    "nsExports": "off",
+    "nsTypes": "off",
+    "duplicates": "off",
+    "enumMembers": "off",
+    "exports": "error"
+  }
+}

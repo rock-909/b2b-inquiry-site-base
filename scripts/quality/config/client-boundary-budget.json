@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "allowedClientBoundaries": [
+    "src/app/[locale]/contact/error.tsx",
+    "src/app/[locale]/products/error.tsx",
+    "src/app/global-error.tsx",
+    "src/components/attribution-bootstrap.tsx",
+    "src/components/cookie/cookie-banner.tsx",
+    "src/components/cookie/cookie-consent-island.tsx",
+    "src/components/cookie/lazy-cookie-banner.tsx",
+    "src/components/cookie/lazy-cookie-consent-island.tsx",
+    "src/components/errors/localized-not-found-view.tsx",
+    "src/components/errors/route-error-view.tsx",
+    "src/components/forms/inquiry-form.tsx",
+    "src/components/forms/lazy-turnstile.tsx",
+    "src/components/layout/header-client.tsx",
+    "src/components/layout/mobile-navigation-interactive.tsx",
+    "src/components/monitoring/enterprise-analytics-island.tsx",
+    "src/components/navigation/navigation-progress-bar.tsx",
+    "src/components/products/boxwall-cross-section.tsx",
+    "src/components/products/product-run-calculator.tsx",
+    "src/components/security/turnstile.tsx",
+    "src/components/theme-provider.tsx",
+    "src/components/ui/lazy-island-error-boundary.tsx",
+    "src/components/ui/separator.tsx",
+    "src/components/ui/sheet.tsx",
+    "src/components/ui/theme-switcher.tsx",
+    "src/lib/cookie-consent/context.tsx",
+    "src/lib/marketing/lead-event.ts",
+    "src/lib/marketing/utm.ts"
+  ]
+}
