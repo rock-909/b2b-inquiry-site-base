@@ -3,12 +3,13 @@ import { SINGLE_SITE_FACTS } from "@/config/single-site";
 
 const PLACEHOLDER_EMAIL_VALUES = new Set([
   "sales@example.com",
+  "sales@example.invalid",
   "starter-contact@example.com",
 ]);
 const PLACEHOLDER_PHONE_VALUES = new Set(["+86-518-0000-0000", "TODO-OWNER"]);
 const PHONE_ZERO_BLOCK_PATTERN = /(?:^|[-\s])0{3,}(?:[-\s]|$)/;
 const EXAMPLE_EMAIL_DOMAIN_PATTERN =
-  /@(?:example\.com|example\.org|example\.net|[\w.-]+\.example)$/iu;
+  /@(?:example\.com|example\.org|example\.net|example\.invalid|[\w.-]+\.example|[\w.-]+\.example\.invalid)$/iu;
 const US_COUNTRY_CODE_WITH_NATIONAL_LENGTH = 11;
 const US_NATIONAL_PHONE_LENGTH = 10;
 const US_AREA_CODE_END = 3;

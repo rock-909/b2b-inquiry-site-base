@@ -159,6 +159,16 @@ function readWranglerProductionVars(rootDir = process.cwd()) {
   return isRecord(vars) ? vars : undefined;
 }
 
+function readWranglerConfig(rootDir = process.cwd()) {
+  const filePath = path.join(rootDir, WRANGLER_CONFIG_PATH);
+
+  if (!fs.existsSync(filePath)) {
+    return undefined;
+  }
+
+  return parseJsoncText(filePath, fs.readFileSync(filePath, "utf8"));
+}
+
 function validateWranglerProductionPublicUrls(target) {
   const productionVars = readWranglerProductionVars();
 
@@ -182,7 +192,7 @@ function validateWranglerProductionPublicUrls(target) {
 function containsStarterMarker(value) {
   if (!value) return true;
 
-  return /Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.com|starter-contact@example\.com|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|x\.com\/example|linkedin\.com\/company\/example/iu.test(
+  return /Northstar Industrial Reference|B2B Inquiry Template|b2b-inquiry-site-base|Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.(?:com|invalid)|starter-contact@example\.com|non-production B2B inquiry reference|sentinel identity|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|Replace with owner-confirmed|x\.com\/example|linkedin\.com\/company\/example/iu.test(
     value,
   );
 }
@@ -202,6 +212,40 @@ function validateOptionalSocialProfile(target, markerPath, value) {
     value,
     "remove starter social profiles or replace them with owner-confirmed profiles before client launch",
   );
+}
+
+function validateWranglerSentinelResources(target) {
+  const config = readWranglerConfig();
+  if (!config) return;
+
+  validateNoStarterMarker(
+    target,
+    "wrangler.jsonc name",
+    config.name,
+    "replace the template Worker name before production deploy",
+  );
+
+  for (const environment of ["preview", "production"]) {
+    const buckets = config.env?.[environment]?.r2_buckets;
+    if (!Array.isArray(buckets)) continue;
+
+    for (const bucket of buckets) {
+      const binding =
+        isRecord(bucket) && typeof bucket.binding === "string"
+          ? bucket.binding
+          : "unknown binding";
+      const bucketName =
+        isRecord(bucket) && typeof bucket.bucket_name === "string"
+          ? bucket.bucket_name
+          : "";
+      validateNoStarterMarker(
+        target,
+        `wrangler.jsonc env.${environment}.r2_buckets ${binding}`,
+        bucketName,
+        "replace the template R2 bucket name before production deploy",
+      );
+    }
+  }
 }
 
 function validateRequiredEnv(target, env, key, reason) {
@@ -353,6 +397,7 @@ function validatePublicLaunchTrustContent(env) {
     }
   }
   validateWranglerProductionPublicUrls(target);
+  validateWranglerSentinelResources(target);
 
   validateNoStarterMarker(
     target,
@@ -470,6 +515,25 @@ function validateProductionConfig(env = process.env) {
   };
 }
 
+function isSentinelBlocker(message) {
+  return (
+    message.includes("public-launch ready") ||
+    message.includes("not configured for production") ||
+    message.includes("SITE_CONFIG.") ||
+    message.includes("brandAssets.") ||
+    message.includes("wrangler.jsonc")
+  );
+}
+
+function printErrors(title, errors) {
+  if (errors.length === 0) return;
+
+  console.error(`${title}:`);
+  for (const error of errors) {
+    console.error(`  - ${error}`);
+  }
+}
+
 function runValidateProductionConfigCli() {
   const report = validateProductionConfig(process.env);
 
@@ -481,10 +545,13 @@ function runValidateProductionConfigCli() {
   }
 
   if (report.errors.length > 0) {
-    console.error("Errors:");
-    for (const error of report.errors) {
-      console.error(`  - ${error}`);
-    }
+    const sentinelBlockers = report.errors.filter(isSentinelBlocker);
+    const environmentReadinessBlockers = report.errors.filter(
+      (error) => !isSentinelBlocker(error),
+    );
+
+    printErrors("Sentinel blockers", sentinelBlockers);
+    printErrors("Environment readiness blockers", environmentReadinessBlockers);
     return false;
   }
 

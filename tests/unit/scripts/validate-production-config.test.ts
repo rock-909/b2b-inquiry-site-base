@@ -650,6 +650,33 @@ describe("public launch trust content guard", () => {
     expect(result.stderr).not.toContain("SITE_CONFIG.social.linkedin");
   });
 
+  it("separates template sentinel blockers from missing production readiness in the strict CLI", () => {
+    const result = spawnSync(
+      process.execPath,
+      ["scripts/starter-checks.js", "validate-production-config"],
+      {
+        cwd: process.cwd(),
+        encoding: "utf8",
+        env: createChildEnv({
+          APP_ENV: "production",
+          NODE_ENV: "production",
+          PUBLIC_LAUNCH_STRICT: "true",
+        }),
+      },
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("Sentinel blockers:");
+    expect(result.stderr).toContain("Environment readiness blockers:");
+    expect(result.stderr).toContain("SITE_CONFIG.name");
+    expect(result.stderr).toContain("wrangler.jsonc name");
+    expect(result.stderr).toContain("NEXT_INC_CACHE_R2_BUCKET");
+    expect(result.stderr).toContain("RATE_LIMIT_PEPPER is required");
+    expect(result.stderr).toContain(
+      "Production rate limiting requires Upstash Redis",
+    );
+  });
+
   it("treats workers.dev and example.invalid as non-launch public URLs", () => {
     const workersDev = validateProductionConfig({
       ...createValidProductionEnv(),

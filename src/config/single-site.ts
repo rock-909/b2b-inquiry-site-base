@@ -46,9 +46,7 @@ function resolveSingleSiteBaseUrl(fallback: string): string {
   return fallback;
 }
 
-const baseUrl = resolveSingleSiteBaseUrl(
-  "https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev",
-);
+const baseUrl = resolveSingleSiteBaseUrl("https://example.invalid");
 
 const social = {
   twitter: "",
@@ -147,47 +145,46 @@ export function getSingleSiteFooterColumns() {
   ] as const;
 }
 
-export const TUCSENBERG_REGISTERED_ADDRESS =
-  "No. 47, Houhe Village, Dongwangji Town, Guanyun County, Lianyungang City, Jiangsu, China";
+export const TEMPLATE_REGISTERED_ADDRESS = "Replace before launch";
 
 const contact = {
   phone: "",
-  email: "sales@tucsenberg.com",
+  email: "sales@example.invalid",
 } as const;
 
-const establishedYear = 2021;
+const establishedYear = 2026;
 const siteFactSnapshotYear = 2026;
 
 /**
  * Single-site canonical source for the current cutover phase.
  */
-export const SINGLE_SITE_KEY = "tucsenberg" as const;
+export const SINGLE_SITE_KEY = "b2b-inquiry-site-base" as const;
 export const SINGLE_SITE_DEFINITION = {
   key: SINGLE_SITE_KEY,
   config: {
     baseUrl,
-    name: "Tucsenberg",
-    description: "Factory-direct flood barrier supply from China",
+    name: "Northstar Industrial Reference",
+    description:
+      "Neutral B2B inquiry reference site that must be replaced before launch",
     seo: {
-      titleTemplate: "%s | Tucsenberg",
-      defaultTitle:
-        "Flood Barrier Manufacturer & Supplier from China | Tucsenberg",
+      titleTemplate: "%s | Northstar Industrial Reference",
+      defaultTitle: "Northstar Industrial Reference - B2B Inquiry Template",
       defaultDescription:
-        "Factory-direct flood barriers from China: ABS boxwall, aluminum flood gates, sandless flood bags and tube dams. OEM & private label. Reply within 12 hours.",
+        "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details.",
     },
     social,
     contact,
   },
   facts: {
     company: {
-      name: "Jiangsu Tucson Borg Technology Co., Ltd. (trading as Tucsenberg)",
+      name: "Northstar Industrial Reference",
       established: establishedYear,
       yearsInBusiness: siteFactSnapshotYear - establishedYear,
       employees: 0,
       location: {
-        country: "China",
-        city: "Lianyungang, Jiangsu",
-        address: TUCSENBERG_REGISTERED_ADDRESS,
+        country: "Replace before launch",
+        city: "Replace before launch",
+        address: TEMPLATE_REGISTERED_ADDRESS,
       },
     },
     contact: {
@@ -202,8 +199,7 @@ export const SINGLE_SITE_DEFINITION = {
     certifications: [],
     stats: {
       exportCountries: 0,
-      annualCapacity:
-        "ABS boxwall, aluminum gates, flood bags, tube dams, and FRP planks",
+      annualCapacity: "Replace with owner-confirmed capacity before launch",
       clientsServed: 0,
       onTimeDeliveryRate: 0,
     },

@@ -17,11 +17,11 @@ const WRANGLER_REQUIRED_COMPAT_FLAGS = [
 const REQUIRED_R2_BINDINGS = [
   {
     environment: "preview",
-    bucketName: "tucsenberg-site-cache-preview",
+    bucketName: "b2b-inquiry-site-base-next-cache-preview",
   },
   {
     environment: "production",
-    bucketName: "tucsenberg-site-cache-production",
+    bucketName: "b2b-inquiry-site-base-next-cache-production",
   },
 ];
 const OPEN_NEXT_DRAFT_DEPENDENCY =
