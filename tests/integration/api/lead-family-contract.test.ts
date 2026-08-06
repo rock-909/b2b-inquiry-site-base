@@ -36,8 +36,8 @@ vi.mock("@/lib/lead-pipeline/process-lead", () => ({
 }));
 
 vi.mock("@/lib/lead-pipeline/lead-schema", () => ({
-  PRODUCT_LEAD_TYPE: "product",
-  productLeadSchema: {
+  INQUIRY_LEAD_TYPE: "product",
+  inquiryLeadSchema: {
     safeParse: vi.fn((input: Record<string, unknown>) => ({
       success: true,
       data: {
@@ -94,9 +94,7 @@ describe("lead API family response contract (auxiliary)", () => {
         turnstileToken: "valid-token",
         email: "buyer@example.com",
         fullName: "Buyer",
-        company: "Buyer Co",
-        productInquiryKind: "catalog-product",
-        catalogProductId: "abs-flood-barriers",
+        interest: "Custom fabrication",
       }),
     );
 
@@ -116,9 +114,7 @@ describe("lead API family response contract (auxiliary)", () => {
       makeRequest("/api/inquiry", {
         email: "buyer@example.com",
         fullName: "Buyer",
-        company: "Buyer Co",
-        productInquiryKind: "catalog-product",
-        catalogProductId: "abs-flood-barriers",
+        interest: "Custom fabrication",
       }),
     );
 
@@ -169,9 +165,7 @@ describe("lead API family response contract (auxiliary)", () => {
           turnstileToken: "valid-token",
           email: "buyer@example.com",
           fullName: "Buyer",
-          company: "Buyer Co",
-          productInquiryKind: "catalog-product",
-          catalogProductId: "abs-flood-barriers",
+          interest: "Custom fabrication",
         }),
       ),
       500,

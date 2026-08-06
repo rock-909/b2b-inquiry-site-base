@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import baseEnglishMessages from "@messages/base/en/messages.json";
 import { EMAIL_COPY } from "@/emails/email-copy";
-import type { ProductInquiryEmailData } from "@/lib/email/email-data-schema";
+import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 
 interface EmailTemplates {
   common: {
     fields: typeof EMAIL_COPY.common.fields;
   };
-  productInquiry: {
+  inquiry: {
     title: string;
     preview: string;
     footer: string;
@@ -15,24 +15,24 @@ interface EmailTemplates {
   };
 }
 
-const productInquiryEmailData: ProductInquiryEmailData = {
-  referenceId: "PRO-abc123-deadbeef",
+const inquiryEmailData: InquiryEmailData = {
+  referenceId: "INQ-abc123-deadbeef",
   firstName: "John",
   lastName: "Doe",
   email: "john.doe@example.com",
-  productName: "Hydraulic Pump Station",
+  offeringId: "custom-fabrication",
+  offeringName: "Custom Fabrication",
   requirements: "Need urgent delivery.",
 };
 
-const productInquiryEmailDataWithPlaceholderLikeInput: ProductInquiryEmailData =
-  {
-    referenceId: "PRO-abc123-deadbeef",
-    firstName: "John",
-    lastName: "Doe",
-    email: "john.doe@example.com",
-    productName: "{quantity}",
-    requirements: "Need {lastName}",
-  };
+const inquiryEmailDataWithPlaceholderLikeInput: InquiryEmailData = {
+  referenceId: "INQ-abc123-deadbeef",
+  firstName: "John",
+  lastName: "Doe",
+  email: "john.doe@example.com",
+  offeringName: "{quantity}",
+  requirements: "Need {lastName}",
+};
 
 const UNRESOLVED_PLACEHOLDER_PATTERN = /\{[^}]+\}/;
 
@@ -80,38 +80,30 @@ describe("email copy source", () => {
     expect(EMAIL_COPY.common.fields).toEqual(emailTemplates.common.fields);
   });
 
-  it("uses default English message-pack copy for product inquiry email copy", () => {
+  it("uses default English message-pack copy for inquiry email copy", () => {
     const emailTemplates = getEmailTemplates();
 
-    expect(EMAIL_COPY.productInquiry.title).toBe(
-      emailTemplates.productInquiry.title,
-    );
-    expect(EMAIL_COPY.productInquiry.preview).toBe(
-      emailTemplates.productInquiry.preview,
-    );
-    expect(EMAIL_COPY.productInquiry.footer()).toBe(
-      emailTemplates.productInquiry.footer,
-    );
-    expect(EMAIL_COPY.productInquiry.subject(productInquiryEmailData)).toBe(
-      `[${productInquiryEmailData.referenceId}] ${formatTemplate(
-        emailTemplates.productInquiry.subject,
-        { productName: productInquiryEmailData.productName },
-      )}`,
+    expect(EMAIL_COPY.inquiry.title).toBe(emailTemplates.inquiry.title);
+    expect(EMAIL_COPY.inquiry.preview).toBe(emailTemplates.inquiry.preview);
+    expect(EMAIL_COPY.inquiry.footer()).toBe(emailTemplates.inquiry.footer);
+    expect(EMAIL_COPY.inquiry.subject(inquiryEmailData)).toBe(
+      `[${inquiryEmailData.referenceId}] ${formatTemplate(
+        emailTemplates.inquiry.subject,
+        {},
+      )}: Custom Fabrication`,
     );
   });
 
-  it("resolves every dynamic product inquiry template placeholder before rendering", () => {
+  it("resolves every dynamic inquiry template placeholder before rendering", () => {
     expectNoUnresolvedPlaceholders([
-      EMAIL_COPY.productInquiry.footer(),
-      EMAIL_COPY.productInquiry.subject(productInquiryEmailData),
+      EMAIL_COPY.inquiry.footer(),
+      EMAIL_COPY.inquiry.subject(inquiryEmailData),
     ]);
   });
 
   it("preserves user input that looks like later template placeholders", () => {
     expect(
-      EMAIL_COPY.productInquiry.subject(
-        productInquiryEmailDataWithPlaceholderLikeInput,
-      ),
-    ).toBe("[PRO-abc123-deadbeef] Inquiry: {quantity}");
+      EMAIL_COPY.inquiry.subject(inquiryEmailDataWithPlaceholderLikeInput),
+    ).toBe("[INQ-abc123-deadbeef] Website inquiry: {quantity}");
   });
 });

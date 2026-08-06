@@ -1,4 +1,4 @@
-import type { ProductInquiryEmailData } from "@/lib/email/email-data-schema";
+import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 import baseEnglishMessages from "@messages/base/en/messages.json";
 
 const emailTemplateCopy = baseEnglishMessages.emailTemplates;
@@ -22,14 +22,14 @@ export const EMAIL_COPY = {
   common: {
     fields: emailTemplateCopy.common.fields,
   },
-  productInquiry: {
-    title: emailTemplateCopy.productInquiry.title,
-    preview: emailTemplateCopy.productInquiry.preview,
-    footer: () => emailTemplateCopy.productInquiry.footer,
-    subject: (data: ProductInquiryEmailData) =>
+  inquiry: {
+    title: emailTemplateCopy.inquiry.title,
+    preview: emailTemplateCopy.inquiry.preview,
+    footer: () => emailTemplateCopy.inquiry.footer,
+    subject: (data: InquiryEmailData) =>
       `[${data.referenceId}] ${formatTemplate(
-        emailTemplateCopy.productInquiry.subject,
-        { productName: data.productName },
-      )}`,
+        emailTemplateCopy.inquiry.subject,
+        {},
+      )}${data.offeringName ? `: ${data.offeringName}` : ""}`,
   },
 } as const;

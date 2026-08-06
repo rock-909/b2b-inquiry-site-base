@@ -9,35 +9,39 @@ import { SITE_CONFIG } from "@/config/paths/site-config";
 import { EMAIL_COPY } from "@/emails/email-copy";
 import { env, getRuntimeEnvString } from "@/lib/env";
 import {
-  productInquiryEmailDataSchema,
-  type ProductInquiryEmailData,
+  inquiryEmailDataSchema,
+  type InquiryEmailData,
 } from "@/lib/email/email-data-schema";
 import { ResendHttpEmailClient } from "@/lib/email/resend-http-client";
-import { buildProductInquiryEmailContent } from "@/lib/email/runtime-email-content";
+import { buildInquiryEmailContent } from "@/lib/email/runtime-email-content";
 import { logger, sanitizeEmail } from "@/lib/logger";
 import {
   sanitizeMultilineText,
   sanitizePlainText,
 } from "@/lib/security/validation";
 
-function sanitizeProductInquiryData(
-  data: ProductInquiryEmailData,
-): ProductInquiryEmailData {
+function sanitizeInquiryData(data: InquiryEmailData): InquiryEmailData {
   return {
     referenceId: data.referenceId,
     firstName: sanitizePlainText(data.firstName),
     lastName: sanitizePlainText(data.lastName),
     email: data.email.toLowerCase().trim(),
-    productName: sanitizePlainText(data.productName),
+    interest: data.interest ? sanitizePlainText(data.interest) : undefined,
+    offeringId: data.offeringId
+      ? sanitizePlainText(data.offeringId)
+      : undefined,
+    offeringName: data.offeringName
+      ? sanitizePlainText(data.offeringName)
+      : undefined,
     requirements: data.requirements
       ? sanitizeMultilineText(data.requirements)
       : undefined,
   };
 }
 
-function getProductInquiryTags(referenceId: string) {
+function getInquiryTags(referenceId: string) {
   return [
-    { name: "type", value: "product-inquiry" },
+    { name: "type", value: "inquiry" },
     { name: "source", value: "website" },
     { name: "reference-id", value: referenceId },
   ];
@@ -105,27 +109,25 @@ export class ResendService {
     return this.isConfigured && this.resend !== null;
   }
 
-  public async sendProductInquiryEmail(
-    data: ProductInquiryEmailData,
-  ): Promise<string> {
+  public async sendInquiryEmail(data: InquiryEmailData): Promise<string> {
     if (!this.isReady()) {
       throw new Error("Resend service is not configured");
     }
 
     try {
-      const validatedData = productInquiryEmailDataSchema.parse(data);
-      const sanitizedData = sanitizeProductInquiryData(validatedData);
+      const validatedData = inquiryEmailDataSchema.parse(data);
+      const sanitizedData = sanitizeInquiryData(validatedData);
 
-      const emailContent = buildProductInquiryEmailContent(sanitizedData);
+      const emailContent = buildInquiryEmailContent(sanitizedData);
 
       const result = await this.resend!.send({
         from: this.emailConfig.from,
         to: [this.emailConfig.replyTo],
         replyTo: sanitizedData.email,
-        subject: EMAIL_COPY.productInquiry.subject(sanitizedData),
+        subject: EMAIL_COPY.inquiry.subject(sanitizedData),
         html: emailContent.html,
         text: emailContent.text,
-        tags: getProductInquiryTags(sanitizedData.referenceId),
+        tags: getInquiryTags(sanitizedData.referenceId),
       });
 
       if (result.error || !result.data) {
@@ -134,23 +136,23 @@ export class ResendService {
         );
       }
 
-      logger.info("Product inquiry email sent successfully", {
+      logger.info("Inquiry email sent successfully", {
         referenceId: sanitizedData.referenceId,
         messageId: result.data.id,
         to: sanitizeEmail(this.emailConfig.replyTo),
         from: sanitizeEmail(sanitizedData.email),
-        product: sanitizedData.productName,
+        offeringId: sanitizedData.offeringId,
       });
 
       return result.data.id;
     } catch (error) {
-      logger.error("Failed to send product inquiry email", {
+      logger.error("Failed to send inquiry email", {
         referenceId: data.referenceId,
         error: error instanceof Error ? error.message : "Unknown error",
         email: sanitizeEmail(data.email),
-        product: data.productName,
+        offeringId: data.offeringId,
       });
-      throw new Error("Failed to send product inquiry email", { cause: error });
+      throw new Error("Failed to send inquiry email", { cause: error });
     }
   }
 }

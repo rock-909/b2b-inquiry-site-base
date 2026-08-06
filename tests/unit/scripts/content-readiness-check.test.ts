@@ -83,7 +83,7 @@ describe("content-readiness-check", () => {
     );
 
     expect(scanned.length).toBeGreaterThan(0);
-    expect(scanned).toContain("src/constants/product-catalog.ts");
+    expect(scanned).toContain("src/config/offerings.ts");
 
     for (const repoPath of scanned) {
       // eslint-disable-next-line security/detect-non-literal-fs-filename -- paths come from the check's own repo-local scan targets
@@ -97,8 +97,7 @@ describe("content-readiness-check", () => {
       "messages/profiles/b2b-lead/en/messages.json": JSON.stringify({
         cta: "Contact your company",
       }),
-      "src/config/single-site-product-catalog.ts":
-        "export const product = 'Sample Product';",
+      "src/config/offerings.ts": "export const offering = 'Sample Product';",
     });
     fixtureRoots.push(rootDir);
 
@@ -112,11 +111,7 @@ describe("content-readiness-check", () => {
       "your-company",
       "messages/profiles/b2b-lead/en/messages.json",
     );
-    expectFinding(
-      result.warnings,
-      "sample-product",
-      "src/config/single-site-product-catalog.ts",
-    );
+    expectFinding(result.warnings, "sample-product", "src/config/offerings.ts");
   });
 
   it("warns on neutral starter placeholder wording without failing", () => {
@@ -178,8 +173,8 @@ describe("content-readiness-check", () => {
 
   it("does not treat config asset paths as buyer-visible product residue", () => {
     const rootDir = createFixture({
-      "src/config/single-site-product-catalog.ts":
-        "export const product = { image: '/images/products/sample-product.svg' };",
+      "src/config/offerings.ts":
+        "export const offering = { image: '/images/products/sample-product.svg' };",
     });
     fixtureRoots.push(rootDir);
 
@@ -192,8 +187,8 @@ describe("content-readiness-check", () => {
 
   it("does not treat absolute config asset URLs as buyer-visible product residue", () => {
     const rootDir = createFixture({
-      "src/config/single-site-product-catalog.ts":
-        "export const product = { image: 'https://cdn.example.com/images/products/sample-product.svg' };",
+      "src/config/offerings.ts":
+        "export const offering = { image: 'https://cdn.example.com/images/products/sample-product.svg' };",
     });
     fixtureRoots.push(rootDir);
 
@@ -251,7 +246,7 @@ describe("content-readiness-check", () => {
     );
   });
 
-  it("scans current product-page and catalog config as buyer-visible truth", () => {
+  it("scans current product-page and offering config as buyer-visible truth", () => {
     const rootDir = createFixture({
       "src/constants/tucsenberg-product-page-test.ts": [
         "export const PRODUCT_PAGE = {",
@@ -259,22 +254,15 @@ describe("content-readiness-check", () => {
         '  certifications: ["Example Standard A"],',
         "};",
       ].join("\n"),
-      "src/config/single-site-product-catalog.ts": [
-        "export const singleSiteProductCatalog = {",
-        '  markets: [{ label: "Primary Offer Example" }],',
-        "};",
-      ].join("\n"),
+      "src/config/offerings.ts":
+        'export const OFFERINGS = [{ name: "Primary Offer Example" }];',
     });
     fixtureRoots.push(rootDir);
 
     const result = runContentReadinessCheck(rootDir);
 
     expect(result.status).toBe("passed");
-    expectFinding(
-      result.warnings,
-      "example-offer",
-      "src/config/single-site-product-catalog.ts",
-    );
+    expectFinding(result.warnings, "example-offer", "src/config/offerings.ts");
   });
 
   it("allows legitimate replaceable product features", () => {

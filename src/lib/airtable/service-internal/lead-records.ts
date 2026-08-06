@@ -3,7 +3,7 @@ import "server-only";
 import type AirtableNS from "airtable";
 import type {
   CreatedAirtableRecord,
-  ProductLeadData,
+  InquiryLeadData,
 } from "@/lib/airtable/types";
 import { sanitizeAirtableTextField } from "@/lib/airtable/service-internal/field-sanitization";
 import { logger, sanitizeEmail } from "@/lib/logger";
@@ -16,7 +16,7 @@ import {
 type AirtableFieldValue = string | number | boolean;
 type AirtableFields = Record<string, AirtableFieldValue>;
 
-const PRODUCT_INQUIRY_SOURCE = "Product Inquiry" as const;
+const INQUIRY_SOURCE = "Website Inquiry" as const;
 
 const AIRTABLE_ATTRIBUTION_FIELD_NAMES = {
   utmSource: "UTM Source",
@@ -36,7 +36,7 @@ function buildBaseFields(email: string, now: string): AirtableFields {
     Email: email.toLowerCase().trim(),
     "Submitted At": now,
     Status: "New",
-    Source: PRODUCT_INQUIRY_SOURCE,
+    Source: INQUIRY_SOURCE,
   };
 }
 
@@ -45,14 +45,19 @@ function addReferenceId(fields: AirtableFields, referenceId?: string): void {
   fields["Reference ID"] = referenceId;
 }
 
-function addProductFields(fields: AirtableFields, data: ProductLeadData): void {
+function addInquiryFields(fields: AirtableFields, data: InquiryLeadData): void {
   fields["First Name"] = sanitizeAirtableTextField(data.firstName);
   fields["Last Name"] = sanitizeAirtableTextField(data.lastName);
   fields["Message"] = sanitizeAirtableTextField(data.message);
-  fields["Product Name"] = sanitizeAirtableTextField(data.productName);
-  fields["Product Slug"] = data.catalogProductId
-    ? sanitizeAirtableTextField(data.catalogProductId)
-    : "";
+  if (data.interest) {
+    fields["Interest"] = sanitizeAirtableTextField(data.interest);
+  }
+  if (data.offeringId) {
+    fields["Offering ID"] = sanitizeAirtableTextField(data.offeringId);
+  }
+  if (data.offeringName) {
+    fields["Offering Name"] = sanitizeAirtableTextField(data.offeringName);
+  }
   if (data.requirements) {
     fields["Requirements"] = sanitizeAirtableTextField(data.requirements);
   }
@@ -71,10 +76,10 @@ function addAttributionFields(
   }
 }
 
-function buildLeadFields(data: ProductLeadData, now: string): AirtableFields {
+function buildLeadFields(data: InquiryLeadData, now: string): AirtableFields {
   const fields = buildBaseFields(data.email, now);
   addReferenceId(fields, data.referenceId);
-  addProductFields(fields, data);
+  addInquiryFields(fields, data);
   addAttributionFields(fields, data);
   return fields;
 }
@@ -115,7 +120,7 @@ function buildCreateLeadRecordLogContext(
 export async function createLeadRecord(params: {
   base: AirtableNS.Base;
   tableName: string;
-  data: ProductLeadData;
+  data: InquiryLeadData;
 }): Promise<CreatedAirtableRecord> {
   const { base, tableName, data } = params;
 
@@ -142,7 +147,7 @@ export async function createLeadRecord(params: {
 
     logger.info("Lead record created successfully", {
       recordId,
-      source: PRODUCT_INQUIRY_SOURCE,
+      source: INQUIRY_SOURCE,
       email: sanitizeEmail(data.email),
       referenceId: data.referenceId,
     });

@@ -1,6 +1,6 @@
 /**
  * Shared public inquiry API route.
- * Contact, Request Quote, and validated catalog context all write through `/api/inquiry`.
+ * Contact, Request Quote, and validated offering context all write through `/api/inquiry`.
  */
 
 import "server-only";
@@ -26,9 +26,9 @@ import {
   pickAttributionFields,
 } from "@/lib/marketing/attribution-fields";
 import {
-  PRODUCT_LEAD_TYPE,
-  productLeadSchema,
-  type ProductLeadInput,
+  INQUIRY_LEAD_TYPE,
+  inquiryLeadSchema,
+  type InquiryLeadInput,
 } from "@/lib/lead-pipeline/lead-schema";
 import { logger, sanitizeIP } from "@/lib/logger";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
@@ -37,25 +37,25 @@ import {
   verifyLeadTurnstile,
 } from "@/lib/security/lead-turnstile";
 
-interface ProductLeadValidationSuccess {
+interface InquiryLeadValidationSuccess {
   success: true;
-  data: ProductLeadInput;
+  data: InquiryLeadInput;
 }
 
-interface ProductLeadValidationFailure {
+interface InquiryLeadValidationFailure {
   success: false;
   details: string[];
 }
 
-type ProductLeadValidationResult =
-  ProductLeadValidationSuccess | ProductLeadValidationFailure;
+type InquiryLeadValidationResult =
+  InquiryLeadValidationSuccess | InquiryLeadValidationFailure;
 
 function isInquiryHoneypotTriggered(data: Record<string, unknown>): boolean {
   const { website } = data;
   return typeof website === "string" && website.trim().length > 0;
 }
 
-async function validateProductInquiryTurnstile(
+async function validateInquiryTurnstile(
   token: unknown,
   clientIP: string,
 ): Promise<NextResponse | null> {
@@ -70,12 +70,12 @@ async function validateProductInquiryTurnstile(
 
 function validateLeadData(
   data: Record<string, unknown>,
-): ProductLeadValidationResult {
+): InquiryLeadValidationResult {
   // 由 schema 决定哪些字段活下来，路由不再手写白名单：zod 的 object 默认剥离未知
   // 键，turnstileToken / website / phone 本来就进不去。这一段管的只是
   // 「路由 → processValidatedInquiry」这一跳，加字段时这里不用改。
   // 整条链路不止这一跳：浏览器发不发（createInquiryPayload）、邮件收不收
-  // （createProductEmailData）、Airtable 收不收（createProductLeadRecord）
+  // （createInquiryEmailData）、Airtable 收不收（createInquiryLeadRecord）
   // 各有各的字段清单，加买家字段时那三处仍要一起看。
   // 归因字段必须先整组剔除、再放清洗结果：pickAttributionFields 碰到非字符串值是
   // 「整个键不写入」而不是写 undefined，直接展开的话原始脏值会活下来，买家会因为
@@ -89,9 +89,9 @@ function validateLeadData(
   const schemaInput = {
     ...rest,
     ...pickAttributionFields(data),
-    type: PRODUCT_LEAD_TYPE,
+    type: INQUIRY_LEAD_TYPE,
   };
-  const parsed = productLeadSchema.safeParse(schemaInput);
+  const parsed = inquiryLeadSchema.safeParse(schemaInput);
 
   if (parsed.success) {
     return {
@@ -106,13 +106,13 @@ function validateLeadData(
   };
 }
 
-function createProductInquirySuccessResponse(
+function createInquirySuccessResponse(
   result: LeadResult,
   clientIP: string,
   startTime: number,
 ) {
   if (!isRuntimeProduction()) {
-    logger.info("Product inquiry submitted successfully", {
+    logger.info("Inquiry submitted successfully", {
       referenceId: result.referenceId,
       ip: sanitizeIP(clientIP),
       processingTime: Date.now() - startTime,
@@ -129,12 +129,12 @@ function createProductInquirySuccessResponse(
   });
 }
 
-function createProductInquiryFailureResponse(
+function createInquiryFailureResponse(
   result: LeadResult,
   clientIP: string,
   startTime: number,
 ) {
-  logger.warn("Product inquiry submission failed", {
+  logger.warn("Inquiry submission failed", {
     error: result.error,
     ip: sanitizeIP(clientIP),
     processingTime: Date.now() - startTime,
@@ -151,7 +151,7 @@ function createInquiryHoneypotSuccessResponse(
   clientIP: string,
   startTime: number,
 ) {
-  const referenceId = generateLeadReferenceId(PRODUCT_LEAD_TYPE);
+  const referenceId = generateLeadReferenceId(INQUIRY_LEAD_TYPE);
 
   logger.warn("Inquiry honeypot triggered", {
     referenceId,
@@ -164,7 +164,7 @@ function createInquiryHoneypotSuccessResponse(
 
 /**
  * POST /api/inquiry
- * Handle product inquiry form submission
+ * Handle inquiry form submission.
  */
 async function handleInquiryPost(
   request: NextRequest,
@@ -198,7 +198,7 @@ async function handleInquiryPost(
       );
     }
 
-    const turnstileError = await validateProductInquiryTurnstile(
+    const turnstileError = await validateInquiryTurnstile(
       data.turnstileToken,
       clientIP,
     );
@@ -207,12 +207,12 @@ async function handleInquiryPost(
     const result = await processValidatedInquiry(leadValidation.data);
 
     if (result.success) {
-      return createProductInquirySuccessResponse(result, clientIP, startTime);
+      return createInquirySuccessResponse(result, clientIP, startTime);
     }
 
-    return createProductInquiryFailureResponse(result, clientIP, startTime);
+    return createInquiryFailureResponse(result, clientIP, startTime);
   } catch (error) {
-    logger.error("Product inquiry submission failed unexpectedly", {
+    logger.error("Inquiry submission failed unexpectedly", {
       error: error instanceof Error ? error.message : "Unknown error",
       stack: error instanceof Error ? error.stack : undefined,
       ip: sanitizeIP(clientIP),

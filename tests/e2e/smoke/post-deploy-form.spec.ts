@@ -40,7 +40,7 @@ interface AirtableInquiryRecordFields {
   "Last Name"?: unknown;
   Email?: unknown;
   Company?: unknown;
-  "Product Name"?: unknown;
+  Interest?: unknown;
   Requirements?: unknown;
   Message?: unknown;
   "Reference ID"?: unknown;
@@ -55,7 +55,6 @@ interface AirtableInquiryListResponse {
   records?: AirtableInquiryRecord[];
 }
 
-const GENERAL_RFQ_PRODUCT_LABEL = "General RFQ (no catalog product)";
 const AIRTABLE_BASE_URL = "https://api.airtable.com/v0";
 
 async function waitForEditableInquiryForm(page: Page) {
@@ -187,7 +186,8 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
     expect(inquiryBody.email).toBe(CANARY_EMAIL);
     expect(inquiryBody.fullName).toBe("Smoke Test");
     expect(inquiryBody.message).toBe(CANARY_MESSAGE);
-    expect(inquiryBody.productInquiryKind).toBe("general-rfq");
+    expect(inquiryBody).not.toHaveProperty("productInquiryKind");
+    expect(inquiryBody).not.toHaveProperty("catalogProductId");
 
     await expectDeployedSuccess(page, selectors.successPrefix);
 
@@ -201,7 +201,6 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
     expect(record?.fields?.["First Name"]).toBe("Smoke");
     expect(record?.fields?.["Last Name"]).toBe("Test");
     expect(record?.fields?.Email).toBe(CANARY_EMAIL);
-    expect(record?.fields?.["Product Name"]).toBe(GENERAL_RFQ_PRODUCT_LABEL);
     expect(record?.fields?.Requirements).toBe(CANARY_MESSAGE);
     expect(typeof record?.fields?.["Reference ID"]).toBe("string");
     expect(record?.fields?.Company ?? "").toBe("");

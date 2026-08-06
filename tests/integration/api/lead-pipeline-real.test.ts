@@ -114,10 +114,9 @@ function makeInquiryRequest(body: unknown): NextRequest {
 
 const VALID_INQUIRY_BODY = {
   turnstileToken: "valid-turnstile-token",
-  productInquiryKind: "catalog-product",
   fullName: "Jane Buyer",
   email: "buyer@example.com",
-  catalogProductId: "abs-flood-barriers",
+  offeringId: "custom-fabrication",
   message: "Custom packaging details",
 };
 
@@ -126,13 +125,12 @@ const CANONICAL_BUYER_MESSAGE =
 
 const CANONICAL_MESSAGE_INQUIRY_BODY = {
   turnstileToken: "valid-turnstile-token",
-  productInquiryKind: "general-rfq",
   fullName: "Jane Buyer",
   email: "buyer@example.com",
   message: CANONICAL_BUYER_MESSAGE,
 };
 
-const CATALOG_PRODUCT_LABEL = "ABS Interlocking Boxwall";
+const OFFERING_NAME = "Custom Fabrication";
 
 describe("lead pipeline (real end-to-end proof)", () => {
   beforeEach(() => {
@@ -182,18 +180,18 @@ describe("lead pipeline (real end-to-end proof)", () => {
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
     expect(typeof body.data.referenceId).toBe("string");
-    expect(body.data.referenceId).toMatch(/^PRO-/);
+    expect(body.data.referenceId).toMatch(/^INQ-/);
 
     expect(airtableCreateMock).toHaveBeenCalledTimes(1);
     const fields = getCapturedAirtableFields();
     expect(fields).toMatchObject({
       Email: "buyer@example.com",
-      Source: "Product Inquiry",
+      Source: "Website Inquiry",
       Status: "New",
       "First Name": "Jane",
       "Last Name": "Buyer",
-      "Product Name": CATALOG_PRODUCT_LABEL,
-      "Product Slug": "abs-flood-barriers",
+      "Offering Name": OFFERING_NAME,
+      "Offering ID": "custom-fabrication",
       Requirements: "Custom packaging details",
     });
     expect(fields).not.toHaveProperty("Company");
@@ -201,7 +199,7 @@ describe("lead pipeline (real end-to-end proof)", () => {
     expect(typeof fields["Reference ID"]).toBe("string");
     expect(fields["Reference ID"]).toBe(body.data.referenceId);
     expect(typeof fields["Message"]).toBe("string");
-    expect(fields["Message"]).toContain(CATALOG_PRODUCT_LABEL);
+    expect(fields["Message"]).toContain(OFFERING_NAME);
     // 邮件发出去了就不能挂失败提示，否则业主每条线索都在报警
     expect(fields["Message"]).not.toContain("⚠️");
 
@@ -354,11 +352,10 @@ describe("lead pipeline (real end-to-end proof)", () => {
     expect(text).toContain("buyer@example.com");
   });
 
-  it("delivers general-rfq inquiry with canonical message to both external sinks", async () => {
+  it("delivers general inquiry with canonical message to both external sinks", async () => {
     const response = await inquiryRoute.POST(
       makeInquiryRequest({
         turnstileToken: "valid-turnstile-token",
-        productInquiryKind: "general-rfq",
         fullName: "Jane Buyer",
         email: "jane@example.com",
         message: "Need flood protection for warehouse",
@@ -378,11 +375,10 @@ describe("lead pipeline (real end-to-end proof)", () => {
     expect(resendBody.text as string).toContain("Need flood protection");
   });
 
-  it("accepts optional empty message on general-rfq and still delivers", async () => {
+  it("accepts optional empty message on general inquiry and still delivers", async () => {
     const response = await inquiryRoute.POST(
       makeInquiryRequest({
         turnstileToken: "valid-turnstile-token",
-        productInquiryKind: "general-rfq",
         fullName: "Jane Buyer",
         email: "jane@example.com",
       }),
@@ -397,8 +393,8 @@ describe("lead pipeline (real end-to-end proof)", () => {
 
   it("airtable-only success: succeeds when email fails but Airtable persists", async () => {
     const consoleError = captureExpectedConsoleErrors(
-      "Failed to send product inquiry email",
-      "Product owner email failed",
+      "Failed to send inquiry email",
+      "Owner inquiry email failed",
     );
     fetchMock.mockImplementation(async (input: unknown) => {
       const url = resolveFetchUrl(input);
@@ -435,8 +431,8 @@ describe("lead pipeline (real end-to-end proof)", () => {
 
   it("bakes the email-failure notice into the Airtable Message the owner reads", async () => {
     const consoleError = captureExpectedConsoleErrors(
-      "Failed to send product inquiry email",
-      "Product owner email failed",
+      "Failed to send inquiry email",
+      "Owner inquiry email failed",
     );
     fetchMock.mockImplementation(async (input: unknown) => {
       const url = resolveFetchUrl(input);
@@ -526,7 +522,7 @@ describe("lead pipeline (real end-to-end proof)", () => {
   it("airtable failure: still succeeds and delivers the owner email", async () => {
     const consoleError = captureExpectedConsoleErrors(
       "Failed to create lead record",
-      "Product Airtable createLead failed",
+      "Inquiry Airtable createLead failed",
     );
     airtableCreateMock.mockRejectedValue(new Error("airtable down"));
 
@@ -537,7 +533,7 @@ describe("lead pipeline (real end-to-end proof)", () => {
 
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
-    expect(body.data.referenceId).toMatch(/^PRO-/);
+    expect(body.data.referenceId).toMatch(/^INQ-/);
     expect(getResendCalls()).toHaveLength(1);
     expect(consoleError).toHaveBeenCalledTimes(2);
   });
@@ -545,9 +541,9 @@ describe("lead pipeline (real end-to-end proof)", () => {
   it("both channels fail: rejects with an inquiry processing error", async () => {
     const consoleError = captureExpectedConsoleErrors(
       "Failed to create lead record",
-      "Failed to send product inquiry email",
-      "Product owner email failed",
-      "Product Airtable createLead failed",
+      "Failed to send inquiry email",
+      "Owner inquiry email failed",
+      "Inquiry Airtable createLead failed",
     );
     airtableCreateMock.mockRejectedValue(new Error("airtable down"));
     fetchMock.mockImplementation(async (input: unknown) => {
@@ -579,9 +575,9 @@ describe("lead pipeline (real end-to-end proof)", () => {
   it("rejects when email fails and Airtable returns an invalid receipt", async () => {
     const consoleError = captureExpectedConsoleErrors(
       "Failed to create lead record",
-      "Failed to send product inquiry email",
-      "Product owner email failed",
-      "Product Airtable createLead failed",
+      "Failed to send inquiry email",
+      "Owner inquiry email failed",
+      "Inquiry Airtable createLead failed",
     );
     airtableCreateMock.mockResolvedValue([{ id: undefined }]);
     fetchMock.mockImplementation(async (input: unknown) => {

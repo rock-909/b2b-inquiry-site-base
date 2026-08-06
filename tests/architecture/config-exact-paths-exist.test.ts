@@ -2,7 +2,6 @@ import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
-import { getAllMarketSlugs } from "../../src/constants/product-catalog";
 import { routing } from "../../src/i18n/routing-config";
 
 const REPO_PATH_PATTERN = /^(?:content|messages|public|scripts|src|tests)\//u;
@@ -139,9 +138,9 @@ function collectDepCruiserDeadToFiles(): string[] {
 }
 
 // Resolve a Lighthouse audit URL pathname against the App Router tree: each
-// segment is a literal dir or the sole dynamic `[param]` dir; `[market]` slugs
-// are validated against the live catalog. Returns true only when it lands on a
-// real page.tsx — so an audited URL can never silently point at a 404.
+// segment is a literal dir or the sole dynamic `[param]` dir. Returns true only
+// when it lands on a real page.tsx — so an audited URL can never silently point
+// at a 404.
 function appRouteResolves(pathnameSegments: string[]): boolean {
   // Canonical URLs carry no locale segment under `localePrefix: 'never'`, but a
   // future prefix strategy would add one. Accept a leading configured locale;
@@ -175,9 +174,6 @@ function appRouteResolves(pathnameSegments: string[]): boolean {
     // A catch-all segment (`[...rest]`) exists only to render notFound(); a path
     // that resolves *into* it is by definition a dead route, not a real page.
     if (dynamicDir.startsWith("[...")) return false;
-    if (dynamicDir === "[market]" && !getAllMarketSlugs().includes(segment)) {
-      return false;
-    }
     dir = path.join(currentDir, dynamicDir);
   }
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test checks a repo-local page module

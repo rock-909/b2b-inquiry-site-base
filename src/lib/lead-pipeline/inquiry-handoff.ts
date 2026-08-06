@@ -1,12 +1,8 @@
-import type { ProductMarketSlug } from "@/config/single-site-product-catalog";
+import { getOfferingById } from "@/config/offerings";
 import {
   MAX_INQUIRY_CONFIG_PREFILL_LENGTH,
-  MAX_LEAD_PRODUCT_NAME_LENGTH,
+  MAX_LEAD_INTEREST_LENGTH,
 } from "@/constants/validation-limits";
-import {
-  getMarketBySlug,
-  isProductMarketSlug,
-} from "@/constants/product-catalog";
 
 function capBuyerInterest(raw: string | null | undefined): string | undefined {
   if (!raw) {
@@ -18,7 +14,7 @@ function capBuyerInterest(raw: string | null | undefined): string | undefined {
     return undefined;
   }
 
-  return trimmed.slice(0, MAX_LEAD_PRODUCT_NAME_LENGTH);
+  return trimmed.slice(0, MAX_LEAD_INTEREST_LENGTH);
 }
 
 function capConfigPrefill(raw: string | null | undefined): string | undefined {
@@ -38,14 +34,15 @@ export type InquirySearchParams = Record<string, string | string[] | undefined>;
 
 export type ValidatedInquiryContext =
   | {
-      kind: "catalog-context";
-      catalogProductId: ProductMarketSlug;
+      kind: "offering-context";
+      offeringId: string;
       displayLabel: string;
+      interest?: string;
       initialMessage?: string;
     }
   | {
       kind: "general-context";
-      buyerInterest?: string;
+      interest?: string;
       initialMessage?: string;
     };
 
@@ -60,67 +57,39 @@ function readOptionalDescription(
     : capConfigPrefill(raw ?? null);
 }
 
-function readCatalogProductId(
-  searchParams: InquirySearchParams,
-): ProductMarketSlug | undefined {
-  const value = searchParams.catalogProductId;
+function readOfferingId(searchParams: InquirySearchParams): string | undefined {
+  const value = searchParams.offeringId;
   if (Array.isArray(value) || typeof value !== "string") {
     return undefined;
   }
 
   const trimmed = value.trim();
-  return isProductMarketSlug(trimmed) ? trimmed : undefined;
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
 export function resolveInquiryContext(
   searchParams: InquirySearchParams,
 ): ValidatedInquiryContext {
-  const buyerInterest = readOptionalDescription(searchParams, "interest");
+  const interest = readOptionalDescription(searchParams, "interest");
   const initialMessage = readOptionalDescription(searchParams, "config");
-  const generalDescriptionFields = {
-    ...(buyerInterest ? { buyerInterest } : {}),
-    ...(initialMessage ? { initialMessage } : {}),
-  };
-  const catalogDescriptionFields = {
+  const descriptionFields = {
+    ...(interest ? { interest } : {}),
     ...(initialMessage ? { initialMessage } : {}),
   };
 
-  const catalogProductId = readCatalogProductId(searchParams);
-  if (!catalogProductId) {
+  const offeringId = readOfferingId(searchParams);
+  const offering = getOfferingById(offeringId);
+  if (!offering) {
     return {
       kind: "general-context",
-      ...generalDescriptionFields,
-    };
-  }
-
-  const market = getMarketBySlug(catalogProductId);
-  if (!market) {
-    return {
-      kind: "general-context",
-      ...generalDescriptionFields,
+      ...descriptionFields,
     };
   }
 
   return {
-    kind: "catalog-context",
-    catalogProductId,
-    displayLabel: market.label,
-    ...catalogDescriptionFields,
+    kind: "offering-context",
+    offeringId: offering.id,
+    displayLabel: offering.name,
+    ...descriptionFields,
   };
-}
-
-export function createCatalogInquiryHref(
-  catalogProductId: ProductMarketSlug,
-  initialMessage?: string,
-): `/request-quote${string}` {
-  const params = new URLSearchParams({ catalogProductId });
-  const cappedMessage = initialMessage
-    ? capConfigPrefill(initialMessage)
-    : undefined;
-
-  if (cappedMessage) {
-    params.set("config", cappedMessage);
-  }
-
-  return `/request-quote?${params.toString()}` as `/request-quote${string}`;
 }

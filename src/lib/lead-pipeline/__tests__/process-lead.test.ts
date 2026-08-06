@@ -1,11 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AIRTABLE_REQUEST_TIMEOUT_MS } from "@/lib/airtable/service";
 import { logger } from "@/lib/logger";
-import {
-  PRODUCT_INQUIRY_KINDS,
-  PRODUCT_LEAD_TYPE,
-  type ProductLeadInput,
-} from "../lead-schema";
+import { INQUIRY_LEAD_TYPE, type InquiryLeadInput } from "../lead-schema";
 import { processValidatedInquiry } from "../process-lead";
 
 const { mockCreateLead, mockSendProductInquiryEmail } = vi.hoisted(() => ({
@@ -17,18 +13,17 @@ vi.mock("@/lib/airtable/instance", () => ({
   airtableService: { createLead: mockCreateLead },
 }));
 vi.mock("@/lib/resend-instance", () => ({
-  resendService: { sendProductInquiryEmail: mockSendProductInquiryEmail },
+  resendService: { sendInquiryEmail: mockSendProductInquiryEmail },
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
 
-const VALID_LEAD: ProductLeadInput = {
-  type: PRODUCT_LEAD_TYPE,
-  productInquiryKind: PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT,
+const VALID_LEAD: InquiryLeadInput = {
+  type: INQUIRY_LEAD_TYPE,
   fullName: "Jane Buyer",
   email: "jane@example.com",
   message: "Need custom height\nStainless finish",
-  catalogProductId: "abs-flood-barriers",
-  buyerInterest: "OEM branding",
+  offeringId: "custom-fabrication",
+  interest: "OEM branding",
 };
 
 describe("processValidatedInquiry", () => {
@@ -42,7 +37,7 @@ describe("processValidatedInquiry", () => {
     vi.useRealTimers();
   });
 
-  it("delivers one validated inquiry to product email and Airtable", async () => {
+  it("delivers one validated inquiry to owner email and Airtable", async () => {
     const result = await processValidatedInquiry(VALID_LEAD);
 
     expect(result).toMatchObject({
@@ -51,26 +46,28 @@ describe("processValidatedInquiry", () => {
       ownerNotified: true,
       recordCreated: true,
     });
-    expect(result.referenceId).toMatch(/^PRO-/);
+    expect(result.referenceId).toMatch(/^INQ-/);
     expect(mockSendProductInquiryEmail).toHaveBeenCalledWith({
       referenceId: result.referenceId,
       firstName: "Jane",
       lastName: "Buyer",
       email: "jane@example.com",
-      productName: "ABS Interlocking Boxwall",
-      requirements:
-        "Interest: OEM branding\nNeed custom height\nStainless finish",
+      offeringId: "custom-fabrication",
+      offeringName: "Custom Fabrication",
+      interest: "OEM branding",
+      requirements: "Need custom height\nStainless finish",
     });
     expect(mockCreateLead).toHaveBeenCalledWith(
       expect.objectContaining({
         firstName: "Jane",
         lastName: "Buyer",
         email: "jane@example.com",
-        productName: "ABS Interlocking Boxwall",
-        catalogProductId: "abs-flood-barriers",
+        offeringId: "custom-fabrication",
+        offeringName: "Custom Fabrication",
+        interest: "OEM branding",
         requirements: "Need custom height\nStainless finish",
         message: expect.stringContaining("Requirements: Need custom height"),
-        referenceId: expect.stringMatching(/^PRO-/),
+        referenceId: expect.stringMatching(/^INQ-/),
       }),
     );
     expect(mockCreateLead.mock.calls[0]?.[0]).not.toHaveProperty("company");
@@ -81,7 +78,7 @@ describe("processValidatedInquiry", () => {
     const result = await processValidatedInquiry(VALID_LEAD);
     const { referenceId } = result;
 
-    expect(referenceId).toMatch(/^PRO-/);
+    expect(referenceId).toMatch(/^INQ-/);
     expect(mockSendProductInquiryEmail).toHaveBeenCalledWith(
       expect.objectContaining({ referenceId }),
     );
@@ -96,13 +93,13 @@ describe("processValidatedInquiry", () => {
 
     const { referenceId } = await processValidatedInquiry(VALID_LEAD);
 
-    expect(referenceId).toMatch(/^PRO-/);
+    expect(referenceId).toMatch(/^INQ-/);
     expect(logger.error).toHaveBeenCalledWith(
-      "Product owner email failed",
+      "Owner inquiry email failed",
       expect.objectContaining({ referenceId }),
     );
     expect(logger.error).toHaveBeenCalledWith(
-      "Product Airtable createLead failed (non-blocking)",
+      "Inquiry Airtable createLead failed (non-blocking)",
       expect.objectContaining({ referenceId }),
     );
   });
@@ -133,7 +130,7 @@ describe("processValidatedInquiry", () => {
       emailSent: false,
       ownerNotified: false,
       recordCreated: false,
-      referenceId: expect.stringMatching(/^PRO-/),
+      referenceId: expect.stringMatching(/^INQ-/),
       error: "PROCESSING_FAILED",
     });
   });

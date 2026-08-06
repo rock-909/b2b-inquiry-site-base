@@ -9,13 +9,13 @@ vi.mock("@/lib/logger", async () => {
   return mockLogger;
 });
 
-const validProductLeadData = {
+const validInquiryLeadData = {
   firstName: "John",
   lastName: "Doe",
   email: "john.doe@example.com",
   message: "Test message",
-  productName: "ABS Flood Barriers",
-  catalogProductId: "abs-flood-barriers",
+  offeringName: "Custom Fabrication",
+  offeringId: "custom-fabrication",
 };
 
 function createMockBase(create: ReturnType<typeof vi.fn>) {
@@ -39,13 +39,13 @@ describe("createLeadRecord", () => {
         createLeadRecord({
           base: base as never,
           tableName: "Leads",
-          data: validProductLeadData,
+          data: validInquiryLeadData,
         }),
       ).rejects.toThrow("Failed to create lead record");
     },
   );
 
-  it("maps a product inquiry and accepts the Airtable SDK array response", async () => {
+  it("maps an inquiry and accepts the Airtable SDK array response", async () => {
     const mockCreate = vi.fn().mockResolvedValue([{ id: " rec-123 " }]);
     const base = createMockBase(mockCreate);
     const data = {
@@ -53,10 +53,11 @@ describe("createLeadRecord", () => {
       lastName: "Buyer",
       email: "Buyer+RFQ@Example.com",
       message: "Need details",
-      productName: "ABS Flood Barriers",
-      catalogProductId: "abs-flood-barriers",
+      interest: "OEM branding",
+      offeringName: "Custom Fabrication",
+      offeringId: "custom-fabrication",
       requirements: "Custom packaging",
-      referenceId: "PRO-test-123",
+      referenceId: "INQ-test-123",
       utmSource: "google",
       utmMedium: "cpc",
       utmCampaign: '=IMPORTXML("https://example.test")',
@@ -80,13 +81,14 @@ describe("createLeadRecord", () => {
           Email: "buyer+rfq@example.com",
           "Submitted At": expect.any(String),
           Status: "New",
-          Source: "Product Inquiry",
-          "Reference ID": "PRO-test-123",
+          Source: "Website Inquiry",
+          "Reference ID": "INQ-test-123",
           "First Name": "Jane",
           "Last Name": "Buyer",
           Message: "Need details",
-          "Product Name": "ABS Flood Barriers",
-          "Product Slug": "abs-flood-barriers",
+          Interest: "OEM branding",
+          "Offering Name": "Custom Fabrication",
+          "Offering ID": "custom-fabrication",
           Requirements: "Custom packaging",
           "UTM Source": "google",
           "UTM Medium": "cpc",
@@ -99,7 +101,7 @@ describe("createLeadRecord", () => {
     ]);
   });
 
-  it("neutralizes formulas in product fields without changing ordinary Unicode", async () => {
+  it("neutralizes formulas in inquiry fields without changing ordinary Unicode", async () => {
     const mockCreate = vi.fn().mockResolvedValue([{ id: "rec-formula" }]);
     const base = createMockBase(mockCreate);
 
@@ -111,8 +113,9 @@ describe("createLeadRecord", () => {
         lastName: "García-López",
         email: "buyer@example.com",
         message: "=message",
-        productName: "+Product",
-        catalogProductId: "-product-slug",
+        interest: "+Interest",
+        offeringName: "+Offering",
+        offeringId: "-offering-id",
         requirements: "@requirements",
       },
     });
@@ -123,8 +126,9 @@ describe("createLeadRecord", () => {
           "First Name": "'=Buyer",
           "Last Name": "García-López",
           Message: "'=message",
-          "Product Name": "'+Product",
-          "Product Slug": "'-product-slug",
+          Interest: "'+Interest",
+          "Offering Name": "'+Offering",
+          "Offering ID": "'-offering-id",
           Requirements: "'@requirements",
         }),
       },
@@ -145,7 +149,7 @@ describe("createLeadRecord", () => {
       createLeadRecord({
         base: base as never,
         tableName: "Leads",
-        data: validProductLeadData,
+        data: validInquiryLeadData,
       }),
     ).rejects.toThrow("Failed to create lead record");
 
@@ -174,7 +178,7 @@ describe("createLeadRecord", () => {
       createLeadRecord({
         base: base as never,
         tableName: "Leads",
-        data: validProductLeadData,
+        data: validInquiryLeadData,
       }),
     ).rejects.toThrow("Failed to create lead record");
 
@@ -194,7 +198,7 @@ describe("createLeadRecord", () => {
       createLeadRecord({
         base: base as never,
         tableName: "Leads",
-        data: validProductLeadData,
+        data: validInquiryLeadData,
       }),
     ).rejects.toThrow("Failed to create lead record");
 

@@ -17,7 +17,7 @@
 // ============================================================================
 export {
   // Lead pipeline
-  MAX_LEAD_PRODUCT_NAME_LENGTH,
+  MAX_LEAD_INTEREST_LENGTH,
 } from "./validation-limits";
 
 // ============================================================================

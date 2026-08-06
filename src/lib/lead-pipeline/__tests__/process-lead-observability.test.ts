@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { logger } from "@/lib/logger";
-import {
-  PRODUCT_INQUIRY_KINDS,
-  PRODUCT_LEAD_TYPE,
-  type ProductLeadInput,
-} from "../lead-schema";
+import { INQUIRY_LEAD_TYPE, type InquiryLeadInput } from "../lead-schema";
 import { processValidatedInquiry } from "../process-lead";
 
 const { mockCreateLead, mockSendProductInquiryEmail } = vi.hoisted(() => ({
@@ -16,13 +12,12 @@ vi.mock("@/lib/airtable/instance", () => ({
   airtableService: { createLead: mockCreateLead },
 }));
 vi.mock("@/lib/resend-instance", () => ({
-  resendService: { sendProductInquiryEmail: mockSendProductInquiryEmail },
+  resendService: { sendInquiryEmail: mockSendProductInquiryEmail },
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
 
-const LEAD: ProductLeadInput = {
-  type: PRODUCT_LEAD_TYPE,
-  productInquiryKind: PRODUCT_INQUIRY_KINDS.GENERAL_RFQ,
+const LEAD: InquiryLeadInput = {
+  type: INQUIRY_LEAD_TYPE,
   fullName: "Sensitive Buyer",
   email: "sensitive@example.com",
   message: "Private facility details",
@@ -35,15 +30,15 @@ describe("processValidatedInquiry observability", () => {
     mockSendProductInquiryEmail.mockResolvedValue("email-123");
   });
 
-  it("logs the product type and reference id without raw PII", async () => {
+  it("logs the inquiry type and reference id without raw PII", async () => {
     await processValidatedInquiry(LEAD);
 
     expect(logger.info).toHaveBeenCalledWith(
       "Processing lead",
       expect.objectContaining({
-        type: PRODUCT_LEAD_TYPE,
+        type: INQUIRY_LEAD_TYPE,
         email: "[REDACTED_EMAIL]",
-        referenceId: expect.stringMatching(/^PRO-/),
+        referenceId: expect.stringMatching(/^INQ-/),
       }),
     );
     const logs = JSON.stringify(vi.mocked(logger.info).mock.calls);

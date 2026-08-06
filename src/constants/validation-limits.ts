@@ -8,7 +8,7 @@
  */
 
 // ============================================================================
-// Lead Pipeline Limits (contact / product inquiry)
+// Lead Pipeline Limits (shared inquiry forms)
 // ============================================================================
 
 /**
@@ -20,8 +20,8 @@ export const MAX_LEAD_EMAIL_LENGTH = 254 as const;
 /** Max full name length for lead forms. */
 export const MAX_LEAD_NAME_LENGTH = 100 as const;
 
-/** Max product-interest length for canonical inquiry leads. */
-export const MAX_LEAD_PRODUCT_NAME_LENGTH = 200 as const;
+/** Max buyer interest length for canonical inquiry leads. */
+export const MAX_LEAD_INTEREST_LENGTH = 200 as const;
 
 /** Max optional buyer message length for canonical inquiry leads. */
 export const MAX_LEAD_MESSAGE_LENGTH = 2000 as const;

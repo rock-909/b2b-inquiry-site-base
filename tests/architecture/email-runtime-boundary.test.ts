@@ -143,7 +143,7 @@ describe("runtime email boundary", () => {
 
     expectNoRuntimeRendererImports(source);
     expectNoRuntimeRendererImports(httpClientSource);
-    expect(source).toContain("buildProductInquiryEmailContent");
+    expect(source).toContain("buildInquiryEmailContent");
     expect(source).not.toContain("buildContactFormEmailContent");
     expect(source).not.toContain("buildConfirmationEmailContent");
   });

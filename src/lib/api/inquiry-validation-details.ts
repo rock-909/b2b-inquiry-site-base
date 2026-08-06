@@ -7,7 +7,7 @@ import {
 /**
  * Inquiry field → inquiry.form error namespace prefixes.
  */
-export const PRODUCT_INQUIRY_FIELD_ERROR_KEYS = {
+export const INQUIRY_FIELD_ERROR_KEYS = {
   fullName: "errors.fullName",
   email: "errors.email",
   message: "errors.message",
@@ -16,7 +16,7 @@ export const PRODUCT_INQUIRY_FIELD_ERROR_KEYS = {
 /**
  * Detail leaves with matching inquiry.form copy for visible field errors.
  */
-export const PRODUCT_INQUIRY_RENDERABLE_DETAIL_KEYS = [
+export const INQUIRY_RENDERABLE_DETAIL_KEYS = [
   "errors.fullName.required",
   "errors.fullName.invalid",
   "errors.fullName.tooLong",
@@ -28,12 +28,12 @@ export const PRODUCT_INQUIRY_RENDERABLE_DETAIL_KEYS = [
 ] as const;
 
 /**
- * Detail leaves the inquiry mapper can emit for productLeadSchema.
+ * Detail leaves the inquiry mapper can emit for inquiryLeadSchema.
  * Usage gate binds renderable keys — keep it aligned with behavior tests.
  */
-export const PRODUCT_INQUIRY_VALIDATION_DETAIL_KEYS = [
+export const INQUIRY_VALIDATION_DETAIL_KEYS = [
   "errors.generic",
-  ...PRODUCT_INQUIRY_RENDERABLE_DETAIL_KEYS,
+  ...INQUIRY_RENDERABLE_DETAIL_KEYS,
 ] as const;
 
 export function mapInquiryValidationDetails(
@@ -42,7 +42,7 @@ export function mapInquiryValidationDetails(
 ): string[] {
   return mapZodIssuesToValidationDetails(
     issues,
-    PRODUCT_INQUIRY_FIELD_ERROR_KEYS,
+    INQUIRY_FIELD_ERROR_KEYS,
     source,
   );
 }

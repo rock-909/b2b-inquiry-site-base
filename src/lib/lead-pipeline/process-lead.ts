@@ -1,20 +1,19 @@
 import "server-only";
 
+import { getOfferingById } from "@/config/offerings";
 import { airtableService } from "@/lib/airtable/instance";
 import { AIRTABLE_REQUEST_TIMEOUT_MS } from "@/lib/airtable/service";
-import type { ProductInquiryEmailData } from "@/lib/email/email-data-schema";
+import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 import {
-  PRODUCT_LEAD_TYPE,
-  type ProductLeadInput,
+  INQUIRY_LEAD_TYPE,
+  type InquiryLeadInput,
 } from "@/lib/lead-pipeline/lead-schema";
 import {
-  composeInquiryDescription,
   generateLeadReferenceId,
-  generateProductInquiryMessage,
-  resolveProductBuyerText,
+  generateInquiryMessage,
+  resolveBuyerMessage,
   splitName,
 } from "@/lib/lead-pipeline/utils";
-import { resolveProductIdentity } from "@/lib/lead-pipeline/product-identity";
 import { logger, sanitizeEmail } from "@/lib/logger";
 import { pickAttributionFields } from "@/lib/marketing/attribution-fields";
 import { resendService } from "@/lib/resend-instance";
@@ -66,39 +65,38 @@ function createProcessingFailureResult(referenceId?: string): LeadResult {
   };
 }
 
-function createProductEmailData(
-  lead: ProductLeadInput,
+function createInquiryEmailData(
+  lead: InquiryLeadInput,
   referenceId: string,
-): ProductInquiryEmailData {
+): InquiryEmailData {
   const { firstName, lastName } = splitName(lead.fullName);
-  const { productName } = resolveProductIdentity(lead);
-  const buyerText = resolveProductBuyerText({ message: lead.message });
-  const requirements = composeInquiryDescription({
-    buyerInterest: lead.buyerInterest,
-    requirements: buyerText,
-  });
+  const offering = getOfferingById(lead.offeringId);
+  const requirements = resolveBuyerMessage({ message: lead.message });
 
   return {
     referenceId,
     firstName,
     lastName,
     email: lead.email,
-    productName,
+    ...(lead.interest ? { interest: lead.interest } : {}),
+    ...(offering
+      ? { offeringId: offering.id, offeringName: offering.name }
+      : {}),
     ...(requirements ? { requirements } : {}),
   };
 }
 
-async function sendProductOwnerEmail(
-  lead: ProductLeadInput,
+async function sendOwnerEmail(
+  lead: InquiryLeadInput,
   context: LeadProcessingContext,
 ): Promise<boolean> {
   try {
-    await resendService.sendProductInquiryEmail(
-      createProductEmailData(lead, context.referenceId),
+    await resendService.sendInquiryEmail(
+      createInquiryEmailData(lead, context.referenceId),
     );
     return true;
   } catch (error) {
-    logger.error("Product owner email failed", {
+    logger.error("Owner inquiry email failed", {
       error: normalizeErrorMessage(error),
       email: sanitizeEmail(lead.email),
       referenceId: context.referenceId,
@@ -107,18 +105,18 @@ async function sendProductOwnerEmail(
   }
 }
 
-async function createProductLeadRecord(
-  lead: ProductLeadInput,
+async function createInquiryLeadRecord(
+  lead: InquiryLeadInput,
   context: LeadProcessingContext,
   emailSent: boolean,
 ): Promise<boolean> {
   const { firstName, lastName } = splitName(lead.fullName);
   const { referenceId } = context;
-  const identity = resolveProductIdentity(lead);
-  const buyerText = resolveProductBuyerText({ message: lead.message });
-  const baseMessage = generateProductInquiryMessage({
-    productName: identity.productName,
-    buyerInterest: lead.buyerInterest,
+  const offering = getOfferingById(lead.offeringId);
+  const buyerText = resolveBuyerMessage({ message: lead.message });
+  const baseMessage = generateInquiryMessage({
+    offeringName: offering?.name,
+    interest: lead.interest,
     requirements: buyerText,
   });
   // 邮件没发出去时，业主唯一能看到这条线索的地方就是这条记录。
@@ -135,9 +133,9 @@ async function createProductLeadRecord(
         lastName,
         email: lead.email,
         message,
-        productName: identity.productName,
-        ...(identity.catalogProductId
-          ? { catalogProductId: identity.catalogProductId }
+        ...(lead.interest ? { interest: lead.interest } : {}),
+        ...(offering
+          ? { offeringId: offering.id, offeringName: offering.name }
           : {}),
         ...(buyerText ? { requirements: buyerText } : {}),
         referenceId,
@@ -146,7 +144,7 @@ async function createProductLeadRecord(
     );
     return true;
   } catch (error) {
-    logger.error("Product Airtable createLead failed (non-blocking)", {
+    logger.error("Inquiry Airtable createLead failed (non-blocking)", {
       error: normalizeErrorMessage(error),
       email: sanitizeEmail(lead.email),
       leadDeliveryPolicy: LEAD_DELIVERY_POLICY,
@@ -157,15 +155,15 @@ async function createProductLeadRecord(
 }
 
 export async function processValidatedInquiry(
-  input: ProductLeadInput,
+  input: InquiryLeadInput,
 ): Promise<LeadResult> {
   let referenceId: string | undefined;
 
   try {
-    referenceId = generateLeadReferenceId(PRODUCT_LEAD_TYPE);
+    referenceId = generateLeadReferenceId(INQUIRY_LEAD_TYPE);
 
     logger.info("Processing lead", {
-      type: PRODUCT_LEAD_TYPE,
+      type: INQUIRY_LEAD_TYPE,
       email: sanitizeEmail(input.email),
       leadDeliveryPolicy: LEAD_DELIVERY_POLICY,
       referenceId,
@@ -175,8 +173,8 @@ export async function processValidatedInquiry(
     // 「这封通知没发出去」一次写进记录。事后补一次更新做不到——Airtable
     // 限流重试可能在预算过期后才落库，那时已经拿不到记录编号了。
     // 代价：最坏耗时从 max(5s, 8s) 变成 5s + 8s。邮件有 5 秒硬超时，不会无限等。
-    const emailSent = await sendProductOwnerEmail(input, { referenceId });
-    const recordCreated = await createProductLeadRecord(
+    const emailSent = await sendOwnerEmail(input, { referenceId });
+    const recordCreated = await createInquiryLeadRecord(
       input,
       { referenceId },
       emailSent,
@@ -195,7 +193,7 @@ export async function processValidatedInquiry(
     };
   } catch (error) {
     logger.error("Lead processing unexpected error", {
-      type: PRODUCT_LEAD_TYPE,
+      type: INQUIRY_LEAD_TYPE,
       referenceId,
       error: normalizeErrorMessage(error),
     });

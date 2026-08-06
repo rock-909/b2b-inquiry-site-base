@@ -1,26 +1,20 @@
 /**
  * Lead Pipeline Schema Definitions
- * Canonical product/general inquiry schema for /api/inquiry
+ * Canonical inquiry schema for /api/inquiry.
  */
 
 import { z } from "zod";
-import { isProductMarketSlug } from "@/constants/product-catalog";
+import { getOfferingById } from "@/config/offerings";
 import {
   canonicalBuyerEmailSchema,
   canonicalBuyerFullNameSchema,
   canonicalBuyerMessageSchema,
 } from "@/lib/lead-pipeline/canonical-buyer-fields";
-import {
-  PRODUCT_INQUIRY_KINDS,
-  type ProductInquiryKind,
-} from "@/lib/lead-pipeline/product-inquiry-kinds";
 import { sanitizePlainText } from "@/lib/security/validation";
 import type { AttributionFieldName } from "@/lib/marketing/attribution-fields";
-import { MAX_LEAD_PRODUCT_NAME_LENGTH } from "@/constants";
+import { MAX_LEAD_INTEREST_LENGTH } from "@/constants";
 
-export const PRODUCT_LEAD_TYPE = "product" as const;
-
-export { PRODUCT_INQUIRY_KINDS, type ProductInquiryKind };
+export const INQUIRY_LEAD_TYPE = "inquiry" as const;
 
 const sanitizedString = () => z.string().overwrite(sanitizePlainText);
 const MAX_ATTRIBUTION_FIELD_LENGTH = 256;
@@ -58,60 +52,30 @@ function optionalBlankToUndefined<Output>(inner: z.ZodType<Output>) {
     .pipe(z.union([z.undefined(), inner]));
 }
 
-const catalogProductIdSchema = z
+const offeringIdSchema = z
   .string()
   .trim()
   .min(1)
-  .refine(isProductMarketSlug, {
-    error: "catalogProductId must match a real catalog product",
+  .refine((offeringId) => getOfferingById(offeringId) !== undefined, {
+    error: "offeringId must match a configured offering",
   });
+const interestSchema = sanitizedString().overwrite((value) =>
+  value.slice(0, MAX_LEAD_INTEREST_LENGTH),
+);
 
 /**
- * 单独导出对象层，是为了让测试能从 `.shape` 读出字段名，而不是再手抄一份清单。
- * `productLeadSchema` 结尾的 `.superRefine` 返回的不是 `ZodObject`，读不到 `.shape`。
- * 手抄的清单会随时间悄悄变短——这个仓库就是被这类清单坑过才有这一轮整改。
+ * 单独导出对象层，让路由合同测试直接读取真实字段，而不是维护平行清单。
  */
-export const productLeadObjectSchema = z.object({
-  type: z.literal(PRODUCT_LEAD_TYPE),
-  productInquiryKind: z.enum([
-    PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT,
-    PRODUCT_INQUIRY_KINDS.GENERAL_RFQ,
-  ]),
+export const inquiryLeadObjectSchema = z.object({
+  type: z.literal(INQUIRY_LEAD_TYPE),
   fullName: canonicalBuyerFullNameSchema,
   email: canonicalBuyerEmailSchema,
   message: canonicalBuyerMessageSchema.optional(),
-  catalogProductId: optionalBlankToUndefined(catalogProductIdSchema).optional(),
-  buyerInterest: optionalBlankToUndefined(
-    sanitizedString().max(MAX_LEAD_PRODUCT_NAME_LENGTH),
-  ).optional(),
+  interest: optionalBlankToUndefined(interestSchema).optional(),
+  offeringId: optionalBlankToUndefined(offeringIdSchema).optional(),
   ...baseLeadFields,
 });
 
-export const productLeadSchema = productLeadObjectSchema.superRefine(
-  (data, ctx) => {
-    if (data.productInquiryKind === PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT) {
-      if (!data.catalogProductId) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["catalogProductId"],
-          message: "catalogProductId is required for a catalog product inquiry",
-        });
-      }
-      return;
-    }
+export const inquiryLeadSchema = inquiryLeadObjectSchema;
 
-    if (data.catalogProductId !== undefined) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["catalogProductId"],
-        message: "general RFQ must not carry a catalog product identity",
-      });
-    }
-  },
-);
-
-export type ProductLeadInput = z.infer<typeof productLeadSchema>;
-
-export function isCatalogProductInquiry(lead: ProductLeadInput): boolean {
-  return lead.productInquiryKind === PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT;
-}
+export type InquiryLeadInput = z.infer<typeof inquiryLeadSchema>;

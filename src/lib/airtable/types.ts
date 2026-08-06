@@ -14,11 +14,12 @@ interface BaseLeadData extends MarketingAttributionFields {
   referenceId?: string;
 }
 
-export interface ProductLeadData extends BaseLeadData {
+export interface InquiryLeadData extends BaseLeadData {
   firstName: string;
   lastName: string;
   message: string;
-  productName: string;
-  catalogProductId?: string;
+  interest?: string;
+  offeringId?: string;
+  offeringName?: string;
   requirements?: string;
 }

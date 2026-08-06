@@ -92,16 +92,18 @@
       "fields": {
         "contactName": "Contact Name",
         "email": "Email",
-        "product": "Product",
+        "interest": "Interest",
+        "offering": "Offering",
+        "offeringId": "Offering ID",
         "reference": "Reference",
         "requirements": "Requirements"
       }
     },
-    "productInquiry": {
+    "inquiry": {
       "title": "New Inquiry",
       "preview": "New inquiry received.",
       "footer": "This inquiry was submitted through the website.",
-      "subject": "Inquiry: {productName}"
+      "subject": "Website inquiry"
     }
   }
 }

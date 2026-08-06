@@ -53,7 +53,7 @@ const validLeadData = {
   lastName: "Tester",
   email: "config@example.com",
   message: "Configuration test inquiry",
-  productName: "General RFQ",
+  interest: "Configuration check",
 };
 
 function createdRecord(id = "rec-config") {

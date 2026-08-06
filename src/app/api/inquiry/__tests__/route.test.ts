@@ -98,31 +98,26 @@ describe("/api/inquiry route", () => {
   });
 
   describe("POST", () => {
-    // Default happy-path payload: a real catalog product, identified by a
-    // registry-validated slug (never a client-invented product name).
     const validInquiryData = {
       turnstileToken: "valid-token",
-      type: "product",
-      productInquiryKind: "catalog-product",
+      type: "browser-spoof",
       fullName: "John Doe",
       email: "john@example.com",
-      catalogProductId: "abs-flood-barriers",
+      offeringId: "custom-fabrication",
       message: "I am interested in your products.",
     };
 
-    const generalRfqData = {
+    const generalInquiryData = {
       turnstileToken: "valid-token",
-      type: "product",
-      productInquiryKind: "general-rfq",
       fullName: "Rita Buyer",
       email: "rita@example.com",
       message: "Submitted via the request-quote form.",
     };
 
-    it("accepts a catalog product inquiry and forwards the validated identity", async () => {
+    it("accepts an offering inquiry and forwards the validated identity", async () => {
       const safeParseSpy = vi.spyOn(safeParseJsonModule, "safeParseJson");
       const schemaSpy = vi.spyOn(
-        leadSchemaModule.productLeadSchema,
+        leadSchemaModule.inquiryLeadSchema,
         "safeParse",
       );
       const request = createInquiryRequest(JSON.stringify(validInquiryData));
@@ -135,10 +130,9 @@ describe("/api/inquiry route", () => {
       expect(data.data.referenceId).toBe("ref-123");
       expect(processValidatedInquiry).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "product",
+          type: "inquiry",
           email: "john@example.com",
-          productInquiryKind: "catalog-product",
-          catalogProductId: "abs-flood-barriers",
+          offeringId: "custom-fabrication",
         }),
       );
       expect(safeParseSpy).toHaveBeenCalledTimes(1);
@@ -148,8 +142,8 @@ describe("/api/inquiry route", () => {
       expect(response.headers.get("x-observability-surface")).toBeNull();
     });
 
-    it("accepts a general RFQ with no per-product identity", async () => {
-      const request = createInquiryRequest(JSON.stringify(generalRfqData));
+    it("accepts a general inquiry with no offering identity", async () => {
+      const request = createInquiryRequest(JSON.stringify(generalInquiryData));
 
       const response = await POST(request);
       const data = await response.json();
@@ -158,15 +152,15 @@ describe("/api/inquiry route", () => {
       expect(data.success).toBe(true);
       const callArgs = vi.mocked(processValidatedInquiry).mock
         .calls[0]![0] as Record<string, unknown>;
-      expect(callArgs.productInquiryKind).toBe("general-rfq");
-      expect(callArgs.catalogProductId).toBeUndefined();
+      expect(callArgs.type).toBe("inquiry");
+      expect(callArgs.offeringId).toBeUndefined();
     });
 
-    it("accepts a buyer-interest-only general RFQ and keeps interest as description, not identity", async () => {
+    it("accepts interest-only general inquiry and keeps interest as free text", async () => {
       const request = createInquiryRequest(
         JSON.stringify({
-          ...generalRfqData,
-          buyerInterest: "Aluminum flood gates for a garage",
+          ...generalInquiryData,
+          interest: "Custom fabrication",
         }),
       );
 
@@ -177,16 +171,16 @@ describe("/api/inquiry route", () => {
       expect(data.success).toBe(true);
       const callArgs = vi.mocked(processValidatedInquiry).mock
         .calls[0]![0] as Record<string, unknown>;
-      expect(callArgs.productInquiryKind).toBe("general-rfq");
-      expect(callArgs.buyerInterest).toBe("Aluminum flood gates for a garage");
-      expect(callArgs.catalogProductId).toBeUndefined();
+      expect(callArgs.type).toBe("inquiry");
+      expect(callArgs.interest).toBe("Custom fabrication");
+      expect(callArgs.offeringId).toBeUndefined();
     });
 
-    it("rejects an unknown catalog product id before lead processing", async () => {
+    it("rejects an unknown offering id before lead processing", async () => {
       const request = createInquiryRequest(
         JSON.stringify({
           ...validInquiryData,
-          catalogProductId: "not-a-real-product",
+          offeringId: "not-a-real-offering",
         }),
       );
 
@@ -202,24 +196,20 @@ describe("/api/inquiry route", () => {
       expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
 
-    it("rejects a general RFQ that smuggles a catalog product identity", async () => {
+    it("ignores retired catalog product identity fields without aliasing them", async () => {
       const request = createInquiryRequest(
         JSON.stringify({
-          ...generalRfqData,
+          ...generalInquiryData,
           catalogProductId: "abs-flood-barriers",
         }),
       );
 
       const response = await POST(request);
-      const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data).toEqual({
-        success: false,
-        errorCode: API_ERROR_CODES.INQUIRY_VALIDATION_FAILED,
-        details: ["errors.generic"],
-      });
-      expect(processValidatedInquiry).not.toHaveBeenCalled();
+      expect(response.status).toBe(200);
+      const callArgs = vi.mocked(processValidatedInquiry).mock
+        .calls[0]![0] as Record<string, unknown>;
+      expect(callArgs).not.toHaveProperty("catalogProductId");
     });
 
     it("passes attribution fields to processValidatedInquiry", async () => {
@@ -239,7 +229,7 @@ describe("/api/inquiry route", () => {
 
       expect(processValidatedInquiry).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "product",
+          type: "inquiry",
           utmSource: "google",
           utmMedium: "cpc",
           utmCampaign: "flood-barriers",
@@ -498,27 +488,23 @@ describe("/api/inquiry route", () => {
       expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
 
-    it("should reject a catalog product inquiry with a missing product identity", async () => {
+    it("normalizes a blank offering id to general inquiry", async () => {
       const request = createInquiryRequest(
         JSON.stringify({
           ...validInquiryData,
-          catalogProductId: "",
+          offeringId: "",
         }),
       );
 
       const response = await POST(request);
-      const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data).toEqual({
-        success: false,
-        errorCode: API_ERROR_CODES.INQUIRY_VALIDATION_FAILED,
-        details: ["errors.generic"],
-      });
-      expect(processValidatedInquiry).not.toHaveBeenCalled();
+      expect(response.status).toBe(200);
+      const callArgs = vi.mocked(processValidatedInquiry).mock
+        .calls[0]![0] as Record<string, unknown>;
+      expect(callArgs.offeringId).toBeUndefined();
     });
 
-    it("accepts a catalog product inquiry without legacy adapter fields", async () => {
+    it("accepts an inquiry without legacy adapter fields", async () => {
       const request = createInquiryRequest(
         JSON.stringify({
           ...validInquiryData,
@@ -538,6 +524,9 @@ describe("/api/inquiry route", () => {
       expect(callArgs).not.toHaveProperty("company");
       expect(callArgs).not.toHaveProperty("quantity");
       expect(callArgs).not.toHaveProperty("requirements");
+      expect(callArgs).not.toHaveProperty("productName");
+      expect(callArgs).not.toHaveProperty("productInquiryKind");
+      expect(callArgs).not.toHaveProperty("catalogProductId");
     });
 
     it("should return 400 when turnstile verification fails", async () => {
@@ -643,7 +632,7 @@ describe("/api/inquiry route", () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.data.referenceId).toMatch(/^PRO-/);
+      expect(data.data.referenceId).toMatch(/^INQ-/);
       expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
       expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
@@ -663,14 +652,14 @@ describe("/api/inquiry route", () => {
       expect(data.errorCode).toBe(API_ERROR_CODES.INQUIRY_PROCESSING_ERROR);
     });
 
-    it("should pass lead type product to processValidatedInquiry", async () => {
+    it("should pass lead type inquiry to processValidatedInquiry", async () => {
       const request = createInquiryRequest(JSON.stringify(validInquiryData));
 
       await POST(request);
 
       expect(processValidatedInquiry).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "product",
+          type: "inquiry",
         }),
       );
     });
@@ -687,7 +676,7 @@ describe("/api/inquiry route", () => {
 
       expect(processValidatedInquiry).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: "product",
+          type: "inquiry",
         }),
       );
     });
@@ -718,13 +707,12 @@ describe("/api/inquiry route", () => {
     // schema 的 `.shape` 跟这张表对账。给 schema 加字段而不给样值，这条立刻红——
     // 手抄的清单不会报错，只会随时间悄悄变短，正是这个 bug 的成因。
     const SAMPLE_VALUE_PER_SCHEMA_FIELD: Record<string, unknown> = {
-      type: "product",
-      productInquiryKind: "catalog-product",
+      type: "inquiry",
       fullName: "Full Coverage Buyer",
       email: "coverage@example.com",
-      catalogProductId: "abs-flood-barriers",
+      offeringId: "custom-fabrication",
       message: "Every declared field carries a value.",
-      buyerInterest: "Flood barriers",
+      interest: "Custom fabrication",
       utmSource: "google",
       utmMedium: "cpc",
       utmCampaign: "flood-2026",
@@ -739,7 +727,7 @@ describe("/api/inquiry route", () => {
 
     it("keeps a sample value for every field the schema declares", () => {
       expect([...Object.keys(SAMPLE_VALUE_PER_SCHEMA_FIELD)].sort()).toEqual(
-        [...Object.keys(leadSchemaModule.productLeadObjectSchema.shape)].sort(),
+        [...Object.keys(leadSchemaModule.inquiryLeadObjectSchema.shape)].sort(),
       );
     });
 
@@ -765,9 +753,9 @@ describe("/api/inquiry route", () => {
     it("normalizes a blank optional field instead of rejecting it", async () => {
       const request = createInquiryRequest(
         JSON.stringify({
-          ...generalRfqData,
-          catalogProductId: "",
-          buyerInterest: "   ",
+          ...generalInquiryData,
+          offeringId: "",
+          interest: "   ",
         }),
       );
 
@@ -777,8 +765,8 @@ describe("/api/inquiry route", () => {
       expect(response.status).toBe(200);
       const callArgs = vi.mocked(processValidatedInquiry).mock
         .calls[0]![0] as Record<string, unknown>;
-      expect(callArgs.catalogProductId).toBeUndefined();
-      expect(callArgs.buyerInterest).toBeUndefined();
+      expect(callArgs.offeringId).toBeUndefined();
+      expect(callArgs.interest).toBeUndefined();
     });
 
     it("should exclude turnstileToken from lead data", async () => {

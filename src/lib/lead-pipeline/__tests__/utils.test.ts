@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  composeInquiryDescription,
   generateLeadReferenceId,
-  generateProductInquiryMessage,
-  resolveProductBuyerText,
+  generateInquiryMessage,
+  resolveBuyerMessage,
   splitName,
 } from "../utils";
 
@@ -18,48 +17,48 @@ describe("lead pipeline utils", () => {
 
   it("builds the canonical Airtable message without quantity", () => {
     expect(
-      generateProductInquiryMessage({
-        productName: "ABS Interlocking Boxwall",
-        buyerInterest: "OEM branding",
+      generateInquiryMessage({
+        offeringName: "Custom Fabrication",
+        interest: "OEM branding",
         requirements: "Need custom height\nStainless finish",
       }),
     ).toBe(
-      "Product: ABS Interlocking Boxwall\nInterest: OEM branding\nRequirements: Need custom height\nStainless finish",
+      "Offering: Custom Fabrication\nInterest: OEM branding\nRequirements: Need custom height\nStainless finish",
     );
   });
 
   it("omits blank optional message parts", () => {
     expect(
-      generateProductInquiryMessage({
-        productName: "General RFQ",
-        buyerInterest: " ",
+      generateInquiryMessage({
+        offeringName: " ",
+        interest: " ",
         requirements: "",
       }),
-    ).toBe("Product: General RFQ");
+    ).toBe("General inquiry");
   });
 
-  it("combines buyer interest with canonical message for email", () => {
+  it("combines interest with canonical message", () => {
     expect(
-      composeInquiryDescription({
-        buyerInterest: "OEM branding",
+      generateInquiryMessage({
+        interest: "OEM branding",
         requirements: "Need 50 units",
       }),
-    ).toBe("Interest: OEM branding\nNeed 50 units");
+    ).toBe("Interest: OEM branding\nRequirements: Need 50 units");
   });
 
   it("resolves only the canonical message", () => {
-    expect(resolveProductBuyerText({ message: "  Buyer note  " })).toBe(
+    expect(resolveBuyerMessage({ message: "  Buyer note  " })).toBe(
       "Buyer note",
     );
-    expect(resolveProductBuyerText({ message: "   " })).toBeUndefined();
-    expect(resolveProductBuyerText({})).toBeUndefined();
+    expect(resolveBuyerMessage({ message: "   " })).toBeUndefined();
+    expect(resolveBuyerMessage({})).toBeUndefined();
   });
 
-  it("generates product-shaped unique reference ids", () => {
-    const first = generateLeadReferenceId("product");
-    const second = generateLeadReferenceId("product");
+  it("generates inquiry-shaped unique reference ids", () => {
+    const first = generateLeadReferenceId("inquiry");
+    const second = generateLeadReferenceId("inquiry");
 
-    expect(first).toMatch(/^PRO-[a-z0-9]+-[a-f0-9]{8}$/);
+    expect(first).toMatch(/^INQ-[a-z0-9]+-[a-f0-9]{8}$/);
     expect(second).not.toBe(first);
   });
 });

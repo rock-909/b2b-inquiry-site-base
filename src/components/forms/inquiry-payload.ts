@@ -1,20 +1,16 @@
 import { MAX_LEAD_MESSAGE_LENGTH } from "@/constants/validation-limits";
-import { PRODUCT_INQUIRY_KINDS } from "@/lib/lead-pipeline/product-inquiry-kinds";
 import type { ValidatedInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import {
   pickAttributionFieldsFromFormData,
   type MarketingAttributionFields,
 } from "@/lib/marketing/attribution-fields";
 
-interface InquiryPayload extends MarketingAttributionFields {
+export interface InquiryPayload extends MarketingAttributionFields {
   readonly fullName: string;
   readonly email: string;
-  readonly productInquiryKind:
-    | typeof PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT
-    | typeof PRODUCT_INQUIRY_KINDS.GENERAL_RFQ;
-  readonly catalogProductId?: string;
   readonly message?: string;
-  readonly buyerInterest?: string;
+  readonly interest?: string;
+  readonly offeringId?: string;
   readonly website: string;
   readonly turnstileToken: string;
 }
@@ -33,22 +29,15 @@ export function createInquiryPayload(
   const email = getOptionalString(formData, "email");
   const message = getOptionalString(formData, "message");
   const website = getOptionalString(formData, "website");
-  const identity =
-    context.kind === "catalog-context"
-      ? {
-          productInquiryKind: PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT,
-          catalogProductId: context.catalogProductId,
-        }
-      : { productInquiryKind: PRODUCT_INQUIRY_KINDS.GENERAL_RFQ };
 
   return {
     fullName,
     email,
-    ...identity,
     website,
     ...(message ? { message } : {}),
-    ...(context.kind === "general-context" && context.buyerInterest
-      ? { buyerInterest: context.buyerInterest }
+    ...(context.interest ? { interest: context.interest } : {}),
+    ...(context.kind === "offering-context"
+      ? { offeringId: context.offeringId }
       : {}),
     turnstileToken,
     ...pickAttributionFieldsFromFormData(formData),

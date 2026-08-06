@@ -21,46 +21,31 @@ export function splitName(fullName: string): SplitNameResult {
   return { firstName: parts.join(" "), lastName };
 }
 
-export interface ProductInquiryMessageParts {
-  productName: string;
-  buyerInterest?: string | undefined;
+export interface InquiryMessageParts {
+  offeringName?: string | undefined;
+  interest?: string | undefined;
   requirements?: string | undefined;
 }
 
-export function generateProductInquiryMessage(
-  parts: ProductInquiryMessageParts,
-): string {
-  const lines = [`Product: ${parts.productName}`];
+export function generateInquiryMessage(parts: InquiryMessageParts): string {
+  const lines: string[] = [];
 
-  if (parts.buyerInterest?.trim()) {
-    lines.push(`Interest: ${parts.buyerInterest.trim()}`);
+  if (parts.offeringName?.trim()) {
+    lines.push(`Offering: ${parts.offeringName.trim()}`);
+  }
+
+  if (parts.interest?.trim()) {
+    lines.push(`Interest: ${parts.interest.trim()}`);
   }
 
   if (parts.requirements?.trim()) {
     lines.push(`Requirements: ${parts.requirements.trim()}`);
   }
 
-  return lines.join("\n");
+  return lines.length > 0 ? lines.join("\n") : "General inquiry";
 }
 
-export function composeInquiryDescription(parts: {
-  buyerInterest?: string | undefined;
-  requirements?: string | undefined;
-}): string | undefined {
-  const lines: string[] = [];
-
-  if (parts.buyerInterest?.trim()) {
-    lines.push(`Interest: ${parts.buyerInterest.trim()}`);
-  }
-
-  if (parts.requirements?.trim()) {
-    lines.push(parts.requirements.trim());
-  }
-
-  return lines.length > 0 ? lines.join("\n") : undefined;
-}
-
-export function resolveProductBuyerText(parts: {
+export function resolveBuyerMessage(parts: {
   message?: string | undefined;
 }): string | undefined {
   const message = parts.message?.trim();

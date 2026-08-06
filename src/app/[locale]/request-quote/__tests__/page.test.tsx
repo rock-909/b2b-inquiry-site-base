@@ -183,24 +183,24 @@ describe("RequestQuotePage", () => {
     );
   });
 
-  it("passes catalog-context for a valid catalogProductId", async () => {
-    await renderPageWith({ catalogProductId: "frp-flood-barriers" });
+  it("passes offering-context for a valid offeringId", async () => {
+    await renderPageWith({ offeringId: "custom-fabrication" });
 
     expect(capturedInquiry.latest?.context).toEqual({
-      kind: "catalog-context",
-      catalogProductId: "frp-flood-barriers",
-      displayLabel: "FRP Composite Planks",
+      kind: "offering-context",
+      offeringId: "custom-fabrication",
+      displayLabel: "Custom Fabrication",
     });
   });
 
-  it("downgrades forged or repeated catalogProductId values to general-context", async () => {
-    await renderPageWith({ catalogProductId: "forged-product" });
+  it("downgrades forged or repeated offeringId values to general-context", async () => {
+    await renderPageWith({ offeringId: "forged-offering" });
     expect(capturedInquiry.latest?.context).toEqual({
       kind: "general-context",
     });
 
     await renderPageWith({
-      catalogProductId: ["abs-flood-barriers", "frp-flood-barriers"],
+      offeringId: ["custom-fabrication", "custom-fabrication"],
     });
     expect(capturedInquiry.latest?.context).toEqual({
       kind: "general-context",
@@ -209,7 +209,7 @@ describe("RequestQuotePage", () => {
 
   it("passes estimator config into the validated initial message", async () => {
     await renderPageWith({
-      catalogProductId: "abs-flood-barriers",
+      offeringId: "custom-fabrication",
       config: "Estimated 12 straight units",
     });
 

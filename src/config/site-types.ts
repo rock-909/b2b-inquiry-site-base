@@ -12,9 +12,6 @@ export interface SiteSeoConfig {
   defaultDescription: string;
 }
 
-export type TucsenbergProductStandardId =
-  "tb_bw" | "tb_ag" | "tb_fb" | "tb_td" | "tb_cp";
-
 export interface SiteSocialConfig {
   twitter: string;
   linkedin: string;
@@ -134,23 +131,10 @@ export interface SiteFooterColumnConfig {
   links: readonly SiteFooterLinkItem[];
 }
 
-export interface MarketDefinition {
-  slug: string;
-  label: string;
-  standardLabel: string;
-  sizeSystem: "inch" | "mm";
-  standardIds: readonly TucsenbergProductStandardId[];
-}
-
-export interface ProductCatalog {
-  readonly markets: readonly MarketDefinition[];
-}
-
 export interface SiteDefinition {
   key: SiteKey;
   config: SiteConfig;
   facts: SiteFacts;
-  productCatalog: ProductCatalog;
   navigation: {
     main: SiteNavigationItem[];
   };

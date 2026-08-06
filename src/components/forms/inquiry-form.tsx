@@ -8,8 +8,8 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
-  InquiryBuyerInterestContext,
   InquiryFormFields,
+  InquiryInterestContext,
 } from "@/components/forms/inquiry-form-fields";
 import {
   type InquiryFormCopy,
@@ -150,9 +150,9 @@ function InquiryFormLive({
   context: ValidatedInquiryContext;
 }) {
   const visibleContext =
-    context.kind === "catalog-context"
+    context.kind === "offering-context"
       ? context.displayLabel
-      : context.buyerInterest;
+      : context.interest;
   const { initialMessage } = context;
   const formRef = useRef<HTMLFormElement>(null);
   const [turnstileToken, setTurnstileToken] = useState("");
@@ -239,10 +239,7 @@ function InquiryFormLive({
         onSubmit={handleSubmit}
       >
         {visibleContext ? (
-          <InquiryBuyerInterestContext
-            buyerInterest={visibleContext}
-            copy={copy}
-          />
+          <InquiryInterestContext interest={visibleContext} copy={copy} />
         ) : null}
 
         <InquiryFormFields

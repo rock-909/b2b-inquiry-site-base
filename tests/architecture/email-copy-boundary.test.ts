@@ -103,16 +103,18 @@ describe("email copy boundary", () => {
     expect(english.emailTemplates).toBeDefined();
     expect(getObjectKeys(english.emailTemplates)).toEqual([
       "common",
-      "productInquiry",
+      "inquiry",
     ]);
     expect(getNestedKeys(english.emailTemplates).sort()).toEqual(
       expect.arrayContaining([
-        "productInquiry.footer",
-        "productInquiry.preview",
-        "productInquiry.subject",
+        "inquiry.footer",
+        "inquiry.preview",
+        "inquiry.subject",
         "common.fields.contactName",
         "common.fields.email",
-        "common.fields.product",
+        "common.fields.interest",
+        "common.fields.offering",
+        "common.fields.offeringId",
         "common.fields.requirements",
       ]),
     );

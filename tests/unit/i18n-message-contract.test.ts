@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { createInquiryFormCopyFromMessages } from "@/components/forms/inquiry-form-copy";
 import { getComposedMessages } from "@/lib/i18n/composed-messages";
-import { PRODUCT_INQUIRY_VALIDATION_DETAIL_KEYS } from "@/lib/api/inquiry-validation-details";
+import { INQUIRY_VALIDATION_DETAIL_KEYS } from "@/lib/api/inquiry-validation-details";
 
 type JsonObject = Record<string, unknown>;
 
@@ -78,7 +78,7 @@ describe("real i18n runtime message contract", () => {
   });
 
   it("keeps inquiry validation detail keys under inquiry.form", () => {
-    const renderableDetails = PRODUCT_INQUIRY_VALIDATION_DETAIL_KEYS.filter(
+    const renderableDetails = INQUIRY_VALIDATION_DETAIL_KEYS.filter(
       (detailKey) => detailKey !== "errors.generic",
     );
 

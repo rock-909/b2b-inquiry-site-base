@@ -3,7 +3,6 @@ import type { PageType } from "@/config/paths/types";
 import { PUBLIC_STATIC_PAGE_TYPES } from "@/config/pages.config";
 import { SINGLE_SITE_ROUTE_HREFS } from "@/config/single-site-links";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
-import { singleSiteProductCatalog } from "@/config/single-site-product-catalog";
 import type {
   SiteConfig,
   SiteDefinition,
@@ -16,8 +15,6 @@ export type {
   Certification,
   CompanyInfo,
   ContactInfo,
-  MarketDefinition,
-  ProductCatalog,
   SiteConfig,
   SiteDefinition,
   SiteFacts,
@@ -210,7 +207,6 @@ export const SINGLE_SITE_DEFINITION = {
       favicon: "/favicon.ico",
     },
   },
-  productCatalog: singleSiteProductCatalog,
   navigation: {
     main: SINGLE_SITE_NAVIGATION,
   },

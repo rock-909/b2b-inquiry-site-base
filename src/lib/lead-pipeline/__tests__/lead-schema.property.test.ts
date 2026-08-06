@@ -1,16 +1,12 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
-import {
-  PRODUCT_INQUIRY_KINDS,
-  PRODUCT_LEAD_TYPE,
-  productLeadSchema,
-} from "../lead-schema";
+import { INQUIRY_LEAD_TYPE, inquiryLeadSchema } from "../lead-schema";
 
-describe("productLeadSchema properties", () => {
+describe("inquiryLeadSchema properties", () => {
   it("safeParse never throws for arbitrary input", () => {
     fc.assert(
       fc.property(fc.anything(), (input) => {
-        expect(() => productLeadSchema.safeParse(input)).not.toThrow();
+        expect(() => inquiryLeadSchema.safeParse(input)).not.toThrow();
       }),
     );
   });
@@ -18,9 +14,8 @@ describe("productLeadSchema properties", () => {
   it("rejects non-email-shaped values", () => {
     fc.assert(
       fc.property(fc.stringMatching(/^[a-z]{1,48}$/), (email) => {
-        const result = productLeadSchema.safeParse({
-          type: PRODUCT_LEAD_TYPE,
-          productInquiryKind: PRODUCT_INQUIRY_KINDS.GENERAL_RFQ,
+        const result = inquiryLeadSchema.safeParse({
+          type: INQUIRY_LEAD_TYPE,
           fullName: "Jane Buyer",
           email,
         });
@@ -37,19 +32,24 @@ describe("productLeadSchema properties", () => {
         fc.integer(),
         fc.string(),
         (company, quantity, requirements) => {
-          const result = productLeadSchema.parse({
-            type: PRODUCT_LEAD_TYPE,
-            productInquiryKind: PRODUCT_INQUIRY_KINDS.GENERAL_RFQ,
+          const result = inquiryLeadSchema.parse({
+            type: INQUIRY_LEAD_TYPE,
             fullName: "Jane Buyer",
             email: "jane@example.com",
             company,
             quantity,
             requirements,
+            productInquiryKind: "general-rfq",
+            catalogProductId: "abs-flood-barriers",
+            buyerInterest: "retired",
           });
 
           expect(result).not.toHaveProperty("company");
           expect(result).not.toHaveProperty("quantity");
           expect(result).not.toHaveProperty("requirements");
+          expect(result).not.toHaveProperty("productInquiryKind");
+          expect(result).not.toHaveProperty("catalogProductId");
+          expect(result).not.toHaveProperty("buyerInterest");
         },
       ),
     );

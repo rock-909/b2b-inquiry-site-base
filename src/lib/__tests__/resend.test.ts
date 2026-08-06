@@ -79,7 +79,7 @@ describe("resend - Service Initialization", () => {
     const service = new ResendServiceClass();
     expect(service.isReady()).toBe(true);
     expect(mockResendCtorCalls).toHaveBeenCalledWith("test-resend-key");
-    expect(typeof service.sendProductInquiryEmail).toBe("function");
+    expect(typeof service.sendInquiryEmail).toBe("function");
   });
 
   it("falls back to the site contact email when email env is absent", async () => {
@@ -94,12 +94,13 @@ describe("resend - Service Initialization", () => {
       error: null,
     });
 
-    await service.sendProductInquiryEmail({
-      referenceId: "PRO-abc123-deadbeef",
+    await service.sendInquiryEmail({
+      referenceId: "INQ-abc123-deadbeef",
       firstName: "Jane",
       lastName: "Smith",
       email: "jane.smith@example.com",
-      productName: "Enterprise Widget",
+      offeringId: "custom-fabrication",
+      offeringName: "Custom Fabrication",
       requirements: "Need bulk pricing",
     });
 
@@ -113,15 +114,16 @@ describe("resend - Service Initialization", () => {
   });
 });
 
-describe("resend - sendProductInquiryEmail", () => {
+describe("resend - sendInquiryEmail", () => {
   let ResendServiceClass: ResendServiceConstructor;
 
-  const validProductInquiryData = {
-    referenceId: "PRO-abc123-deadbeef",
+  const validInquiryData = {
+    referenceId: "INQ-abc123-deadbeef",
     firstName: "Jane",
     lastName: "Smith",
     email: "jane.smith@example.com",
-    productName: "Enterprise Widget",
+    offeringId: "custom-fabrication",
+    offeringName: "Custom Fabrication",
     requirements: "Need bulk pricing",
   };
 
@@ -133,7 +135,7 @@ describe("resend - sendProductInquiryEmail", () => {
     vi.resetModules();
   });
 
-  it("sends product inquiry email successfully", async () => {
+  it("sends inquiry email successfully", async () => {
     const service = new ResendServiceClass();
 
     mockResendSend.mockResolvedValue({
@@ -141,9 +143,7 @@ describe("resend - sendProductInquiryEmail", () => {
       error: null,
     });
 
-    const result = await service.sendProductInquiryEmail(
-      validProductInquiryData,
-    );
+    const result = await service.sendInquiryEmail(validInquiryData);
 
     const payload = mockResendSend.mock.calls[0]?.[0];
 
@@ -153,32 +153,30 @@ describe("resend - sendProductInquiryEmail", () => {
         from: "test@example.com",
         to: ["reply@example.com"],
         replyTo: "jane.smith@example.com",
-        subject: expect.stringContaining("Enterprise Widget"),
-        html: expect.stringContaining("Enterprise Widget"),
-        text: expect.stringContaining("Enterprise Widget"),
-        tags: expect.arrayContaining([
-          { name: "type", value: "product-inquiry" },
-        ]),
+        subject: expect.stringContaining("Custom Fabrication"),
+        html: expect.stringContaining("Custom Fabrication"),
+        text: expect.stringContaining("Custom Fabrication"),
+        tags: expect.arrayContaining([{ name: "type", value: "inquiry" }]),
       }),
     );
     expect(payload).not.toHaveProperty("react");
 
     // One reference the buyer can quote must reach subject, body, and provider metadata.
-    expect(payload.subject).toContain("PRO-abc123-deadbeef");
-    expect(payload.text).toContain("PRO-abc123-deadbeef");
-    expect(payload.html).toContain("PRO-abc123-deadbeef");
+    expect(payload.subject).toContain("INQ-abc123-deadbeef");
+    expect(payload.text).toContain("INQ-abc123-deadbeef");
+    expect(payload.html).toContain("INQ-abc123-deadbeef");
     expect(payload.tags).toContainEqual({
       name: "reference-id",
-      value: "PRO-abc123-deadbeef",
+      value: "INQ-abc123-deadbeef",
     });
   });
 
-  it("sanitizes product inquiry data before rendering without expanding buyer placeholders", async () => {
+  it("sanitizes inquiry data before rendering without expanding buyer placeholders", async () => {
     const service = new ResendServiceClass();
     const emailData = {
-      ...validProductInquiryData,
+      ...validInquiryData,
       email: "JANE@EXAMPLE.COM",
-      productName: "<Pump {lastName}>",
+      offeringName: "<Pump {lastName}>",
       requirements: "Need {lastName}\n\nwith data:text/plain and onclick=alert",
     };
 
@@ -187,7 +185,7 @@ describe("resend - sendProductInquiryEmail", () => {
       error: null,
     });
 
-    await service.sendProductInquiryEmail(emailData);
+    await service.sendInquiryEmail(emailData);
 
     const payload = mockResendSend.mock.calls[0]?.[0];
 
@@ -200,25 +198,25 @@ describe("resend - sendProductInquiryEmail", () => {
     expect(payload.html).not.toContain("<Pump");
   });
 
-  it("handles API errors for product inquiry", async () => {
+  it("handles API errors for inquiry", async () => {
     const service = new ResendServiceClass();
     mockResendSend.mockResolvedValue({
       data: null,
       error: { message: "Product Inquiry API Error" },
     });
 
-    await expect(
-      service.sendProductInquiryEmail(validProductInquiryData),
-    ).rejects.toThrow("Failed to send product inquiry email");
+    await expect(service.sendInquiryEmail(validInquiryData)).rejects.toThrow(
+      "Failed to send inquiry email",
+    );
   });
 
-  it("handles network errors for product inquiry", async () => {
+  it("handles network errors for inquiry", async () => {
     const service = new ResendServiceClass();
     mockResendSend.mockRejectedValue(new Error("Network error"));
 
-    await expect(
-      service.sendProductInquiryEmail(validProductInquiryData),
-    ).rejects.toThrow("Failed to send product inquiry email");
+    await expect(service.sendInquiryEmail(validInquiryData)).rejects.toThrow(
+      "Failed to send inquiry email",
+    );
   });
 
   it("logs the reference on both delivery outcomes so a quoted reference is traceable", async () => {
@@ -229,21 +227,21 @@ describe("resend - sendProductInquiryEmail", () => {
       data: { id: "product-inquiry-id" },
       error: null,
     });
-    await service.sendProductInquiryEmail(validProductInquiryData);
+    await service.sendInquiryEmail(validInquiryData);
 
     expect(logger.info).toHaveBeenCalledWith(
-      "Product inquiry email sent successfully",
-      expect.objectContaining({ referenceId: "PRO-abc123-deadbeef" }),
+      "Inquiry email sent successfully",
+      expect.objectContaining({ referenceId: "INQ-abc123-deadbeef" }),
     );
 
     mockResendSend.mockRejectedValue(new Error("Network error"));
-    await expect(
-      service.sendProductInquiryEmail(validProductInquiryData),
-    ).rejects.toThrow("Failed to send product inquiry email");
+    await expect(service.sendInquiryEmail(validInquiryData)).rejects.toThrow(
+      "Failed to send inquiry email",
+    );
 
     expect(logger.error).toHaveBeenCalledWith(
-      "Failed to send product inquiry email",
-      expect.objectContaining({ referenceId: "PRO-abc123-deadbeef" }),
+      "Failed to send inquiry email",
+      expect.objectContaining({ referenceId: "INQ-abc123-deadbeef" }),
     );
   });
 });

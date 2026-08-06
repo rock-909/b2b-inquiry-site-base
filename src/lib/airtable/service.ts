@@ -9,7 +9,7 @@ import "server-only";
 import type AirtableNS from "airtable";
 import type {
   CreatedAirtableRecord,
-  ProductLeadData,
+  InquiryLeadData,
 } from "@/lib/airtable/types";
 import { env, getRuntimeEnvString } from "@/lib/env";
 import { logger } from "@/lib/logger";
@@ -153,7 +153,7 @@ export class AirtableService {
 
   /** Create a product/general inquiry record in Airtable. */
   public async createLead(
-    data: ProductLeadData,
+    data: InquiryLeadData,
   ): Promise<CreatedAirtableRecord> {
     const base = await this.requireBase();
     return createLeadRecord({ base, tableName: this.tableName, data });

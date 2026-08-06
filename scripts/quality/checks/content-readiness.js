@@ -46,16 +46,10 @@ const READINESS_SCAN_TARGETS = [
     scanPathRules: true,
   },
   {
-    root: "src/constants",
-    extensions: new Set([".js", ".json", ".mjs", ".ts", ".tsx"]),
-    allowedPath: (repoPath) => repoPath === "src/constants/product-catalog.ts",
-    scanTextRules: true,
-  },
-  {
     root: "src/config",
     extensions: new Set([".ts"]),
     allowedPathPattern:
-      /^src\/config\/(?:single-site|single-site-seo|single-site-navigation|single-site-links|single-site-product-catalog)\.ts$/u,
+      /^src\/config\/(?:offerings|single-site|single-site-seo|single-site-navigation|single-site-links)\.ts$/u,
     scanTextRules: true,
   },
 ];

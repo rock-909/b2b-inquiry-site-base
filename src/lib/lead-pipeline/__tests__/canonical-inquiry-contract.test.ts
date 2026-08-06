@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  PRODUCT_INQUIRY_KINDS,
-  PRODUCT_LEAD_TYPE,
-  productLeadSchema,
-} from "../lead-schema";
+import { INQUIRY_LEAD_TYPE, inquiryLeadSchema } from "../lead-schema";
 import { processValidatedInquiry } from "../process-lead";
 
 const { mockCreateLead, mockSendProductInquiryEmail } = vi.hoisted(() => ({
@@ -15,7 +11,7 @@ vi.mock("@/lib/airtable/instance", () => ({
   airtableService: { createLead: mockCreateLead },
 }));
 vi.mock("@/lib/resend-instance", () => ({
-  resendService: { sendProductInquiryEmail: mockSendProductInquiryEmail },
+  resendService: { sendInquiryEmail: mockSendProductInquiryEmail },
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
 
@@ -26,76 +22,96 @@ describe("canonical inquiry contract", () => {
     mockSendProductInquiryEmail.mockResolvedValue("email-123");
   });
 
-  it("uses message as the only buyer requirements source", async () => {
-    const lead = productLeadSchema.parse({
-      type: PRODUCT_LEAD_TYPE,
-      productInquiryKind: PRODUCT_INQUIRY_KINDS.GENERAL_RFQ,
-      fullName: "Jane Buyer",
-      email: "jane@example.com",
-      message: "Line one\nLine two",
-      requirements: "retired value",
-    });
-
-    await processValidatedInquiry(lead);
-
-    expect(mockCreateLead).toHaveBeenCalledWith(
-      expect.objectContaining({ requirements: "Line one\nLine two" }),
-    );
-    expect(mockSendProductInquiryEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ requirements: "Line one\nLine two" }),
-    );
-  });
-
-  it("keeps buyer interest as description rather than product identity", async () => {
-    const lead = productLeadSchema.parse({
-      type: PRODUCT_LEAD_TYPE,
-      productInquiryKind: PRODUCT_INQUIRY_KINDS.GENERAL_RFQ,
-      fullName: "Jane Buyer",
-      email: "jane@example.com",
-      buyerInterest: "Aluminum flood gates",
+  it("delivers a general inquiry through schema, owner email, and Airtable", async () => {
+    const lead = inquiryLeadSchema.parse({
+      type: INQUIRY_LEAD_TYPE,
+      fullName: "Ada Buyer",
+      email: "ada@example.com",
+      message: "Please contact me about this project.",
     });
 
     await processValidatedInquiry(lead);
 
     expect(mockCreateLead).toHaveBeenCalledWith(
       expect.objectContaining({
-        productName: "General RFQ (no catalog product)",
+        email: "ada@example.com",
+        message: "Requirements: Please contact me about this project.",
+      }),
+    );
+    expect(mockSendProductInquiryEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "ada@example.com",
+        requirements: "Please contact me about this project.",
+      }),
+    );
+    expect(mockCreateLead.mock.calls[0]?.[0]).not.toHaveProperty("offeringId");
+  });
+
+  it("delivers an offering inquiry with canonical server offering identity", async () => {
+    const lead = inquiryLeadSchema.parse({
+      type: INQUIRY_LEAD_TYPE,
+      fullName: "Ada Buyer",
+      email: "ada@example.com",
+      message: "Please contact me about this project.",
+      interest: "  Custom fabrication  ",
+      offeringId: "custom-fabrication",
+      offeringName: "Forged browser label",
+      offeringLabel: "Forged browser label",
+    });
+
+    await processValidatedInquiry(lead);
+
+    expect(mockCreateLead).toHaveBeenCalledWith(
+      expect.objectContaining({
+        offeringId: "custom-fabrication",
+        offeringName: "Custom Fabrication",
         message:
-          "Product: General RFQ (no catalog product)\nInterest: Aluminum flood gates",
+          "Offering: Custom Fabrication\nInterest: Custom fabrication\nRequirements: Please contact me about this project.",
       }),
     );
-    expect(mockCreateLead.mock.calls[0]?.[0]).not.toHaveProperty(
-      "catalogProductId",
+    expect(mockSendProductInquiryEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        offeringId: "custom-fabrication",
+        offeringName: "Custom Fabrication",
+        interest: "Custom fabrication",
+        requirements: "Please contact me about this project.",
+      }),
     );
   });
 
-  it("resolves catalog display identity on the server", async () => {
-    const lead = productLeadSchema.parse({
-      type: PRODUCT_LEAD_TYPE,
-      productInquiryKind: PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT,
-      fullName: "Jane Buyer",
-      email: "jane@example.com",
-      catalogProductId: "abs-flood-barriers",
+  it("rejects unknown offering ids before delivery", () => {
+    expect(() =>
+      inquiryLeadSchema.parse({
+        type: INQUIRY_LEAD_TYPE,
+        fullName: "Ada Buyer",
+        email: "ada@example.com",
+        offeringId: "missing-offering",
+      }),
+    ).toThrow();
+  });
+
+  it("keeps interest as capped free text", async () => {
+    const longInterest = `  ${"x".repeat(220)}  `;
+    const lead = inquiryLeadSchema.parse({
+      type: INQUIRY_LEAD_TYPE,
+      fullName: "Ada Buyer",
+      email: "ada@example.com",
+      interest: longInterest,
     });
 
     await processValidatedInquiry(lead);
 
     expect(mockCreateLead).toHaveBeenCalledWith(
       expect.objectContaining({
-        productName: "ABS Interlocking Boxwall",
-        catalogProductId: "abs-flood-barriers",
+        message: `Interest: ${"x".repeat(200)}`,
       }),
-    );
-    expect(mockSendProductInquiryEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ productName: "ABS Interlocking Boxwall" }),
     );
   });
 
   it("preserves the either-channel success policy", async () => {
     mockSendProductInquiryEmail.mockRejectedValueOnce(new Error("email down"));
-    const lead = productLeadSchema.parse({
-      type: PRODUCT_LEAD_TYPE,
-      productInquiryKind: PRODUCT_INQUIRY_KINDS.GENERAL_RFQ,
+    const lead = inquiryLeadSchema.parse({
+      type: INQUIRY_LEAD_TYPE,
       fullName: "Jane Buyer",
       email: "jane@example.com",
     });

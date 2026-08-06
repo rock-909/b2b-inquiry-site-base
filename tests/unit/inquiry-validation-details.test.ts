@@ -2,15 +2,14 @@ import { describe, expect, it } from "vitest";
 import { MAX_LEAD_MESSAGE_LENGTH } from "@/constants/validation-limits";
 import { getComposedMessages } from "@/lib/i18n/composed-messages";
 import {
+  INQUIRY_FIELD_ERROR_KEYS,
+  INQUIRY_VALIDATION_DETAIL_KEYS,
   mapInquiryValidationDetails,
-  PRODUCT_INQUIRY_FIELD_ERROR_KEYS,
-  PRODUCT_INQUIRY_VALIDATION_DETAIL_KEYS,
 } from "@/lib/api/inquiry-validation-details";
 import { mapZodIssuesToValidationDetails } from "@/lib/api/validation-error-details";
 import {
-  PRODUCT_INQUIRY_KINDS,
-  PRODUCT_LEAD_TYPE,
-  productLeadSchema,
+  INQUIRY_LEAD_TYPE,
+  inquiryLeadSchema,
 } from "@/lib/lead-pipeline/lead-schema";
 
 type JsonObject = Record<string, unknown>;
@@ -29,8 +28,7 @@ function getMessageValue(messages: JsonObject, keyPath: string): unknown {
 const runtimeMessages = getComposedMessages("en");
 
 const validBase = {
-  type: PRODUCT_LEAD_TYPE,
-  productInquiryKind: PRODUCT_INQUIRY_KINDS.GENERAL_RFQ,
+  type: INQUIRY_LEAD_TYPE,
   fullName: "Ada Lovelace",
   email: "ada@example.com",
 } as const;
@@ -45,23 +43,9 @@ const inquiryFailureInputs: ReadonlyArray<Record<string, unknown>> = [
   { ...validBase, email: 42 },
   { ...validBase, email: "not-an-email" },
   { ...validBase, email: `a@${"x".repeat(300)}.com` },
-  { ...validBase, productInquiryKind: undefined },
-  { ...validBase, productInquiryKind: "not-a-kind" },
-  { ...validBase, productInquiryKind: 1 },
-  {
-    type: PRODUCT_LEAD_TYPE,
-    productInquiryKind: PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT,
-    fullName: "Ada Lovelace",
-    email: "ada@example.com",
-  },
-  {
-    ...validBase,
-    productInquiryKind: PRODUCT_INQUIRY_KINDS.CATALOG_PRODUCT,
-    catalogProductId: "not-real",
-  },
-  { ...validBase, catalogProductId: "abs-flood-barriers" },
-  { ...validBase, buyerInterest: 123 },
-  { ...validBase, buyerInterest: "A".repeat(500) },
+  { ...validBase, offeringId: "not-real" },
+  { ...validBase, offeringId: 1 },
+  { ...validBase, interest: 123 },
   { ...validBase, message: 123 },
   { ...validBase, message: "A".repeat(5000) },
   { ...validBase, utmSource: "x".repeat(257) },
@@ -75,7 +59,7 @@ describe("inquiry validation detail mapping", () => {
 
     expect(rawMessage.length).toBeGreaterThan(MAX_LEAD_MESSAGE_LENGTH);
 
-    const parsed = productLeadSchema.safeParse({
+    const parsed = inquiryLeadSchema.safeParse({
       ...validBase,
       message: rawMessage,
     });
@@ -90,11 +74,11 @@ describe("inquiry validation detail mapping", () => {
   });
 
   it("maps canonical message too_long to errors.message.tooLong after normalization", () => {
-    const tooLong = productLeadSchema.safeParse({
+    const tooLong = inquiryLeadSchema.safeParse({
       ...validBase,
       message: "A".repeat(MAX_LEAD_MESSAGE_LENGTH + 1),
     });
-    const wrongType = productLeadSchema.safeParse({
+    const wrongType = inquiryLeadSchema.safeParse({
       ...validBase,
       message: 123,
     });
@@ -122,9 +106,9 @@ describe("inquiry validation detail mapping", () => {
       ...validBase,
       company: 123,
       message: 999,
-      buyerInterest: 789,
+      interest: 789,
     };
-    const parsed = productLeadSchema.safeParse(input);
+    const parsed = inquiryLeadSchema.safeParse(input);
 
     expect(parsed.success).toBe(false);
     if (parsed.success) return;
@@ -135,19 +119,19 @@ describe("inquiry validation detail mapping", () => {
     expect(mapInquiryValidationDetails(parsed.error.issues, input)).not.toEqual(
       expect.arrayContaining([
         "errors.company.invalid",
-        "errors.buyerInterest.invalid",
+        "errors.interest.invalid",
         "errors.company.required",
-        "errors.buyerInterest.required",
+        "errors.interest.required",
       ]),
     );
   });
 
   it("maps unregistered attribution fields to errors.generic only", () => {
-    const tooLong = productLeadSchema.safeParse({
+    const tooLong = inquiryLeadSchema.safeParse({
       ...validBase,
       utmSource: "x".repeat(257),
     });
-    const wrongType = productLeadSchema.safeParse({
+    const wrongType = inquiryLeadSchema.safeParse({
       ...validBase,
       utmSource: 42,
     });
@@ -171,8 +155,8 @@ describe("inquiry validation detail mapping", () => {
   });
 
   it("does not expose phone validation detail keys", () => {
-    expect(PRODUCT_INQUIRY_FIELD_ERROR_KEYS).not.toHaveProperty("phone");
-    expect(PRODUCT_INQUIRY_VALIDATION_DETAIL_KEYS).not.toContain(
+    expect(INQUIRY_FIELD_ERROR_KEYS).not.toHaveProperty("phone");
+    expect(INQUIRY_VALIDATION_DETAIL_KEYS).not.toContain(
       "errors.phone.invalid",
     );
   });
@@ -181,7 +165,7 @@ describe("inquiry validation detail mapping", () => {
     const emitted = new Set<string>();
 
     for (const input of inquiryFailureInputs) {
-      const parsed = productLeadSchema.safeParse(input);
+      const parsed = inquiryLeadSchema.safeParse(input);
       if (parsed.success) {
         throw new Error(`expected failure for ${JSON.stringify(input)}`);
       }
@@ -195,12 +179,12 @@ describe("inquiry validation detail mapping", () => {
     }
 
     expect([...emitted].sort()).toEqual(
-      [...PRODUCT_INQUIRY_VALIDATION_DETAIL_KEYS].sort(),
+      [...INQUIRY_VALIDATION_DETAIL_KEYS].sort(),
     );
   });
 
   it("keeps inquiry.form copy for every renderable visible detail key", () => {
-    const renderableDetails = PRODUCT_INQUIRY_VALIDATION_DETAIL_KEYS.filter(
+    const renderableDetails = INQUIRY_VALIDATION_DETAIL_KEYS.filter(
       (detail) => detail !== "errors.generic",
     );
 

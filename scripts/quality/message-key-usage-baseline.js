@@ -105,7 +105,7 @@ const MESSAGE_DERIVED_KEY_CONSUMERS = [
   {
     kind: "collection-values",
     file: "src/lib/api/inquiry-validation-details.ts",
-    sourceName: "PRODUCT_INQUIRY_RENDERABLE_DETAIL_KEYS",
+    sourceName: "INQUIRY_RENDERABLE_DETAIL_KEYS",
     prefix: "inquiry.form.",
     suffixes: [""],
     reason: "inquiry validation emits these detail keys to the client",

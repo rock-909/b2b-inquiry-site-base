@@ -6,7 +6,7 @@ import {
   SIZES,
   SPACING,
 } from "@/emails/theme";
-import type { ProductInquiryEmailData } from "@/lib/email/email-data-schema";
+import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 
 export interface RuntimeEmailContent {
   html: string;
@@ -114,17 +114,25 @@ function renderEmailDocument({
   };
 }
 
-export function buildProductInquiryEmailContent(
-  data: ProductInquiryEmailData,
+export function buildInquiryEmailContent(
+  data: InquiryEmailData,
 ): RuntimeEmailContent {
   const fields = compactFields([
-    { label: EMAIL_COPY.common.fields.product, value: data.productName },
     { label: EMAIL_COPY.common.fields.reference, value: data.referenceId },
     {
       label: EMAIL_COPY.common.fields.contactName,
       value: `${data.firstName} ${data.lastName}`,
     },
     { label: EMAIL_COPY.common.fields.email, value: data.email },
+    data.offeringName
+      ? { label: EMAIL_COPY.common.fields.offering, value: data.offeringName }
+      : null,
+    data.offeringId
+      ? { label: EMAIL_COPY.common.fields.offeringId, value: data.offeringId }
+      : null,
+    data.interest
+      ? { label: EMAIL_COPY.common.fields.interest, value: data.interest }
+      : null,
     data.requirements
       ? {
           label: EMAIL_COPY.common.fields.requirements,
@@ -133,27 +141,14 @@ export function buildProductInquiryEmailContent(
         }
       : null,
   ]);
-  const highlightHtml = [
-    `<section style="background-color:${COLORS.successLight};border-left:4px solid ${COLORS.success};padding:${SPACING.md};margin-bottom:${SPACING.lg};">`,
-    `<p style="margin:0 0 6px 0;font-weight:bold;color:${COLORS.textLight};font-size:${FONT_SIZES.sm};">${escapeHtml(
-      EMAIL_COPY.common.fields.product,
-    )}</p>`,
-    `<p style="margin:0 0 10px 0;font-size:${FONT_SIZES.lg};font-weight:bold;">${escapeHtml(
-      data.productName,
-    )}</p>`,
-    "</section>",
-  ].join("");
-  const bodyFields = fields.filter(
-    (field) => field.label !== EMAIL_COPY.common.fields.product,
-  );
 
   return renderEmailDocument({
-    title: EMAIL_COPY.productInquiry.title,
-    preview: EMAIL_COPY.productInquiry.preview,
+    title: EMAIL_COPY.inquiry.title,
+    preview: EMAIL_COPY.inquiry.preview,
     accentColor: COLORS.success,
-    footerText: EMAIL_COPY.productInquiry.footer(),
+    footerText: EMAIL_COPY.inquiry.footer(),
     contentBackgroundColor: COLORS.contentBackground,
-    bodyHtml: `${highlightHtml}${renderFields(bodyFields)}`,
+    bodyHtml: renderFields(fields),
     bodyText: renderPlainFields(fields),
   });
 }
