@@ -197,12 +197,17 @@ Expected: PASS。
 - Move to Trash: `src/components/component-governance.registry.json`
 - Move to Trash: `scripts/component-governance-registry-truth.js`
 - Move to Trash: `scripts/quality/checks/component-governance.js`
+- Move to Trash: `src/lib/i18n/storybook-messages.ts`
 - Move to Trash: 对应 Storybook/component-governance tests
 - Modify: `package.json`
 - Modify: `pnpm-lock.yaml`
 - Modify: `.github/workflows/ci.yml`
 - Modify: `scripts/starter-checks.js`
 - Modify: `knip.json`
+- Modify: `vitest.config.mts`
+- Modify: `eslint.config.mjs`
+- Modify: `.gitignore`
+- Modify: `.prettierignore`
 
 - [ ] **Step 1: 记录移出清单并移动到 Trash**
 
@@ -217,7 +222,7 @@ Expected: PASS。
 Run:
 
 ```bash
-rg -n "component-governance|storybook" src tests scripts package.json .github knip.json
+rg -n -i "component-governance|storybook" src tests scripts package.json .github knip.json vitest.config.mts eslint.config.mjs .gitignore .prettierignore
 ```
 
 Expected: 运行代码、测试、package scripts、CI 和 Knip 中引用为零。不要在本任务处理产品运行面。
@@ -315,6 +320,7 @@ Expected: 核心路由、metadata、sitemap、404、导航和 message compositio
 - Modify: `src/lib/lead-pipeline/process-lead.ts`
 - Modify: `src/lib/lead-pipeline/inquiry-handoff.ts`
 - Modify: `src/lib/lead-pipeline/utils.ts`
+- Move to Trash: `src/constants/product-catalog.ts`
 - Move to Trash: `src/lib/lead-pipeline/product-identity.ts`
 - Move to Trash: `src/lib/lead-pipeline/product-inquiry-kinds.ts`
 - Modify: `src/lib/email/email-data-schema.ts`
@@ -359,7 +365,7 @@ Expected: 新字段合同因旧 product model 而 FAIL。
 
 - [ ] **Step 3: 最小改造真实链路**
 
-删除 `catalogProductId`、`productInquiryKind`、`productName` 和 `Product Inquiry` 分支，使用可选 `interest`、`offeringId`。`offeringId` 只作为不可信输入进入服务端解析，未知 ID 拒绝；下游 email/Airtable 只接收 canonical offering id/name。保持既有安全边界和 provider 容错语义，不添加动态 schema、provider interface 或兼容 wrapper。
+删除旧 `src/constants/product-catalog.ts`、`catalogProductId`、`productInquiryKind`、`productName` 和 `Product Inquiry` 分支，使用可选 `interest`、`offeringId`。`offeringId` 只作为不可信输入进入服务端解析，未知 ID 拒绝；下游 email/Airtable 只接收 canonical offering id/name。保持既有安全边界和 provider 容错语义，不添加动态 schema、provider interface 或兼容 wrapper。
 
 - [ ] **Step 4: 询盘聚焦测试转绿**
 
@@ -371,9 +377,11 @@ pnpm exec vitest run src/config src/components/forms src/app/api/inquiry src/lib
 
 Expected: 表单、schema、offeringId 服务端解析、未知 ID 拒绝、honeypot、Turnstile、email-first、Airtable、单边成功、双边失败和日志脱敏测试 PASS。
 
-### Task 6: 收缩质量门禁并完成 residue 扫描
+### Task 6: 收缩质量门禁、移出旧资产并完成 residue 扫描
 
 **Files:**
+- Move to Trash: `public/downloads/**`
+- Move to Trash: `public/images/tucsenberg-*`
 - Modify: `scripts/quality/checks/cloudflare-smoke.js`
 - Modify: `scripts/quality/checks/content-readiness.js`
 - Modify: `scripts/quality/checks/production-config.js`
@@ -388,15 +396,18 @@ Expected: 表单、schema、offeringId 服务端解析、未知 ID 拒绝、hone
 
 将 `/products`、产品页、PDF、catalog messages、product photo readiness 等探针替换为 `/about`、`/contact`、`/request-quote` 和通用表单行为。只保留仍阻断真实错误的门禁。
 
-- [ ] **Step 2: 执行一次性 residue 扫描**
+- [ ] **Step 2: 移出旧公共资产并执行一次性 residue 扫描**
+
+将 `public/downloads/**` 和 `public/images/tucsenberg-*` 移到 Trash；同步删除对这些文件的 asset/header/Lighthouse 探针。
 
 Run:
 
 ```bash
 rg -n -i "tucsenberg|flood barrier|flood-barrier|flood control|flood-control|catalogProductId|productInquiryKind|productName" --glob '!docs/baseline/donor-provenance.md' --glob '!docs/superpowers/**'
+rg --files public | rg -i "tucsenberg|downloads|spec-sheet|product-catalog|supplier-checklist"
 ```
 
-Expected: 运行代码、内容、资产、测试和配置均无结果。不要把 banned-string 扫描建设成永久 CI 负空间门禁。
+Expected: 两条命令均无结果；运行代码、内容、资产、测试和配置不再包含旧业务残留。不要把 banned-string 扫描建设成永久 CI 负空间门禁。
 
 - [ ] **Step 3: 记录第一轮范围与未完成项**
 
