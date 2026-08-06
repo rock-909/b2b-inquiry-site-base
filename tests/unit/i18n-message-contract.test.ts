@@ -1,6 +1,5 @@
 import baseEnMessages from "../../messages/base/en/messages.json";
 import b2bLeadMessages from "../../messages/profiles/b2b-lead/en/messages.json";
-import catalogMessages from "../../messages/profiles/catalog/en/messages.json";
 import { describe, expect, it } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { createInquiryFormCopyFromMessages } from "@/components/forms/inquiry-form-copy";
@@ -98,9 +97,8 @@ describe("real i18n runtime message contract", () => {
     ).toEqual(expect.any(String));
   });
 
-  it("keeps RFQ copy owned by b2b-lead and inherited by catalog", () => {
+  it("keeps RFQ copy owned by the B2B lead pack", () => {
     expect(b2bLeadMessages).toHaveProperty("requestQuote");
-    expect(catalogMessages).not.toHaveProperty("requestQuote");
     expect(enMessages).toHaveProperty("requestQuote");
   });
 

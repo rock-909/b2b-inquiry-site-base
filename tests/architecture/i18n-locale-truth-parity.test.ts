@@ -22,14 +22,4 @@ describe("i18n locale truth parity", () => {
 
     expect(configSource).toContain("LOCALES_CONFIG");
   });
-
-  it("keeps product detail static params tied to canonical locales", () => {
-    const source = readFileSync(
-      "src/app/[locale]/products/[market]/page.tsx",
-      "utf8",
-    );
-
-    expect(source).not.toContain('["en", "zh"]');
-    expect(source).toContain("LOCALES_CONFIG.locales");
-  });
 });

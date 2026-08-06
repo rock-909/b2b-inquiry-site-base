@@ -48,7 +48,7 @@ const mockHomeLinkTargets = vi.hoisted(
       contact: "/contact",
       requestQuote: "/request-quote",
       primaryCta: "/request-quote",
-      secondaryCta: "/oem-wholesale",
+      secondaryCta: "/about",
     },
   }),
 );
@@ -80,14 +80,8 @@ vi.mock("@/config/single-site-links", async (importOriginal) => {
   };
 });
 
-const EXPECTED_ITEM_LABELS = [
-  "Home",
-  "Products",
-  "OEM & Wholesale",
-  "Guides",
-  "About",
-] as const;
-const CTA_LABEL = "Request a Quote";
+const EXPECTED_ITEM_LABELS = ["Home", "About", "Start an inquiry"] as const;
+const CTA_LABEL = "Start an inquiry";
 
 describe("MobileNavigationLinks", () => {
   beforeEach(() => {
@@ -99,7 +93,7 @@ describe("MobileNavigationLinks", () => {
       contact: "/contact",
       requestQuote: "/request-quote",
       primaryCta: "/request-quote",
-      secondaryCta: "/oem-wholesale",
+      secondaryCta: "/about",
     };
   });
 
@@ -147,10 +141,9 @@ describe("MobileNavigationLinks", () => {
   it("points the CTA at the quote route with the mobile-nav source tag", () => {
     render(<MobileNavigationLinks />);
 
-    expect(screen.getByRole("link", { name: CTA_LABEL })).toHaveAttribute(
-      "href",
-      "/request-quote?source=mobile_nav_cta",
-    );
+    expect(
+      screen.getAllByRole("link", { name: CTA_LABEL }).at(-1),
+    ).toHaveAttribute("href", "/request-quote?source=mobile_nav_cta");
   });
 
   it("omits the drawer CTA when the active profile has no contact route", () => {

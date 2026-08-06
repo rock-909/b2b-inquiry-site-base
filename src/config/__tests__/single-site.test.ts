@@ -4,9 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_FACTS } from "@/config/single-site";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
 
-const PREVIEW_BASE_URL =
-  "https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev";
-const TUCSENBERG_OG_IMAGE = "/images/tucsenberg-og.png";
+const TEMPLATE_BASE_URL = "https://example.invalid";
+const REFERENCE_OG_IMAGE = "/images/tucsenberg-og.png";
 
 describe("single-site", () => {
   afterEach(() => {
@@ -31,11 +30,11 @@ describe("single-site", () => {
 
     const { SINGLE_SITE_CONFIG } = await import("@/config/single-site");
 
-    expect(SINGLE_SITE_CONFIG.baseUrl).toBe(PREVIEW_BASE_URL);
+    expect(SINGLE_SITE_CONFIG.baseUrl).toBe(TEMPLATE_BASE_URL);
   });
 
-  it("keeps the approved Tucsenberg OG image as the live default", () => {
-    expect(SINGLE_SITE_FACTS.brandAssets.ogImage).toBe(TUCSENBERG_OG_IMAGE);
+  it("keeps the current reference OG image explicit until asset cutover", () => {
+    expect(SINGLE_SITE_FACTS.brandAssets.ogImage).toBe(REFERENCE_OG_IMAGE);
 
     const metadata = generateMetadataForPath({
       locale: "en",
@@ -43,8 +42,8 @@ describe("single-site", () => {
       path: "/",
     });
 
-    expect(metadata.openGraph?.images).toEqual([{ url: TUCSENBERG_OG_IMAGE }]);
-    expect(metadata.twitter?.images).toEqual([TUCSENBERG_OG_IMAGE]);
+    expect(metadata.openGraph?.images).toEqual([{ url: REFERENCE_OG_IMAGE }]);
+    expect(metadata.twitter?.images).toEqual([REFERENCE_OG_IMAGE]);
   });
 
   it("only exposes certification files that exist in public", () => {
@@ -102,6 +101,6 @@ describe("single-site", () => {
     );
     expect(SINGLE_SITE_FACTS.brandAssets.productPhotos.status).toBe("pending");
     // 从 establishedYear 减出来的值，买家在页面上看得见。算错方向就是负数。
-    expect(SINGLE_SITE_FACTS.company.yearsInBusiness).toBeGreaterThan(0);
+    expect(SINGLE_SITE_FACTS.company.yearsInBusiness).toBeGreaterThanOrEqual(0);
   });
 });

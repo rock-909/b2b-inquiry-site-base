@@ -1,4 +1,50 @@
 {
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "contactSales": "Start an inquiry",
+    "siteName": "{siteName}",
+    "siteDescription": "A neutral B2B inquiry site reference."
+  },
+  "footer": {
+    "sections": {
+      "navigation": {
+        "title": "Navigation",
+        "home": "Home",
+        "about": "About",
+        "contact": "Contact"
+      },
+      "support": {
+        "title": "Support",
+        "requestQuote": "Start an inquiry",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service"
+      }
+    },
+    "copyright": "© {currentYear} {siteName}. All rights reserved.",
+    "description": "A neutral B2B inquiry site reference."
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "B2B inquiry reference",
+      "title": "Turn qualified interest into a useful conversation.",
+      "subtitle": "A neutral starting point for businesses that need a clear offer, credible proof and a focused inquiry path.",
+      "cta": {
+        "primary": "Start an inquiry",
+        "secondary": "Learn about the site"
+      }
+    },
+    "value": {
+      "title": "A small site with the pieces that matter",
+      "description": "Use the structure as-is, then replace the identity, offer, proof and content for the next business."
+    },
+    "finalCta": {
+      "title": "Have a requirement to discuss?",
+      "description": "Share the essentials and the team can follow up with the next useful question.",
+      "primary": "Start an inquiry",
+      "secondary": "Learn about the site"
+    }
+  },
   "contact": {
     "title": "Contact",
     "description": "Fastest route: the RFQ form asks the questions we would ask anyway.",
@@ -60,8 +106,8 @@
       "fullName": "Full name",
       "email": "Email address",
       "message": "Message",
-      "messageHint": "Optional — share product interest, opening sizes, quantity, delivery country or port, or just say hello.",
-      "contextLabel": "Product interest from your link",
+      "messageHint": "Optional — share your requirement, timing, market or any useful context.",
+      "contextLabel": "Context from your link",
       "submit": "Send inquiry",
       "submitting": "Sending...",
       "success": "Received. We reply within 12 hours. If the details are sufficient, the reply includes a quote. Otherwise, we ask only for the missing essentials. You'll hear from a person, not a sequence.",

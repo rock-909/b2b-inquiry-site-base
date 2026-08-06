@@ -727,10 +727,7 @@ describe("InquiryFormStaticFallback", () => {
     const { container } = render(<InquiryFormStaticFallback copy={copy} />);
 
     expect(screen.getByText(copy.noJsExplanation)).toBeInTheDocument();
-    expect(screen.getByRole("link")).toHaveAttribute(
-      "href",
-      expect.stringMatching(/^mailto:/),
-    );
+    expect(screen.queryByRole("link")).not.toBeInTheDocument();
     expect(container.querySelector("form")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
   });

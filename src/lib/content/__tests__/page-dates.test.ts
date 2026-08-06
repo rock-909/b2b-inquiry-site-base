@@ -34,18 +34,13 @@ describe("page-dates", () => {
   it("keeps sitemap MDX page detection aligned with public static routes", () => {
     const nonMdxPages = new Set([
       "",
-      getCanonicalPath("products"),
       getCanonicalPath("requestQuote"),
     ]);
     const representativePageContracts = [
       { path: "", isMdx: false },
       { path: "/about", isMdx: true },
-      { path: "/oem-wholesale", isMdx: true },
-      { path: "/guides/flood-barrier-materials-guide", isMdx: true },
-      { path: "/guides/flood-barrier-specifications", isMdx: true },
       { path: "/request-quote", isMdx: false },
       { path: "/contact", isMdx: true },
-      { path: "/warranty", isMdx: true },
       { path: "/privacy", isMdx: true },
       { path: "/terms", isMdx: true },
       { path: "/products", isMdx: false },
@@ -61,14 +56,9 @@ describe("page-dates", () => {
 
     expect(SINGLE_SITE_PUBLIC_STATIC_PAGE_ROUTES).toEqual([
       "home",
-      "products",
-      "oemWholesale",
-      "materialsGuide",
-      "specificationsGuide",
       "about",
       "requestQuote",
       "contact",
-      "warranty",
       "privacy",
       "terms",
     ]);
@@ -110,7 +100,6 @@ describe("page-dates", () => {
     const legalFiles = [
       "content/pages/en/privacy.mdx",
       "content/pages/en/terms.mdx",
-      "content/pages/en/warranty.mdx",
     ];
 
     for (const filePath of legalFiles) {
@@ -126,7 +115,6 @@ describe("page-dates", () => {
     const legalPages = [
       { locale: "en", slug: "privacy" },
       { locale: "en", slug: "terms" },
-      { locale: "en", slug: "warranty" },
     ] as const;
 
     for (const { locale, slug } of legalPages) {

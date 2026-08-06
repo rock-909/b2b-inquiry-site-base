@@ -32,12 +32,6 @@ vi.mock("@/components/content/legal-page-shell", () => ({
   ),
 }));
 
-vi.mock("@/components/content/trade-landing-shell", () => ({
-  TradeLandingShell: ({ pagePath }: { pagePath: string }) => (
-    <div data-testid="landing-shell">{pagePath}</div>
-  ),
-}));
-
 vi.mock("next-intl/server", () => ({
   setRequestLocale: vi.fn(),
 }));
@@ -49,9 +43,8 @@ const legalPage = {
 };
 
 async function renderPage(config: {
-  pageType: "terms" | "oemWholesale";
+  pageType: "terms";
   slug: string;
-  shell?: "legal" | "landing";
   schemaType?: "WebPage" | "Article";
 }) {
   const element = await StaticMdxPage({
@@ -72,18 +65,6 @@ describe("StaticMdxPage", () => {
     await renderPage({ pageType: "terms", slug: "terms" });
 
     expect(screen.getByTestId("legal-shell")).toBeInTheDocument();
-    expect(screen.queryByTestId("landing-shell")).not.toBeInTheDocument();
-  });
-
-  it("renders the landing shell when the config asks for it", async () => {
-    await renderPage({
-      pageType: "oemWholesale",
-      slug: "oem-wholesale",
-      shell: "landing",
-    });
-
-    expect(screen.getByTestId("landing-shell")).toBeInTheDocument();
-    expect(screen.queryByTestId("legal-shell")).not.toBeInTheDocument();
   });
 
   it("defaults the structured-data type to WebPage", async () => {

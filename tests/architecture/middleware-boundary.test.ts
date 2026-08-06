@@ -61,7 +61,7 @@ describe("middleware responsibility boundary", () => {
     expect(middlewareSource).not.toContain("extractLocaleFromLocationHeader");
   });
 
-  it("keeps middleware as a thin next-intl delegate with pre-stream finite-route 404s", () => {
+  it("keeps middleware as a thin next-intl delegate with retired-locale 404s", () => {
     const middlewareSource = read("src/middleware.ts");
 
     expect(middlewareSource).toContain(
@@ -71,7 +71,6 @@ describe("middleware responsibility boundary", () => {
       "const intlMiddleware = createMiddleware(routing);",
     );
     expect(middlewareSource).toContain("isRetiredLocalePath(pathname)");
-    expect(middlewareSource).toContain("isUnknownProductPath(pathname)");
     expect(middlewareSource).toContain("return createPlainNotFound();");
     expect(middlewareSource).toContain("return intlMiddleware(request);");
   });

@@ -72,9 +72,6 @@ const collectProductionSourceFiles = (directory: string): SourceFile[] => {
   });
 };
 
-const readProjectFile = (relativePath: string) =>
-  readFileSync(path.join(process.cwd(), relativePath), "utf8");
-
 describe("starter example standard wording", () => {
   it("does not publish legacy product standard markers", () => {
     const offendingFiles = PRODUCTION_ROOTS.flatMap((root) =>
@@ -88,18 +85,5 @@ describe("starter example standard wording", () => {
     });
 
     expect(offendingFiles).toEqual([]);
-  });
-
-  it("keeps materialized Tucsenberg catalog copy free of generic starter standards", () => {
-    const catalogMessages = readProjectFile(
-      "messages/profiles/catalog/en/messages.json",
-    );
-    const tucsenbergPages = readProjectFile(
-      "src/constants/tucsenberg-product-pages.ts",
-    );
-    const materializedCopy = [catalogMessages, tucsenbergPages].join("\n");
-
-    expect(materializedCopy).not.toContain("Example Standard");
-    expect(materializedCopy).not.toContain("示例标准");
   });
 });

@@ -1,7 +1,6 @@
-// Technical fallback rescue channel; the address also appears verbatim in the
-// form error messages, so it stays a literal rather than a config import that
-// would pull server env resolution into this client boundary.
-const TURNSTILE_RESCUE_EMAIL = "sales@tucsenberg.com";
+// Kept literal so this client boundary does not pull in server env resolution.
+// The production gate rejects this reference address until a business replaces it.
+const TURNSTILE_RESCUE_EMAIL = "sales@example.invalid";
 
 export interface TurnstileRescueLineProps {
   beforeEmail: string;

@@ -18,7 +18,7 @@ vi.mock("@/i18n/routing-config", () => ({
       "/": "/",
       "/about": "/about",
       "/contact": "/contact",
-      "/products/[market]": "/products/[market]",
+      "/request-quote": "/request-quote",
     },
     localeCookie: { maxAge: 60 * 60 * 24 * 365 },
   },
@@ -85,31 +85,6 @@ describe("middleware next-intl boundary", () => {
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     await expect(response.text()).resolves.toBe("Not Found");
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
-  });
-
-  it.each(["/products/not-a-real-product", "/en/products/not-a-real-product"])(
-    "returns 404 before streaming an unknown product path: %s",
-    async (url) => {
-      const { default: middleware } = await import("@/middleware");
-      const request = new NextRequest(`http://localhost:3000${url}`);
-
-      const response = middleware(request);
-
-      expect(response.status).toBe(404);
-      expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
-      expect(intlMiddlewareMock).not.toHaveBeenCalled();
-    },
-  );
-
-  it("delegates a real product path to next-intl", async () => {
-    const { default: middleware } = await import("@/middleware");
-    const request = new NextRequest(
-      "http://localhost:3000/products/abs-flood-barriers",
-    );
-
-    middleware(request);
-
-    expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
   });
 
   it("does not parse unsupported locale-like paths before next-intl", async () => {

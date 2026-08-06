@@ -143,10 +143,7 @@ describe("ContactPage MDX migration", () => {
     expect(staticFallback).toBeInTheDocument();
     expect(staticFallback.tagName).not.toBe("FORM");
     expect(staticFallback.querySelector("form")).toBeNull();
-    expect(within(staticFallback).getByRole("link")).toHaveAttribute(
-      "href",
-      expect.stringMatching(/^mailto:/),
-    );
+    expect(within(staticFallback).queryByRole("link")).toBeNull();
     expect(screen.queryByRole("button", { name: /send enquiry/i })).toBeNull();
     expect(
       screen.queryByTestId("contact-page-fallback"),
@@ -202,7 +199,7 @@ describe("ContactPage MDX migration", () => {
       />,
     );
 
-    expect(screen.getByText("sales@tucsenberg.com")).toBeInTheDocument();
+    expect(screen.queryByText("sales@example.invalid")).not.toBeInTheDocument();
     expect(screen.queryByText("+86-518-0000-0000")).not.toBeInTheDocument();
     expect(screen.queryByText("TODO-OWNER")).not.toBeInTheDocument();
     expect(screen.queryByText("Phone")).not.toBeInTheDocument();
@@ -219,7 +216,7 @@ describe("ContactPage MDX migration", () => {
     expect(screen.queryByTestId("faq-section")).not.toBeInTheDocument();
   });
 
-  it("renders the Tucsenberg inquiry handoff before the form", async () => {
+  it("renders the inquiry handoff before the form", async () => {
     const page = await ContactPage({
       params: Promise.resolve({ locale: "en" }),
     });
@@ -316,11 +313,9 @@ describe("ContactPage MDX migration", () => {
       params: Promise.resolve({ locale: "en" }),
     });
 
-    expect(enMetadata.title).toBe(
-      "Contact Tucsenberg — Flood Barrier Supplier, China",
-    );
+    expect(enMetadata.title).toBe("Contact — B2B Inquiry Site Reference");
     expect(enMetadata.description).toBe(
-      "Contact Tucsenberg — factory-direct flood barriers from China. Reply within 12 hours; pricing follows when project details are sufficient.",
+      "Reference contact page showing the minimum information a future business should replace.",
     );
     expect(enMetadata.other?.google).not.toBe("notranslate");
   });
@@ -351,7 +346,7 @@ describe("ContactPage MDX migration", () => {
     expect(metadata.twitter).toEqual(
       expect.objectContaining({
         card: "summary_large_image",
-        title: "Contact Tucsenberg — Flood Barrier Supplier, China",
+        title: "Contact — B2B Inquiry Site Reference",
       }),
     );
     expect(metadata.robots).toEqual(

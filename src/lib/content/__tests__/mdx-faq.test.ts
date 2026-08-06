@@ -60,10 +60,6 @@ describe("FAQ locale parity", () => {
   const FAQ_PAGE_SLUGS = [
     "about",
     "contact",
-    "oem-wholesale",
-    "flood-barrier-materials-guide",
-    "flood-barrier-specifications",
-    "warranty",
     "privacy",
     "terms",
   ] as const;

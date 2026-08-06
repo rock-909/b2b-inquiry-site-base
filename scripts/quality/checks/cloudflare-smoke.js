@@ -12,21 +12,32 @@ const DEPLOY_SMOKE_REQUEST_TIMEOUT_MS = 30000;
 const DEPLOY_SMOKE_REQUEST_RETRIES = 2;
 const DEPLOY_SMOKE_RETRY_DELAY_MS = 1000;
 const MIN_HTML_BODY_LENGTH = 1024;
-const PRODUCTS_PAGE_SEGMENT = "/$d$locale/products/__PAGE__";
+const CORE_PUBLIC_PAGE_PATHS = [
+  "/",
+  "/about",
+  "/contact",
+  "/request-quote",
+  "/privacy",
+  "/terms",
+];
 const EXTERNAL_URL_SMOKE_EXPECTATIONS = [
   { pathname: "/", status: 200 },
-  { pathname: "/products", status: 200 },
+  { pathname: "/about", status: 200 },
   { pathname: "/contact", status: 200 },
   { pathname: "/request-quote", status: 200 },
+  { pathname: "/privacy", status: 200 },
+  { pathname: "/terms", status: 200 },
   { pathname: "/zh", status: 404 },
   { pathname: "/zh/contact", status: 404 },
 ];
 const CF_PREVIEW_SMOKE_EXPECTATIONS = [
   { pathname: "/", status: 200, html: true },
   { pathname: "/invalid/contact", status: 404, html: true },
-  { pathname: "/products", status: 200, html: true },
+  { pathname: "/about", status: 200, html: true },
   { pathname: "/contact", status: 200, html: true },
   { pathname: "/request-quote", status: 200, html: true },
+  { pathname: "/privacy", status: 200, html: true },
+  { pathname: "/terms", status: 200, html: true },
   { pathname: "/zh", status: 404 },
   { pathname: "/zh/contact", status: 404 },
   // public/ 下的文件由 Cloudflare Static Assets 直送，不经过 Next 服务器，
@@ -41,9 +52,11 @@ const CF_PREVIEW_SMOKE_EXPECTATIONS = [
 const DEPLOYED_SMOKE_EXPECTATIONS = [
   { pathname: "/", status: 200 },
   { pathname: "/invalid/contact", status: 404 },
-  { pathname: "/products", status: 200 },
+  { pathname: "/about", status: 200 },
   { pathname: "/contact", status: 200 },
   { pathname: "/request-quote", status: 200 },
+  { pathname: "/privacy", status: 200 },
+  { pathname: "/terms", status: 200 },
   { pathname: "/api/health", status: 200 },
   { pathname: "/zh", status: 404 },
   { pathname: "/zh/contact", status: 404 },
@@ -185,22 +198,6 @@ function pushHealthyHtmlResponse(response, failures) {
   );
 }
 
-function pushHealthyRscResponse(response, label, marker, failures) {
-  pushExpectedStatus(response, 200, failures);
-  pushFailureUnless(
-    response.contentType?.startsWith("text/x-component"),
-    `Expected /products ${label} to return text/x-component, got ${response.contentType ?? "no content-type"}`,
-    failures,
-  );
-  pushFailureUnless(
-    response.body.length >= 24 &&
-      response.body.includes(marker) &&
-      !/<(?:!doctype|html)/iu.test(response.body),
-    `Expected /products ${label} to return a non-truncated Flight payload, not HTML`,
-    failures,
-  );
-}
-
 function parseExternalUrlSmokeArgs(args) {
   const parsed = {
     baseUrl: DEFAULT_EXTERNAL_URL_SMOKE_BASE_URL,
@@ -287,7 +284,6 @@ async function runExternalUrlSmoke(args = []) {
   return true;
 }
 
-// eslint-disable-next-line max-statements -- one ordered runtime proof; splitting it would hide request order.
 async function runCloudflarePreviewSmoke(args = []) {
   const { baseUrl, includeApiHealth, rounds } =
     parseCloudflarePreviewSmokeArgs(args);
@@ -310,51 +306,7 @@ async function runCloudflarePreviewSmoke(args = []) {
     );
   }
 
-  // Re-check sequentially after the concurrent rounds so a damaged isolate or
-  // incremental cache cannot hide behind successful in-flight responses.
-  const productsWarmResponse = await requestCloudflarePreviewSmoke(
-    baseUrl,
-    "/products",
-  );
-  const productsCachedResponse = await requestCloudflarePreviewSmoke(
-    baseUrl,
-    "/products",
-  );
-  const productsRscResponse = await requestCloudflarePreviewSmoke(
-    baseUrl,
-    "/products",
-    { rsc: "1", "next-router-prefetch": "1" },
-    "follow",
-  );
-  const productsRouteTreeResponse = await requestCloudflarePreviewSmoke(
-    baseUrl,
-    "/products",
-    {
-      rsc: "1",
-      "next-router-prefetch": "1",
-      "next-router-segment-prefetch": "/_tree",
-    },
-    "follow",
-  );
-  const productsPageSegmentResponse = await requestCloudflarePreviewSmoke(
-    baseUrl,
-    "/products",
-    {
-      rsc: "1",
-      "next-router-prefetch": "1",
-      "next-router-segment-prefetch": PRODUCTS_PAGE_SEGMENT,
-    },
-    "follow",
-  );
-
-  for (const response of [
-    ...responses,
-    productsWarmResponse,
-    productsCachedResponse,
-    productsRscResponse,
-    productsRouteTreeResponse,
-    productsPageSegmentResponse,
-  ]) {
+  for (const response of [...responses]) {
     pushFailureUnless(
       response.leakedMiddlewareCookie === null,
       `Unexpected x-middleware-set-cookie leak on ${response.pathname}`,
@@ -375,47 +327,6 @@ async function runCloudflarePreviewSmoke(args = []) {
     if (expectation.html) {
       pushHealthyHtmlResponse(response, failures);
     }
-  }
-
-  pushHealthyHtmlResponse(productsWarmResponse, failures);
-  pushHealthyHtmlResponse(productsCachedResponse, failures);
-  pushFailureUnless(
-    productsCachedResponse.nextCache === "HIT",
-    `Expected warmed /products to return X-Nextjs-Cache: HIT, got ${productsCachedResponse.nextCache ?? "none"}`,
-    failures,
-  );
-  pushHealthyRscResponse(
-    productsRscResponse,
-    "RSC probe",
-    '"$Sreact.fragment"',
-    failures,
-  );
-  pushHealthyRscResponse(
-    productsRouteTreeResponse,
-    "route-tree prefetch",
-    '"tree"',
-    failures,
-  );
-  pushHealthyRscResponse(
-    productsPageSegmentResponse,
-    "page-segment prefetch",
-    '"$Sreact.fragment"',
-    failures,
-  );
-  for (const [label, response] of [
-    ["route-tree prefetch", productsRouteTreeResponse],
-    ["page-segment prefetch", productsPageSegmentResponse],
-  ]) {
-    pushFailureUnless(
-      response.nextPostponed === "2",
-      `Expected /products ${label} to return X-Nextjs-Postponed: 2, got ${response.nextPostponed ?? "none"}`,
-      failures,
-    );
-    pushFailureUnless(
-      response.nextCache === "HIT",
-      `Expected /products ${label} to return X-Nextjs-Cache: HIT, got ${response.nextCache ?? "none"}`,
-      failures,
-    );
   }
 
   if (!includeApiHealth) {

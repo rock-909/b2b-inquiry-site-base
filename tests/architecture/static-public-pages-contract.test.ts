@@ -60,14 +60,9 @@ describe("static public pages architecture contract", () => {
   it("keeps the current PageType set represented by the registry", () => {
     const expected = [
       "home",
-      "products",
-      "oemWholesale",
-      "materialsGuide",
-      "specificationsGuide",
       "about",
       "requestQuote",
       "contact",
-      "warranty",
       "privacy",
       "terms",
     ] as const satisfies readonly PageType[];

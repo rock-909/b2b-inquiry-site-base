@@ -120,13 +120,13 @@ describe("SEO Metadata", () => {
       expect(metadata.openGraph?.url).toBe("https://example.com/about");
     });
 
-    it("noindexes active catalog pages outside production", () => {
+    it("noindexes active public pages outside production", () => {
       process.env.APP_ENV = "preview";
 
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "products",
-        path: "/products",
+        pageType: "about",
+        path: "/about",
       });
 
       expect(metadata.robots).toMatchObject({
@@ -139,13 +139,13 @@ describe("SEO Metadata", () => {
       });
     });
 
-    it("keeps active catalog pages indexable in production", () => {
+    it("keeps active public pages indexable in production", () => {
       process.env.APP_ENV = "production";
 
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "products",
-        path: "/products",
+        pageType: "about",
+        path: "/about",
       });
 
       expect(metadata.robots).toMatchObject({
@@ -154,17 +154,17 @@ describe("SEO Metadata", () => {
       });
     });
 
-    it("indexes product market pages in the catalog-only public SEO surface", () => {
+    it("noindexes a core page type on a non-canonical path", () => {
       process.env.APP_ENV = "production";
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "products",
-        path: "/products/abs-flood-barriers",
+        pageType: "about",
+        path: "/products",
       });
 
       expect(metadata.robots).toMatchObject({
-        index: true,
-        follow: true,
+        index: false,
+        follow: false,
       });
     });
 
@@ -185,11 +185,11 @@ describe("SEO Metadata", () => {
       expect(metadata.twitter?.images).toEqual(["/images/facts-og.png"]);
     });
 
-    it("maps product openGraph type to website", () => {
+    it("maps product-shaped openGraph metadata to website", () => {
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "products",
-        path: "/products",
+        pageType: "about",
+        path: "/about",
         config: {
           type: "product",
         },

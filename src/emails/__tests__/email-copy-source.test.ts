@@ -112,6 +112,6 @@ describe("email copy source", () => {
       EMAIL_COPY.productInquiry.subject(
         productInquiryEmailDataWithPlaceholderLikeInput,
       ),
-    ).toBe("[PRO-abc123-deadbeef] Product Inquiry: {quantity}");
+    ).toBe("[PRO-abc123-deadbeef] Inquiry: {quantity}");
   });
 });

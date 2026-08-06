@@ -18,9 +18,6 @@ const MARKDOWN_LOGO_REFERENCE_PATTERN =
   /!?\[[^\]]*\]\(\s*<?\/images\/logo\.svg>?(?:\s+(?:"[^"]*"|'[^']*'))?\s*\)/iu;
 const ATTRIBUTE_LOGO_REFERENCE_PATTERN =
   /\b(?:href|src)\s*=\s*(?:"\/images\/logo\.svg"|'\/images\/logo\.svg'|\{\s*(?:"\/images\/logo\.svg"|'\/images\/logo\.svg'|`\/images\/logo\.svg`)\s*\})/iu;
-const TUCSENBERG_PRODUCT_PAGE_PREFIX = "src/constants/tucsenberg-product-page-";
-const TUCSENBERG_PRODUCT_PAGES_PATH =
-  "src/constants/tucsenberg-product-pages.ts";
 const READINESS_SCAN_TARGETS = [
   {
     root: "content/pages",
@@ -31,7 +28,7 @@ const READINESS_SCAN_TARGETS = [
     root: "messages",
     extensions: new Set([".json"]),
     allowedPathPattern:
-      /^messages\/(?:base\/[^/]+|profiles\/(?:b2b-lead|catalog)\/[^/]+)\/messages\.json$/u,
+      /^messages\/(?:base\/[^/]+|profiles\/b2b-lead\/[^/]+)\/messages\.json$/u,
     scanTextRules: true,
   },
   {
@@ -51,17 +48,14 @@ const READINESS_SCAN_TARGETS = [
   {
     root: "src/constants",
     extensions: new Set([".js", ".json", ".mjs", ".ts", ".tsx"]),
-    allowedPath: (repoPath) =>
-      (repoPath.startsWith(TUCSENBERG_PRODUCT_PAGE_PREFIX) ||
-        repoPath === TUCSENBERG_PRODUCT_PAGES_PATH) &&
-      repoPath.endsWith(".ts"),
+    allowedPath: (repoPath) => repoPath === "src/constants/product-catalog.ts",
     scanTextRules: true,
   },
   {
     root: "src/config",
     extensions: new Set([".ts"]),
     allowedPathPattern:
-      /^src\/config\/(?:single-site|single-site-seo|single-site-navigation|single-site-links|single-site-page-expression|single-site-product-catalog)\.ts$/u,
+      /^src\/config\/(?:single-site|single-site-seo|single-site-navigation|single-site-links|single-site-product-catalog)\.ts$/u,
     scanTextRules: true,
   },
 ];

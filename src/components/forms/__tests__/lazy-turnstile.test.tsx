@@ -286,7 +286,7 @@ describe("LazyTurnstile", () => {
     );
     expect(screen.getByRole("link")).toHaveAttribute(
       "href",
-      `mailto:sales@tucsenberg.com?subject=${encodeURIComponent(labels.rescueSubject)}`,
+      `mailto:sales@example.invalid?subject=${encodeURIComponent(labels.rescueSubject)}`,
     );
     expect(screen.getByRole("status")).toHaveTextContent(
       labels.rescueBeforeEmail,
@@ -433,7 +433,7 @@ describe("LazyTurnstile", () => {
       expect(screen.getAllByRole("link", { name: /sales@/u })).toHaveLength(1);
       expect(screen.getByRole("link", { name: /sales@/u })).toHaveAttribute(
         "href",
-        `mailto:sales@tucsenberg.com?subject=${encodeURIComponent(labels.rescueSubject)}`,
+        `mailto:sales@example.invalid?subject=${encodeURIComponent(labels.rescueSubject)}`,
       );
     });
   });

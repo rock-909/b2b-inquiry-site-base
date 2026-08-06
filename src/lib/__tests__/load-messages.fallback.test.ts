@@ -13,7 +13,7 @@ describe("load-messages canonical runtime source", () => {
     const messages = await loadCompleteMessages("en");
 
     expect(messages).toHaveProperty("apiErrors");
-    expect(messages).toHaveProperty("catalog");
+    expect(messages).toHaveProperty("home");
     expect(messages).toHaveProperty("contact");
     expect(messages).toHaveProperty("emailTemplates");
     expect(messages).toHaveProperty("home");

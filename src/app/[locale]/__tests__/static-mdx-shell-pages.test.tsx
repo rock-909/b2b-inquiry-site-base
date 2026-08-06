@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Locale } from "@/types/content.types";
 
 /**
- * 五个页面都是同一个形状：把一份 `{ pageType, slug, shell }` 转交给
+ * About 页面把一份 `{ pageType, slug }` 转交给
  * `StaticMdxPage`。它们此前没有任何单测——`vitest related` 对它们报
  * "No test files found"，而 pre-commit 钩子把这一条当成通过。
  *
@@ -35,21 +35,6 @@ interface ShellPageModule {
 
 const shellPages = [
   { name: "about", load: () => import("@/app/[locale]/about/page") },
-  {
-    name: "oem-wholesale",
-    load: () => import("@/app/[locale]/oem-wholesale/page"),
-  },
-  { name: "warranty", load: () => import("@/app/[locale]/warranty/page") },
-  {
-    name: "flood-barrier-materials-guide",
-    load: () =>
-      import("@/app/[locale]/guides/flood-barrier-materials-guide/page"),
-  },
-  {
-    name: "flood-barrier-specifications",
-    load: () =>
-      import("@/app/[locale]/guides/flood-barrier-specifications/page"),
-  },
 ] as const;
 
 describe("StaticMdxPage 转发壳", () => {

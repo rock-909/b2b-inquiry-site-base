@@ -10,8 +10,7 @@
       {
         "files": [
           "src/app/[locale]/static-mdx-page.tsx",
-          "src/components/content/legal-page-shell.tsx",
-          "src/components/products/product-diagrams.tsx"
+          "src/components/content/legal-page-shell.tsx"
         ],
         "rules": ["react-doctor/only-export-components"]
       },
@@ -135,10 +134,7 @@
         "rules": ["react-doctor/nextjs-no-a-element"]
       },
       {
-        "files": [
-          "src/app/[locale]/products/__tests__/products-page.test.tsx",
-          "src/components/layout/logo.tsx"
-        ],
+        "files": ["src/components/layout/logo.tsx"],
         "rules": ["react-doctor/nextjs-no-img-element"]
       },
       {

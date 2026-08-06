@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  CATALOG_MESSAGE_PACK_IDS,
+  MESSAGE_PACK_IDS,
   type MessagePackId,
 } from "@/lib/i18n/message-pack-config";
 import { getComposedMessages } from "@/lib/i18n/composed-messages";
@@ -13,7 +13,7 @@ import {
 
 const LOCALES = ["en"] as const;
 const REQUIRED_PACK_FILES = [
-  ...CATALOG_MESSAGE_PACK_IDS.flatMap((packId) =>
+  ...MESSAGE_PACK_IDS.flatMap((packId) =>
     LOCALES.map((locale) => getPackPath(packId, locale)),
   ),
 ];
@@ -38,8 +38,8 @@ function readJson(filePath: string): Record<string, unknown> {
   >;
 }
 
-function composeCatalogMessages(locale: (typeof LOCALES)[number]) {
-  return CATALOG_MESSAGE_PACK_IDS.reduce<Record<string, unknown>>(
+function composeMessages(locale: (typeof LOCALES)[number]) {
+  return MESSAGE_PACK_IDS.reduce<Record<string, unknown>>(
     (messages, packId) =>
       mergeObjects(messages, readJson(getPackPath(packId, locale))),
     {},
@@ -64,15 +64,13 @@ describe("physical message packs", () => {
     expect(loader).toContain("@/lib/i18n/composed-messages");
     expect(composed).toContain("@messages/base/en/messages.json");
     expect(composed).toContain("@messages/profiles/b2b-lead/en/messages.json");
-    expect(composed).toContain("@messages/profiles/catalog/en/messages.json");
+    expect(composed).not.toContain("@messages/profiles/catalog/");
     expect(nextIntlTypes).toContain("@messages/base/en/messages.json");
   });
 
   it("keeps the shared composition helper aligned with pack merge order", () => {
     for (const locale of LOCALES) {
-      expect(getComposedMessages(locale)).toEqual(
-        composeCatalogMessages(locale),
-      );
+      expect(getComposedMessages(locale)).toEqual(composeMessages(locale));
     }
   });
 

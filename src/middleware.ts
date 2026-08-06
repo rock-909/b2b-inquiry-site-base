@@ -3,7 +3,6 @@ import createMiddleware from "next-intl/middleware";
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { routing } from "@/i18n/routing-config";
 import { HTTP_NOT_FOUND } from "@/constants";
-import { isProductMarketSlug } from "@/constants/product-catalog";
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -25,26 +24,9 @@ function createPlainNotFound() {
   });
 }
 
-function isUnknownProductPath(pathname: string): boolean {
-  const segments = pathname.split("/").filter(Boolean);
-  let market: string | undefined;
-
-  if (segments.length === 2 && segments[0] === "products") {
-    market = segments[1];
-  } else if (
-    segments.length === 3 &&
-    routing.locales.some((locale) => locale === segments[0]) &&
-    segments[1] === "products"
-  ) {
-    market = segments[2];
-  }
-
-  return market !== undefined && !isProductMarketSlug(market);
-}
-
 export default function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (isRetiredLocalePath(pathname) || isUnknownProductPath(pathname)) {
+  if (isRetiredLocalePath(pathname)) {
     return createPlainNotFound();
   }
 

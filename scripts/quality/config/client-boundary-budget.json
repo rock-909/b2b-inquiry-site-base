@@ -2,7 +2,6 @@
   "version": 1,
   "allowedClientBoundaries": [
     "src/app/[locale]/contact/error.tsx",
-    "src/app/[locale]/products/error.tsx",
     "src/app/global-error.tsx",
     "src/components/attribution-bootstrap.tsx",
     "src/components/cookie/cookie-banner.tsx",
@@ -17,8 +16,6 @@
     "src/components/layout/mobile-navigation-interactive.tsx",
     "src/components/monitoring/enterprise-analytics-island.tsx",
     "src/components/navigation/navigation-progress-bar.tsx",
-    "src/components/products/boxwall-cross-section.tsx",
-    "src/components/products/product-run-calculator.tsx",
     "src/components/security/turnstile.tsx",
     "src/components/theme-provider.tsx",
     "src/components/ui/lazy-island-error-boundary.tsx",

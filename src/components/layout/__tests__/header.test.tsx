@@ -13,6 +13,7 @@ interface MockHomeLinkTargets {
   primaryCta: string;
   secondaryCta: string;
   contact?: string;
+  requestQuote?: string;
   products?: string;
 }
 
@@ -20,6 +21,7 @@ const mockSingleSiteHomeLinkTargets = vi.hoisted(
   (): { current: MockHomeLinkTargets } => ({
     current: {
       contact: "/contact",
+      requestQuote: "/request-quote",
       products: "/products",
       primaryCta: "/products",
       secondaryCta: "/contact",
@@ -93,7 +95,7 @@ const MAIN_NAV_ITEMS = [
 ];
 
 const HEADER_LABELS = {
-  contactSalesLabel: "Contact",
+  contactSalesLabel: "Start an inquiry",
   openMenuLabel: "Open navigation menu",
   closeMenuLabel: "Close navigation menu",
   mainNavigationLabel: "Main navigation",
@@ -104,6 +106,7 @@ describe("Header Component", () => {
     vi.clearAllMocks();
     mockSingleSiteHomeLinkTargets.current = {
       contact: "/contact",
+      requestQuote: "/request-quote",
       products: "/products",
       primaryCta: "/products",
       secondaryCta: "/contact",
@@ -154,6 +157,8 @@ describe("Header Component", () => {
       const utilityRegion = screen.getByTestId("header-utility-controls");
       const contactCta = screen.getByTestId("header-cta");
 
+      expect(contactCta).toHaveAttribute("href", "/request-quote");
+      expect(contactCta).toHaveTextContent("Start an inquiry");
       expect(utilityRegion.compareDocumentPosition(contactCta)).toBe(
         Node.DOCUMENT_POSITION_CONTAINED_BY | Node.DOCUMENT_POSITION_FOLLOWING,
       );
@@ -176,8 +181,8 @@ describe("Header Component", () => {
       const menuButton = screen.getByTestId("header-mobile-menu-button");
 
       expect(mobileContactWrapper).toHaveClass("header-mobile-only");
-      expect(mobileContactCta).toHaveAttribute("href", "/contact");
-      expect(mobileContactCta).toHaveTextContent("Contact");
+      expect(mobileContactCta).toHaveAttribute("href", "/request-quote");
+      expect(mobileContactCta).toHaveTextContent("Start an inquiry");
       expect(
         mobileContactCta.compareDocumentPosition(menuButton) &
           Node.DOCUMENT_POSITION_FOLLOWING,
@@ -185,7 +190,7 @@ describe("Header Component", () => {
       expect(utilityRegion).toContainElement(mobileContactCta);
     });
 
-    it("omits contact CTAs when the active profile has no contact route", async () => {
+    it("omits contact CTAs when the active profile has no inquiry route", async () => {
       mockSingleSiteHomeLinkTargets.current = {
         primaryCta: "/",
         secondaryCta: "/",

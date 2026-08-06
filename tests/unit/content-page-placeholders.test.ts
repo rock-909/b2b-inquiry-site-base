@@ -43,7 +43,6 @@ const PUBLIC_LEGAL_AND_SECURITY_FILES = [
 const CANONICAL_PLACEHOLDER_FILES = [
   join(process.cwd(), "src/config/single-site.ts"),
   join(process.cwd(), "messages/base/en/messages.json"),
-  join(process.cwd(), "messages/profiles/catalog/en/messages.json"),
   join(process.cwd(), "messages/profiles/b2b-lead/en/messages.json"),
 ] as const;
 

@@ -1,4 +1,3 @@
-/* eslint-disable max-lines -- Smoke modes share lifecycle fixtures; split when another mode is added. */
 import { spawn } from "node:child_process";
 import {
   copyFileSync,
@@ -25,8 +24,14 @@ const TEMP_TRASH_ROOT = path.join(
   "tucsenberg-cloudflare-smoke-test-trash",
 );
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
-const HEALTHY_RSC = '#1:"$Sreact.fragment"\n2:I[1,[],"default"]';
-const HEALTHY_ROUTE_TREE_RSC = '0:{"tree":{"name":"products"}}';
+const CORE_PUBLIC_PAGE_PATHS = [
+  "/",
+  "/about",
+  "/contact",
+  "/request-quote",
+  "/privacy",
+  "/terms",
+] as const;
 
 interface ChildProcessResult {
   status: number | null;
@@ -57,29 +62,20 @@ function createPreviewFetchMock(
   pdfHeaders: HeadersInit = { "x-robots-tag": "noindex" },
 ) {
   return vi.fn(
-    async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const pathname = getRequestPath(input);
-      const requestHeaders = new Headers(init?.headers);
+    async (
+      _input: RequestInfo | URL,
+      _init?: RequestInit,
+    ): Promise<Response> => {
+      const pathname = getRequestPath(_input);
 
-      if (pathname === "/products" && requestHeaders.get("rsc") === "1") {
-        const segment = requestHeaders.get("next-router-segment-prefetch");
-        const headers = {
-          "content-type": "text/x-component",
-          "x-nextjs-cache": "HIT",
-          ...(segment ? { "x-nextjs-postponed": "2" } : {}),
-        };
-        return response(
-          200,
-          segment === "/_tree" ? HEALTHY_ROUTE_TREE_RSC : HEALTHY_RSC,
-          headers,
-        );
-      }
-
-      if (["/", "/products", "/contact", "/request-quote"].includes(pathname)) {
+      if (
+        CORE_PUBLIC_PAGE_PATHS.includes(
+          pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
+        )
+      ) {
         const headers = new Headers({
           "content-type": "text/html; charset=utf-8",
         });
-        if (pathname === "/products") headers.set("x-nextjs-cache", "HIT");
         return response(200, HEALTHY_HTML, headers);
       }
 
@@ -116,7 +112,11 @@ function createExternalUrlFetchMock() {
   return vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
     const pathname = getRequestPath(input);
 
-    if (["/", "/products", "/contact", "/request-quote"].includes(pathname)) {
+    if (
+      CORE_PUBLIC_PAGE_PATHS.includes(
+        pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
+      )
+    ) {
       return response(200, "healthy external page");
     }
 
@@ -142,10 +142,7 @@ function createDeployedFetchMock(
 
       if (
         [
-          "/",
-          "/products",
-          "/contact",
-          "/request-quote",
+          ...CORE_PUBLIC_PAGE_PATHS,
           "/api/health",
           "/.well-known/security.txt",
         ].includes(pathname)
@@ -183,7 +180,11 @@ function listenForExternalUrlSmoke(): Promise<{
       const pathname = request.url ?? "/";
       paths.push(pathname);
 
-      if (["/", "/products", "/contact", "/request-quote"].includes(pathname)) {
+      if (
+        CORE_PUBLIC_PAGE_PATHS.includes(
+          pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
+        )
+      ) {
         serverResponse.writeHead(200, { "content-type": "text/plain" });
         serverResponse.end("ok");
         return;
@@ -229,10 +230,7 @@ function listenForDeployedSmoke(): Promise<{
 
       if (
         [
-          "/",
-          "/products",
-          "/contact",
-          "/request-quote",
+          ...CORE_PUBLIC_PAGE_PATHS,
           "/api/health",
           "/.well-known/security.txt",
         ].includes(pathname)
@@ -375,9 +373,11 @@ describe("external URL smoke", () => {
       fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
     ).toEqual([
       "/",
-      "/products",
+      "/about",
       "/contact",
       "/request-quote",
+      "/privacy",
+      "/terms",
       "/zh",
       "/zh/contact",
     ]);
@@ -396,9 +396,11 @@ describe("external URL smoke", () => {
     expect(result.status).toBe(0);
     expect(paths).toEqual([
       "/",
-      "/products",
+      "/about",
       "/contact",
       "/request-quote",
+      "/privacy",
+      "/terms",
       "/zh",
       "/zh/contact",
     ]);
@@ -458,9 +460,9 @@ describe("cloudflare preview smoke", () => {
       "--rounds",
       "1",
     ]);
-    const expectedPaths = discoveryFetchMock.mock.calls
-      .map(([input]) => getRequestPath(input))
-      .slice(0, -5);
+    const expectedPaths = discoveryFetchMock.mock.calls.map(([input]) =>
+      getRequestPath(input),
+    );
     let releaseRoot!: () => void;
     const started: string[] = [];
     const previewFetchMock = createPreviewFetchMock();
@@ -532,33 +534,27 @@ describe("cloudflare preview smoke", () => {
     ).toEqual([
       "/",
       "/invalid/contact",
-      "/products",
+      "/about",
       "/contact",
       "/request-quote",
+      "/privacy",
+      "/terms",
       "/zh",
       "/zh/contact",
       "/downloads/spec-sheet-tb-bw.pdf",
       "/api/health",
       "/",
       "/invalid/contact",
-      "/products",
+      "/about",
       "/contact",
       "/request-quote",
+      "/privacy",
+      "/terms",
       "/zh",
       "/zh/contact",
       "/downloads/spec-sheet-tb-bw.pdf",
       "/api/health",
-      "/products",
-      "/products",
-      "/products",
-      "/products",
-      "/products",
     ]);
-    expect(
-      fetchMock.mock.calls
-        .slice(-3)
-        .every(([, init]) => init?.redirect === "follow"),
-    ).toBe(true);
   });
 
   it("proves preview pages, removed locale routes, and optional api-health probes", async () => {
@@ -578,18 +574,15 @@ describe("cloudflare preview smoke", () => {
     ).toEqual([
       "/",
       "/invalid/contact",
-      "/products",
+      "/about",
       "/contact",
       "/request-quote",
+      "/privacy",
+      "/terms",
       "/zh",
       "/zh/contact",
       "/downloads/spec-sheet-tb-bw.pdf",
       "/api/health",
-      "/products",
-      "/products",
-      "/products",
-      "/products",
-      "/products",
     ]);
   });
 
@@ -633,91 +626,6 @@ describe("cloudflare preview smoke", () => {
       ).resolves.toBe(false);
     },
   );
-
-  it("fails when the products RSC probe returns HTML", async () => {
-    captureExpectedConsoleErrors(
-      "[cf-preview-smoke] Failures detected:",
-      "  - Expected /products RSC probe to return text/x-component, got text/html; charset=utf-8",
-      "  - Expected /products RSC probe to return a non-truncated Flight payload, not HTML",
-    );
-    const previewFetchMock = createPreviewFetchMock();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const headers = new Headers(init?.headers);
-        if (
-          getRequestPath(input) === "/products" &&
-          headers.get("rsc") === "1" &&
-          headers.get("next-router-segment-prefetch") === null
-        ) {
-          return response(200, HEALTHY_HTML, {
-            "content-type": "text/html; charset=utf-8",
-          });
-        }
-
-        return previewFetchMock(input, init);
-      }),
-    );
-
-    await expect(
-      runCloudflarePreviewSmoke(["--base-url", "https://preview.example"]),
-    ).resolves.toBe(false);
-  });
-
-  it("fails when the products route-tree prefetch misses the segment cache", async () => {
-    captureExpectedConsoleErrors(
-      "[cf-preview-smoke] Failures detected:",
-      "  - Expected /products route-tree prefetch to return X-Nextjs-Postponed: 2, got none",
-    );
-    const previewFetchMock = createPreviewFetchMock();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const headers = new Headers(init?.headers);
-        const result = await previewFetchMock(input, init);
-        if (headers.get("next-router-segment-prefetch") === "/_tree") {
-          result.headers.delete("x-nextjs-postponed");
-        }
-        return result;
-      }),
-    );
-
-    await expect(
-      runCloudflarePreviewSmoke(["--base-url", "https://preview.example"]),
-    ).resolves.toBe(false);
-  });
-
-  it("fails when the warmed products response is not a cache hit", async () => {
-    captureExpectedConsoleErrors(
-      "[cf-preview-smoke] Failures detected:",
-      "  - Expected warmed /products to return X-Nextjs-Cache: HIT, got MISS",
-    );
-    const previewFetchMock = createPreviewFetchMock();
-    let productsHtmlRequests = 0;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-        const headers = new Headers(init?.headers);
-        if (
-          getRequestPath(input) === "/products" &&
-          headers.get("rsc") !== "1"
-        ) {
-          productsHtmlRequests += 1;
-          const result = await previewFetchMock(input, init);
-          if (productsHtmlRequests >= 3) {
-            result.headers.set("x-nextjs-cache", "MISS");
-          }
-          return result;
-        }
-
-        return previewFetchMock(input, init);
-      }),
-    );
-
-    await expect(
-      runCloudflarePreviewSmoke(["--base-url", "https://preview.example"]),
-    ).resolves.toBe(false);
-  });
 
   it("fails when the removed Chinese route becomes live again", async () => {
     const consoleError = captureExpectedConsoleErrors(
@@ -790,9 +698,11 @@ describe("deployed smoke", () => {
     ).toEqual([
       "/",
       "/invalid/contact",
-      "/products",
+      "/about",
       "/contact",
       "/request-quote",
+      "/privacy",
+      "/terms",
       "/api/health",
       "/zh",
       "/zh/contact",
@@ -812,7 +722,7 @@ describe("deployed smoke", () => {
   it("retries transient deployed 5xx responses before failing the proof", async () => {
     vi.useFakeTimers();
 
-    let productsAttempts = 0;
+    let aboutAttempts = 0;
     const deployedFetchMock = createDeployedFetchMock();
     const fetchMock = vi.fn(
       async (
@@ -821,9 +731,9 @@ describe("deployed smoke", () => {
       ): Promise<Response> => {
         const pathname = getRequestPath(input);
 
-        if (pathname === "/products") {
-          productsAttempts += 1;
-          return productsAttempts === 1
+        if (pathname === "/about") {
+          aboutAttempts += 1;
+          return aboutAttempts === 1
             ? response(500, "temporary failure")
             : response(200, "recovered");
         }
@@ -845,7 +755,7 @@ describe("deployed smoke", () => {
     await vi.runAllTimersAsync();
 
     await expect(smokePromise).resolves.toBe(true);
-    expect(productsAttempts).toBe(2);
+    expect(aboutAttempts).toBe(2);
   });
 
   it("runs deployed smoke from a minimal fixture without node_modules", async () => {
@@ -867,9 +777,11 @@ describe("deployed smoke", () => {
       [
         "/",
         "/invalid/contact",
-        "/products",
+        "/about",
         "/contact",
         "/request-quote",
+        "/privacy",
+        "/terms",
         "/api/health",
         "/zh",
         "/zh/contact",
@@ -944,7 +856,7 @@ describe("deployed smoke", () => {
     ]);
 
     await vi.waitFor(() => {
-      expect(requested.has("/products")).toBe(true);
+      expect(requested.has("/about")).toBe(true);
       expect(requested.has("/contact")).toBe(true);
       expect(requested.has("/request-quote")).toBe(true);
       expect(requested.has("/api/health")).toBe(true);

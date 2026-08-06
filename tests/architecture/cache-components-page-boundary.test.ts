@@ -7,29 +7,6 @@ const SHARED_STATIC_MDX_ROUTE_SOURCES = [
     routeOwner: "src/app/[locale]/about/page.tsx",
     source: readFileSync("src/app/[locale]/about/page.tsx", "utf8"),
   },
-  {
-    routeOwner: "src/app/[locale]/oem-wholesale/page.tsx",
-    source: readFileSync("src/app/[locale]/oem-wholesale/page.tsx", "utf8"),
-  },
-  {
-    routeOwner:
-      "src/app/[locale]/guides/flood-barrier-materials-guide/page.tsx",
-    source: readFileSync(
-      "src/app/[locale]/guides/flood-barrier-materials-guide/page.tsx",
-      "utf8",
-    ),
-  },
-  {
-    routeOwner: "src/app/[locale]/guides/flood-barrier-specifications/page.tsx",
-    source: readFileSync(
-      "src/app/[locale]/guides/flood-barrier-specifications/page.tsx",
-      "utf8",
-    ),
-  },
-  {
-    routeOwner: "src/app/[locale]/warranty/page.tsx",
-    source: readFileSync("src/app/[locale]/warranty/page.tsx", "utf8"),
-  },
 ] as const;
 
 const LEGAL_ROUTE_SOURCES = [

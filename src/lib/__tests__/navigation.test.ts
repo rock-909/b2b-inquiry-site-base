@@ -51,48 +51,20 @@ describe("navigation", () => {
       expect(mainNavigation).toBe(SINGLE_SITE_NAVIGATION);
     });
 
-    it("should use the catalog site navigation as the singleton source", () => {
+    it("should use the neutral site navigation as the singleton source", () => {
       expect(SINGLE_SITE_NAVIGATION).toEqual(getSingleSiteNavigation());
       expect(mainNavigation).toEqual([
         { key: "home", href: "/", messageKey: "home" },
-        {
-          key: "products",
-          href: "/products",
-          messageKey: "products",
-        },
-        {
-          key: "oemWholesale",
-          href: "/oem-wholesale",
-          messageKey: "oemWholesale",
-        },
-        {
-          key: "materialsGuide",
-          href: "/guides/flood-barrier-materials-guide",
-          messageKey: "guides",
-        },
         { key: "about", href: "/about", messageKey: "about" },
+        { key: "contact", href: "/contact", messageKey: "contactSales" },
       ]);
     });
 
-    it("can derive the default materialized catalog navigation explicitly", () => {
+    it("can derive the default materialized navigation explicitly", () => {
       expect(getSingleSiteNavigation()).toEqual([
         { key: "home", href: "/", messageKey: "home" },
-        {
-          key: "products",
-          href: "/products",
-          messageKey: "products",
-        },
-        {
-          key: "oemWholesale",
-          href: "/oem-wholesale",
-          messageKey: "oemWholesale",
-        },
-        {
-          key: "materialsGuide",
-          href: "/guides/flood-barrier-materials-guide",
-          messageKey: "guides",
-        },
         { key: "about", href: "/about", messageKey: "about" },
+        { key: "contact", href: "/contact", messageKey: "contactSales" },
       ]);
     });
 
@@ -101,7 +73,6 @@ describe("navigation", () => {
       expect(actualKeys).not.toContain("capabilities");
       expect(actualKeys).not.toContain("howItWorks");
       expect(actualKeys).not.toContain("customProject");
-      expect(actualKeys).not.toContain("contact");
       expect(actualKeys).not.toContain("privacy");
     });
 

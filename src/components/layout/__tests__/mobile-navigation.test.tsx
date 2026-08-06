@@ -182,7 +182,7 @@ describe("MobileNavigationInteractive", () => {
       expect(nav).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
       expect(
-        screen.getByRole("link", { name: "Request a Quote" }),
+        screen.getAllByRole("link", { name: "Start an inquiry" }).at(-1),
       ).toBeInTheDocument();
     });
 
@@ -346,7 +346,7 @@ describe("MobileNavigationInteractive", () => {
     it("renders the translated site description inside the drawer", () => {
       (useTranslations as ReturnType<typeof vi.fn>).mockImplementation(
         createMockUseTranslations({
-          "navigation.siteDescription": "Factory-direct flood barrier supply.",
+          "navigation.siteDescription": "A neutral B2B inquiry site reference.",
         }),
       );
 
@@ -354,7 +354,7 @@ describe("MobileNavigationInteractive", () => {
       fireEvent.click(screen.getByRole("button", { name: /menu/i }));
 
       expect(
-        screen.getByText("Factory-direct flood barrier supply."),
+        screen.getByText("A neutral B2B inquiry site reference."),
       ).toBeInTheDocument();
     });
   });

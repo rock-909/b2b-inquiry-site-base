@@ -11,8 +11,7 @@
     "mainNavigation": "Main navigation",
     "mobileNavigation": "Mobile navigation menu",
     "themeSelector": "Theme selector",
-    "footerNavigation": "Footer navigation",
-    "breadcrumb": "Breadcrumb"
+    "footerNavigation": "Footer navigation"
   },
   "cookie": {
     "title": "Cookie Preferences",
@@ -40,7 +39,7 @@
   "structured-data": {
     "organization": {
       "name": "{companyName}",
-      "description": "Factory-direct flood barrier supply from China",
+      "description": "B2B inquiry site reference",
       "social": {
         "twitter": "",
         "linkedin": ""
@@ -48,7 +47,7 @@
     },
     "website": {
       "name": "{siteName}",
-      "description": "Factory-direct flood barrier supply from China"
+      "description": "B2B inquiry site reference"
     },
     "article": {
       "defaultAuthor": "{companyName}"
@@ -70,12 +69,6 @@
     "INQUIRY_PROCESSING_ERROR": "We could not send your inquiry right now. Please try again later."
   },
   "errors": {
-    "products": {
-      "title": "Failed to load product information",
-      "description": "We couldn't load the product details. Please try again or return to the homepage to browse other content.",
-      "tryAgain": "Try again",
-      "goHome": "Back to homepage"
-    },
     "contact": {
       "title": "Contact form temporarily unavailable",
       "description": "Our team will look into this issue immediately. You can try again later or contact us through other channels.",
@@ -92,7 +85,7 @@
     "effectiveDate": "Effective Date",
     "lastUpdated": "Last Updated",
     "tableOfContents": "Table of Contents",
-    "articleAuthorLine": "Written by the Tucsenberg team — factory-direct supplier of the flood barrier systems covered in this guide."
+    "articleAuthorLine": "Written by the operating business responsible for this page."
   },
   "emailTemplates": {
     "common": {
@@ -105,10 +98,10 @@
       }
     },
     "productInquiry": {
-      "title": "New Product Inquiry",
-      "preview": "New product inquiry received.",
-      "footer": "This inquiry was submitted through the Tucsenberg website.",
-      "subject": "Product Inquiry: {productName}"
+      "title": "New Inquiry",
+      "preview": "New inquiry received.",
+      "footer": "This inquiry was submitted through the website.",
+      "subject": "Inquiry: {productName}"
     }
   }
 }

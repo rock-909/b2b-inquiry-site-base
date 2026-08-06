@@ -7,20 +7,14 @@ import {
   getStaticPageLastModified,
   type StaticPageLastModConfig,
 } from "@/lib/sitemap-utils";
-import {
-  LOCALES_CONFIG,
-  getProductMarketPath,
-  SITE_CONFIG,
-} from "@/config/paths";
+import { LOCALES_CONFIG, SITE_CONFIG } from "@/config/paths";
 import {
   getSingleSitePublicStaticPages,
   getSingleSiteSitemapPageConfig,
   getSingleSiteStaticPageLastmod,
-  hasSingleSiteDynamicSurface,
   type SingleSiteSitemapPageConfig,
 } from "@/config/single-site-seo";
 import { routing } from "@/i18n/routing";
-import { PRODUCT_CATALOG } from "@/constants/product-catalog";
 
 // Base URL for the site - uses centralized SITE_CONFIG for consistency
 const BASE_URL = SITE_CONFIG.baseUrl;
@@ -120,45 +114,13 @@ async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
   return entries;
 }
 
-// Generate product catalog entries (market + family pages) for all locales
-function generateCatalogEntries(): MetadataRoute.Sitemap {
-  if (!hasSingleSiteDynamicSurface("productMarket")) {
-    return [];
-  }
-
-  const entries: MetadataRoute.Sitemap = [];
-  const staticPageLastmod = createStaticPageLastmod();
-
-  const marketConfig = getPageConfig("productMarket");
-  for (const market of PRODUCT_CATALOG.markets) {
-    const path = getProductMarketPath(market.slug);
-    const lastModified = getStaticPageLastModified(path, staticPageLastmod);
-
-    for (const locale of routing.locales) {
-      entries.push(
-        createSitemapEntry({
-          url: buildAbsoluteUrl(locale, path),
-          lastModified,
-          config: marketConfig,
-          alternates: buildAlternateLanguages(path),
-        }),
-      );
-    }
-  }
-
-  return entries;
-}
-
-export async function generateSitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticEntries = await generateStaticPageEntries();
-  const catalogEntries = generateCatalogEntries();
-
-  return [...staticEntries, ...catalogEntries];
+export function generateSitemap(): Promise<MetadataRoute.Sitemap> {
+  return generateStaticPageEntries();
 }
 
 /**
  * Dynamic sitemap generation for Next.js.
- * Includes the catalog site's static pages and its product-market surface.
+ * Includes the template's core static pages.
  */
 export default function sitemap(): Promise<MetadataRoute.Sitemap> {
   return generateSitemap();

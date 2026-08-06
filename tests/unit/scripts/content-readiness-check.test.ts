@@ -77,18 +77,13 @@ describe("content-readiness-check", () => {
   });
 
   // 验证扫描实际触达的文件，不检查脚本源码中的路径文案。
-  it("reaches the current Tucsenberg product-page files it claims to scan", () => {
+  it("reaches the current template config files it claims to scan", () => {
     const scanned = collectReadinessScanFiles().map(
       (file: { repoPath: string }) => file.repoPath,
     );
 
     expect(scanned.length).toBeGreaterThan(0);
-    expect(scanned).toContain("src/constants/tucsenberg-product-pages.ts");
-    expect(
-      scanned.filter((repoPath) =>
-        repoPath.startsWith("src/constants/tucsenberg-product-page-"),
-      ).length,
-    ).toBeGreaterThan(0);
+    expect(scanned).toContain("src/constants/product-catalog.ts");
 
     for (const repoPath of scanned) {
       // eslint-disable-next-line security/detect-non-literal-fs-filename -- paths come from the check's own repo-local scan targets
@@ -275,16 +270,6 @@ describe("content-readiness-check", () => {
     const result = runContentReadinessCheck(rootDir);
 
     expect(result.status).toBe("passed");
-    expectFinding(
-      result.warnings,
-      "replaceable-content",
-      "src/constants/tucsenberg-product-page-test.ts",
-    );
-    expectFinding(
-      result.warnings,
-      "example-standard",
-      "src/constants/tucsenberg-product-page-test.ts",
-    );
     expectFinding(
       result.warnings,
       "example-offer",

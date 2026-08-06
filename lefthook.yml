@@ -38,7 +38,7 @@ pre-commit:
           | grep -v '\.test\.' | grep -v '\.spec\.' | grep -v '__tests__' \
           | grep -v '\.stories\.tsx$' \
           | grep -v '\.fixtures\.ts$' \
-          | grep -vE '^src/types/|-types\.ts$|\.types\.ts$' \
+          | grep -vE '^src/types/|(^|/)types\.ts$|-types\.ts$|\.types\.ts$' \
           | grep -v '^src/test/setup' || true)
         if [ -z "$FILES" ]; then
           echo "✅ 相关测试检查跳过 (本次没有需要单测覆盖的源码变更)"; exit 0;

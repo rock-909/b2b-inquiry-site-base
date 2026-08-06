@@ -78,15 +78,7 @@ vi.mock("@/i18n/routing", () => ({
       "/": "/",
       "/about": "/about",
       "/contact": "/contact",
-      "/products": "/products",
-      "/products/[market]": "/products/[market]",
-      "/oem-wholesale": "/oem-wholesale",
-      "/guides/flood-barrier-materials-guide":
-        "/guides/flood-barrier-materials-guide",
-      "/guides/flood-barrier-specifications":
-        "/guides/flood-barrier-specifications",
       "/request-quote": "/request-quote",
-      "/warranty": "/warranty",
       "/privacy": "/privacy",
       "/terms": "/terms",
     },

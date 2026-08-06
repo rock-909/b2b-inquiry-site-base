@@ -55,31 +55,17 @@ interface FactualSourceMessages {
 type FactualCompleteMessages = FactualSourceMessages;
 
 const factualPlaceholderPattern = /\{(?:siteName|companyName|currentYear)\}/u;
-const heroDiagramKeys = ["panelLabel", "ariaLabel", "caption"] as const;
+const heroDiagramKeys = [] as const;
 const homeB2BSectionPaths = [
-  ["home", "productLines", "title"],
-  ["home", "productLines", "description"],
-  ["home", "buyerSegments", "title"],
-  ["home", "buyerSegments", "description"],
-  ["home", "buyingProcess", "title"],
-  ["home", "buyingProcess", "description"],
-  ["home", "verify", "title"],
-  ["home", "verify", "items", "audits", "title"],
-  ["home", "verify", "items", "samples", "title"],
-  ["home", "verify", "items", "inspection", "title"],
-  ["home", "verify", "aboutLink"],
+  ["home", "value", "title"],
+  ["home", "value", "description"],
+  ["home", "finalCta", "title"],
+  ["home", "finalCta", "description"],
+  ["home", "finalCta", "primary"],
+  ["home", "finalCta", "secondary"],
 ] as const;
 
-const homeHeroProofPaths = [
-  ["home", "hero", "proof", "quoteSla"],
-  ["home", "hero", "proof", "quoteSlaLabel"],
-  ["home", "hero", "proof", "warranty"],
-  ["home", "hero", "proof", "warrantyLabel"],
-  ["home", "hero", "proof", "factoryPool"],
-  ["home", "hero", "proof", "factoryPoolLabel"],
-  ["home", "hero", "proof", "oem"],
-  ["home", "hero", "proof", "oemLabel"],
-] as const;
+const homeHeroProofPaths = [] as const;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object";
@@ -185,15 +171,15 @@ describe("load-messages runtime loading", () => {
     expect(JSON.stringify(enMessages)).not.toMatch(factualPlaceholderPattern);
   });
 
-  it("keeps homepage B2B proof copy in complete runtime messages", async () => {
+  it("keeps the neutral homepage copy in complete runtime messages", async () => {
     vi.doMock("@/lib/env", () => createRuntimeEnvMock({ ci: true }));
 
     const { loadCompleteMessages } = await import("@/lib/i18n/load-messages");
 
     const enMessages = await loadCompleteMessages("en");
 
-    expect(getPathValue(enMessages, ["home", "hero", "proofAriaLabel"])).toBe(
-      "Tucsenberg quote, warranty and factory-pool facts",
+    expect(getPathValue(enMessages, ["home", "hero", "eyebrow"])).toBe(
+      "B2B inquiry reference",
     );
 
     const enHero = expectRecordPath(enMessages, ["home", "hero"]);
@@ -216,81 +202,6 @@ describe("load-messages runtime loading", () => {
 
     for (const path of homeHeroProofPaths) {
       expectNonEmptyStringPath(enMessages, path);
-    }
-
-    for (const key of [
-      "absFloodBarriers",
-      "aluminumFloodGates",
-      "absorbentFloodBags",
-      "floodTubeDams",
-      "frpFloodBarriers",
-    ] as const) {
-      expectStringPath(enMessages, [
-        "home",
-        "productLines",
-        "items",
-        key,
-        "title",
-      ]);
-      expectStringPath(enMessages, [
-        "home",
-        "productLines",
-        "items",
-        key,
-        "description",
-      ]);
-      expectStringPath(enMessages, [
-        "home",
-        "productLines",
-        "items",
-        key,
-        "linkLabel",
-      ]);
-    }
-
-    for (const key of [
-      "dealersDistributors",
-      "importersBrands",
-      "contractorsProjects",
-      "smallBusinessBuyers",
-    ] as const) {
-      expectStringPath(enMessages, [
-        "home",
-        "buyerSegments",
-        "items",
-        key,
-        "title",
-      ]);
-      expectStringPath(enMessages, [
-        "home",
-        "buyerSegments",
-        "items",
-        key,
-        "description",
-      ]);
-    }
-
-    for (const key of [
-      "sendRfq",
-      "quoteResponse",
-      "paidSample",
-      "productionQc",
-      "shipment",
-    ] as const) {
-      expectStringPath(enMessages, [
-        "home",
-        "buyingProcess",
-        "items",
-        key,
-        "title",
-      ]);
-      expectStringPath(enMessages, [
-        "home",
-        "buyingProcess",
-        "items",
-        key,
-        "description",
-      ]);
     }
   });
 

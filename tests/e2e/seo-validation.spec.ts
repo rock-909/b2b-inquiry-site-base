@@ -1,12 +1,7 @@
 import { expect, test } from "@playwright/test";
+import { SITE_PAGE_CASES } from "./site-page-cases";
 
-const pages = [
-  "/",
-  "/about",
-  "/contact",
-  "/products/abs-flood-barriers",
-  "/guides/flood-barrier-materials-guide",
-] as const;
+const pages = SITE_PAGE_CASES.map(([path]) => path);
 
 function collectSchemaTypes(value: unknown): string[] {
   if (typeof value === "string") return [value];

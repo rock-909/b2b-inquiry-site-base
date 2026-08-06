@@ -55,17 +55,12 @@ const social = {
 
 const FOOTER_NAVIGATION_PAGE_TYPES = [
   "home",
-  "products",
-  "oemWholesale",
-  "materialsGuide",
-  "specificationsGuide",
   "about",
+  "contact",
 ] as const satisfies readonly PageType[];
 
 const FOOTER_SUPPORT_PAGE_TYPES = [
   "requestQuote",
-  "contact",
-  "warranty",
   "privacy",
   "terms",
 ] as const satisfies readonly PageType[];
@@ -76,14 +71,9 @@ type FooterLinkPageType =
 
 const FOOTER_TRANSLATION_KEYS = {
   home: "footer.sections.navigation.home",
-  products: "footer.sections.navigation.products",
-  oemWholesale: "footer.sections.navigation.oemWholesale",
-  materialsGuide: "footer.sections.navigation.materialsGuide",
-  specificationsGuide: "footer.sections.navigation.specificationsGuide",
   about: "footer.sections.navigation.about",
+  contact: "footer.sections.navigation.contact",
   requestQuote: "footer.sections.support.requestQuote",
-  contact: "footer.sections.support.contact",
-  warranty: "footer.sections.support.warranty",
   privacy: "footer.sections.support.privacy",
   terms: "footer.sections.support.terms",
 } as const satisfies Record<FooterLinkPageType, string>;

@@ -10,7 +10,7 @@ Commands:
   subcommand-lanes    Check every subcommand here is wired into a lane
   content-slugs       Check localized MDX slug pairs
   content-manifest    Generate content manifest only (--check verifies freshness)
-  translations        Check catalog message pack and compat translation shapes
+  translations        Check configured message packs and translation shapes
   message-key-usage   Check message catalog leaves against real consumers
   validate-production-config Validate production and public-launch config gates
   content-readiness   Check buyer-visible catalog residue (--strict-client-launch promotes launch blockers to errors)

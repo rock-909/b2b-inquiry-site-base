@@ -6,7 +6,7 @@ import { waitForLoadWithFallback } from "./test-environment-setup";
 // `/zh/*` 404s as well. A 404 page still renders main#main-content + an h1 with
 // no overflow, so keeping those entries produced false-green assertions. Scope
 // the calibration to the real English core pages instead.
-const corePages = ["/about", "/products", "/contact"] as const;
+const corePages = ["/", "/about", "/contact"] as const;
 
 async function preparePage(page: Page, path: string) {
   const response = await page.goto(path, { waitUntil: "domcontentloaded" });
@@ -114,41 +114,5 @@ test.describe("Core page visual calibration", () => {
     }
 
     expect(pageErrors).toStrictEqual([]);
-  });
-
-  test("home FAQ SectionHead uses 24px section heading at 375px viewport", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 375, height: 812 });
-    await preparePage(page, "/");
-
-    const sectionHeading = page.locator(
-      '[data-testid="home-faq-section"] h2.text-section',
-    );
-    await sectionHeading.scrollIntoViewIfNeeded();
-    await expect(sectionHeading).toBeVisible();
-
-    const fontSize = await sectionHeading.evaluate(
-      (element) => window.getComputedStyle(element).fontSize,
-    );
-    expect(fontSize).toBe("24px");
-  });
-
-  test("home FAQ SectionHead uses 28px section heading at 1280px viewport", async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 1280, height: 900 });
-    await preparePage(page, "/");
-
-    const sectionHeading = page.locator(
-      '[data-testid="home-faq-section"] h2.text-section',
-    );
-    await sectionHeading.scrollIntoViewIfNeeded();
-    await expect(sectionHeading).toBeVisible();
-
-    const fontSize = await sectionHeading.evaluate(
-      (element) => window.getComputedStyle(element).fontSize,
-    );
-    expect(fontSize).toBe("28px");
   });
 });

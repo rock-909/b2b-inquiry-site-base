@@ -1,33 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { getProductMarketPath } from "@/config/paths/utils";
 import {
-  getSingleSiteSitemapPageConfigByPath,
+  getSingleSitePublicStaticPages,
   getSingleSiteStaticPageLastmod,
-  hasSingleSiteDynamicSurface,
   SINGLE_SITE_ROBOTS_DISALLOW_PATHS,
 } from "@/config/single-site-seo";
-import { TUCSENBERG_PRODUCT_PAGES } from "@/constants/tucsenberg-product-pages";
 
-describe("single-site-seo", () => {
-  it("derives product page lastmod from the live catalog", () => {
-    const catalogLastmod = getSingleSiteStaticPageLastmod();
-    for (const productPage of Object.values(TUCSENBERG_PRODUCT_PAGES)) {
-      expect(catalogLastmod[getProductMarketPath(productPage.slug)]).toBe(
-        productPage.meta.updatedAt,
-      );
-    }
+describe("single-site SEO", () => {
+  it("owns only the six core static pages", () => {
+    expect(getSingleSitePublicStaticPages()).toEqual([
+      "",
+      "/about",
+      "/request-quote",
+      "/contact",
+      "/privacy",
+      "/terms",
+    ]);
   });
 
-  it("keeps private runtime paths out of search indexing", () => {
-    expect(SINGLE_SITE_ROBOTS_DISALLOW_PATHS).toEqual(["/api/", "/_next/"]);
-  });
-
-  it("owns the product-market dynamic surface and no blog surface", () => {
-    expect(hasSingleSiteDynamicSurface("productMarket")).toBe(true);
-    expect(getSingleSiteSitemapPageConfigByPath().productMarket).toEqual({
-      changeFrequency: "weekly",
-      priority: 0.8,
+  it("keeps static lastmod only for non-MDX pages", () => {
+    expect(getSingleSiteStaticPageLastmod()).toEqual({
+      "": "2026-07-05T00:00:00Z",
+      "/request-quote": "2026-07-05T00:00:00Z",
     });
-    expect(getSingleSiteSitemapPageConfigByPath().blogArticle).toBeUndefined();
+  });
+
+  it("keeps private runtime paths out of indexing", () => {
+    expect(SINGLE_SITE_ROBOTS_DISALLOW_PATHS).toEqual(["/api/", "/_next/"]);
   });
 });

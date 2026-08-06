@@ -120,11 +120,7 @@ export function Footer({ themeToggleSlot, className, dataTheme }: FooterProps) {
           <div>
             <p className="text-lg font-semibold tracking-tight text-[var(--footer-heading)]">
               <span className="sr-only">{siteName}</span>
-              <span aria-hidden="true">
-                TUCS
-                <span className="text-primary">=</span>
-                NBERG
-              </span>
+              <span aria-hidden="true">{siteName}</span>
             </p>
             <p className="mt-3 max-w-[34ch] text-[13px] leading-6 text-[var(--footer-text)]">
               {footerDescription}

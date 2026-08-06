@@ -32,7 +32,7 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 test.describe.configure({ mode: "serial" });
 
 test.describe("Contact Form - Test-Mode Smoke", () => {
-  const expectedContactTitle = /Contact Tucsenberg/i;
+  const expectedContactTitle = /Contact.*Reference/i;
 
   const resolveContactUrl = (info: TestInfo): string => {
     const base =

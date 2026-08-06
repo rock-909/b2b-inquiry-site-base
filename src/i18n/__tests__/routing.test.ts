@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
-import {
-  DYNAMIC_PATHS_CONFIG,
-  PATHS_CONFIG,
-} from "@/config/paths/paths-config";
+import { PATHS_CONFIG } from "@/config/paths/paths-config";
 import { PATHNAMES } from "@/config/paths/utils";
 
 /**
@@ -91,7 +88,6 @@ describe("i18n Routing Configuration", () => {
 
     const expectedPaths = [
       ...Object.values(PATHS_CONFIG).map((paths) => paths.en),
-      ...Object.values(DYNAMIC_PATHS_CONFIG).map((route) => route.pattern),
     ].sort();
 
     expect(Object.keys(config.pathnames).sort()).toEqual(expectedPaths);

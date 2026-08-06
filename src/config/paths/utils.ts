@@ -3,17 +3,12 @@
  */
 
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
-import {
-  DYNAMIC_PATHS_CONFIG,
-  PATHS_CONFIG,
-} from "@/config/paths/paths-config";
-import type { DynamicPageType, Locale, PageType } from "@/config/paths/types";
+import { PATHS_CONFIG } from "@/config/paths/paths-config";
+import type { Locale, PageType } from "@/config/paths/types";
 
 type StaticPathname =
   (typeof PATHS_CONFIG)[PageType][typeof LOCALES_CONFIG.defaultLocale];
-type DynamicPathname =
-  (typeof DYNAMIC_PATHS_CONFIG)[DynamicPageType]["pattern"];
-type DerivedPathname = StaticPathname | DynamicPathname;
+type DerivedPathname = StaticPathname;
 type PathnameMap = Readonly<Record<DerivedPathname, DerivedPathname>>;
 
 function getCanonicalPathValue(path: string): string {
@@ -26,13 +21,7 @@ function createPathnames(): Readonly<PathnameMap> {
     return [path, path] as const;
   });
 
-  const dynamicPathnames = Object.values(DYNAMIC_PATHS_CONFIG).map(
-    (config) => [config.pattern, config.pattern] as const,
-  );
-
-  return Object.freeze(
-    Object.fromEntries([...staticPathnames, ...dynamicPathnames]),
-  ) as PathnameMap;
+  return Object.freeze(Object.fromEntries(staticPathnames)) as PathnameMap;
 }
 
 /**
@@ -64,10 +53,6 @@ export function getCanonicalPath<T extends PageType>(
     pageType,
     LOCALES_CONFIG.defaultLocale,
   ) as (typeof PATHS_CONFIG)[T][typeof LOCALES_CONFIG.defaultLocale];
-}
-
-export function getProductMarketPath(marketSlug: string): string {
-  return `${getCanonicalPath("products")}/${marketSlug}`;
 }
 
 /**

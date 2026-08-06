@@ -1,46 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { getCanonicalPath, getProductMarketPath } from "@/config/paths/utils";
+import { getCanonicalPath, type PageType } from "@/config/paths";
 import { shouldIndexPublicPage } from "@/config/single-site-seo";
-import { getAllMarketSlugs } from "@/constants/product-catalog";
+
+const CORE_PAGE_TYPES = [
+  "home",
+  "about",
+  "requestQuote",
+  "contact",
+  "privacy",
+  "terms",
+] as const satisfies readonly PageType[];
 
 describe("public page indexing", () => {
-  it("indexes Tucsenberg catalog static pages by default", () => {
-    expect(
-      shouldIndexPublicPage("products", getCanonicalPath("products")),
-    ).toBe(true);
-    expect(shouldIndexPublicPage("about", getCanonicalPath("about"))).toBe(
-      true,
-    );
-    expect(
-      shouldIndexPublicPage("oemWholesale", getCanonicalPath("oemWholesale")),
-    ).toBe(true);
-    expect(
-      shouldIndexPublicPage(
-        "materialsGuide",
-        getCanonicalPath("materialsGuide"),
-      ),
-    ).toBe(true);
-    expect(
-      shouldIndexPublicPage(
-        "specificationsGuide",
-        getCanonicalPath("specificationsGuide"),
-      ),
-    ).toBe(true);
-    expect(
-      shouldIndexPublicPage("requestQuote", getCanonicalPath("requestQuote")),
-    ).toBe(true);
+  it("indexes each core page at its canonical path", () => {
+    for (const pageType of CORE_PAGE_TYPES) {
+      expect(shouldIndexPublicPage(pageType, getCanonicalPath(pageType))).toBe(
+        true,
+      );
+    }
   });
 
-  it("indexes product market pages", () => {
-    const [marketSlug] = getAllMarketSlugs();
-
-    expect(marketSlug).toBeDefined();
-    expect(
-      shouldIndexPublicPage("products", getProductMarketPath(marketSlug ?? "")),
-    ).toBe(true);
-  });
-
-  it("does not index a products page outside the product route", () => {
-    expect(shouldIndexPublicPage("products", "/not-a-product")).toBe(false);
+  it("does not index a core page under another path", () => {
+    expect(shouldIndexPublicPage("about", "/products")).toBe(false);
   });
 });

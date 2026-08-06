@@ -53,27 +53,16 @@ const BASE_URL = `http://localhost:${LIGHTHOUSE_PORT}`;
 
 const criticalUrls = [`${BASE_URL}/`];
 
-// Every canonical public route the site actually ships: the 11 static pages
-// plus all five product-market pages. tests/unit/scripts/
-// lighthouse-route-contract.test.ts keeps this list matched to the page and
-// product registries, so a new route cannot quietly go unmeasured.
+// Every canonical public route the template actually ships.
+// tests/unit/scripts/lighthouse-route-contract.test.ts keeps this list matched
+// to the static page registry, so a new route cannot quietly go unmeasured.
 const allUrls = [
   ...criticalUrls,
-  `${BASE_URL}/products`,
-  `${BASE_URL}/oem-wholesale`,
-  `${BASE_URL}/guides/flood-barrier-materials-guide`,
-  `${BASE_URL}/guides/flood-barrier-specifications`,
   `${BASE_URL}/about`,
   `${BASE_URL}/request-quote`,
   `${BASE_URL}/contact`,
-  `${BASE_URL}/warranty`,
   `${BASE_URL}/privacy`,
   `${BASE_URL}/terms`,
-  `${BASE_URL}/products/abs-flood-barriers`,
-  `${BASE_URL}/products/aluminum-flood-gates`,
-  `${BASE_URL}/products/absorbent-flood-bags`,
-  `${BASE_URL}/products/flood-tube-dams`,
-  `${BASE_URL}/products/frp-flood-barriers`,
 ];
 
 const sharedLighthouseAssertions = {
@@ -156,14 +145,8 @@ module.exports = {
     assert: {
       assertMatrix: [
         {
-          matchingUrlPattern: "^(?!.*\\/products\\/[^/]+$).*$",
+          matchingUrlPattern: ".*",
           assertions: indexablePageAssertions,
-        },
-        {
-          // Product-detail pages carry the shared budget without the SEO
-          // category gate; the pattern covers every slug, not one sample.
-          matchingUrlPattern: "/products/[^/]+$",
-          assertions: sharedLighthouseAssertions,
         },
       ],
     },

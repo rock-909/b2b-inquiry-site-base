@@ -10,26 +10,10 @@
  * ships a route this list does not cover.
  */
 export const SITE_PAGE_CASES = [
-  ["/", /Factory-Direct Flood Barriers from China/i],
-  ["/products", /Flood Barrier Product Lines/i],
-  ["/products/abs-flood-barriers", /ABS Interlocking Boxwall Flood Barriers/i],
-  [
-    "/products/aluminum-flood-gates",
-    /Aluminum Flood Gates & Demountable Barrier Systems/i,
-  ],
-  ["/products/absorbent-flood-bags", /Absorbent Flood Bags/i],
-  ["/products/flood-tube-dams", /Water & Air-Filled Flood Tube Dams/i],
-  ["/products/frp-flood-barriers", /FRP Composite Flood Barrier Planks/i],
-  ["/oem-wholesale", /OEM, Private Label & Wholesale Supply/i],
-  [
-    "/guides/flood-barrier-materials-guide",
-    /ABS vs Aluminum vs FRP vs Water-Filled Flood Barriers/i,
-  ],
-  ["/guides/flood-barrier-specifications", /Flood Barrier Specifications/i],
-  ["/about", /Who you're actually buying from/i],
+  ["/", /Turn qualified interest into a useful conversation/i],
+  ["/about", /About This Reference Site/i],
   ["/request-quote", /Get real numbers/i],
   ["/contact", /Contact/i],
-  ["/warranty", /Warranty Policy/i],
-  ["/privacy", /Privacy Policy/i],
-  ["/terms", /Terms of Service/i],
+  ["/privacy", /Privacy Policy Reference/i],
+  ["/terms", /Website Terms Reference/i],
 ] as const satisfies readonly (readonly [string, RegExp])[];

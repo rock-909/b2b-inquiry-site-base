@@ -2,7 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 const ts = require("typescript");
-const { composeCatalogMessages, collectLeafPaths } = require("./translations");
+const { composeMessages, collectLeafPaths } = require("./translations");
 const {
   collectDerivedKeyConsumerUsage,
   collectObjectKeyConsumerUsage,
@@ -56,7 +56,7 @@ const SELF_FILES = new Set([
 const UNKNOWN_TRANSLATION_NAMESPACE = Symbol("unknown-translation-namespace");
 
 function getCatalogKeys(locale = DEFAULT_LOCALE) {
-  const composed = composeCatalogMessages(locale);
+  const composed = composeMessages(locale);
   return new Set(collectLeafPaths(composed));
 }
 

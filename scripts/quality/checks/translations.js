@@ -4,8 +4,8 @@ const ts = require("typescript");
 
 const ROOT = process.cwd();
 const I18N_LOCALES = require("../../../i18n-locales.config").locales;
-const CATALOG_MESSAGE_PACK_IDS = require("../../../messages/message-packs.json");
-const MESSAGE_PACK_IDS = [...new Set(CATALOG_MESSAGE_PACK_IDS)];
+const CONFIGURED_MESSAGE_PACK_IDS = require("../../../messages/message-packs.json");
+const MESSAGE_PACK_IDS = [...new Set(CONFIGURED_MESSAGE_PACK_IDS)];
 
 const REQUIRED_PACK_FILES = MESSAGE_PACK_IDS.flatMap((packId) =>
   I18N_LOCALES.map((locale) => getPackRelativePath(packId, locale)),
@@ -164,8 +164,8 @@ function mergeObjects(target, source) {
   return result;
 }
 
-function composeCatalogMessages(locale) {
-  return CATALOG_MESSAGE_PACK_IDS.reduce(
+function composeMessages(locale) {
+  return CONFIGURED_MESSAGE_PACK_IDS.reduce(
     (composed, packId) =>
       mergeObjects(composed, readJson(getPackAbsolutePath(packId, locale))),
     {},
@@ -218,7 +218,7 @@ function findCrossPackLeafConflictsFromMaps(packEntries) {
 
 function findCrossPackLeafConflicts(locale) {
   return findCrossPackLeafConflictsFromMaps(
-    CATALOG_MESSAGE_PACK_IDS.map((packId) => ({
+    CONFIGURED_MESSAGE_PACK_IDS.map((packId) => ({
       packId,
       leafPaths: collectLeafPaths(
         readJson(getPackAbsolutePath(packId, locale)),
@@ -348,23 +348,21 @@ function validatePackLocaleParity() {
 }
 
 // Dormant under single-locale (en). Auto-activates when LOCALES_CONFIG gains locales — owner 2026-07-11 decision to keep.
-function validateComposedCatalogParity() {
-  console.log("\nValidating composed catalog locale parity...");
+function validateComposedMessageParity() {
+  console.log("\nValidating composed message locale parity...");
   let allMatch = true;
 
   const [firstLocale, ...otherLocales] = I18N_LOCALES;
-  const firstAllPaths = new Set(
-    collectLeafPaths(composeCatalogMessages(firstLocale)),
-  );
+  const firstAllPaths = new Set(collectLeafPaths(composeMessages(firstLocale)));
 
   for (const locale of otherLocales) {
-    const allPaths = new Set(collectLeafPaths(composeCatalogMessages(locale)));
+    const allPaths = new Set(collectLeafPaths(composeMessages(locale)));
 
     if (
       !compareLeafPathSets(
-        `catalog/${firstLocale}`,
+        `messages/${firstLocale}`,
         firstAllPaths,
-        `catalog/${locale}`,
+        `messages/${locale}`,
         allPaths,
       )
     ) {
@@ -399,7 +397,7 @@ function validateRequiredPackFiles() {
 function validateLocale(locale) {
   console.log(`\nValidating composed locale: ${locale}`);
 
-  const messages = composeCatalogMessages(locale);
+  const messages = composeMessages(locale);
   const leafKeys = collectLeafPaths(messages);
   const leafSet = new Set(leafKeys);
 
@@ -473,7 +471,7 @@ function compareLocales(localeData) {
 }
 
 function runTranslationCheck() {
-  console.log("Translation Validation (catalog message packs)");
+  console.log("Translation Validation (configured message packs)");
   console.log("===============================================");
 
   let allValid = true;
@@ -501,7 +499,7 @@ function runTranslationCheck() {
     allValid = false;
   }
 
-  if (!validateComposedCatalogParity()) {
+  if (!validateComposedMessageParity()) {
     allValid = false;
   }
 
@@ -537,7 +535,7 @@ function runTranslationCheck() {
 module.exports = {
   collectLeafPaths,
   compareLocales,
-  composeCatalogMessages,
+  composeMessages,
   findCrossPackLeafConflicts,
   findCrossPackLeafConflictsFromMaps,
   findDuplicateJsonObjectKeys,

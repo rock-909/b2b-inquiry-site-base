@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { getSingleSitePublicStaticPages } from "@/config/single-site-seo";
-import { TUCSENBERG_PRODUCT_PAGES } from "@/constants/tucsenberg-product-pages";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { getHeaderMobileMenuButton } from "./helpers/navigation";
 
 const site = {
   skipLabel: "Skip to main content",
-  homeHeading: /Factory-Direct Flood Barriers from China/i,
+  homeHeading: /Turn qualified interest into a useful conversation/i,
   contactHeading: /Contact/i,
   fullNameLabel: "Full name",
   optionalLabel: "optional",
@@ -18,7 +18,6 @@ const site = {
 // 进入覆盖面。
 const canonicalPublicPaths = [
   ...getSingleSitePublicStaticPages().map((path) => path || "/"),
-  ...Object.keys(TUCSENBERG_PRODUCT_PAGES).map((slug) => `/products/${slug}`),
 ];
 
 function expectExactlyOneMain(html: string) {
@@ -200,9 +199,9 @@ test.describe("No-JS HTML contract (English-only)", () => {
     await expect(
       staticFallback.getByText(/secure inquiry form needs JavaScript/i),
     ).toBeVisible();
-    await expect(
-      staticFallback.getByRole("link", { name: /@/i }),
-    ).toBeVisible();
+    await expect(staticFallback.getByRole("link", { name: /@/i })).toHaveCount(
+      0,
+    );
     await expect(staticFallback.getByRole("button")).toHaveCount(0);
     await expectNoReservedGap(page);
     await expectBodyRenderedOnce(page);
@@ -235,9 +234,9 @@ test.describe("No-JS HTML contract (English-only)", () => {
     await expect(
       staticFallback.getByText(/secure inquiry form needs JavaScript/i),
     ).toBeVisible();
-    await expect(
-      staticFallback.getByRole("link", { name: /@/i }),
-    ).toBeVisible();
+    await expect(staticFallback.getByRole("link", { name: /@/i })).toHaveCount(
+      0,
+    );
     await expect(staticFallback.getByRole("button")).toHaveCount(0);
     await expectNoReservedGap(page);
     await expectBodyRenderedOnce(page);
@@ -270,11 +269,12 @@ test.describe("No-JS HTML contract (English-only)", () => {
   test("rendered <title> carries exactly one brand suffix", async ({
     page,
   }) => {
-    await page.goto("http://localhost:3000/products/aluminum-flood-gates", {
+    await page.goto("http://localhost:3000/about", {
       waitUntil: "domcontentloaded",
     });
     const title = await page.title();
-    expect(title).toMatch(/\| Tucsenberg$/u);
-    expect(title).not.toMatch(/Tucsenberg\s*\|\s*Tucsenberg/u);
+    const suffix = `| ${SINGLE_SITE_CONFIG.name}`;
+    expect(title).toContain(suffix);
+    expect(title.split(SINGLE_SITE_CONFIG.name)).toHaveLength(2);
   });
 });

@@ -1,6 +1,5 @@
-import catalogMessagePacks from "@messages/message-packs.json";
+import messagePacks from "@messages/message-packs.json";
 
-export type MessagePackId = "base" | "b2b-lead" | "catalog";
+export type MessagePackId = "base" | "b2b-lead";
 
-export const CATALOG_MESSAGE_PACK_IDS =
-  catalogMessagePacks as readonly MessagePackId[];
+export const MESSAGE_PACK_IDS = messagePacks as readonly MessagePackId[];

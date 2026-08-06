@@ -76,7 +76,7 @@ describe("Footer Component", () => {
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
   });
 
-  it("keeps footer navigation aligned with the Tucsenberg catalog IA", () => {
+  it("keeps footer navigation aligned with the neutral core IA", () => {
     render(<Footer />);
 
     const footerNav = screen.getByRole("navigation", {
@@ -107,25 +107,12 @@ describe("Footer Component", () => {
 
     expect(navigationLinks).toEqual([
       { href: "/", text: "Home" },
-      { href: "/products", text: "Products" },
-      { href: "/oem-wholesale", text: "OEM & Wholesale" },
-      {
-        href: "/guides/flood-barrier-materials-guide",
-        text: "Materials Guide",
-      },
-      {
-        href: "/guides/flood-barrier-specifications",
-        text: "Specifications Guide",
-      },
       { href: "/about", text: "About" },
+      { href: "/contact", text: "Contact" },
     ]);
-    expect(navigationLinks).not.toContainEqual({
-      href: "/contact",
-      text: "Contact",
-    });
     expect(supportLinks).toContainEqual({
       href: "/request-quote",
-      text: "Request a Quote",
+      text: "Start an inquiry",
     });
   });
 
@@ -176,8 +163,9 @@ describe("Footer Component", () => {
   it("renders the brand wordmark with an accessible site name", () => {
     render(<Footer />);
 
-    expect(screen.getByText(SINGLE_SITE_CONFIG.name)).toHaveClass("sr-only");
-    expect(screen.getByText("=")).toHaveClass("text-primary");
+    expect(
+      screen.getByText(SINGLE_SITE_CONFIG.name, { selector: ".sr-only" }),
+    ).toBeInTheDocument();
   });
 
   it("renders the legal identity bar from single-site config", () => {
