@@ -1,4 +1,4 @@
-# Tucsenberg Site Docs
+# B2B Inquiry Site Base Docs
 
 docs/ 只保留当前项目真相、维护操作、正式上线标准、仍有效的技术问题与决策。过程材料、审查证据和可由 Git 恢复的历史计划不在这里长期保留。
 

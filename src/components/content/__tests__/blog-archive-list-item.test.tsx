@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { PUBLIC_STATIC_PAGE_TYPES } from "@/config/pages.config";
 
 describe("retired blog archive list item", () => {
-  it("keeps the active Tucsenberg catalog site free of the old blog archive item", () => {
+  it("keeps the active catalog site free of the old blog archive item", () => {
     expect(
       existsSync(
         join(process.cwd(), "src/components/content/blog-archive-list-item.tsx"),

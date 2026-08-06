@@ -1,7 +1,7 @@
 # AGENTS.md
 
-Tucsenberg 防洪挡板英文 B2B 官网，使用 Next.js App Router 和
-Cloudflare/OpenNext，服务产品发现、PDF 下载和 OEM / 批发询盘。
+英文 B2B 询盘站模板，使用 Next.js App Router 和 Cloudflare/OpenNext，
+服务 offering 介绍、联系和报价询盘转化。
 
 ## 已知约束
 

@@ -5,7 +5,7 @@ import { SINGLE_SITE_FACTS } from "@/config/single-site";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
 
 const TEMPLATE_BASE_URL = "https://example.invalid";
-const REFERENCE_OG_IMAGE = "/images/tucsenberg-og.png";
+const REFERENCE_OG_IMAGE = "/opengraph-image.png";
 
 describe("single-site", () => {
   afterEach(() => {
@@ -95,11 +95,10 @@ describe("single-site", () => {
     expect(getPublicContactPhone("+86-138-0013-8000")).toBe(
       "+86-138-0013-8000",
     );
-    expect(SINGLE_SITE_FACTS.brandAssets.logo.status).toBe("ready");
-    expect(getPublicLogoPath(SINGLE_SITE_FACTS.brandAssets.logo)).toBe(
-      "/images/tucsenberg-logo.png",
-    );
-    expect(SINGLE_SITE_FACTS.brandAssets.productPhotos.status).toBe("pending");
+    expect(SINGLE_SITE_FACTS.brandAssets.logo.status).toBe("pending");
+    expect(
+      getPublicLogoPath(SINGLE_SITE_FACTS.brandAssets.logo),
+    ).toBeUndefined();
     // 从 establishedYear 减出来的值，买家在页面上看得见。算错方向就是负数。
     expect(SINGLE_SITE_FACTS.company.yearsInBusiness).toBeGreaterThanOrEqual(0);
   });

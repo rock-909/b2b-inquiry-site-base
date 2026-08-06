@@ -28,13 +28,13 @@ describe("Layout Structured Data Generation", () => {
     mockGenerateOrganizationData.mockReturnValue({
       "@context": "https://schema.org",
       "@type": "Organization",
-      name: "Tucsenberg",
+      name: "Reference Industries",
       url: "https://example.com",
     });
     mockGenerateWebSiteData.mockReturnValue({
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "Tucsenberg",
+      name: "Reference Industries",
       url: "https://example.com",
     });
   });
@@ -68,13 +68,13 @@ describe("Layout Structured Data Generation", () => {
       organizationData: {
         "@context": "https://schema.org",
         "@type": "Organization",
-        name: "Tucsenberg",
+        name: "Reference Industries",
         url: "https://example.com",
       },
       websiteData: {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        name: "Tucsenberg",
+        name: "Reference Industries",
         url: "https://example.com",
       },
     });

@@ -66,8 +66,6 @@ describe("public asset surface", () => {
       .map((filePath) => ({ filePath, urlPath: toUrlPath(filePath) }))
       .filter(({ filePath, urlPath }) => !isExempt(urlPath, filePath));
 
-    expect(shipped.length).toBeGreaterThan(0);
-
     const orphans = shipped
       .filter(
         ({ urlPath }) => !sources.some((source) => source.includes(urlPath)),

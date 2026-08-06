@@ -40,14 +40,6 @@ const CF_PREVIEW_SMOKE_EXPECTATIONS = [
   { pathname: "/terms", status: 200, html: true },
   { pathname: "/zh", status: 404 },
   { pathname: "/zh/contact", status: 404 },
-  // public/ 下的文件由 Cloudflare Static Assets 直送，不经过 Next 服务器，
-  // 所以 Node 侧的 e2e 证明不了它们的响应头。这里打的是本地 Worker，
-  // 是 public/_headers 唯一的行为层证明。
-  {
-    pathname: "/downloads/spec-sheet-tb-bw.pdf",
-    status: 200,
-    robotsTag: "noindex",
-  },
 ];
 const DEPLOYED_SMOKE_EXPECTATIONS = [
   { pathname: "/", status: 200 },
@@ -62,11 +54,6 @@ const DEPLOYED_SMOKE_EXPECTATIONS = [
   { pathname: "/zh/contact", status: 404 },
   { pathname: "/.well-known/security.txt", status: 200 },
   { pathname: "/security-policy.txt", status: 404 },
-  {
-    pathname: "/downloads/spec-sheet-tb-bw.pdf",
-    status: 200,
-    robotsTag: "noindex",
-  },
 ];
 const CF_PREVIEW_PROOF_OUTPUT_PATH = path.join(
   ROOT,
@@ -294,7 +281,7 @@ async function runCloudflarePreviewSmoke(args = []) {
   ];
 
   console.log(
-    `[cf-preview-smoke] Probing ${baseUrl} (${includeApiHealth ? "strict" : "page/header"} mode)`,
+    `[cf-preview-smoke] Probing ${baseUrl} (${includeApiHealth ? "strict" : "page"} mode)`,
   );
 
   const responses = [];
@@ -334,7 +321,7 @@ async function runCloudflarePreviewSmoke(args = []) {
       "[cf-preview-smoke] Skipping /api/health (diagnostic-only in local preview).",
     );
     console.log(
-      "[cf-preview-smoke] Policy: local preview proves page/header/cookie behavior. API proof belongs to deployed smoke.",
+      "[cf-preview-smoke] Policy: local preview proves page/cookie behavior. API proof belongs to deployed smoke.",
     );
   }
 

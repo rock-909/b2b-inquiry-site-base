@@ -193,18 +193,15 @@ export const SINGLE_SITE_DEFINITION = {
     social,
     brandAssets: {
       logo: {
-        status: "ready",
-        horizontal: "/images/tucsenberg-logo.png",
-        horizontalPng: "/images/tucsenberg-logo.png",
-        square: "/images/tucsenberg-logo-square.png",
+        status: "pending",
+        horizontal: "/icon.svg",
+        horizontalPng: "/icon.svg",
+        square: "/icon.svg",
         width: 240,
         height: 72,
       },
-      productPhotos: {
-        status: "pending",
-      },
-      ogImage: "/images/tucsenberg-og.png",
-      favicon: "/favicon.ico",
+      ogImage: "/opengraph-image.png",
+      favicon: "/icon.svg",
     },
   },
   navigation: {

@@ -84,9 +84,6 @@ function loadSingleSiteModule() {
           logo: {
             status: "pending",
           },
-          productPhotos: {
-            status: "pending",
-          },
         },
       },
     };
@@ -479,12 +476,6 @@ function validatePublicLaunchTrustContent(env) {
   if (!getPublicLogoPath(SINGLE_SITE_FACTS.brandAssets.logo)) {
     target.push(
       "brandAssets.logo.status is pending. Header falls back to text-only now; owner-confirmed logo files must be supplied before launch.",
-    );
-  }
-
-  if (SINGLE_SITE_FACTS.brandAssets.productPhotos.status !== "ready") {
-    target.push(
-      "brandAssets.productPhotos.status is pending. Neutral product illustrations are allowed for preview, but owner-confirmed product photos must be supplied before launch.",
     );
   }
 

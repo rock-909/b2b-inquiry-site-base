@@ -42,7 +42,7 @@ describe("static public pages architecture contract", () => {
   // 改成另一个真实存在的 page.tsx 就照样绿，`/products` 指到首页也发现不了。
   //
   // 这条只管一件事：URL 和 owner 目录必须对得上。它自己不是独立真值，两个字段
-  // 一起改错它也是绿的。真值在 `tucsenberg-site-contract.test.ts` 的
+  // 一起改错它也是绿的。真值在站点路由 contract 的
   // `TARGET_STATIC_PATHS`——那份 URL 清单是手写的，注册表改了 URL 它会红。两条
   // 合起来才封住：一条钉 URL，一条钉 URL 到文件的映射。
   it("puts each route owner where the page's own URL says it should be", () => {

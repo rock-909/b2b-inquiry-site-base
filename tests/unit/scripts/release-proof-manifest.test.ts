@@ -55,7 +55,7 @@ describe("release proof manifest", () => {
     vi.unstubAllEnvs();
   });
 
-  it("keeps release proof local and catalog-only", () => {
+  it("keeps release proof local and repository-only", () => {
     const manifest = loadReleaseProofManifest();
     const releaseProofFlow = manifest.getReleaseProofSequence().join("\n");
     const lanes = new Set(
@@ -156,7 +156,7 @@ describe("release proof manifest", () => {
     expect(playwrightIndex).toBeLessThan(cloudflareBuildIndex);
     expect(cloudflareBuildIndex).toBeGreaterThanOrEqual(0);
     expect(artifactConfigIndex).toBe(cloudflareBuildIndex + 1);
-    expect(artifactConfigIndex).toBeLessThan(staticAssetHeadersIndex);
+    expect(staticAssetHeadersIndex).toBe(artifactConfigIndex + 1);
     expect(manifest.getReleaseProofSequence()[artifactConfigIndex]).toBe(
       "node scripts/quality/checks/cloudflare-artifact-config.js",
     );

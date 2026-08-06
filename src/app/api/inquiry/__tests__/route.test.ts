@@ -75,6 +75,15 @@ vi.mock("@/lib/api/cors-utils", () => ({
 }));
 
 describe("/api/inquiry route", () => {
+  const RETIRED_INPUT_FIELDS = [
+    "company",
+    "quantity",
+    "requirements",
+    "legacyItemLabel",
+    "legacyProductId",
+    "legacyInquiryKind",
+  ] as const;
+
   function createInquiryRequest(
     body: BodyInit | null,
     headers: Record<string, string> = {},
@@ -196,11 +205,11 @@ describe("/api/inquiry route", () => {
       expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
 
-    it("ignores retired catalog product identity fields without aliasing them", async () => {
+    it("ignores retired offering identity fields without aliasing them", async () => {
       const request = createInquiryRequest(
         JSON.stringify({
           ...generalInquiryData,
-          catalogProductId: "abs-flood-barriers",
+          legacyProductId: "retired-offering",
         }),
       );
 
@@ -209,7 +218,7 @@ describe("/api/inquiry route", () => {
       expect(response.status).toBe(200);
       const callArgs = vi.mocked(processValidatedInquiry).mock
         .calls[0]![0] as Record<string, unknown>;
-      expect(callArgs).not.toHaveProperty("catalogProductId");
+      expect(callArgs).not.toHaveProperty("legacyProductId");
     });
 
     it("passes attribution fields to processValidatedInquiry", async () => {
@@ -218,7 +227,7 @@ describe("/api/inquiry route", () => {
           ...validInquiryData,
           utmSource: "google",
           utmMedium: "cpc",
-          utmCampaign: "flood-barriers",
+          utmCampaign: "sample-campaign",
           gclid: "gclid-rfq-123",
           landingPage: "/en/request-quote",
           capturedAt: "2026-07-04T00:00:00.000Z",
@@ -232,7 +241,7 @@ describe("/api/inquiry route", () => {
           type: "inquiry",
           utmSource: "google",
           utmMedium: "cpc",
-          utmCampaign: "flood-barriers",
+          utmCampaign: "sample-campaign",
           gclid: "gclid-rfq-123",
           landingPage: "/en/request-quote",
           capturedAt: "2026-07-04T00:00:00.000Z",
@@ -511,6 +520,9 @@ describe("/api/inquiry route", () => {
           company: "Legacy Co",
           quantity: "100",
           requirements: "Legacy note",
+          legacyItemLabel: "Retired item",
+          legacyProductId: "retired-offering",
+          legacyInquiryKind: "general-rfq",
         }),
       );
 
@@ -521,12 +533,9 @@ describe("/api/inquiry route", () => {
       expect(data.success).toBe(true);
       const callArgs = vi.mocked(processValidatedInquiry).mock
         .calls[0]![0] as Record<string, unknown>;
-      expect(callArgs).not.toHaveProperty("company");
-      expect(callArgs).not.toHaveProperty("quantity");
-      expect(callArgs).not.toHaveProperty("requirements");
-      expect(callArgs).not.toHaveProperty("productName");
-      expect(callArgs).not.toHaveProperty("productInquiryKind");
-      expect(callArgs).not.toHaveProperty("catalogProductId");
+      for (const field of RETIRED_INPUT_FIELDS) {
+        expect(callArgs).not.toHaveProperty(field);
+      }
     });
 
     it("should return 400 when turnstile verification fails", async () => {
@@ -715,8 +724,8 @@ describe("/api/inquiry route", () => {
       interest: "Custom fabrication",
       utmSource: "google",
       utmMedium: "cpc",
-      utmCampaign: "flood-2026",
-      utmTerm: "flood barrier",
+      utmCampaign: "sample-2026",
+      utmTerm: "sample offering",
       utmContent: "hero-cta",
       gclid: "gclid-sample",
       fbclid: "fbclid-sample",

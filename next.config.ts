@@ -157,12 +157,6 @@ const nextConfig: NextConfig = {
         value: "public, max-age=31536000, immutable",
       },
     ];
-    const pdfNoindexHeaders = [
-      {
-        key: "X-Robots-Tag",
-        value: "noindex",
-      },
-    ];
     const nonProductionNoindexHeaders = [
       {
         key: "X-Robots-Tag",
@@ -172,7 +166,7 @@ const nextConfig: NextConfig = {
     const shouldNoindexPublicPages = process.env.APP_ENV !== "production";
 
     // 这些规则只对 Next 服务器渲染的响应生效：本地/CI 的 Node 服务器，以及
-    // Worker 渲染的路由（含 src/app/icon.png 这类文件式 metadata）。
+    // Worker 渲染的路由（含 src/app/icon.svg 这类文件式 metadata）。
     // public/ 下的文件由 Cloudflare Static Assets 直送，不经过这里——
     // 要给它们加响应头，必须同时写进 public/_headers。改这里的人请一起改那边。
     const headerConfigs = [
@@ -193,11 +187,6 @@ const nextConfig: NextConfig = {
             },
           ]
         : []),
-      // PDF downloads are buyer aids, not SEO landing pages.
-      {
-        source: "/downloads/:path*.pdf",
-        headers: pdfNoindexHeaders,
-      },
       // CDN 缓存策略应用到静态资源
       {
         source: "/:all*(svg|jpg|jpeg|png|webp|pdf|woff|woff2|ttf|otf)",

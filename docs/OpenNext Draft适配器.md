@@ -56,8 +56,8 @@ Cache Components 在 Node.js 和 Cloudflare workerd 上的计时器、请求隔�
 
 | 环境 | Binding | Bucket |
 | --- | --- | --- |
-| Preview | `NEXT_INC_CACHE_R2_BUCKET` | `tucsenberg-site-cache-preview` |
-| Production | `NEXT_INC_CACHE_R2_BUCKET` | `tucsenberg-site-cache-production` |
+| Preview | `NEXT_INC_CACHE_R2_BUCKET` | `site-cache-preview` |
+| Production | `NEXT_INC_CACHE_R2_BUCKET` | `site-cache-production` |
 
 两个环境不共享 bucket，因此不需要额外配置 `NEXT_INC_CACHE_R2_PREFIX`。不要把
 Production binding 指向 Preview bucket。

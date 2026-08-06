@@ -29,12 +29,12 @@ describe("CORS base URL origin", () => {
   });
 
   it("includes the canonical site URL origin when only NEXT_PUBLIC_SITE_URL is set", async () => {
-    process.env.NEXT_PUBLIC_SITE_URL = "https://tucsenberg.example";
+    process.env.NEXT_PUBLIC_SITE_URL = "https://reference-site.example";
     vi.resetModules();
 
     const { getAllowedCorsOrigins } = await import("../cors");
 
-    expect(getAllowedCorsOrigins()).toContain("https://tucsenberg.example");
+    expect(getAllowedCorsOrigins()).toContain("https://reference-site.example");
   });
 
   it("still honours NEXT_PUBLIC_BASE_URL when set", async () => {

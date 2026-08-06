@@ -12,7 +12,7 @@ const SCRIPT_PATH = path.join(
 );
 const TEST_TRASH_DIR = path.join(
   os.tmpdir(),
-  "tucsenberg-cloudflare-official-compare-test-trash",
+  "b2b-inquiry-cloudflare-official-compare-test-trash",
 );
 const requireModule = createRequire(path.join(REPO_ROOT, "package.json"));
 const tempDirs: string[] = [];
@@ -87,8 +87,8 @@ function writePassingWranglerConfig(rootDir: string): void {
       '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
       '  "assets": { "binding": "ASSETS" },',
       '  "env": {',
-      '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tucsenberg-site-cache-preview" }] },',
-      '    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tucsenberg-site-cache-production" }] }',
+      '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-preview" }] },',
+      '    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-production" }] }',
       "  }",
       "}",
     ].join("\n"),
@@ -97,7 +97,7 @@ function writePassingWranglerConfig(rootDir: string): void {
 
 function createFixture(): string {
   const rootDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "tucsenberg-cloudflare-official-compare-"),
+    path.join(os.tmpdir(), "b2b-inquiry-cloudflare-official-compare-"),
   );
   tempDirs.push(rootDir);
   return rootDir;
@@ -156,8 +156,8 @@ describe("Cloudflare official-compare source contract", () => {
         "  // historical note: r2_buckets and d1_databases were never added",
         '  "assets": { "binding": "ASSETS" },',
         '  "env": {',
-        '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tucsenberg-site-cache-preview" }] },',
-        '    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tucsenberg-site-cache-production" }] }',
+        '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-preview" }] },',
+        '    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-production" }] }',
         "  }",
         "}",
       ].join("\n"),
@@ -249,7 +249,7 @@ describe("Cloudflare official-compare source contract", () => {
         '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
         '  "assets": { "binding": "ASSETS" },',
         '  "env": {',
-        '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tucsenberg-site-cache-preview" }] }',
+        '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-preview" }] }',
         "  }",
         "}",
       ].join("\n"),

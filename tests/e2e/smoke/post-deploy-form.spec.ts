@@ -186,8 +186,6 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
     expect(inquiryBody.email).toBe(CANARY_EMAIL);
     expect(inquiryBody.fullName).toBe("Smoke Test");
     expect(inquiryBody.message).toBe(CANARY_MESSAGE);
-    expect(inquiryBody).not.toHaveProperty("productInquiryKind");
-    expect(inquiryBody).not.toHaveProperty("catalogProductId");
 
     await expectDeployedSuccess(page, selectors.successPrefix);
 

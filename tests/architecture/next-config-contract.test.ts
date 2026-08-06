@@ -1,7 +1,7 @@
 /**
  * `next.config.ts` 的行为契约。
  *
- * 跟 `tucsenberg-site-contract.test.ts` 分开放，是因为这里的做法不一样：那个文件
+ * 跟站点契约测试分开放，是因为这里的做法不一样：那个文件
  * 读仓库里的文本，这个文件 import 并执行配置本身。原来这两条挂在那边，靠在
  * next.config.ts 的源码里找字符串来判断。找到字符串不等于配置生效，两条都因此
  * 长期失灵，详见各自的注释。
@@ -9,12 +9,16 @@
 
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { createRequire } from "node:module";
 import { describe, expect, it, vi } from "vitest";
 
-const { toDirectiveSet } = createRequire(import.meta.url)(
-  "../../scripts/quality/checks/wrangler-headers-semantics.js",
-) as { toDirectiveSet: (name: string, value: string) => Set<string> };
+function hasNoindexDirective(key: string, value: string): boolean {
+  if (key.toLowerCase() !== "x-robots-tag") return false;
+  return value
+    .toLowerCase()
+    .split(",")
+    .map((part) => part.trim())
+    .some((directive) => directive === "noindex" || directive === "none");
+}
 
 describe("next.config contract", () => {
   it("uses the native Rust React Compiler for Turbopack builds", async () => {
@@ -72,18 +76,9 @@ describe("next.config contract", () => {
         // "noindex, follow"、"NOINDEX"，或者换一种 source 写法照样能把整站从
         // 搜索里拿掉，精确比对全都放行。
         //
-        // 也不自己写正则。`X-Robots-Tag: none` 在 Google 的定义里就等于
-        // noindex + nofollow，`/noindex/` 看不见它；按爬虫下指令的写法
-        // （`bingbot: noindex`）又只对那一个爬虫生效，不该算全站。这两条语义
-        // 仓库里已经有一份，Cloudflare 静态资源头那个门禁在用，直接复用它，
-        // 别让同一件事在两个地方各判各的。
         const noindex = all.flatMap((rule) =>
           rule.headers
-            .filter((header) =>
-              toDirectiveSet(header.key.toLowerCase(), header.value).has(
-                "noindex",
-              ),
-            )
+            .filter((header) => hasNoindexDirective(header.key, header.value))
             .map((header) => `${rule.source} => ${header.value}`),
         );
         return { all, noindex };
@@ -104,13 +99,8 @@ describe("next.config contract", () => {
     expect(staging.all.length).toBeGreaterThan(0);
     expect(production.all.length).toBeGreaterThan(0);
 
-    // 钉死完整清单，不是「除了 PDF 那条以外没有别的」。用规则形状去猜哪条是 PDF
-    // 那条，改写 PDF 的 source 就会被误判成盖住普通页面。清单比对没有这个猜测：
-    // 多一条、少一条、换个值、换个 source，都会红，改的人顺手把这里改对就行。
-    // PDF 是买家资料不是落地页，它那条 noindex 两个环境都在，是有意的。
-    const pdfRule = "/downloads/:path*.pdf => noindex";
-    expect(production.noindex).toEqual([pdfRule]);
-    expect(staging.noindex).toEqual(["/:path* => noindex, nofollow", pdfRule]);
+    expect(production.noindex).toEqual([]);
+    expect(staging.noindex).toEqual(["/:path* => noindex, nofollow"]);
   });
 
   // 原来断的是「unsplash 和 placeholder 这两个名字不在配置里」。那只挡得住这两个

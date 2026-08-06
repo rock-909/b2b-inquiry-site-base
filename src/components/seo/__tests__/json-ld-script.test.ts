@@ -46,12 +46,12 @@ describe("createJsonLdGraphData", () => {
       organizationData: {
         "@type": "Organization",
         "@id": "https://www.example.com#organization",
-        name: "Tucsenberg",
+        name: "Reference Industries",
       },
       websiteData: {
         "@type": "WebSite",
         "@id": "https://www.example.com#website",
-        name: "Tucsenberg Flood Barriers",
+        name: "Reference Industries",
       },
     });
   });
@@ -61,12 +61,12 @@ describe("createJsonLdGraphData", () => {
       {
         "@context": "https://schema.org",
         "@type": "Organization",
-        name: "Tucsenberg",
+        name: "Reference Industries",
       },
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        name: "Tucsenberg Flood Barriers",
+        name: "Reference Industries",
       },
       {
         "@context": "https://schema.org",

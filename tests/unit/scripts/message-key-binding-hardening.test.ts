@@ -13,7 +13,7 @@ type DerivedKeyConsumerFixture = Record<string, unknown> & {
 const tempDirs: string[] = [];
 const TEMP_TRASH_ROOT = path.join(
   os.tmpdir(),
-  "tucsenberg-message-binding-test-trash",
+  "b2b-inquiry-message-binding-test-trash",
 );
 
 function collect({

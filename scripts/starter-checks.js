@@ -13,7 +13,7 @@ Commands:
   translations        Check configured message packs and translation shapes
   message-key-usage   Check message catalog leaves against real consumers
   validate-production-config Validate production and public-launch config gates
-  content-readiness   Check buyer-visible catalog residue (--strict-client-launch promotes launch blockers to errors)
+  content-readiness   Check buyer-visible starter residue (--strict-client-launch promotes launch blockers to errors)
   client-boundary     Check top-level use client budget (--build-artifacts after pnpm build)
   prerender-static    Check localized Next.js build output stays prerendered
   cf-preview-smoke    Probe local Cloudflare preview behavior

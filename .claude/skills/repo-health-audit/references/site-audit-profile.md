@@ -1,12 +1,12 @@
-# Tucsenberg Audit Profile
+# Site Audit Profile
 
 Use this as the repo-specific audit adapter. It overrides any global
 `ai-smell-audit` repo profile that still mentions Showcase Website Starter.
 
 ## Critical chains
 
-1. Product discovery: product truth -> catalog -> product detail page -> SEO
-   metadata -> JSON-LD -> sitemap -> CTA.
+1. Offering discovery: offering truth -> public page -> SEO metadata ->
+   JSON-LD -> sitemap -> CTA.
 2. Buyer inquiry: form -> `/api/inquiry` -> validation -> Turnstile -> rate
    limit -> lead pipeline -> owner email + Airtable -> buyer feedback.
 3. Release proof: source -> messages/content -> Next build -> OpenNext build ->
@@ -23,17 +23,16 @@ Use this as the repo-specific audit adapter. It overrides any global
 - Messages:
   - `messages/base/**`
   - `messages/profiles/b2b-lead/**`
-  - `messages/profiles/catalog/**`
   - `.claude/rules/i18n.md`
 - Launch/release proof:
   - `docs/正式上线标准.md`
   - `docs/开发与维护.md`
   - `docs/架构与行为.md`
-- Canonical product and route truth:
+- Canonical offering and route truth:
   - `src/config/pages.config.ts`
   - `src/config/single-site*.ts`
-  - `src/constants/tucsenberg-product-pages.ts`
-  - `src/constants/tucsenberg-product-page-*.ts`
+  - `src/config/offerings.ts`
+  - content config used by active pages
 
 ## Noise to classify first
 

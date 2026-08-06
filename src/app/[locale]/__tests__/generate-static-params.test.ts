@@ -3,7 +3,7 @@ import { generateLocaleStaticParams } from "@/app/[locale]/generate-static-param
 
 // 这个文件只守一件事：helper 会把 routing 里的每一个 locale 都映射成一条 params。
 // 它跟「站点现在出几种语言」解耦，所以这里给一个多语言的 routing。真实语言集合
-// 是什么，由 `tests/architecture/tucsenberg-site-contract.test.ts` 手写钉住，首页
+// 是什么，由 architecture contract 手写钉住，首页
 // 会为它们预生成页面则由 `page.test.tsx` 钉住。
 //
 // 单独一个文件，不塞进 `page.test.tsx`：那里全局 setup 已经把 `@/i18n/routing`

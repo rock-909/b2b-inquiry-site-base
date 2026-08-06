@@ -89,12 +89,12 @@ describe("site-config", () => {
     it("should return false for current production placeholders and workers.dev", () => {
       vi.stubEnv("NODE_ENV", "production");
       const rejected = [
-        "https://tucsenberg-site-production.example.invalid",
+        "https://reference-site-production.example.invalid",
         "https://example.com",
         "https://sub.example.org",
         "http://localhost:3000",
         "http://127.0.0.1:8787",
-        "https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev",
+        "https://reference-site-preview.faints-pudgier-9r.workers.dev",
       ];
       for (const url of rejected) {
         expect(isBaseUrlConfigured(url), url).toBe(false);
@@ -103,17 +103,19 @@ describe("site-config", () => {
 
     it("should return true for real public domains in production", () => {
       vi.stubEnv("NODE_ENV", "production");
-      expect(isBaseUrlConfigured("https://tucsenberg.com")).toBe(true);
-      expect(isBaseUrlConfigured("https://www.tucsenberg.com")).toBe(true);
+      expect(isBaseUrlConfigured("https://reference-site.com")).toBe(true);
+      expect(isBaseUrlConfigured("https://www.reference-site.com")).toBe(true);
     });
 
     it("should reject reserved .test hosts and non-origin URLs in production", () => {
       vi.stubEnv("NODE_ENV", "production");
-      expect(isBaseUrlConfigured("https://showcase-website-starter.test")).toBe(
+      expect(isBaseUrlConfigured("https://b2b-inquiry-site-base.test")).toBe(
         false,
       );
-      expect(isBaseUrlConfigured("http://tucsenberg.com")).toBe(false);
-      expect(isBaseUrlConfigured("https://tucsenberg.com/path")).toBe(false);
+      expect(isBaseUrlConfigured("http://reference-site.com")).toBe(false);
+      expect(isBaseUrlConfigured("https://reference-site.com/path")).toBe(
+        false,
+      );
     });
   });
 
@@ -269,7 +271,7 @@ describe("site-config", () => {
       vi.stubEnv("NODE_ENV", "production");
       const configuredConfig = {
         ...SITE_CONFIG,
-        baseUrl: "https://tucsenberg.com",
+        baseUrl: "https://reference-site.com",
       } satisfies SiteConfig;
       const result = validateSiteConfig(configuredConfig);
       expect(result.valid).toBe(true);

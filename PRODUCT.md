@@ -8,13 +8,13 @@ web
 
 ## Status
 
-这是 Tucsenberg 英文 B2B 官网项目的产品意图入口，供设计、内容和实现类 AI agent 使用；它不参与网站运行、构建或 CI。与当前代码、配置或运行行为冲突时，以实际行为为准并更新本文。
+这是英文 B2B 询盘站模板的产品意图入口，供设计、内容和实现类 AI agent 使用；它不参与网站运行、构建或 CI。与当前代码、配置或运行行为冲突时，以实际行为为准并更新本文。
 
-本仓已经从 `showcase-website-starter` 派生成具体站点。保留的 starter/profile 代码、测试和文档属于继承工具或历史说明；当前页面、内容、询盘路径和上线证明都应按 Tucsenberg 站点判断。
+保留的 starter/profile 代码、测试和文档属于继承工具或历史说明；当前页面、内容、询盘路径和上线证明都应按本仓运行事实判断。
 
 ## Users
 
-当前站点优先服务海外防洪屏障采购、批发/OEM 买家和技术评估方。
+当前站点优先服务海外 B2B 采购、批发/OEM 买家和技术评估方。
 
 | 角色 | 关心什么 | 网站要给的答案 |
 | --- | --- | --- |
@@ -25,12 +25,12 @@ web
 
 ## Product Purpose
 
-当前目标：让访问者快速理解 Tucsenberg 做哪些防洪屏障产品，并自然进入报价、资料下载或联系路径。
+当前目标：让访问者快速理解供应商提供什么产品或服务，并自然进入报价、资料下载或联系路径。
 
 成功的样子：
 
-1. 首页 10 秒内说清“防洪屏障工厂供应 + 五条产品线”。
-2. 产品页能让买家判断哪条产品线适合自己的采购场景。
+1. 首页 10 秒内说清供应商定位和核心产品线。
+2. 产品页能让买家判断哪条产品或服务适合自己的采购场景。
 3. 规格、FAQ、下载件和 RFQ 字段能减少来回沟通。
 4. 询盘路径稳定，不能因为文档、旧 starter 内容或 profile 机制误导维护者。
 
@@ -38,10 +38,9 @@ web
 
 RFQ 和 CTA 要降低“我该怎么问”的成本，不要把表单做成营销问卷。
 
-- 先确认产品兴趣：ABS flood barriers、Aluminum flood gates、Absorbent flood
-  bags、Flood tube dams、FRP flood barriers，或 general inquiry。
+- 先确认产品或服务兴趣，或 general inquiry。
 - 鼓励买家补充项目国家/地区、应用场景、预计数量、规格要求、交期压力和附件准备情况。
-- 说明下一步是 Tucsenberg 按产品线、规格和项目背景判断报价或资料需求。
+- 说明下一步是供应商按产品线、规格和项目背景判断报价或资料需求。
 - 不承诺未经验证的固定价格、固定交期、认证、客户数量、工程案例或国家覆盖。
 
 ## Trust and Messaging Rules
@@ -51,7 +50,7 @@ owner source. Process expectations can explain what happens next, but not promis
 fixed timing. Specs, materials, structure, downloads, and FAQ should support the
 buyer's decision.
 
-- Use: factory supply, flood barrier products, OEM / wholesale, request quote,
+- Use: factory supply, configured offerings, OEM / wholesale, request quote,
   product specifications, application fit, datasheet/PDF download, project
   requirements.
 - Avoid: fake proof, unsupported certifications, exact price promises, guaranteed
@@ -91,7 +90,7 @@ buyer's decision.
 1. **证据贴着主张走**——每一条卖点旁边尽量有规格、流程、下载件或可验证细节。
 2. **节奏胜过密度**——宁可少而清楚，不把页面变成产品墙。
 3. **询盘路径清楚**——RFQ、Contact、PDF 下载和提交后预期必须互相支持。
-4. **维护面要清楚**——Tucsenberg 当前内容与 inherited starter 工具要分开标注。
+4. **维护面要清楚**——当前内容与 inherited starter 工具要分开标注。
 5. **工艺感来自细节**——留白、对齐、字号阶梯、动效克制，比大特效更重要。
 
 ## Accessibility & Inclusion

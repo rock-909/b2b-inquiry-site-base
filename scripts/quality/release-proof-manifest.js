@@ -90,8 +90,8 @@ const RELEASE_PROOF_MANIFEST = deepFreeze({
       args: ["scripts/starter-checks.js", "translations"],
     },
     {
-      id: "content-readiness-catalog",
-      label: "Catalog content readiness",
+      id: "content-readiness",
+      label: "Buyer-visible content readiness",
       lane: RELEASE_PROOF_LANES.LOCAL_TEST_MODE,
       command: "node",
       args: ["scripts/starter-checks.js", "content-readiness"],

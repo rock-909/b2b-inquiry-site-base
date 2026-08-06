@@ -32,12 +32,22 @@ const FORBIDDEN_CONTROL_NAMES = [
   "phone",
   "company",
   "subject",
-  "catalogProductId",
+  "legacyProductId",
   "quantity",
   "country",
   "port",
   "budget",
 ] as const;
+const RETIRED_PAYLOAD_FIELDS = [
+  "legacyInquiryKind",
+  "legacyProductId",
+] as const;
+
+function expectRetiredPayloadFieldsAbsent(body: Record<string, unknown>): void {
+  for (const field of RETIRED_PAYLOAD_FIELDS) {
+    expect(body).not.toHaveProperty(field);
+  }
+}
 
 function assertThreeFieldContract(
   container: HTMLElement,
@@ -150,8 +160,7 @@ describe("InquiryForm contract", () => {
       website: "https://spam.example",
       turnstileToken: "mock-inquiry-turnstile-token",
     });
-    expect(getFetchBody()).not.toHaveProperty("productInquiryKind");
-    expect(getFetchBody()).not.toHaveProperty("catalogProductId");
+    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("posts to /api/inquiry with optional blank message", async () => {
@@ -180,8 +189,7 @@ describe("InquiryForm contract", () => {
       turnstileToken: "mock-inquiry-turnstile-token",
     });
     expect(getFetchBody()).not.toHaveProperty("message");
-    expect(getFetchBody()).not.toHaveProperty("productInquiryKind");
-    expect(getFetchBody()).not.toHaveProperty("catalogProductId");
+    expectRetiredPayloadFieldsAbsent(getFetchBody());
     await screen.findByText(
       `${copy.success} ${copy.referenceLabel}: inq-ref-1`,
     );
@@ -220,8 +228,7 @@ describe("InquiryForm contract", () => {
       turnstileToken: "mock-inquiry-turnstile-token",
     });
     expect(getFetchBody()).not.toHaveProperty("offeringName");
-    expect(getFetchBody()).not.toHaveProperty("productInquiryKind");
-    expect(getFetchBody()).not.toHaveProperty("catalogProductId");
+    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("submits on Enter from a text control once Turnstile is ready", async () => {
@@ -378,7 +385,7 @@ describe("InquiryForm contract", () => {
     fireEvent.change(fullName, { target: { value: "Ada Buyer" } });
     fireEvent.change(email, { target: { value: "ada@example.com" } });
     fireEvent.change(message, {
-      target: { value: "Need flood barrier specs" },
+      target: { value: "Need sample offering specs" },
     });
 
     await act(async () => {
@@ -636,7 +643,7 @@ describe("InquiryForm validated context", () => {
       interest: "coastal project",
     });
     expect(getFetchBody()).not.toHaveProperty("offeringName");
-    expect(getFetchBody()).not.toHaveProperty("productInquiryKind");
+    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("renders the server-resolved offering label and submits offering id", async () => {
@@ -667,7 +674,7 @@ describe("InquiryForm validated context", () => {
       offeringId: "custom-fabrication",
     });
     expect(getFetchBody()).not.toHaveProperty("offeringName");
-    expect(getFetchBody()).not.toHaveProperty("productInquiryKind");
+    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("submits general inquiry with interest and no offering id", async () => {
@@ -691,7 +698,7 @@ describe("InquiryForm validated context", () => {
       interest,
     });
     expect(getFetchBody()).not.toHaveProperty("offeringId");
-    expect(getFetchBody()).not.toHaveProperty("productInquiryKind");
+    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("pre-fills, edits, and clears the initial message", async () => {

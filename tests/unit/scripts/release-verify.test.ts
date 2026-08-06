@@ -116,7 +116,7 @@ describe("release verify runner", () => {
       },
       {
         output: [
-          "Uploaded showcase-website-starter (preview)",
+          "Uploaded b2b-inquiry-site-base (preview)",
           "Total Upload: 8423.21 KiB / gzip: 2174.32 KiB",
           "Worker startup time: 21 ms",
         ].join("\n"),

@@ -35,7 +35,7 @@ test.describe("Missing URLs answer 404", () => {
 
   test("a served asset still returns 200", async ({ request }) => {
     const response = await request.get(
-      "http://localhost:3000/images/tucsenberg-og.png",
+      "http://localhost:3000/.well-known/security.txt",
     );
 
     expect(response.status()).toBe(200);

@@ -97,7 +97,7 @@ describe("structured-data generators", () => {
     it("When generating Article schema, Then author is Organization not Person", () => {
       const schema = generateArticleData(mockTranslator, "en" as Locale, {
         title: "Materials Guide",
-        description: "Barrier material overview.",
+        description: "Material overview.",
         publishedTime: "2026-01-01",
         url: `${SITE_CONFIG.baseUrl}/materials-guide`,
       });
@@ -144,9 +144,9 @@ describe("structured-data generators", () => {
   describe("Given a product detail page represents one catalog item", () => {
     it("When generating product schema, Then only one Product node shape is emitted", () => {
       const schema = generateProductData({
-        name: "ABS Interlocking Boxwall Flood Barriers",
-        description: "A freestanding flood barrier that needs no bolts.",
-        url: `${SITE_CONFIG.baseUrl}/products/abs-flood-barriers`,
+        name: "Modular Sample Product",
+        description: "A configurable product for B2B purchasing.",
+        url: `${SITE_CONFIG.baseUrl}/products/sample-offering`,
         brand: SITE_CONFIG.name,
       });
 

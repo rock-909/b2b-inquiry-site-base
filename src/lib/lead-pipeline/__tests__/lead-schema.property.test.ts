@@ -2,6 +2,15 @@ import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { INQUIRY_LEAD_TYPE, inquiryLeadSchema } from "../lead-schema";
 
+const RETIRED_INPUT_FIELDS = [
+  "company",
+  "quantity",
+  "requirements",
+  "legacyProductId",
+  "legacyInquiryKind",
+  "buyerInterest",
+] as const;
+
 describe("inquiryLeadSchema properties", () => {
   it("safeParse never throws for arbitrary input", () => {
     fc.assert(
@@ -39,17 +48,14 @@ describe("inquiryLeadSchema properties", () => {
             company,
             quantity,
             requirements,
-            productInquiryKind: "general-rfq",
-            catalogProductId: "abs-flood-barriers",
+            legacyProductId: "retired-offering",
+            legacyInquiryKind: "general-rfq",
             buyerInterest: "retired",
           });
 
-          expect(result).not.toHaveProperty("company");
-          expect(result).not.toHaveProperty("quantity");
-          expect(result).not.toHaveProperty("requirements");
-          expect(result).not.toHaveProperty("productInquiryKind");
-          expect(result).not.toHaveProperty("catalogProductId");
-          expect(result).not.toHaveProperty("buyerInterest");
+          for (const field of RETIRED_INPUT_FIELDS) {
+            expect(result).not.toHaveProperty(field);
+          }
         },
       ),
     );

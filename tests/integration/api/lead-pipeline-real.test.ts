@@ -358,7 +358,7 @@ describe("lead pipeline (real end-to-end proof)", () => {
         turnstileToken: "valid-turnstile-token",
         fullName: "Jane Buyer",
         email: "jane@example.com",
-        message: "Need flood protection for warehouse",
+        message: "Need a custom component for a warehouse",
       }),
     );
     const body = await response.json();
@@ -368,11 +368,11 @@ describe("lead pipeline (real end-to-end proof)", () => {
 
     const fields = getCapturedAirtableFields();
     expect(fields["Email"]).toBe("jane@example.com");
-    expect(fields["Requirements"]).toContain("Need flood protection");
+    expect(fields["Requirements"]).toContain("Need a custom component");
 
     const resendBody = parseJsonBody(getResendCalls()[0]?.init);
     expect(resendBody.reply_to).toBe("jane@example.com");
-    expect(resendBody.text as string).toContain("Need flood protection");
+    expect(resendBody.text as string).toContain("Need a custom component");
   });
 
   it("accepts optional empty message on general inquiry and still delivers", async () => {
@@ -414,7 +414,7 @@ describe("lead pipeline (real end-to-end proof)", () => {
       makeInquiryRequest({
         ...CANONICAL_MESSAGE_INQUIRY_BODY,
         email: "jane@example.com",
-        message: "Need flood protection",
+        message: "Need a custom component",
       }),
     );
     const body = await response.json();
@@ -424,7 +424,7 @@ describe("lead pipeline (real end-to-end proof)", () => {
     expect(getResendCalls()).toHaveLength(1);
     expect(airtableCreateMock).toHaveBeenCalledTimes(1);
     expect(getCapturedAirtableFields()["Requirements"]).toContain(
-      "Need flood protection",
+      "Need a custom component",
     );
     expect(consoleError).toHaveBeenCalledTimes(2);
   });

@@ -54,8 +54,8 @@ describe("Cloudflare runtime env timing", () => {
     expect(service.isReady()).toBe(false);
 
     runtimeValues.RESEND_API_KEY = "runtime-resend-key";
-    runtimeValues.EMAIL_FROM = "noreply@mail.tucsenberg.com";
-    runtimeValues.EMAIL_REPLY_TO = "sales@tucsenberg.com";
+    runtimeValues.EMAIL_FROM = "noreply@mail.reference-site.test";
+    runtimeValues.EMAIL_REPLY_TO = "sales@reference-site.test";
 
     expect(service.isReady()).toBe(true);
     expect(constructorCalls).toHaveBeenCalledWith("runtime-resend-key");
@@ -128,7 +128,7 @@ describe("Cloudflare runtime env timing", () => {
       new Response(
         JSON.stringify({
           success: true,
-          hostname: "tucsenberg-site-preview.faints-pudgier-9r.workers.dev",
+          hostname: "reference-preview.faints-pudgier-9r.workers.dev",
           action: "product_inquiry",
         }),
         { status: 200 },
@@ -157,7 +157,7 @@ describe("Cloudflare runtime env timing", () => {
 
     runtimeValues.TURNSTILE_SECRET_KEY = "runtime-turnstile-secret";
     runtimeValues.TURNSTILE_ALLOWED_HOSTS =
-      "tucsenberg-site-preview.faints-pudgier-9r.workers.dev";
+      "reference-preview.faints-pudgier-9r.workers.dev";
 
     await expect(
       verifyTurnstileDetailed("token", "203.0.113.10"),

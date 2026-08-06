@@ -7,7 +7,7 @@ import { collectPrerenderStaticFindings } from "../../../scripts/quality/checks/
 const tempDirs: string[] = [];
 const TEMP_TRASH_ROOT = path.join(
   os.tmpdir(),
-  "tucsenberg-prerender-static-test-trash",
+  "b2b-inquiry-prerender-static-test-trash",
 );
 
 function moveTempDirToTrash(dir: string): void {

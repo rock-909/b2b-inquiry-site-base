@@ -8,7 +8,7 @@ import {
 } from "../mdx-faq";
 
 const MOCK_FACTS = {
-  companyName: "Tucsenberg",
+  companyName: "Reference Industries",
   exportCountries: 20,
   established: 2018,
 };
@@ -37,7 +37,7 @@ describe("interpolateFaqAnswer", () => {
       "{companyName} has been in business since {established}.",
       MOCK_FACTS,
     );
-    expect(result).toBe("Tucsenberg has been in business since 2018.");
+    expect(result).toBe("Reference Industries has been in business since 2018.");
   });
 
   it("leaves unknown placeholders intact", () => {

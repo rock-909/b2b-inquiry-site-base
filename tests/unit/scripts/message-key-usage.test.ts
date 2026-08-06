@@ -14,7 +14,7 @@ type DerivedKeyConsumerFixture = Record<string, unknown> & {
 const tempDirs: string[] = [];
 const TEMP_TRASH_ROOT = path.join(
   os.tmpdir(),
-  "tucsenberg-message-key-usage-test-trash",
+  "b2b-inquiry-message-key-usage-test-trash",
 );
 const CLIENT_TRANSLATOR_IMPORT = 'import { useTranslations } from "next-intl";';
 const SERVER_TRANSLATOR_IMPORT =

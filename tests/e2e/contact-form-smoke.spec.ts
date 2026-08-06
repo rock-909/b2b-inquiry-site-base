@@ -12,7 +12,7 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
  * 2026-07-29 从 15 条收到 3 条。删掉的分四类：
  *
  * 1. 跨文件重复：中文入口缺席和 `/zh/contact` 404 在
- *    `tucsenberg-site-smoke.spec.ts` 里已经逐条守着（那边还多守 `/zh` 本身）。
+ *    `site-smoke.spec.ts` 里已经逐条守着（那边还多守 `/zh` 本身）。
  * 2. 被更强的检查覆盖：移动端那条只断言「表单可见」，而
  *    `layout-stability.spec.ts` 在 360/412/640/768px 四档验证真实表单可见且不抖，
  *    `core-page-visual-calibration.spec.ts` 还在 390px 断言无横向溢出。

@@ -1,9 +1,9 @@
 ---
-name: Tucsenberg Site Design
-description: Entry point for the current Tucsenberg design system.
+name: B2B Inquiry Site Base Design
+description: Entry point for the current reference design system.
 ---
 
-# Tucsenberg design entry
+# Design entry
 
 This file is an entry point, not a separate design specification.
 

@@ -27,7 +27,7 @@ function expectPreviewStepEnv(
   stepName: string,
 ): void {
   const previewSiteUrl =
-    "${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://tucsenberg-site-preview.faints-pudgier-9r.workers.dev' }}";
+    "${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://reference-site-preview.faints-pudgier-9r.workers.dev' }}";
   const gaMeasurementId =
     "${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}";
   const googleSiteVerification =
@@ -50,7 +50,7 @@ function expectPreviewStepEnv(
     "example.com",
   );
   expect(step?.env?.NEXT_PUBLIC_SITE_URL, stepName).not.toContain(
-    "tucsenberg.com",
+    "reference-site.com",
   );
 }
 
@@ -61,7 +61,7 @@ describe("CI preview environment contract", () => {
     const workflow = readCiWorkflow();
     const browserSteps = workflow.jobs?.e2e?.steps;
     const testStep = browserSteps?.find(
-      (candidate) => candidate.name === "运行 Tucsenberg E2E",
+      (candidate) => candidate.run === "pnpm exec playwright test",
     );
 
     expect(testStep?.run?.trim()).toBe("pnpm exec playwright test");

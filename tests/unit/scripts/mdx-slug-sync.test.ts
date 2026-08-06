@@ -23,7 +23,7 @@ const {
 
 describe("page content checks", () => {
   let tmpDir: string;
-  const trashRoot = path.join(os.tmpdir(), "tucsenberg-content-test-trash");
+  const trashRoot = path.join(os.tmpdir(), "b2b-inquiry-content-test-trash");
 
   beforeEach(() => {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "content-check-"));

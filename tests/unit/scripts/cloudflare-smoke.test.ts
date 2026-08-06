@@ -21,7 +21,7 @@ const openServers: http.Server[] = [];
 const tempDirs: string[] = [];
 const TEMP_TRASH_ROOT = path.join(
   os.tmpdir(),
-  "tucsenberg-cloudflare-smoke-test-trash",
+  "b2b-cloudflare-smoke-test-trash",
 );
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
 const CORE_PUBLIC_PAGE_PATHS = [
@@ -58,9 +58,7 @@ function getRequestPath(input: RequestInfo | URL): string {
   return new URL(url).pathname;
 }
 
-function createPreviewFetchMock(
-  pdfHeaders: HeadersInit = { "x-robots-tag": "noindex" },
-) {
+function createPreviewFetchMock() {
   return vi.fn(
     async (
       _input: RequestInfo | URL,
@@ -95,12 +93,6 @@ function createPreviewFetchMock(
         return response(404, "Not Found", { "content-type": "text/plain" });
       }
 
-      if (pathname === "/downloads/spec-sheet-tb-bw.pdf") {
-        const headers = new Headers(pdfHeaders);
-        headers.set("content-type", "application/pdf");
-        return response(200, "%PDF-1.7", headers);
-      }
-
       return response(404, HEALTHY_HTML, {
         "content-type": "text/html; charset=utf-8",
       });
@@ -128,9 +120,7 @@ function createExternalUrlFetchMock() {
   });
 }
 
-function createDeployedFetchMock(
-  pdfHeaders: HeadersInit = { "x-robots-tag": "noindex" },
-) {
+function createDeployedFetchMock() {
   return vi.fn(
     async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const pathname = getRequestPath(input);
@@ -159,10 +149,6 @@ function createDeployedFetchMock(
         ].includes(pathname)
       ) {
         return response(404, "not found");
-      }
-
-      if (pathname === "/downloads/spec-sheet-tb-bw.pdf") {
-        return response(200, "%PDF-1.7", pdfHeaders);
       }
 
       return response(404, "not found");
@@ -253,15 +239,6 @@ function listenForDeployedSmoke(): Promise<{
         return;
       }
 
-      if (pathname === "/downloads/spec-sheet-tb-bw.pdf") {
-        serverResponse.writeHead(200, {
-          "content-type": "application/pdf",
-          "x-robots-tag": "noindex",
-        });
-        serverResponse.end("%PDF-1.7");
-        return;
-      }
-
       serverResponse.writeHead(404);
       serverResponse.end("not found");
     });
@@ -286,7 +263,7 @@ function listenForDeployedSmoke(): Promise<{
 
 function createMinimalStarterChecksFixture(): string {
   const rootDir = mkdtempSync(
-    path.join(os.tmpdir(), "tucsenberg-minimal-starter-checks-"),
+    path.join(os.tmpdir(), "b2b-minimal-starter-checks-"),
   );
   const focusedChecksDir = path.join(rootDir, "scripts", "quality", "checks");
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
@@ -541,7 +518,6 @@ describe("cloudflare preview smoke", () => {
       "/terms",
       "/zh",
       "/zh/contact",
-      "/downloads/spec-sheet-tb-bw.pdf",
       "/api/health",
       "/",
       "/invalid/contact",
@@ -552,7 +528,6 @@ describe("cloudflare preview smoke", () => {
       "/terms",
       "/zh",
       "/zh/contact",
-      "/downloads/spec-sheet-tb-bw.pdf",
       "/api/health",
     ]);
   });
@@ -581,7 +556,6 @@ describe("cloudflare preview smoke", () => {
       "/terms",
       "/zh",
       "/zh/contact",
-      "/downloads/spec-sheet-tb-bw.pdf",
       "/api/health",
     ]);
   });
@@ -654,27 +628,6 @@ describe("cloudflare preview smoke", () => {
     ).resolves.toBe(false);
     expect(consoleError).toHaveBeenCalledTimes(2);
   });
-
-  it("fails when the preview worker serves a pdf without the noindex header", async () => {
-    const consoleError = captureExpectedConsoleErrors(
-      "[cf-preview-smoke] Failures detected:",
-      "  - Expected /downloads/spec-sheet-tb-bw.pdf to carry X-Robots-Tag: noindex, got none",
-    );
-    vi.stubGlobal("fetch", createPreviewFetchMock({}));
-
-    await expect(
-      runCloudflarePreviewSmoke(["--base-url", "http://127.0.0.1:8787"]),
-    ).resolves.toBe(false);
-    expect(consoleError).toHaveBeenCalledTimes(2);
-  });
-
-  it("passes when the preview worker serves a pdf with the noindex header", async () => {
-    vi.stubGlobal("fetch", createPreviewFetchMock());
-
-    await expect(
-      runCloudflarePreviewSmoke(["--base-url", "http://127.0.0.1:8787"]),
-    ).resolves.toBe(true);
-  });
 });
 
 describe("deployed smoke", () => {
@@ -708,7 +661,6 @@ describe("deployed smoke", () => {
       "/zh/contact",
       "/.well-known/security.txt",
       "/security-policy.txt",
-      "/downloads/spec-sheet-tb-bw.pdf",
     ]);
     expect(
       fetchMock.mock.calls.every(
@@ -787,7 +739,6 @@ describe("deployed smoke", () => {
         "/zh/contact",
         "/.well-known/security.txt",
         "/security-policy.txt",
-        "/downloads/spec-sheet-tb-bw.pdf",
       ].sort(),
     );
     expect(result.stdout).toContain("[post-deploy-smoke] All checks passed");
@@ -804,25 +755,6 @@ describe("deployed smoke", () => {
     ).rejects.toThrow(
       "Both --header-name and --header-value must be provided together",
     );
-  });
-
-  it("fails when the deployed PDF loses its noindex header", async () => {
-    captureExpectedConsoleErrors(
-      "[post-deploy-smoke] Failures detected:",
-      "  - Expected /downloads/spec-sheet-tb-bw.pdf to carry X-Robots-Tag: noindex, got none",
-    );
-    vi.stubGlobal("fetch", createDeployedFetchMock({}));
-
-    await expect(
-      runDeployedSmoke([
-        "--base-url",
-        "https://deployed.example",
-        "--header-name",
-        "x-smoke-secret",
-        "--header-value",
-        "proof",
-      ]),
-    ).resolves.toBe(false);
   });
 
   it("probes the mandatory deployed routes concurrently", async () => {

@@ -25,8 +25,8 @@ vi.mock("next-intl/server", () => ({
         home: "Home",
       },
       "structured-data": {
-        "organization.name": "Tucsenberg",
-        "article.defaultAuthor": "Tucsenberg",
+        "organization.name": "Reference Industries",
+        "article.defaultAuthor": "Reference Industries",
       },
     };
 
@@ -104,7 +104,7 @@ describe("LegalPageShell structured data", () => {
         title: "Materials Guide",
         slug: "materials-guide",
         publishedAt: "2026-01-01",
-        author: "Tucsenberg",
+        author: "Reference Industries",
         seo: {
           title: "Materials Guide",
           description: "Guide description",

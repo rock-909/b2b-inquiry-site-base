@@ -248,7 +248,7 @@ describe("content-readiness-check", () => {
 
   it("scans current product-page and offering config as buyer-visible truth", () => {
     const rootDir = createFixture({
-      "src/constants/tucsenberg-product-page-test.ts": [
+      "src/constants/reference-offering-test.ts": [
         "export const PRODUCT_PAGE = {",
         '  technical: { material: "Replaceable catalog example" },',
         '  certifications: ["Example Standard A"],',
@@ -267,7 +267,7 @@ describe("content-readiness-check", () => {
 
   it("allows legitimate replaceable product features", () => {
     const rootDir = createFixture({
-      "src/constants/tucsenberg-product-page-test.ts":
+      "src/constants/reference-offering-test.ts":
         'export const seals = "EPDM seals, replaceable";',
     });
     fixtureRoots.push(rootDir);
@@ -318,7 +318,7 @@ describe("content-readiness-check", () => {
   it("does not treat TypeScript string literal types as buyer-visible content", () => {
     const rootDir = createFixture({
       "src/config/single-site.ts": [
-        'export type ProductName = "Sample Product";',
+        'export type OfferingName = "Sample Offering";',
         'export type LogoPath = "/images/logo.svg";',
         "export interface Profile {",
         '  category: "placeholder";',

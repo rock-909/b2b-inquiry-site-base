@@ -1,18 +1,18 @@
 ---
 name: repo-health-audit
-description: Tucsenberg-local Claude entry for whole-repo health audits, launch-readiness audits, and audit-framework questions. Reads the Tucsenberg audit profile first; does not vendor the full global audit bundle.
+description: Local Claude entry for whole-repo health audits, launch-readiness audits, and audit-framework questions. Reads the site audit profile first; does not vendor the full global audit bundle.
 ---
 
 # Repo Health Audit
 
-This is the Claude-local entrypoint for Tucsenberg audits. It is intentionally
+This is the Claude-local entrypoint for site audits. It is intentionally
 thin: use the global Codex `repo-health-audit` method when that surface is
 available, but always read this repo's profile first and ignore any global
 `ai-smell-audit` starter/showcase repo profile.
 
 Before auditing, read:
 
-1. `.claude/skills/repo-health-audit/references/tucsenberg-audit-profile.md`
+1. `.claude/skills/repo-health-audit/references/site-audit-profile.md`
 2. `AGENTS.md` or `CLAUDE.md`
 3. the `.claude/rules/*.md` files for touched paths
 

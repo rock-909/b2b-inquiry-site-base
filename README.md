@@ -1,20 +1,14 @@
-# Tucsenberg Site
+# B2B Inquiry Site Base
 
-Tucsenberg 英文官网项目，面向海外防洪屏障采购、OEM/批发询盘和资料下载转化。
+英文 B2B 询盘站模板，面向 offering 介绍、联系和报价询盘转化。
 
-这个仓库已经从 `showcase-website-starter` 派生成具体站点。当前业务真相以 Tucsenberg 页面、内容、配置和上线证明为准。多 profile runtime 和 materialize 工具已经退役；旧说明需要追溯时看 Git 历史。
+当前业务真相以本仓页面、内容、配置和上线证明为准。多 profile runtime 和 materialize 工具已经退役；旧说明需要追溯时看 Git 历史。
 
 ## 当前站点范围
 
 - 单语言：English only，公开 URL 不带 `/en` 前缀。
-- 页面：Home、Products、5 个产品详情页、OEM/Wholesale、2 个 Guide、About、Request Quote、Contact、Warranty、Privacy、Terms。
-- 产品线：
-  - ABS flood barriers
-  - Aluminum flood gates
-  - Absorbent flood bags
-  - Flood tube dams
-  - FRP flood barriers
-- 下载件在 `public/downloads/**`，PDF 响应需要保持 `X-Robots-Tag: noindex`。
+- 页面：Home、About、Request Quote、Contact、Privacy、Terms。
+- 业务身份、offering 和页面内容必须由派生站 owner 在公开上线前替换确认。
 
 ## 快速开始
 
@@ -34,12 +28,13 @@ pnpm dev
 ```bash
 pnpm dev
 pnpm content:check
-pnpm component:check
+pnpm type-check
+pnpm test
 pnpm website:check
 pnpm website:build:cf
 ```
 
-CI 当前保留 React Doctor、Tucsenberg Playwright smoke、Component governance、Dependency cruiser、Semgrep 和 Cloudflare/OpenNext build proof。
+CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、Semgrep 和 Cloudflare/OpenNext build proof。
 
 ## 主要维护入口
 
@@ -48,9 +43,8 @@ CI 当前保留 React Doctor、Tucsenberg Playwright smoke、Component governanc
 3. `docs/架构与行为.md`
 4. `docs/开发与维护.md`
 5. `docs/正式上线标准.md`
-6. `docs/技术问题与决策.md`
 
-历史 starter 派生说明已经退出当前文档入口；需要追溯时看 Git 历史，不要把它们当 Tucsenberg 当前站的业务入口。
+历史 starter 派生说明已经退出当前文档入口；需要追溯时看 Git 历史，不要把它们当当前站的业务入口。
 
 ## 技术基础
 
@@ -60,13 +54,12 @@ CI 当前保留 React Doctor、Tucsenberg Playwright smoke、Component governanc
 
 - 品牌事实：`src/config/single-site.ts`
 - SEO / crawl：`src/config/single-site-seo.ts`
-- 页面表达：`src/config/single-site-page-expression.ts`
 - 导航和链接：`src/config/single-site-navigation.ts`、`src/config/single-site-links.ts`
 - 页面正文：`content/pages/en/*.mdx`
-- 产品数据：`src/constants/tucsenberg-product-page-*.ts`、`src/constants/tucsenberg-product-pages.ts`、`src/config/single-site-product-catalog.ts`
-- UI 文案 authoring truth：`messages/base/**`、`messages/profiles/b2b-lead/**`、`messages/profiles/catalog/**`
+- Offering 数据：`src/config/offerings.ts`
+- UI 文案 authoring truth：`messages/base/**`、`messages/profiles/b2b-lead/**`
 
-message graph 固定为 `base -> b2b-lead -> catalog`。修改 physical packs 后运行 `pnpm content:check`。
+message graph 固定为 `base -> b2b-lead`。修改 physical packs 后运行 `pnpm content:check`。
 
 ## AI 协作入口
 

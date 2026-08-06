@@ -3,7 +3,7 @@ import { getPageBySlug } from "@/lib/content-query/queries";
 import { extractFaqFromMetadata } from "@/lib/content/mdx-faq";
 
 describe("Contact page rendering data", () => {
-  it("does not keep starter FAQ ids on the Tucsenberg contact page", async () => {
+  it("does not keep starter FAQ ids on the contact page", async () => {
     const page = await getPageBySlug("contact", "en");
     const ids = extractFaqFromMetadata(page.metadata).map((item) => item.id);
 

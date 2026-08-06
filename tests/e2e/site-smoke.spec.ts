@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { SITE_PAGE_CASES } from "./site-page-cases";
 
-test.describe("Tucsenberg site smoke", () => {
+test.describe("site smoke", () => {
   for (const [path, heading] of SITE_PAGE_CASES) {
     test(`${path} renders current site content`, async ({ page }) => {
       const response = await page.goto(path, { waitUntil: "domcontentloaded" });
@@ -40,11 +40,4 @@ test.describe("Tucsenberg site smoke", () => {
       await expect(page.locator('a[href="/zh"]')).toHaveCount(0);
     });
   }
-
-  test("public PDF downloads stay noindex", async ({ request }) => {
-    const response = await request.head("/downloads/spec-sheet-tb-ag.pdf");
-
-    expect(response.status()).toBe(200);
-    expect(response.headers()["x-robots-tag"]).toBe("noindex");
-  });
 });

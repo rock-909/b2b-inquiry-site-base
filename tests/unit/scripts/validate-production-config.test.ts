@@ -70,7 +70,7 @@ const ROOT_DIR = path.resolve(import.meta.dirname, "../../..");
 const tempDirs: string[] = [];
 const TEMP_TRASH_ROOT = path.join(
   os.tmpdir(),
-  "tucsenberg-production-export-test-trash",
+  "b2b-inquiry-production-export-test-trash",
 );
 
 afterEach(() => {
@@ -155,7 +155,7 @@ function executeProductionExport(exportScript: string): {
   }
 
   const tempDir = mkdtempSync(
-    path.join(os.tmpdir(), "tucsenberg-production-export-"),
+    path.join(os.tmpdir(), "b2b-inquiry-production-export-"),
   );
   tempDirs.push(tempDir);
   const githubEnvPath = path.join(tempDir, "github-env");
@@ -554,8 +554,8 @@ describe("public launch trust content guard", () => {
       APP_ENV: "production",
       NODE_ENV: "production",
       PUBLIC_LAUNCH_STRICT: "true",
-      NEXT_PUBLIC_SITE_URL: "https://launch.tucsenberg.test",
-      NEXT_PUBLIC_BASE_URL: "https://launch.tucsenberg.test",
+      NEXT_PUBLIC_SITE_URL: "https://launch.reference-site.test",
+      NEXT_PUBLIC_BASE_URL: "https://launch.reference-site.test",
     });
 
     expect(result.errors).toEqual(
@@ -584,7 +584,6 @@ describe("public launch trust content guard", () => {
       expect.arrayContaining([
         expect.stringContaining("SITE_CONFIG.contact.phone"),
         expect.stringContaining("brandAssets.logo.status"),
-        expect.stringContaining("brandAssets.productPhotos.status"),
       ]),
     );
   });
@@ -602,7 +601,6 @@ describe("public launch trust content guard", () => {
       expect.arrayContaining([
         expect.stringContaining("SITE_CONFIG.contact.phone"),
         expect.stringContaining("brandAssets.logo.status"),
-        expect.stringContaining("brandAssets.productPhotos.status"),
       ]),
     );
   });
@@ -703,15 +701,14 @@ describe("public launch trust content guard", () => {
       NODE_ENV: "production",
       PUBLIC_LAUNCH_STRICT: "true",
       NEXT_PUBLIC_SITE_URL:
-        "https://tucsenberg-site-preview.example.workers.dev",
+        "https://reference-site-preview.example.workers.dev",
     });
     const exampleInvalid = validateProductionConfig({
       ...createValidProductionEnv(),
       APP_ENV: "production",
       NODE_ENV: "production",
       PUBLIC_LAUNCH_STRICT: "true",
-      NEXT_PUBLIC_SITE_URL:
-        "https://tucsenberg-site-production.example.invalid",
+      NEXT_PUBLIC_SITE_URL: "https://reference-site-production.example.invalid",
     });
 
     expect(workersDev.errors).toEqual(
@@ -729,15 +726,14 @@ describe("public launch trust content guard", () => {
       NODE_ENV: "production",
       PUBLIC_LAUNCH_STRICT: "true",
       NEXT_PUBLIC_BASE_URL:
-        "https://tucsenberg-site-preview.example.workers.dev",
+        "https://reference-site-preview.example.workers.dev",
     });
     const exampleInvalid = validateProductionConfig({
       ...createValidProductionEnv(),
       APP_ENV: "production",
       NODE_ENV: "production",
       PUBLIC_LAUNCH_STRICT: "true",
-      NEXT_PUBLIC_BASE_URL:
-        "https://tucsenberg-site-production.example.invalid",
+      NEXT_PUBLIC_BASE_URL: "https://reference-site-production.example.invalid",
     });
 
     expect(workersDev.errors).toEqual(

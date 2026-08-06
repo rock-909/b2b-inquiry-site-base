@@ -3,8 +3,7 @@ paths:
   - "content/**/*"
   - "messages/**/*.json"
   - "src/config/single-site*.ts"
-  - "src/constants/tucsenberg-product-page-*.ts"
-  - "src/constants/tucsenberg-product-pages.ts"
+  - "src/config/offerings.ts"
   - "src/lib/content/**"
   - "src/lib/content-query/**"
   - "src/app/**/page.tsx"
@@ -23,11 +22,10 @@ Every content field has one authoring source.
 | --- | --- | --- |
 | Company-wide facts | `src/config/single-site.ts` | MDX prose |
 | Page prose, FAQ, page SEO | `content/pages/{locale}/*.mdx` | Translation JSON |
-| Page structure switches | `src/config/single-site-page-expression.ts` | MDX body copy |
+| Page route and namespace ownership | `src/config/pages.config.ts` | MDX body copy |
 | Crawl/indexing policy | `src/config/single-site-seo.ts` | Page components |
-| Shared labels/nav/buttons/form chrome | `messages/base/**`, `messages/profiles/b2b-lead/**`, `messages/profiles/catalog/**` | MDX frontmatter |
-| Product specifications and reviewed product-page copy | `src/constants/tucsenberg-product-page-*.ts` | Component literals or translation JSON |
-| Reusable catalog/card data | typed config + i18n namespace | page prose only |
+| Shared labels/nav/buttons/form chrome | `messages/base/**`, `messages/profiles/b2b-lead/**` | MDX frontmatter |
+| Offering names and reviewed offering copy | `src/config/offerings.ts` and active content | Component literals or translation JSON |
 
 ## Page content
 

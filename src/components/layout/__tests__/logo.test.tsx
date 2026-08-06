@@ -41,12 +41,12 @@ describe("Logo", () => {
       expect(link).toHaveAttribute("href", "/");
     });
 
-    it("renders the ready Tucsenberg logo image", () => {
+    it("does not render a logo image until public assets are configured", () => {
       render(<Logo />);
 
       expect(
-        screen.getByRole("img", { name: `${SITE_CONFIG.name} Logo` }),
-      ).toBeInTheDocument();
+        screen.queryByRole("img", { name: `${SITE_CONFIG.name} Logo` }),
+      ).not.toBeInTheDocument();
     });
 
     it("renders text fallback by default", () => {
@@ -64,10 +64,10 @@ describe("Logo", () => {
   });
 
   describe("showText prop", () => {
-    it("hides text when showText is false and the logo is ready", () => {
+    it("keeps text when showText is false but no public logo is ready", () => {
       render(<Logo showText={false} />);
 
-      expect(screen.queryByText(SITE_CONFIG.name)).not.toBeInTheDocument();
+      expect(screen.getByText(SITE_CONFIG.name)).toBeInTheDocument();
     });
 
     it("shows text when showText is true", () => {
@@ -142,11 +142,11 @@ describe("Logo", () => {
       expect(text).toHaveClass("text-foreground");
     });
 
-    it("text uses the desktop-only class when the logo image is visible", () => {
+    it("does not use the desktop-only class until a logo image is visible", () => {
       render(<Logo />);
 
       const text = screen.getByText(SITE_CONFIG.name);
-      expect(text).toHaveClass("header-logo-text-desktop-only");
+      expect(text).not.toHaveClass("header-logo-text-desktop-only");
     });
   });
 

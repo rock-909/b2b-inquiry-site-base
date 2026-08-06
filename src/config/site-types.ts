@@ -90,9 +90,6 @@ export interface BrandAssets {
     width: number;
     height: number;
   };
-  productPhotos: {
-    status: PublicAssetStatus;
-  };
   ogImage: string;
   favicon: string;
 }

@@ -63,8 +63,8 @@ describe("SEO Metadata", () => {
       const { buildCanonicalForPath: buildCanonical } =
         await import("../seo-metadata");
 
-      expect(buildCanonical("/products/abs-flood-barriers")).toBe(
-        "https://example.com/products/abs-flood-barriers",
+      expect(buildCanonical("/products/sample-offering")).toBe(
+        "https://example.com/products/sample-offering",
       );
       expect(buildCanonical("/")).toBe("https://example.com/");
     });
@@ -174,7 +174,7 @@ describe("SEO Metadata", () => {
         pageType: "about",
         path: "/about",
         config: {
-          title: "About Tucsenberg",
+          title: "About Reference Industries",
           description: "About page description",
         },
       });

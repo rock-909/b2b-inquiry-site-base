@@ -33,10 +33,10 @@ describe("public-runtime-env", () => {
   });
 
   it("reads legacy-compatible public keys such as NEXT_PUBLIC_APP_NAME", () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_NAME", "Tucsenberg");
+    vi.stubEnv("NEXT_PUBLIC_APP_NAME", "Reference Site");
 
     expect(getPublicRuntimeEnvString("NEXT_PUBLIC_APP_NAME")).toBe(
-      "Tucsenberg",
+      "Reference Site",
     );
   });
 

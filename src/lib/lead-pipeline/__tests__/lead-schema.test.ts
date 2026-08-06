@@ -5,8 +5,16 @@ const GENERAL_INQUIRY = {
   type: INQUIRY_LEAD_TYPE,
   fullName: "Jane Buyer",
   email: "jane@example.com",
-  message: "Need flood protection for a warehouse.",
+  message: "Need a custom component for a warehouse project.",
 } as const;
+const RETIRED_INPUT_FIELDS = [
+  "company",
+  "quantity",
+  "requirements",
+  "legacyProductId",
+  "legacyInquiryKind",
+  "buyerInterest",
+] as const;
 
 describe("inquiryLeadSchema", () => {
   it("accepts a general inquiry without offering identity", () => {
@@ -41,14 +49,14 @@ describe("inquiryLeadSchema", () => {
       company: "Buyer Co",
       quantity: 100,
       requirements: "Legacy requirements",
+      legacyProductId: "retired-offering",
+      legacyInquiryKind: "general-rfq",
+      buyerInterest: "retired",
     });
 
-    expect(result).not.toHaveProperty("company");
-    expect(result).not.toHaveProperty("quantity");
-    expect(result).not.toHaveProperty("requirements");
-    expect(result).not.toHaveProperty("productInquiryKind");
-    expect(result).not.toHaveProperty("catalogProductId");
-    expect(result).not.toHaveProperty("buyerInterest");
+    for (const field of RETIRED_INPUT_FIELDS) {
+      expect(result).not.toHaveProperty(field);
+    }
   });
 
   it("preserves canonical multiline message and attribution", () => {

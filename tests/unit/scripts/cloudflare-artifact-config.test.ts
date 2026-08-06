@@ -13,7 +13,7 @@ const SCRIPT_PATH = path.join(
 );
 const TEST_TRASH_DIR = path.join(
   os.tmpdir(),
-  "tucsenberg-cloudflare-artifact-config-test-trash",
+  "b2b-inquiry-cloudflare-artifact-config-test-trash",
 );
 const requireModule = createRequire(path.join(REPO_ROOT, "package.json"));
 const tempDirs: string[] = [];
@@ -29,7 +29,7 @@ function loadChecker(): CloudflareArtifactConfigModule {
 
 function createFixture(): string {
   const rootDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "tucsenberg-cloudflare-artifact-config-"),
+    path.join(os.tmpdir(), "b2b-inquiry-cloudflare-artifact-config-"),
   );
   tempDirs.push(rootDir);
   return rootDir;

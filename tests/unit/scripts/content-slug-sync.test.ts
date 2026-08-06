@@ -6,7 +6,7 @@ import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const CLI_PATH = path.resolve(__dirname, "../../../scripts/starter-checks.js");
-const trashRoot = path.join(os.tmpdir(), "tucsenberg-content-cli-trash");
+const trashRoot = path.join(os.tmpdir(), "b2b-inquiry-content-cli-trash");
 let tmpDir: string;
 
 function runCli(args: string[]) {
