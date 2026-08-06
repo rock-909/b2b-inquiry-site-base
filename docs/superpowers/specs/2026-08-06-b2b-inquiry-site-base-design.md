@@ -18,7 +18,7 @@
 - 本轮固定 SHA：`dcb9e2bbed164b484e1c8cbc1b08c7f140e84405`。
 - 只复制 tracked files，不复制 `.git`、`.next`、`node_modules`、环境密钥或构建产物。
 - 新仓不继承 Tucsenberg Git 历史和 remote。
-- 新仓先保留一笔原样 donor snapshot commit，再通过独立提交做中性化。
+- 新仓先保留一笔原样 donor snapshot commit，再通过后续首笔实现提交做中性化。
 - 后续与 Tucsenberg 独立演进；新业务只从稳定 tag 创建，不自动同步。
 
 ## 当前技术基线
@@ -118,6 +118,8 @@ turnstile token
 
 支持 general inquiry 和 offering-specific inquiry。删除 `catalogProductId`、`productInquiryKind`、`productName` 等产品强耦合，不添加兼容 alias，也不建设动态表单系统。
 
+`src/config/offerings.ts` 是服务端 offering 权威真相，只导出一个很薄的 offerings 数组。浏览器提交的 `offeringId` 是不可信输入，服务端必须用它匹配当前 offerings；未知 ID 直接拒绝。email 和 Airtable 只使用服务端解析后的 canonical offering id/name，不使用浏览器提交的名称或标签。`interest` 仍是买家自由文本，按自由文本规则清洗和截断。空 offerings 数组允许纯 general inquiry；此时任何非空 `offeringId` 都应拒绝。不要为此新增 profile、schema builder、provider abstraction 或运行时 mode。
+
 询盘处理继续保持：owner email 先执行，Airtable 随后写入并记录邮件结果；任一渠道成功即对买家成功，两边都失败才返回失败；日志不得泄露完整买家自由文本或 secret。
 
 ## 模板成熟生命周期
@@ -156,4 +158,3 @@ PUBLIC_LAUNCH_READY
 ```
 
 真实业务仍必须提供并证明自己的公司事实、内容和法务、正式域名、生产 provider 配置、DNS/sender 验证、owner 收件回执和业务上线确认。
-

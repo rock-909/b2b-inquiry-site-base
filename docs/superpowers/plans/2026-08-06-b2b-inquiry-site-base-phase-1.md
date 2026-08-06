@@ -4,7 +4,7 @@
 
 **Goal:** 从 Tucsenberg 的固定 tracked snapshot 建立独立仓库，并完成第一轮去品牌、减法和通用询盘中性化，得到可验证的 `INDEPENDENT_NEUTRAL_BASE_CANDIDATE`。
 
-**Architecture:** 先保留一笔原样 donor snapshot commit，再用少量直接修改和整组移出完成中性化。保留现有 Next/OpenNext/Cloudflare 与询盘安全链路，不引入 profile、generator、provider abstraction 或多站同步。
+**Architecture:** 先保留一笔原样 donor snapshot commit，再用后续首笔实现提交和整组移出完成中性化。保留现有 Next/OpenNext/Cloudflare 与询盘安全链路，不引入 profile、generator、provider abstraction 或多站同步。
 
 **Tech Stack:** Next.js 16.3、React 19.2.8、TypeScript 7/6 双轨、Vitest、Playwright、OpenNext Cloudflare、Wrangler、R2、Turnstile、Airtable、Resend。
 
@@ -12,13 +12,19 @@
 
 ### Task 1: 建立独立 donor snapshot
 
+**Status:** Completed. Do not rerun.
+
+**Recorded commits:**
+- `a60ed413a71db54f8378fcc5985ad196b7fcd223` — `chore: import tucsenberg donor snapshot`
+- `60f981505958331f2ce910e5e7a473a64148093f` — `docs: record template extraction plan`
+
 **Files:**
 - Create: `/Users/Data/workspace/B2B Inquiry Site Base/**`
 - Create: `/Users/Data/workspace/B2B Inquiry Site Base/docs/superpowers/specs/2026-08-06-b2b-inquiry-site-base-design.md`
 - Create: `/Users/Data/workspace/B2B Inquiry Site Base/docs/superpowers/plans/2026-08-06-b2b-inquiry-site-base-phase-1.md`
 - Create: `/Users/Data/workspace/B2B Inquiry Site Base/docs/baseline/donor-provenance.md`
 
-- [ ] **Step 1: 再次确认 donor 干净且 SHA 正确**
+- [x] **Step 1: 再次确认 donor 干净且 SHA 正确**
 
 Run:
 
@@ -30,7 +36,7 @@ git -C /Users/Data/code/tucsenberg-site rev-parse origin/main
 
 Expected: `main...origin/main` 无文件变更，两个 SHA 都是 `dcb9e2bbed164b484e1c8cbc1b08c7f140e84405`。
 
-- [ ] **Step 2: 从 tracked archive 创建新目录**
+- [x] **Step 2: 从 tracked archive 创建新目录**
 
 Run:
 
@@ -41,7 +47,7 @@ git -C /Users/Data/code/tucsenberg-site archive dcb9e2bbed164b484e1c8cbc1b08c7f1
 
 Expected: 新目录包含 donor tracked files，不包含 `.git`、`.next`、`node_modules`。
 
-- [ ] **Step 3: 初始化独立分支并确认无 remote**
+- [x] **Step 3: 初始化独立分支并确认无 remote**
 
 Run:
 
@@ -52,7 +58,7 @@ git -C "/Users/Data/workspace/B2B Inquiry Site Base" remote -v
 
 Expected: 当前分支为 `build/template-v1`，remote 输出为空。
 
-- [ ] **Step 4: 验证并提交原样 snapshot**
+- [x] **Step 4: 验证并提交原样 snapshot**
 
 Run:
 
@@ -66,7 +72,7 @@ git -C "/Users/Data/workspace/B2B Inquiry Site Base" commit -m "chore: import tu
 
 Expected: tracked path list一致；首个 commit 的 tree 只包含 donor tracked snapshot。
 
-- [ ] **Step 5: 写入并提交来源证明和已批准规划**
+- [x] **Step 5: 写入并提交来源证明和已批准规划**
 
 Create `docs/baseline/donor-provenance.md`:
 
@@ -109,6 +115,8 @@ Expected: 第二个 commit 只增加 provenance、设计规格和实施计划，
 - Modify: `src/config/single-site-links.ts`
 - Modify: `src/config/single-site-navigation.ts`
 - Modify: `src/config/single-site-seo.ts`
+- Create: `src/config/offerings.ts`
+- Create: `src/config/__tests__/offerings.test.ts`
 - Modify: `src/config/pages.config.ts`
 - Modify: `src/config/paths/**`
 - Modify: `.github/workflows/*.yml`
@@ -131,17 +139,21 @@ describe("base identity", () => {
 
 字段名以 `src/config/single-site.ts` 当前真实导出为准；不得新增第二套身份对象。
 
-- [ ] **Step 2: 运行测试确认先红**
+- [ ] **Step 2: 写 offering 权威真相合同测试**
+
+Create `src/config/__tests__/offerings.test.ts`，断言 `src/config/offerings.ts` 只导出一个薄的 offerings 数组，元素至少包含 canonical `id` 和 `name`。第一版 reference site 可包含一个明显虚构的 `custom-fabrication`，也允许空数组支持纯 general inquiry；不要新增 profile、schema builder 或资源名生成器。
+
+- [ ] **Step 3: 运行测试确认先红**
 
 Run:
 
 ```bash
-pnpm exec vitest run tests/architecture/base-identity.test.ts
+pnpm exec vitest run tests/architecture/base-identity.test.ts src/config/__tests__/offerings.test.ts
 ```
 
 Expected: 因当前仍是 Tucsenberg 身份而 FAIL。
 
-- [ ] **Step 3: 直接替换现有权威入口**
+- [ ] **Step 4: 直接替换现有权威入口**
 
 将 package 名改为 `b2b-inquiry-site-base`，站点示例身份改为 `Northstar Industrial Reference`，域名使用 `https://example.invalid`，公开邮箱使用 `sales@example.invalid`。Worker 和 R2 名使用明显 sentinel：
 
@@ -154,22 +166,22 @@ b2b-inquiry-site-base-next-cache-production
 
 不创建 `SiteProfile`、环境 profile 或资源名生成器。
 
-- [ ] **Step 4: strict sentinel 必须真实失败**
+- [ ] **Step 5: strict sentinel 必须真实失败**
 
 Run:
 
 ```bash
-node scripts/starter-checks.js production-config --strict
+PUBLIC_LAUNCH_STRICT=true APP_ENV=production NODE_ENV=production node scripts/starter-checks.js validate-production-config
 ```
 
-Expected: exit non-zero，并点名 `example.invalid`、示例品牌/邮箱或 sentinel 资源名中仍需替换的实际位置。
+Expected: exit non-zero，并分开列出两类红灯：sentinel blockers（`example.invalid`、示例品牌/邮箱、sentinel 资源名等必须替换的位置）和缺生产 secret/binding 的环境 readiness blockers。sentinel blockers 是模板阶段预期红灯；缺 secret 不能被当作 sentinel 已证明的替代品。
 
-- [ ] **Step 5: 身份测试转绿**
+- [ ] **Step 6: 身份和 offering 测试转绿**
 
 Run:
 
 ```bash
-pnpm exec vitest run tests/architecture/base-identity.test.ts
+pnpm exec vitest run tests/architecture/base-identity.test.ts src/config/__tests__/offerings.test.ts
 ```
 
 Expected: PASS。
@@ -232,6 +244,8 @@ Expected: 只允许出现在一次性迁移记录或明确说明历史来源的�
 - Modify: `messages/base/en/messages.json`
 - Modify: `messages/profiles/b2b-lead/en/messages.json`
 - Modify: `messages/message-packs.json`
+- Modify: `src/config/offerings.ts`
+- Modify: `src/config/__tests__/offerings.test.ts`
 - Modify: `src/components/layout/**`
 - Modify: `src/components/footer/**`
 - Move to Trash: 任何中性页面不再调用的产品 sections/grid 组件及其测试
@@ -260,12 +274,16 @@ unknown route -> 404
 
 About、Contact、Privacy、Terms 必须明确是 reference content，并让 strict production gate 阻止直接上线。法律文本不得写成可直接复用的正式法律意见。
 
-- [ ] **Step 4: 运行聚焦测试**
+- [ ] **Step 4: 写最薄 offerings 显示规则**
+
+如果 reference site 展示 offering，数据只能来自 `src/config/offerings.ts` 的 canonical 数组。空 offerings 数组时隐藏 offering-specific UI，但 general inquiry 仍可用。不要创建 route registry、profile、schema builder 或动态表单搭建器。
+
+- [ ] **Step 5: 运行聚焦测试**
 
 Run:
 
 ```bash
-pnpm exec vitest run src/app tests/unit/routes tests/architecture/static-public-pages-contract.test.ts
+pnpm exec vitest run src/app src/config/__tests__/offerings.test.ts tests/unit/routes tests/architecture/static-public-pages-contract.test.ts
 ```
 
 Expected: 核心路由、metadata、sitemap 和 404 相关测试 PASS。
@@ -273,6 +291,8 @@ Expected: 核心路由、metadata、sitemap 和 404 相关测试 PASS。
 ### Task 5: 中性化询盘字段闭包
 
 **Files:**
+- Modify: `src/config/offerings.ts`
+- Modify: `src/config/__tests__/offerings.test.ts`
 - Modify: `src/components/forms/inquiry-payload.ts`
 - Modify: `src/components/forms/inquiry-form*.tsx`
 - Modify: `src/lib/lead-pipeline/canonical-buyer-fields.ts`
@@ -310,29 +330,31 @@ const offeringInquiry = {
 
 断言 `interest` 和 `offeringId` 从 browser payload 进入真实 Zod schema、email data 和 Airtable mapping；不通过源码字段清单扫描证明闭包。
 
+同时覆盖：未知 `offeringId` 被拒绝；email/Airtable 使用服务端从 `src/config/offerings.ts` 解析出的 canonical id/name；浏览器提交的 offering name/label 被忽略；空 offerings 数组仍允许 general inquiry，但拒绝任何非空 `offeringId`。`interest` 仍是买家自由文本，只做自由文本清洗和截断。
+
 - [ ] **Step 2: 运行聚焦测试确认先红**
 
 Run:
 
 ```bash
-pnpm exec vitest run src/components/forms src/lib/lead-pipeline src/lib/email src/lib/airtable tests/integration/api
+pnpm exec vitest run src/config src/components/forms src/lib/lead-pipeline src/lib/email src/lib/airtable tests/integration/api
 ```
 
 Expected: 新字段合同因旧 product model 而 FAIL。
 
 - [ ] **Step 3: 最小改造真实链路**
 
-删除 `catalogProductId`、`productInquiryKind`、`productName` 和 `Product Inquiry` 分支，使用可选 `interest`、`offeringId`。保持既有安全边界和 provider 容错语义，不添加动态 schema、provider interface 或兼容 wrapper。
+删除 `catalogProductId`、`productInquiryKind`、`productName` 和 `Product Inquiry` 分支，使用可选 `interest`、`offeringId`。`offeringId` 只作为不可信输入进入服务端解析，未知 ID 拒绝；下游 email/Airtable 只接收 canonical offering id/name。保持既有安全边界和 provider 容错语义，不添加动态 schema、provider interface 或兼容 wrapper。
 
 - [ ] **Step 4: 询盘聚焦测试转绿**
 
 Run:
 
 ```bash
-pnpm exec vitest run src/components/forms src/app/api/inquiry src/lib/lead-pipeline src/lib/email src/lib/airtable tests/integration/api
+pnpm exec vitest run src/config src/components/forms src/app/api/inquiry src/lib/lead-pipeline src/lib/email src/lib/airtable tests/integration/api
 ```
 
-Expected: 表单、schema、honeypot、Turnstile、email-first、Airtable、单边成功、双边失败和日志脱敏测试 PASS。
+Expected: 表单、schema、offeringId 服务端解析、未知 ID 拒绝、honeypot、Turnstile、email-first、Airtable、单边成功、双边失败和日志脱敏测试 PASS。
 
 ### Task 6: 收缩质量门禁并完成 residue 扫描
 
@@ -413,10 +435,10 @@ Expected: OpenNext build 和 Wrangler dry-run exit 0。
 Run:
 
 ```bash
-node scripts/starter-checks.js production-config --strict
+PUBLIC_LAUNCH_STRICT=true APP_ENV=production NODE_ENV=production node scripts/starter-checks.js validate-production-config
 ```
 
-Expected: exit non-zero，并准确列出示例品牌、域名、邮箱或平台资源名；这是本阶段唯一预期红灯。
+Expected: exit non-zero，并分开列出 sentinel blockers（示例品牌、域名、邮箱或平台资源名）和缺生产 secret/binding 的环境 readiness blockers。sentinel blockers 是本阶段预期红灯；缺 secret 只是生产环境未配置，不能替代 sentinel 证明。
 
 - [ ] **Step 5: 两阶段只读复审**
 
@@ -431,7 +453,7 @@ git add -A
 git commit -m "refactor: extract neutral b2b inquiry base"
 ```
 
-Expected: 第二笔提交只包含独立身份、业务减法、中性 reference site、通用询盘和对应证明；不包含 clean-room demo、generator 或自动同步。
+Expected: 后续首笔实现提交只包含独立身份、业务减法、中性 reference site、通用询盘和对应证明；不包含 clean-room demo、generator 或自动同步。
 
 ## Phase 1 完成边界
 
