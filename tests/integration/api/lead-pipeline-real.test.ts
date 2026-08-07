@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { captureExpectedConsoleErrors } from "@/test/console";
+import { TEST_OFFERING } from "@/test/offerings";
 
 /**
  * Real end-to-end lead-pipeline proof.
@@ -9,7 +10,8 @@ import { captureExpectedConsoleErrors } from "@/test/console";
  * Runs the REAL pipeline: real Zod schema, real `processValidatedInquiry`,
  * real in-memory rate limiter, and the real Turnstile verification logic.
  *
- * Only the external wires are stubbed:
+ * Only the business offering fixture and external wires are stubbed:
+ * - `@/config/offerings` — stable test-owned business identity
  * - `global.fetch` — Turnstile siteverify and the Resend HTTP API
  * - the `airtable` SDK — CRM wire with captured create payloads
  */
@@ -31,6 +33,8 @@ vi.mock("airtable", () => {
   const configure = vi.fn();
   return { default: { configure, base } };
 });
+
+vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 import * as inquiryRoute from "@/app/api/inquiry/route";
 import { resetRateLimitStore } from "@/lib/security/distributed-rate-limit";
@@ -116,7 +120,7 @@ const VALID_INQUIRY_BODY = {
   turnstileToken: "valid-turnstile-token",
   fullName: "Jane Buyer",
   email: "buyer@example.com",
-  offeringId: "custom-fabrication",
+  offeringId: TEST_OFFERING.id,
   message: "Custom packaging details",
 };
 
@@ -129,8 +133,6 @@ const CANONICAL_MESSAGE_INQUIRY_BODY = {
   email: "buyer@example.com",
   message: CANONICAL_BUYER_MESSAGE,
 };
-
-const OFFERING_NAME = "Custom Fabrication";
 
 describe("lead pipeline (real end-to-end proof)", () => {
   beforeEach(() => {
@@ -190,8 +192,8 @@ describe("lead pipeline (real end-to-end proof)", () => {
       Status: "New",
       "First Name": "Jane",
       "Last Name": "Buyer",
-      "Offering Name": OFFERING_NAME,
-      "Offering ID": "custom-fabrication",
+      "Offering Name": TEST_OFFERING.name,
+      "Offering ID": TEST_OFFERING.id,
       Requirements: "Custom packaging details",
     });
     expect(fields).not.toHaveProperty("Company");
@@ -199,7 +201,7 @@ describe("lead pipeline (real end-to-end proof)", () => {
     expect(typeof fields["Reference ID"]).toBe("string");
     expect(fields["Reference ID"]).toBe(body.data.referenceId);
     expect(typeof fields["Message"]).toBe("string");
-    expect(fields["Message"]).toContain(OFFERING_NAME);
+    expect(fields["Message"]).toContain(TEST_OFFERING.name);
     // 邮件发出去了就不能挂失败提示，否则业主每条线索都在报警
     expect(fields["Message"]).not.toContain("⚠️");
 

@@ -6,6 +6,7 @@ import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
 import * as leadSchemaModule from "@/lib/lead-pipeline/lead-schema";
 import { checkDistributedRateLimit } from "@/lib/security/distributed-rate-limit";
 import { verifyTurnstileDetailed } from "@/lib/security/turnstile";
+import { TEST_OFFERING } from "@/test/offerings";
 import { OPTIONS, POST } from "../route";
 
 // Mock dependencies before imports
@@ -46,6 +47,8 @@ vi.mock("@/lib/lead-pipeline/process-lead", () => ({
 vi.mock("@/lib/security/turnstile", () => ({
   verifyTurnstileDetailed: vi.fn(() => Promise.resolve({ success: true })),
 }));
+
+vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 // Mock CORS utilities
 vi.mock("@/lib/api/cors-utils", () => ({
@@ -112,7 +115,7 @@ describe("/api/inquiry route", () => {
       type: "browser-spoof",
       fullName: "John Doe",
       email: "john@example.com",
-      offeringId: "custom-fabrication",
+      offeringId: TEST_OFFERING.id,
       message: "I am interested in your products.",
     };
 
@@ -141,7 +144,7 @@ describe("/api/inquiry route", () => {
         expect.objectContaining({
           type: "inquiry",
           email: "john@example.com",
-          offeringId: "custom-fabrication",
+          offeringId: TEST_OFFERING.id,
         }),
       );
       expect(safeParseSpy).toHaveBeenCalledTimes(1);
@@ -719,7 +722,7 @@ describe("/api/inquiry route", () => {
       type: "inquiry",
       fullName: "Full Coverage Buyer",
       email: "coverage@example.com",
-      offeringId: "custom-fabrication",
+      offeringId: TEST_OFFERING.id,
       message: "Every declared field carries a value.",
       interest: "Custom fabrication",
       utmSource: "google",

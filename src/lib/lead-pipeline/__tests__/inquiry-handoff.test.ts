@@ -1,19 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { resolveInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import {
   MAX_INQUIRY_CONFIG_PREFILL_LENGTH,
   MAX_LEAD_INTEREST_LENGTH,
 } from "@/constants/validation-limits";
+import { TEST_OFFERING } from "@/test/offerings";
+
+vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 describe("resolveInquiryContext", () => {
   it("returns offering-context for one valid scalar offeringId", () => {
-    expect(resolveInquiryContext({ offeringId: "custom-fabrication" })).toEqual(
-      {
-        kind: "offering-context",
-        offeringId: "custom-fabrication",
-        displayLabel: "Custom Fabrication",
-      },
-    );
+    expect(resolveInquiryContext({ offeringId: TEST_OFFERING.id })).toEqual({
+      kind: "offering-context",
+      offeringId: TEST_OFFERING.id,
+      displayLabel: TEST_OFFERING.name,
+    });
   });
 
   it("downgrades forged offeringId values to general-context", () => {
@@ -25,7 +26,7 @@ describe("resolveInquiryContext", () => {
   it("downgrades repeated offeringId values to general-context", () => {
     expect(
       resolveInquiryContext({
-        offeringId: ["custom-fabrication", "custom-fabrication"],
+        offeringId: [TEST_OFFERING.id, TEST_OFFERING.id],
       }),
     ).toEqual({
       kind: "general-context",
@@ -61,14 +62,14 @@ describe("resolveInquiryContext", () => {
   it("keeps interest and initialMessage on valid offering handoffs", () => {
     expect(
       resolveInquiryContext({
-        offeringId: "custom-fabrication",
+        offeringId: TEST_OFFERING.id,
         interest: "coastal project",
         config: "Need span data",
       }),
     ).toEqual({
       kind: "offering-context",
-      offeringId: "custom-fabrication",
-      displayLabel: "Custom Fabrication",
+      offeringId: TEST_OFFERING.id,
+      displayLabel: TEST_OFFERING.name,
       interest: "coastal project",
       initialMessage: "Need span data",
     });

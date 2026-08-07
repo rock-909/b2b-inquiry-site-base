@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { TEST_OFFERING } from "@/test/offerings";
 import { INQUIRY_LEAD_TYPE, inquiryLeadSchema } from "../lead-schema";
 import { processValidatedInquiry } from "../process-lead";
 
@@ -14,6 +15,7 @@ vi.mock("@/lib/resend-instance", () => ({
   resendService: { sendInquiryEmail: mockSendProductInquiryEmail },
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
+vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 describe("canonical inquiry contract", () => {
   beforeEach(() => {
@@ -54,7 +56,7 @@ describe("canonical inquiry contract", () => {
       email: "ada@example.com",
       message: "Please contact me about this project.",
       interest: "  Custom fabrication  ",
-      offeringId: "custom-fabrication",
+      offeringId: TEST_OFFERING.id,
       offeringName: "Forged browser label",
       offeringLabel: "Forged browser label",
     });
@@ -63,16 +65,16 @@ describe("canonical inquiry contract", () => {
 
     expect(mockCreateLead).toHaveBeenCalledWith(
       expect.objectContaining({
-        offeringId: "custom-fabrication",
-        offeringName: "Custom Fabrication",
+        offeringId: TEST_OFFERING.id,
+        offeringName: TEST_OFFERING.name,
         message:
-          "Offering: Custom Fabrication\nInterest: Custom fabrication\nRequirements: Please contact me about this project.",
+          "Offering: Test Offering\nInterest: Custom fabrication\nRequirements: Please contact me about this project.",
       }),
     );
     expect(mockSendProductInquiryEmail).toHaveBeenCalledWith(
       expect.objectContaining({
-        offeringId: "custom-fabrication",
-        offeringName: "Custom Fabrication",
+        offeringId: TEST_OFFERING.id,
+        offeringName: TEST_OFFERING.name,
         interest: "Custom fabrication",
         requirements: "Please contact me about this project.",
       }),

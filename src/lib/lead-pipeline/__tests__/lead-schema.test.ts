@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { TEST_OFFERING } from "@/test/offerings";
 import { INQUIRY_LEAD_TYPE, inquiryLeadSchema } from "../lead-schema";
+
+vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 const GENERAL_INQUIRY = {
   type: INQUIRY_LEAD_TYPE,
@@ -26,11 +29,11 @@ describe("inquiryLeadSchema", () => {
   it("accepts a configured offering inquiry", () => {
     const result = inquiryLeadSchema.parse({
       ...GENERAL_INQUIRY,
-      offeringId: "custom-fabrication",
+      offeringId: TEST_OFFERING.id,
       interest: "OEM branding",
     });
 
-    expect(result.offeringId).toBe("custom-fabrication");
+    expect(result.offeringId).toBe(TEST_OFFERING.id);
     expect(result.interest).toBe("OEM branding");
   });
 
@@ -93,7 +96,7 @@ describe("inquiryLeadSchema", () => {
         type: leadType,
         fullName: "Ada Buyer",
         email: "ada@example.com",
-        offeringId: "custom-fabrication",
+        offeringId: TEST_OFFERING.id,
       }).success,
     ).toBe(false);
 

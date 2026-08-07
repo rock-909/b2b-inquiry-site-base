@@ -18,12 +18,12 @@ describe("lead pipeline utils", () => {
   it("builds the canonical Airtable message without quantity", () => {
     expect(
       generateInquiryMessage({
-        offeringName: "Custom Fabrication",
+        offeringName: "Test Offering",
         interest: "OEM branding",
         requirements: "Need custom height\nStainless finish",
       }),
     ).toBe(
-      "Offering: Custom Fabrication\nInterest: OEM branding\nRequirements: Need custom height\nStainless finish",
+      "Offering: Test Offering\nInterest: OEM branding\nRequirements: Need custom height\nStainless finish",
     );
   });
 
