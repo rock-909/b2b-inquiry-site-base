@@ -1,8 +1,12 @@
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { collectMessageKeyUsageFindings } from "../../../scripts/quality/checks/message-key-usage.js";
+import {
+  collectMessageKeyUsageFindings,
+  collectUsageSourceFiles,
+} from "../../../scripts/quality/checks/message-key-usage.js";
 import { UNUSED_MESSAGE_KEYS } from "../../../scripts/quality/message-key-usage-baseline.js";
 
 type DerivedKeyConsumerFixture = Record<string, unknown> & {
@@ -12,10 +16,7 @@ type DerivedKeyConsumerFixture = Record<string, unknown> & {
 };
 
 const tempDirs: string[] = [];
-const TEMP_TRASH_ROOT = path.join(
-  os.tmpdir(),
-  "b2b-inquiry-message-key-usage-test-trash",
-);
+const TEMP_TRASH_ROOT = path.join(os.tmpdir(), "message-key-usage-test-trash");
 const CLIENT_TRANSLATOR_IMPORT = 'import { useTranslations } from "next-intl";';
 const SERVER_TRANSLATOR_IMPORT =
   'import { getTranslations } from "next-intl/server";';
@@ -115,6 +116,11 @@ afterEach(() => {
 });
 
 describe("message key usage gate", () => {
+  it("scans new untracked source files", () => {
+    const { rootDir, file } = createSource("export {};");
+    execFileSync("git", ["init", "-q"], { cwd: rootDir });
+    expect(collectUsageSourceFiles(rootDir)).toContain(file);
+  });
   it("ignores tracked source paths deleted in the current worktree", () => {
     const { rootDir } = createSource("export {};");
 

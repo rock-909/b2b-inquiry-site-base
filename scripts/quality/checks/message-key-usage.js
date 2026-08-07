@@ -63,7 +63,15 @@ function getCatalogKeys(locale = DEFAULT_LOCALE) {
 function collectUsageSourceFiles(rootDir = ROOT) {
   const output = execFileSync(
     "git",
-    ["ls-files", "-z", "--", ...SOURCE_ROOTS],
+    [
+      "ls-files",
+      "-z",
+      "--cached",
+      "--others",
+      "--exclude-standard",
+      "--",
+      ...SOURCE_ROOTS,
+    ],
     {
       cwd: rootDir,
       encoding: "utf8",
