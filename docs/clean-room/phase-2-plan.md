@@ -144,7 +144,7 @@ PUBLIC_LAUNCH_STRICT=true APP_ENV=production NODE_ENV=production node scripts/st
 每个实验保存：
 
 ```bash
-git diff --binary candidate-2026-08-06.1 > <scenario>.patch
+git diff --binary candidate-2026-08-06.1 | gzip -c > <scenario>.patch.gz
 git diff --name-status candidate-2026-08-06.1
 git diff --stat candidate-2026-08-06.1
 ```
@@ -174,7 +174,7 @@ git diff --stat candidate-2026-08-06.1
 
 ## Task 11：提交证据和清理实验目录
 
-1. 提交 briefs、patch、场景报告和汇总报告。
+1. 提交 briefs、压缩 patch、场景报告和汇总报告。patch 使用 gzip 保存，避免 diff 内容本身触发仓库的尾随空格门禁。
 2. 确认模板仓工作树干净。
 3. 将三个临时实验目录移动到 macOS Trash。
 4. 清理失效的 worktree 注册信息，但不得永久删除实验业务文件。

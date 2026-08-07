@@ -86,11 +86,11 @@ docs/clean-room/phase-2/
 │   └── hybrid-offering.md
 ├── run-1/
 │   ├── product-catalog-report.md
-│   ├── product-catalog.patch
+│   ├── product-catalog.patch.gz
 │   ├── service-business-report.md
-│   ├── service-business.patch
+│   ├── service-business.patch.gz
 │   ├── hybrid-offering-report.md
-│   └── hybrid-offering.patch
+│   └── hybrid-offering.patch.gz
 └── run-1-summary.md
 ```
 
@@ -107,7 +107,7 @@ docs/clean-room/phase-2/
 5. 类型、lint、测试、内容检查和 build 通过。
 6. OpenNext build 与 Wrangler dry-run 通过。
 7. `PUBLIC_LAUNCH_STRICT` 因虚构域名、真实 secret 和 owner acceptance 缺失而保持红灯。
-8. brief、patch、修改清单和验证证据已保存。
+8. brief、压缩 patch、修改清单和验证证据已保存。
 
 ## Phase 2 完成边界
 
