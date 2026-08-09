@@ -8,6 +8,7 @@ import { LazyTurnstile } from "@/components/forms/lazy-turnstile";
 import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
 
 const RESCUE_TIMEOUT_MS = 15_000;
+const SENTINEL_RESCUE_EMAIL = "rescue@fieldaxis.test";
 
 const sentinelTurnstileLabels = {
   unavailable: "安全验证暂时不可用。",
@@ -17,6 +18,7 @@ const sentinelTurnstileLabels = {
   testMode: "测试模式下已关闭机器人防护",
   rescueBeforeEmail: "请改发邮件 —",
   rescueAfterEmail: "12 小时内回复。",
+  rescueEmail: SENTINEL_RESCUE_EMAIL,
   rescueSubject: "报价咨询",
 };
 
@@ -286,8 +288,9 @@ describe("LazyTurnstile", () => {
     );
     expect(screen.getByRole("link")).toHaveAttribute(
       "href",
-      `mailto:sales@example.invalid?subject=${encodeURIComponent(labels.rescueSubject)}`,
+      `mailto:${SENTINEL_RESCUE_EMAIL}?subject=${encodeURIComponent(labels.rescueSubject)}`,
     );
+    expect(screen.getByRole("link")).toHaveTextContent(SENTINEL_RESCUE_EMAIL);
     expect(screen.getByRole("status")).toHaveTextContent(
       labels.rescueBeforeEmail,
     );
@@ -433,7 +436,7 @@ describe("LazyTurnstile", () => {
       expect(screen.getAllByRole("link", { name: /sales@/u })).toHaveLength(1);
       expect(screen.getByRole("link", { name: /sales@/u })).toHaveAttribute(
         "href",
-        `mailto:sales@example.invalid?subject=${encodeURIComponent(labels.rescueSubject)}`,
+        `mailto:${labels.rescueEmail}?subject=${encodeURIComponent(labels.rescueSubject)}`,
       );
     });
   });

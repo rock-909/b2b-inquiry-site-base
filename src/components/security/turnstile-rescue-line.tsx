@@ -1,10 +1,7 @@
-// Kept literal so this client boundary does not pull in server env resolution.
-// The production gate rejects this reference address until a business replaces it.
-const TURNSTILE_RESCUE_EMAIL = "sales@example.invalid";
-
 export interface TurnstileRescueLineProps {
   beforeEmail: string;
   afterEmail: string;
+  email: string;
   subject: string;
 }
 
@@ -15,6 +12,7 @@ export interface TurnstileRescueLineProps {
 export function TurnstileRescueLine({
   beforeEmail,
   afterEmail,
+  email,
   subject,
 }: TurnstileRescueLineProps) {
   return (
@@ -22,9 +20,9 @@ export function TurnstileRescueLine({
       {beforeEmail}{" "}
       <a
         className="font-medium text-[var(--primary-text)] underline underline-offset-4 hover:no-underline"
-        href={`mailto:${TURNSTILE_RESCUE_EMAIL}?subject=${encodeURIComponent(subject)}`}
+        href={`mailto:${email}?subject=${encodeURIComponent(subject)}`}
       >
-        {TURNSTILE_RESCUE_EMAIL}
+        {email}
       </a>
       . {afterEmail}
     </p>

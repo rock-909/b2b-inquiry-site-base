@@ -33,6 +33,7 @@ interface LazyTurnstileLabels {
   testMode: string;
   rescueBeforeEmail: string;
   rescueAfterEmail: string;
+  rescueEmail: string;
   rescueSubject: string;
 }
 
@@ -198,6 +199,7 @@ function TurnstileRescueStatus({
       <TurnstileRescueLine
         beforeEmail={labels.rescueBeforeEmail}
         afterEmail={labels.rescueAfterEmail}
+        email={labels.rescueEmail}
         subject={labels.rescueSubject}
       />
     </output>

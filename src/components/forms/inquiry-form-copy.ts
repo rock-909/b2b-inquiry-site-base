@@ -1,4 +1,5 @@
 import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 
 export type InquiryFormSource = "contact" | "request-quote";
 
@@ -65,6 +66,7 @@ export function createInquiryFormCopy(t: InquiryTranslate) {
       testMode: t("turnstile.testMode"),
       rescueBeforeEmail: t("turnstile.rescueBeforeEmail"),
       rescueAfterEmail: t("turnstile.rescueAfterEmail"),
+      rescueEmail: SINGLE_SITE_CONFIG.contact.email,
       rescueSubject: t("turnstile.rescueSubject"),
     },
     errors: {
