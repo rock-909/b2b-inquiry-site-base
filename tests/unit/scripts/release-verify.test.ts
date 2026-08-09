@@ -104,6 +104,25 @@ describe("release verify runner", () => {
     errorSpy.mockRestore();
   });
 
+  it("stops at the first failed command and propagates its status", async () => {
+    const executedCommands: string[] = [];
+    const firstStep = RELEASE_VERIFY_COMMANDS[0];
+
+    expect(firstStep).toBeDefined();
+
+    const status = await runReleaseVerify({
+      rootDir: "/repo",
+      runCommand: (step) => {
+        executedCommands.push(step.id);
+        return 17;
+      },
+      portInUse: async () => false,
+    });
+
+    expect(status).toBe(17);
+    expect(executedCommands).toEqual([firstStep?.id]);
+  });
+
   it("parses representative Wrangler dry-run gzip upload lines", () => {
     const samples: Array<{ output: string; expectedKiB: number }> = [
       {
