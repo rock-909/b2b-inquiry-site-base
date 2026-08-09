@@ -143,22 +143,28 @@ export function getPublicStaticPageDefinition(
 }
 
 export function getStaticSitemapPages(): string[] {
-  return PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
-    (definition) => definition.sitemap.include,
-  ).map((definition) => toSitemapStaticPath(definition.localizedPaths.en));
+  return PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((definition) =>
+    definition.sitemap.include
+      ? [toSitemapStaticPath(definition.localizedPaths.en)]
+      : [],
+  );
 }
 
 export function getStaticSitemapPageConfigByPath() {
   return Object.fromEntries(
-    PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
-      (definition) => definition.sitemap.include,
-    ).map((definition) => [
-      toSitemapStaticPath(definition.localizedPaths.en),
-      {
-        changeFrequency: definition.sitemap.changeFrequency,
-        priority: definition.sitemap.priority,
-      },
-    ]),
+    PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((definition) =>
+      definition.sitemap.include
+        ? [
+            [
+              toSitemapStaticPath(definition.localizedPaths.en),
+              {
+                changeFrequency: definition.sitemap.changeFrequency,
+                priority: definition.sitemap.priority,
+              },
+            ],
+          ]
+        : [],
+    ),
   ) as Record<
     string,
     { changeFrequency: PublicStaticPageChangeFrequency; priority: number }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import {
   INQUIRY_TURNSTILE_ACTION,
@@ -124,24 +124,25 @@ export function TurnstileWidget({
    * 提交之后再也拿不到令牌，按钮永久禁用。所以这里补发一次替身令牌，跟真实控件
    * reset 后会出新挑战对齐。本地 E2E 与预览部署都跑在这个模式下。
    */
-  const handleReset = useCallback(() => {
-    if (isBypassMode) {
-      onSuccess?.(TURNSTILE_BYPASS_TOKEN);
-      return;
-    }
-    if (isTestMode) {
-      onSuccess?.(TURNSTILE_DUMMY_TEST_TOKEN);
-      return;
-    }
-    turnstileRef.current?.reset();
-  }, [isBypassMode, isTestMode, onSuccess]);
-
   useEffect(() => {
     if (!onReadyRef) {
       return undefined;
     }
+
+    const handleReset = () => {
+      if (isBypassMode) {
+        onSuccess?.(TURNSTILE_BYPASS_TOKEN);
+        return;
+      }
+      if (isTestMode) {
+        onSuccess?.(TURNSTILE_DUMMY_TEST_TOKEN);
+        return;
+      }
+      turnstileRef.current?.reset();
+    };
+
     return onReadyRef(handleReset);
-  }, [onReadyRef, handleReset]);
+  }, [isBypassMode, isTestMode, onReadyRef, onSuccess]);
 
   // All hooks must be called before any conditional returns. Dev bypass and
   // test mode both replace the real widget, so they share one settle-once

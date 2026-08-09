@@ -1,13 +1,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { usePrefersReducedMotion } from "@/lib/motion/use-prefers-reduced-motion";
@@ -96,7 +90,7 @@ export function NavigationProgressBar() {
     routeKey: null as string | null,
   });
 
-  const clearTimers = useCallback(() => {
+  const clearTimers = useEffectEvent(() => {
     if (trickleTimerRef.current !== undefined) {
       window.clearInterval(trickleTimerRef.current);
       trickleTimerRef.current = undefined;
@@ -106,7 +100,7 @@ export function NavigationProgressBar() {
       window.clearTimeout(hideTimerRef.current);
       hideTimerRef.current = undefined;
     }
-  }, []);
+  });
 
   const finish = useEffectEvent(() => {
     if (!isActiveRef.current) {
@@ -194,7 +188,7 @@ export function NavigationProgressBar() {
       window.removeEventListener("popstate", handlePopState);
       clearTimers();
     };
-  }, [clearTimers]);
+  }, []);
 
   if (reducedMotion || !visible) {
     return null;

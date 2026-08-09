@@ -39,6 +39,7 @@ describe("InquiryForm submission lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.sessionStorage.clear();
+    delete (window as unknown as Record<string, unknown>).gtag;
     global.fetch = vi.fn(async () => successResponse());
   });
 
@@ -96,6 +97,26 @@ describe("InquiryForm submission lifecycle", () => {
 
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(screen.getByText(copy.errors.securitySummary)).toBeInTheDocument();
+  });
+
+  it("finishes a successful inquiry when analytics throws", async () => {
+    window.gtag = vi.fn(() => {
+      throw new Error("analytics unavailable");
+    });
+
+    const { container, copy } = renderInquiryForm("contact");
+    const { form, fullName, email } = fillRequiredFields(container);
+
+    await act(async () => {
+      fireEvent.submit(form);
+    });
+
+    await screen.findByText(
+      `${copy.success} ${copy.referenceLabel}: inq-ref-1`,
+    );
+    expect(fullName).toHaveValue("");
+    expect(email).toHaveValue("");
+    expect(turnstileWidgetResetSpy).toHaveBeenCalledTimes(1);
   });
 
   it("resets the Turnstile widget after a failed submit", async () => {

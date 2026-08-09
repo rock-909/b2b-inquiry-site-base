@@ -191,19 +191,21 @@ function InquiryFormLive({
     }
     isSubmittingRef.current = true;
     setDisplayState({ status: "submitting" });
-    appendAttributionToFormData(formData);
 
     try {
+      appendAttributionToFormData(formData);
       const decoded = await postInquiry(formData, turnstileToken, context);
       setDisplayState(decoded);
       if (decoded.status === "success") {
         trackGenerateLead(source === "contact" ? "contact" : "rfq");
         clearSubmittedFields(formRef.current);
       }
-    } finally {
-      isSubmittingRef.current = false;
-      clearTurnstileAfterSettlement();
+    } catch {
+      setDisplayState({ status: "error", errorKind: "server" });
     }
+
+    isSubmittingRef.current = false;
+    clearTurnstileAfterSettlement();
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {

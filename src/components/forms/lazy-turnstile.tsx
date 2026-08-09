@@ -4,7 +4,6 @@ import {
   type CSSProperties,
   lazy,
   Suspense,
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -150,16 +149,13 @@ function useTurnstileRescueState(isLoading: boolean) {
 
   // 拿到令牌就收回救援行。managed 挑战常要买家手动点一次，先填字段再去点验证码
   // 超过 15 秒是常态；那时救援行已经出现，但控件完全健康，买家也已经能提交了。
-  const markSuccess = useCallback(() => {
+  const markSuccess = () => {
     setWaitCycle(null);
     setHasTimedOut(false);
     setDegradedKind(null);
-  }, []);
+  };
 
-  const markWaiting = useCallback(
-    () => setWaitCycle((cycle) => (cycle ?? 0) + 1),
-    [],
-  );
+  const markWaiting = () => setWaitCycle((cycle) => (cycle ?? 0) + 1);
 
   return {
     showRescue: degradedKind !== null || hasTimedOut,

@@ -7,7 +7,6 @@
 import {
   cloneElement,
   isValidElement,
-  useCallback,
   useState,
   type ComponentProps,
   type ReactNode,
@@ -140,16 +139,13 @@ export function MobileNavigationInteractive({
   const resolvedSiteDescription =
     siteDescription ?? tNavigation("siteDescription");
 
-  const handleOpenChange = useCallback(
-    (open: boolean) => {
-      setMenuState((currentState) => ({
-        ...currentState,
-        isOpen: open,
-        pathname,
-      }));
-    },
-    [pathname],
-  );
+  const handleOpenChange = (open: boolean) => {
+    setMenuState((currentState) => ({
+      ...currentState,
+      isOpen: open,
+      pathname,
+    }));
+  };
 
   const navigationContent = children ? (
     withInteractiveNavigationProps(children, {

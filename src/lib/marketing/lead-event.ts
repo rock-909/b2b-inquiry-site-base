@@ -14,5 +14,9 @@ export function trackGenerateLead(method: LeadEventMethod): void {
     method,
   } satisfies GtagEventParams;
 
-  window.gtag("event", "generate_lead", eventParams);
+  try {
+    window.gtag("event", "generate_lead", eventParams);
+  } catch {
+    // 分析脚本失败不能改变已经成功的询盘结果。
+  }
 }

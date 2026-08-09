@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
@@ -46,12 +46,9 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
   const dataTestId = (rest as Record<string, unknown>)["data-testid"] as
     string | undefined;
 
-  const handleThemeClick = useCallback(
-    (themeKey: "light" | "dark" | "system") => {
-      setTheme(themeKey);
-    },
-    [setTheme],
-  );
+  const handleThemeClick = (themeKey: "light" | "dark" | "system") => {
+    setTheme(themeKey);
+  };
 
   if (!isHydrated) {
     return (
@@ -105,7 +102,7 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
           >
             {isActive ? (
               <div
-                className="absolute inset-0 rounded-full bg-muted transition-all duration-150"
+                className="absolute inset-0 rounded-full bg-muted transition-colors duration-150"
                 data-testid="theme-switcher-highlight"
                 style={{
                   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",

@@ -9,8 +9,6 @@
 import {
   createContext,
   use,
-  useCallback,
-  useMemo,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
@@ -145,67 +143,54 @@ export function CookieConsentProvider({
     getServerSnapshot,
   );
 
-  const acceptAll = useCallback(() => {
+  const acceptAll = () => {
     const newConsent = createAcceptAllConsent();
     saveConsent(newConsent);
     updateConsentStore(newConsent, true);
-  }, []);
+  };
 
-  const rejectAll = useCallback(() => {
+  const rejectAll = () => {
     const newConsent = createRejectAllConsent();
     saveConsent(newConsent);
     updateConsentStore(newConsent, true);
-  }, []);
+  };
 
-  const updateConsent = useCallback(
-    (category: Exclude<CookieCategory, "necessary">, value: boolean) => {
-      const newConsent = { ...cachedConsent, [category]: value };
-      saveConsent(newConsent);
-      updateConsentStore(newConsent, true);
-    },
-    [],
-  );
+  const updateConsent = (
+    category: Exclude<CookieCategory, "necessary">,
+    value: boolean,
+  ) => {
+    const newConsent = { ...cachedConsent, [category]: value };
+    saveConsent(newConsent);
+    updateConsentStore(newConsent, true);
+  };
 
-  const savePreferences = useCallback(
-    (preferences: Partial<Omit<CookieConsent, "necessary">>) => {
-      const newConsent = {
-        ...cachedConsent,
-        ...preferences,
-        necessary: true as const,
-      };
-      saveConsent(newConsent);
-      updateConsentStore(newConsent, true);
-    },
-    [],
-  );
+  const savePreferences = (
+    preferences: Partial<Omit<CookieConsent, "necessary">>,
+  ) => {
+    const newConsent = {
+      ...cachedConsent,
+      ...preferences,
+      necessary: true as const,
+    };
+    saveConsent(newConsent);
+    updateConsentStore(newConsent, true);
+  };
 
-  const resetConsent = useCallback(() => {
+  const resetConsent = () => {
     clearConsent();
     updateConsentStore(DEFAULT_CONSENT, false);
-  }, []);
+  };
 
-  const value = useMemo<CookieConsentContextValue>(
-    () => ({
-      consent,
-      hasConsented,
-      ready,
-      acceptAll,
-      rejectAll,
-      updateConsent,
-      savePreferences,
-      resetConsent,
-    }),
-    [
-      consent,
-      hasConsented,
-      ready,
-      acceptAll,
-      rejectAll,
-      updateConsent,
-      savePreferences,
-      resetConsent,
-    ],
-  );
+  const value: CookieConsentContextValue = {
+    consent,
+    hasConsented,
+    ready,
+    acceptAll,
+    rejectAll,
+    updateConsent,
+    savePreferences,
+    resetConsent,
+  };
 
   return (
     <CookieConsentContext.Provider value={value}>
