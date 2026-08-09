@@ -1,5 +1,5 @@
 import { resolve } from "path";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 const debugTestOutput = process.env.VITEST_DEBUG_OUTPUT === "true";
 
@@ -22,38 +22,13 @@ export default defineConfig({
     // 设置文件
     setupFiles: ["./src/test/setup.ts"],
 
-    // 测试文件匹配模式 - 优化分离策略
-    include: [
-      "src/**/*.{test,spec}.{js,jsx,ts,tsx,mts,cts}",
-      "src/**/__tests__/**/*.{js,jsx,ts,tsx}",
-      "tests/architecture/**/*.{test,spec}.{js,jsx,ts,tsx,mts,cts}",
-      "tests/unit/**/*.{test,spec}.{js,jsx,ts,tsx,mts,cts}",
-      "tests/integration/**/*.{test,spec}.{js,jsx,ts,tsx,mts,cts}",
-    ],
-
-    // 排除文件 - 严格分离浏览器测试
+    // 使用 Vitest 默认 test/spec discovery，只排除非 Vitest 输入。
     exclude: [
-      "node_modules",
-      ".next",
-      ".next-lighthouse",
-      "dist",
-      "build",
-      "coverage",
-      "**/*.d.ts",
-      // 排除setup文件和工具文件
+      ...configDefaults.exclude,
+      "tests/e2e/**",
+      "**/{fixtures,__fixtures__}/**",
       "**/setup.{js,jsx,ts,tsx}",
       "**/test-utils.{js,jsx,ts,tsx}",
-      "**/__tests__/**/setup.{js,jsx,ts,tsx}",
-      "**/__tests__/**/test-utils.{js,jsx,ts,tsx}",
-      // 排除Mock文件 - 这些是Mock模块，不是测试文件
-      "**/__tests__/**/mocks/**/*.{js,jsx,ts,tsx}",
-      "**/mocks/**/*.{js,jsx,ts,tsx}",
-      // 严格排除浏览器测试文件
-      "**/*.browser.{test,spec}.{js,jsx,ts,tsx,mts,cts}",
-      "tests/browser/**/*",
-      "tests/e2e/**/*",
-      // 排除性能测试文件
-      "**/*.performance.{test,spec}.{js,jsx,ts,tsx,mts,cts}",
     ],
 
     // 覆盖率配置 - 最简配置

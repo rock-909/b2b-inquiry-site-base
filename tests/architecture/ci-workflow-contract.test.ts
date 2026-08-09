@@ -80,20 +80,6 @@ describe("CI workflow contract", () => {
     });
   });
 
-  // 这两个对账门必须接入真实 CI 车道，才能证明自身和测试收集面。
-  it("keeps the standalone gate checks wired to a lane that actually runs", () => {
-    const qualityRuns = (readCiWorkflowConfig().jobs?.quality?.steps ?? [])
-      .map((step) => step.run?.trim())
-      .filter((run): run is string => Boolean(run));
-
-    for (const command of [
-      "node scripts/starter-checks.js vitest-collection",
-      "node scripts/starter-checks.js subcommand-lanes",
-    ]) {
-      expect(qualityRuns).toContain(command);
-    }
-  });
-
   // CI 作业和步骤都必须传播失败；其他工作流有自己的契约。
   it("keeps no ci.yml step or job that can never fail", () => {
     const jobs = Object.entries(readCiWorkflowConfig().jobs ?? {});

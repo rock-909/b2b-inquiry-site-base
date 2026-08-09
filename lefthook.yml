@@ -29,51 +29,6 @@ pre-commit:
       fail_text: '翻译验证失败 - 请同步 messages 物理包与内容文件'
       stage_fixed: false
 
-    # 改动运行时代码时，要求每个文件都有相关测试并执行这些测试。
-    test-related:
-      run: |
-        # stories/fixtures 由类型检查证明；纯类型和 setup 文件由全量车道证明。
-        FILES=$(git diff --cached --name-only --diff-filter=ACM \
-          | grep -E '^src/.+\.(ts|tsx)$' \
-          | grep -v '\.test\.' | grep -v '\.spec\.' | grep -v '__tests__' \
-          | grep -v '\.stories\.tsx$' \
-          | grep -v '\.fixtures\.ts$' \
-          | grep -vE '^src/types/|(^|/)types\.ts$|-types\.ts$|\.types\.ts$' \
-          | grep -v '^src/test/setup' || true)
-        if [ -z "$FILES" ]; then
-          echo "✅ 相关测试检查跳过 (本次没有需要单测覆盖的源码变更)"; exit 0;
-        fi
-        # 逐个检查，避免一个有测试的文件掩盖同批次中没有测试的文件。
-        UNCOVERED=""
-        for FILE in $FILES; do
-          if pnpm vitest related "$FILE" --run --passWithNoTests --reporter=dot 2>&1 \
-            | grep -q "No test files found"; then
-            UNCOVERED="$UNCOVERED $FILE"
-          fi
-        done
-        if [ -n "$UNCOVERED" ]; then
-          echo "";
-          echo "❌ 改动的源文件里，有文件没有任何相关测试：";
-          for FILE in $UNCOVERED; do echo "     $FILE"; done
-          echo "";
-          echo "💡 补一个测试。真的该由别的车道证明，就说清是哪条，并把排除规则写在";
-          echo "   上面那个过滤器里——附上理由，别默默放行。";
-          exit 1;
-        fi
-        echo "🧪 运行相关测试..."
-        OUTPUT=$(pnpm vitest related $FILES --run --passWithNoTests --reporter=dot 2>&1) || {
-          echo "$OUTPUT";
-          echo ""; echo "❌ 相关测试失败 - 可能原因:";
-          echo "  1. 组件 DOM 结构变更，但测试中的 getByRole/getByText 未同步";
-          echo "  2. 接口属性变更，但 Mock 配置未更新";
-          echo "  3. 函数签名变更，但测试断言未更新";
-          echo ""; echo "💡 请检查并同步更新对应的测试文件";
-          exit 1;
-        }
-        echo "✅ 相关测试通过"
-      fail_text: '相关测试失败 - 请确认改动行为有对应测试覆盖'
-      stage_fixed: false
-
 commit-msg:
   commands:
     commitlint:

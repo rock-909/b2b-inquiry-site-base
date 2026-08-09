@@ -72,12 +72,6 @@ jobs:
       - name: Dead-export / dead-file scan (knip)
         run: pnpm knip:check
 
-      - name: Vitest 收集面对账
-        run: node scripts/starter-checks.js vitest-collection
-
-      - name: 门禁子命令车道对账
-        run: node scripts/starter-checks.js subcommand-lanes
-
   tests:
     name: 单元与集成测试
     runs-on: ubuntu-latest

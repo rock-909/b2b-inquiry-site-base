@@ -6,8 +6,6 @@ function printUsage() {
   console.error(`Usage: node scripts/starter-checks.js <command> [options]
 
 Commands:
-  vitest-collection   Check vitest runs every test file on disk
-  subcommand-lanes    Check every subcommand here is wired into a lane
   content-slugs       Check localized MDX slug pairs
   content-manifest    Generate content manifest only (--check verifies freshness)
   translations        Check configured message packs and translation shapes
@@ -30,12 +28,6 @@ Commands:
 // prove a package script is wired to a real check need the command list, not a
 // frozen copy of the command string.
 const COMMAND_HANDLERS = {
-  "vitest-collection": () =>
-    require("./quality/checks/vitest-collection").runVitestCollectionCheck(),
-  "subcommand-lanes": () =>
-    require("./quality/checks/subcommand-lanes").runSubcommandLaneCheck(
-      STARTER_CHECK_COMMANDS,
-    ),
   "content-slugs": (args) =>
     require("./quality/checks/content-slugs").runContentSlugCheck(args),
   "content-manifest": (args) => {

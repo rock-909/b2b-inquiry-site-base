@@ -178,32 +178,11 @@ jobs:
         if: ${{ inputs.environment == 'production' }}
         run: |
           set -euo pipefail
-          pnpm release:verify
+          pnpm release:verify 2>&1 | tee cf_build.log
         env:
           CI: true
           NODE_ENV: production
           APP_ENV: production
-          RATE_LIMIT_PEPPER: ${{ secrets.RATE_LIMIT_PEPPER }}
-          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
-          AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
-          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
-          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
-          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
-          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION || secrets.GOOGLE_SITE_VERIFICATION }}
-
-      - name: 构建（Cloudflare Workers）
-        if: ${{ inputs.environment == 'production' }}
-        id: build
-        run: |
-          set -euo pipefail
-          pnpm website:build:cf 2>&1 | tee cf_build.log
-          echo "log-path=$(pwd)/cf_build.log" >> "$GITHUB_OUTPUT"
-        env:
-          CI: true
-          NODE_ENV: production
-          APP_ENV: ${{ inputs.environment }}
           RATE_LIMIT_PEPPER: ${{ secrets.RATE_LIMIT_PEPPER }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

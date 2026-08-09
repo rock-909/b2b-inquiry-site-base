@@ -69,6 +69,20 @@ describe("Cloudflare deploy workflow contract", () => {
     expect(deployStep?.run).not.toContain("--env preview");
   });
 
+  it("deploys the Cloudflare artifact already built by release proof", () => {
+    const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+    const releaseProof = steps.find((step) =>
+      step.run?.includes("pnpm release:verify"),
+    );
+
+    expect(releaseProof?.run).toContain(
+      "pnpm release:verify 2>&1 | tee cf_build.log",
+    );
+    expect(
+      steps.filter((step) => step.run?.includes("pnpm website:build:cf")),
+    ).toHaveLength(0);
+  });
+
   it("keeps post-deploy verification serialized after the deploy job", () => {
     const workflow = loadDeployWorkflow();
     const smokeStep = workflowSteps(workflow, "post-deploy-verification").find(
