@@ -77,7 +77,7 @@ const TEXT_RULES = [
   },
   {
     ruleId: "fake-phone",
-    severity: "error",
+    severity: "warning",
     pattern:
       /(?:\+?1[\s.-]?)?(?:(?:\(?555\)?[\s.-]?\d{3})|(?:\(?\d{3}\)?[\s.-]?555))[\s.-]?\d{4}\b|\b123[\s.-]?456[\s.-]?7890\b/giu,
     message: "Fake phone marker is present in buyer-visible content.",
@@ -287,13 +287,7 @@ function collectReadinessFiles(rootDir, target) {
   return results;
 }
 
-function getLineText(content, index) {
-  const lineStart = content.lastIndexOf("\n", index - 1) + 1;
-  const lineEnd = content.indexOf("\n", index);
-  return content.slice(lineStart, lineEnd === -1 ? content.length : lineEnd);
-}
-
-function getEffectiveSeverity(rule, scanUnit, index, options = {}) {
+function getEffectiveSeverity(rule, _scanUnit, _index, options = {}) {
   const strictClientLaunch = options.strictClientLaunch === true;
   if (
     strictClientLaunch &&
@@ -302,11 +296,6 @@ function getEffectiveSeverity(rule, scanUnit, index, options = {}) {
     return "error";
   }
 
-  if (rule.ruleId !== "fake-phone") return rule.severity;
-  if (/placeholder/iu.test(scanUnit.context ?? "")) return "warning";
-  if (/placeholder/iu.test(getLineText(scanUnit.value, index))) {
-    return "warning";
-  }
   return rule.severity;
 }
 

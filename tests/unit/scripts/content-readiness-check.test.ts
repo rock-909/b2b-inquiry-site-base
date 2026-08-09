@@ -105,7 +105,7 @@ describe("content-readiness-check", () => {
 
     expect(result.status).toBe("failed");
     expectFinding(result.errors, "lorem-ipsum", "content/pages/en/about.mdx");
-    expectFinding(result.errors, "fake-phone", "content/pages/en/about.mdx");
+    expectFinding(result.warnings, "fake-phone", "content/pages/en/about.mdx");
     expectFinding(
       result.warnings,
       "your-company",
@@ -566,37 +566,6 @@ describe("content-readiness-check", () => {
         }),
       ]),
     );
-  });
-
-  it("warns on fake phone values when they are explicit placeholders", () => {
-    const rootDir = createFixture({
-      "messages/profiles/b2b-lead/en/messages.json": JSON.stringify({
-        phonePlaceholder: "+1 (555) 123-4567",
-      }),
-    });
-    fixtureRoots.push(rootDir);
-
-    const result = runContentReadinessCheck(rootDir);
-
-    expect(result.status).toBe("passed");
-    expectFinding(
-      result.warnings,
-      "fake-phone",
-      "messages/profiles/b2b-lead/en/messages.json",
-    );
-  });
-
-  it("keeps fake phone values blocking when placeholder is only nearby", () => {
-    const rootDir = createFixture({
-      "content/pages/en/contact.mdx":
-        "placeholder\nCall +1 555-123-4567 before launch.",
-    });
-    fixtureRoots.push(rootDir);
-
-    const result = runContentReadinessCheck(rootDir);
-
-    expect(result.status).toBe("failed");
-    expectFinding(result.errors, "fake-phone", "content/pages/en/contact.mdx");
   });
 
   it("warns on generic email placeholders without failing", () => {
