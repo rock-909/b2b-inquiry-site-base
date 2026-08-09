@@ -11,7 +11,6 @@ export {
 } from "@/lib/cookie-consent/context";
 
 export {
-  type CookieCategory,
   type CookieConsent,
   type CookieConsentActions,
   type CookieConsentContextValue,

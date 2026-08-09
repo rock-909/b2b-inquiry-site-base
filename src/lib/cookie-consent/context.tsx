@@ -13,7 +13,6 @@ import {
   type ReactNode,
 } from "react";
 import {
-  clearConsent,
   createAcceptAllConsent,
   createRejectAllConsent,
   loadConsent,
@@ -21,7 +20,6 @@ import {
 } from "@/lib/cookie-consent/storage";
 import {
   DEFAULT_CONSENT,
-  type CookieCategory,
   type CookieConsent,
   type CookieConsentContextValue,
 } from "@/lib/cookie-consent/types";
@@ -155,15 +153,6 @@ export function CookieConsentProvider({
     updateConsentStore(newConsent, true);
   };
 
-  const updateConsent = (
-    category: Exclude<CookieCategory, "necessary">,
-    value: boolean,
-  ) => {
-    const newConsent = { ...cachedConsent, [category]: value };
-    saveConsent(newConsent);
-    updateConsentStore(newConsent, true);
-  };
-
   const savePreferences = (
     preferences: Partial<Omit<CookieConsent, "necessary">>,
   ) => {
@@ -176,20 +165,13 @@ export function CookieConsentProvider({
     updateConsentStore(newConsent, true);
   };
 
-  const resetConsent = () => {
-    clearConsent();
-    updateConsentStore(DEFAULT_CONSENT, false);
-  };
-
   const value: CookieConsentContextValue = {
     consent,
     hasConsented,
     ready,
     acceptAll,
     rejectAll,
-    updateConsent,
     savePreferences,
-    resetConsent,
   };
 
   return (

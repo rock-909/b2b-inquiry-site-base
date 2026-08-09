@@ -8,13 +8,11 @@ import {
 const {
   mockLoadConsent,
   mockSaveConsent,
-  mockClearConsent,
   mockCreateAcceptAllConsent,
   mockCreateRejectAllConsent,
 } = vi.hoisted(() => ({
   mockLoadConsent: vi.fn(),
   mockSaveConsent: vi.fn(),
-  mockClearConsent: vi.fn(),
   mockCreateAcceptAllConsent: vi.fn(),
   mockCreateRejectAllConsent: vi.fn(),
 }));
@@ -22,7 +20,6 @@ const {
 vi.mock("@/lib/cookie-consent/storage", () => ({
   loadConsent: mockLoadConsent,
   saveConsent: mockSaveConsent,
-  clearConsent: mockClearConsent,
   createAcceptAllConsent: mockCreateAcceptAllConsent,
   createRejectAllConsent: mockCreateRejectAllConsent,
 }));

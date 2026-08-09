@@ -141,16 +141,6 @@ describe("MobileNavigationInteractive", () => {
       expect(screen.queryByText("Home")).not.toBeInTheDocument();
     });
 
-    it("applies a custom className to the container", () => {
-      render(
-        <MobileNavigation {...MOBILE_NAV_LABELS} className="custom-nav" />,
-      );
-
-      expect(screen.getByRole("button").closest("div")).toHaveClass(
-        "custom-nav",
-      );
-    });
-
     it("exposes accessible focus and touch-target styling on the trigger", () => {
       render(<MobileNavigation {...MOBILE_NAV_LABELS} />);
 
@@ -405,23 +395,6 @@ describe("MobileNavigationInteractive", () => {
 
       expect(screen.getByRole("button")).toBeInTheDocument();
       expect(() => unmount()).not.toThrow();
-    });
-
-    it("stays mounted and reflects prop changes across re-renders", () => {
-      // Formerly "maintains performance with frequent re-renders" /
-      // "optimizes re-renders": no render-count instrumentation, just proof
-      // the island survives repeated re-renders and picks up new props.
-      const { rerender } = render(<MobileNavigation {...MOBILE_NAV_LABELS} />);
-
-      for (let i = 0; i < 5; i++) {
-        rerender(
-          <MobileNavigation {...MOBILE_NAV_LABELS} className={`class-${i}`} />,
-        );
-      }
-
-      const trigger = screen.getByRole("button");
-      expect(trigger).toBeInTheDocument();
-      expect(trigger.closest("div")).toHaveClass("class-4");
     });
   });
 });

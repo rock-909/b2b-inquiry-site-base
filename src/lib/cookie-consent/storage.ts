@@ -62,11 +62,9 @@ export function loadConsent(): StoredConsent | null {
       return null;
     }
 
-    // Handle version migrations if needed
-    if (parsed.version < CONSENT_VERSION) {
-      const migrated = migrateConsent(parsed);
-      saveConsent(migrated.consent);
-      return migrated;
+    if (parsed.version !== CONSENT_VERSION) {
+      window.localStorage.removeItem(CONSENT_STORAGE_KEY);
+      return null;
     }
 
     return parsed;
@@ -91,26 +89,6 @@ export function saveConsent(consent: CookieConsent): void {
   } catch {
     // Storage quota exceeded or other error - fail silently
   }
-}
-
-/** Clear consent from localStorage */
-export function clearConsent(): void {
-  if (!isStorageAvailable()) return;
-
-  try {
-    window.localStorage.removeItem(CONSENT_STORAGE_KEY);
-  } catch {
-    // Fail silently
-  }
-}
-
-/** Migrate consent from older versions */
-function migrateConsent(stored: StoredConsent): StoredConsent {
-  // Currently only version 1, future migrations go here
-  return {
-    ...stored,
-    version: CONSENT_VERSION,
-  };
 }
 
 /** Create consent with all optional categories accepted */

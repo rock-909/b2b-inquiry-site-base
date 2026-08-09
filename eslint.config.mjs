@@ -82,60 +82,13 @@ const eslintConfig = [
   // Theme switcher exception for SSR hydration pattern
   {
     name: "theme-switcher-ssr-exception",
-    files: ["**/theme-switcher.tsx", "**/horizontal-theme-toggle-simple.tsx"],
+    files: ["**/theme-switcher.tsx"],
     plugins: {
       "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
     },
     rules: {
       // next-themes 推荐的 SSR 水合模式需要在 useEffect 中初始化 mounted 状态
       "react-you-might-not-need-an-effect/no-initialize-state": "off",
-    },
-  },
-
-  // Mobile navigation route change handler exception
-  {
-    name: "mobile-navigation-route-exception",
-    files: ["**/mobile-navigation.tsx"],
-    plugins: {
-      "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
-    },
-    rules: {
-      // Next.js 路由变化时关闭菜单是合理的 useEffect 用例
-      "react-you-might-not-need-an-effect/no-event-handler": "off",
-    },
-  },
-
-  // SSR-compatible hooks and components exception
-  {
-    name: "ssr-hooks-exception",
-    files: [
-      "**/locale-storage-hooks.ts",
-      "**/use-breakpoint.ts",
-      "**/use-scroll-shadow.ts",
-      "**/use-web-vitals-diagnostics.ts",
-    ],
-    plugins: {
-      "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
-    },
-    rules: {
-      // SSR 兼容性模式：使用 lazy initializer 或 useEffect 安全访问浏览器 API
-      "react-you-might-not-need-an-effect/no-initialize-state": "off",
-      // Web Vitals 诊断需要在 useEffect 中初始化历史数据
-      "react-you-might-not-need-an-effect/no-pass-data-to-parent": "off",
-    },
-  },
-
-  // Accessibility: prefersReducedMotion is a system media query, not a component prop
-  // When user preference changes, updating visibility state is a valid a11y pattern
-  {
-    name: "intersection-observer-a11y-exception",
-    files: ["**/use-intersection-observer.ts"],
-    plugins: {
-      "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
-    },
-    rules: {
-      "react-you-might-not-need-an-effect/no-adjust-state-on-prop-change":
-        "off",
     },
   },
 
@@ -203,39 +156,6 @@ const eslintConfig = [
     rules: {
       complexity: "off",
       "max-params": "off",
-    },
-  },
-
-  // CSS-First Responsive Design - Discourage useBreakpoint for layout
-  //
-  // 这块的作用域是 files + 它自己这份 ignores，跟后面的
-  // architecture-boundaries 不是同一个作用域（那块排除了 scripts、config、
-  // src/constants 等）。所以它在那些被排除的文件上仍然生效，不是重复声明。
-  {
-    name: "css-first-responsive-design",
-    files: ["**/*.{js,jsx,ts,tsx}"],
-    ignores: [
-      // Allow useBreakpoint in its own file and tests
-      "**/hooks/use-breakpoint.ts",
-      "**/hooks/__tests__/use-breakpoint.test.ts",
-      // Legacy ResponsiveLayout tests during migration
-      "**/components/__tests__/responsive-layout.test.tsx",
-    ],
-    rules: {
-      "no-restricted-imports": [
-        "warn",
-        {
-          paths: [
-            {
-              name: "@/hooks/use-breakpoint",
-              message:
-                "⚠️ CSS-First Responsive: Prefer Tailwind responsive classes (sm:, md:, lg:) for layout. " +
-                "useBreakpoint is approved only for: (1) interaction logic requiring width detection, " +
-                "(2) analytics/tracking.",
-            },
-          ],
-        },
-      ],
     },
   },
 
@@ -391,37 +311,6 @@ const eslintConfig = [
     },
   },
 
-  // 精简的i18n文件配置 - 仅豁免必要规则
-  {
-    name: "i18n-overrides",
-    files: [
-      "src/lib/i18n-*.ts",
-      "src/lib/translation-*.ts",
-      "src/lib/locale-*.ts",
-      "src/components/i18n/*.tsx",
-    ],
-    plugins: {
-      security,
-    },
-    rules: {
-      // 仅豁免i18n特定的必要规则
-      "no-magic-numbers": "off", // i18n配置中的数字常量
-      "max-lines-per-function": [
-        "warn",
-        { max: 200, skipBlankLines: true, skipComments: true },
-      ], // i18n函数可能较长（跳过空行与注释）
-      complexity: ["warn", 20], // i18n逻辑可能复杂
-      "security/detect-object-injection": "error", // i18n动态键访问，统一为error级别
-      "dot-notation": "off", // i18n键名可能包含特殊字符
-      "no-console": ["warn", { allow: ["warn", "error"] }], // 允许i18n调试
-
-      // 保持严格的类型安全和基本规则
-      "@typescript-eslint/no-explicit-any": "error", // 恢复严格类型检查
-      "no-undef": "error", // 恢复未定义变量检查
-      "security/detect-non-literal-regexp": "error", // 恢复安全检查
-    },
-  },
-
   // TypeScript类型定义文件配置 - 豁免类型域中的字面量数字
   {
     name: "typescript-types-overrides",
@@ -515,8 +404,6 @@ const eslintConfig = [
       "security/detect-unsafe-regex": "warn", // 测试正则表达式
       "no-script-url": "off", // 测试URL可能需要
 
-      // 保持严格的基本语法规则
-      "no-undef": "error", // 未定义变量必须修复
       "no-shadow": "off", // 测试文件中Mock变量重复声明是正常模式
       "no-console": ["warn", { allow: ["warn", "error", "info", "log"] }], // 允许测试调试输出
 
@@ -524,12 +411,10 @@ const eslintConfig = [
     },
   },
 
-  // 脚本和开发工具规则。
+  // 配置和开发工具规则。
   {
-    name: "scripts-and-dev-tools",
+    name: "config-and-dev-tools",
     files: [
-      // 构建脚本和配置文件（完全豁免魔法数字）
-      "scripts/**/*.{js,ts}",
       "config/**/*.{js,ts}",
       ".size-limit.js",
       "next.config.ts",
@@ -546,7 +431,7 @@ const eslintConfig = [
       "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
     },
     rules: {
-      // 脚本使用更宽松的结构阈值。
+      // 配置和开发工具使用更宽松的结构阈值。
       "max-lines-per-function": [
         "warn",
         { max: 250, skipBlankLines: true, skipComments: true },
@@ -587,9 +472,9 @@ const eslintConfig = [
       "no-undef": ["error", { typeof: true }], // 未定义变量检查
       "no-unused-vars": "warn", // 清理未使用变量
 
-      // Node.js 脚本规则。
-      "@typescript-eslint/no-require-imports": "off", // scripts中允许require导入
-      "no-restricted-imports": "off", // scripts中禁用相对路径限制（Node.js环境）
+      // Node.js 工具规则。
+      "@typescript-eslint/no-require-imports": "off",
+      "no-restricted-imports": "off",
       "security/detect-non-literal-fs-filename": "warn", // 文件系统操作降级为警告
       "security/detect-non-literal-regexp": "warn", // 动态正则表达式降级为警告
       "max-statements": ["warn", 35], // scripts中允许更多语句
@@ -602,24 +487,6 @@ const eslintConfig = [
       "require-await": "warn", // async函数无await降级为警告
       "default-case": "warn", // switch缺少default降级为警告
       "no-else-return": "warn", // else return降级为警告
-    },
-  },
-
-  // 对当前较大的质量脚本使用文件级结构阈值。
-  {
-    name: "script-structural-baselines",
-    files: [
-      "scripts/quality/checks/content-readiness.js",
-      "scripts/quality/checks/content-slugs.js",
-      "scripts/quality/checks/release-verify.js",
-    ],
-    rules: {
-      complexity: ["warn", 30],
-      "max-lines": [
-        "warn",
-        { max: 1000, skipBlankLines: true, skipComments: true },
-      ],
-      "max-statements": ["warn", 45],
     },
   },
 
@@ -829,53 +696,80 @@ const eslintConfig = [
     },
   },
 
-  // Scripts directory overrides - Allow more relaxed rules for build/utility scripts
+  // 构建和质量脚本规则。
   {
-    name: "scripts-directory-overrides",
+    name: "scripts",
     files: ["scripts/**/*.{js,ts,mjs}"],
     plugins: {
       security,
+      "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
     },
     rules: {
-      // Allow console statements in scripts
+      "max-lines-per-function": [
+        "warn",
+        { max: 250, skipBlankLines: true, skipComments: true },
+      ],
+      complexity: ["warn", 18],
+      "max-lines": [
+        "warn",
+        { max: 800, skipBlankLines: true, skipComments: true },
+      ],
+      "max-params": ["warn", 5],
+      "max-statements": ["warn", 35],
+      "max-depth": ["warn", 4],
+      "max-nested-callbacks": ["warn", 4],
       "no-console": "off",
-      // Allow unused variables in error handling
+      "no-magic-numbers": "off",
+      "no-implicit-coercion": "off",
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": "off",
-      // Allow object injection for dynamic property access
-      "security/detect-object-injection": "off",
-      // Allow non-literal filesystem operations
-      "security/detect-non-literal-fs-filename": "off",
-      // Allow unsafe regex patterns
-      "security/detect-unsafe-regex": "off",
-      // Allow underscore naming conventions
-      "no-underscore-dangle": "off",
-      // Allow chained assignments
-      "no-multi-assign": "off",
-      // Allow functions in loops
-      "no-loop-func": "off",
-      // Allow variable shadowing
-      "no-shadow": "off",
-      // Allow async functions without await
-      "require-await": "off",
-      // Allow missing default cases
-      "default-case": "off",
-      // Allow missing radix parameter
-      radix: "off",
-      // Allow inconsistent returns
-      "consistent-return": "off",
-      // Allow useless escapes
-      "no-useless-escape": "off",
-      // Allow parameter reassignment
-      "no-param-reassign": "off",
-      // Allow direct property access
-      "prefer-destructuring": "off",
-      // Allow non-literal regex
-      "security/detect-non-literal-regexp": "off",
-      // Allow @ts-nocheck
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/ban-ts-comment": "off",
-      // Allow process.exit in CLI scripts
+      "no-undef": ["error", { typeof: true }],
+      "no-restricted-imports": "off",
+      "security/detect-object-injection": "off",
+      "security/detect-non-literal-fs-filename": "off",
+      "security/detect-non-literal-regexp": "off",
+      "security/detect-unsafe-regex": "off",
+      "react/no-unescaped-entities": "off",
+      "react-you-might-not-need-an-effect/no-event-handler": "warn",
+      "react-you-might-not-need-an-effect/no-chain-state-updates": "warn",
+      "no-void": "off",
+      "no-empty-function": "warn",
+      "no-underscore-dangle": "off",
+      "no-multi-assign": "off",
+      "no-loop-func": "off",
+      "no-shadow": "off",
+      "require-await": "off",
+      "default-case": "off",
+      radix: "off",
+      "consistent-return": "off",
+      "no-useless-escape": "off",
+      "no-param-reassign": "off",
+      "prefer-destructuring": "off",
+      "no-plusplus": "off",
+      "prefer-template": "warn",
+      "no-else-return": "warn",
       "no-process-exit": "off",
+    },
+  },
+
+  // 对当前较大的质量脚本使用文件级结构阈值。
+  {
+    name: "script-structural-baselines",
+    files: [
+      "scripts/quality/checks/content-readiness.js",
+      "scripts/quality/checks/content-slugs.js",
+      "scripts/quality/checks/release-verify.js",
+    ],
+    rules: {
+      complexity: ["warn", 30],
+      "max-lines": [
+        "warn",
+        { max: 1000, skipBlankLines: true, skipComments: true },
+      ],
+      "max-statements": ["warn", 45],
     },
   },
 

@@ -130,10 +130,6 @@
         "rules": ["react-doctor/nextjs-missing-metadata"]
       },
       {
-        "files": ["tests/integration/components/header.test.tsx"],
-        "rules": ["react-doctor/nextjs-no-a-element"]
-      },
-      {
         "files": ["src/components/layout/logo.tsx"],
         "rules": ["react-doctor/nextjs-no-img-element"]
       },
@@ -164,10 +160,6 @@
       {
         "files": ["src/components/security/turnstile.tsx"],
         "rules": ["react-doctor/no-prop-callback-in-effect"]
-      },
-      {
-        "files": ["src/components/ui/separator.tsx"],
-        "rules": ["react-doctor/no-react19-deprecated-apis"]
       },
       {
         "files": ["src/app/[locale]/contact/page.tsx"],

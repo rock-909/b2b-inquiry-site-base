@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   mockCookieConsentProvider,
-  mockLazyCookieBanner,
+  mockCookieBanner,
   mockEnterpriseAnalyticsIsland,
   mockEnterpriseAnalyticsState,
 } = vi.hoisted(() => {
@@ -14,7 +14,7 @@ const {
     mockCookieConsentProvider: vi.fn(({ children }) => (
       <div data-testid="cookie-consent-provider">{children}</div>
     )),
-    mockLazyCookieBanner: vi.fn(() => <div data-testid="lazy-cookie-banner" />),
+    mockCookieBanner: vi.fn(() => <div data-testid="cookie-banner" />),
     mockEnterpriseAnalyticsState,
     mockEnterpriseAnalyticsIsland: vi.fn(() => {
       if (mockEnterpriseAnalyticsState.shouldThrow) {
@@ -30,8 +30,8 @@ vi.mock("@/lib/cookie-consent", () => ({
   CookieConsentProvider: mockCookieConsentProvider,
 }));
 
-vi.mock("@/components/cookie/lazy-cookie-banner", () => ({
-  LazyCookieBanner: mockLazyCookieBanner,
+vi.mock("@/components/cookie/cookie-banner", () => ({
+  CookieBanner: mockCookieBanner,
 }));
 
 vi.mock("@/components/monitoring/enterprise-analytics-island", () => ({
@@ -62,11 +62,11 @@ describe("CookieConsentIsland", () => {
     expect(screen.getByTestId("cookie-consent-provider")).toBeInTheDocument();
   });
 
-  it("renders LazyCookieBanner inside Suspense", async () => {
+  it("renders the cookie banner", async () => {
     const { CookieConsentIsland } = await import("../cookie-consent-island");
     render(<CookieConsentIsland />);
 
-    expect(screen.getByTestId("lazy-cookie-banner")).toBeInTheDocument();
+    expect(screen.getByTestId("cookie-banner")).toBeInTheDocument();
   });
 
   it("renders EnterpriseAnalyticsIsland in production", async () => {
@@ -102,7 +102,7 @@ describe("CookieConsentIsland", () => {
       await vi.dynamicImportSettled();
     });
 
-    expect(screen.getByTestId("lazy-cookie-banner")).toBeInTheDocument();
+    expect(screen.getByTestId("cookie-banner")).toBeInTheDocument();
     expect(
       screen.queryByTestId("enterprise-analytics-island"),
     ).not.toBeInTheDocument();

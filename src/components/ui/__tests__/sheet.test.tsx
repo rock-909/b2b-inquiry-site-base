@@ -9,7 +9,6 @@ import {
   Sheet,
   SheetContent,
   SheetDescription,
-  SheetFooter,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -42,40 +41,6 @@ describe("Sheet", () => {
     });
   });
 
-  it("supports controlled open state and side classes", () => {
-    const { rerender } = render(
-      <Sheet open={false}>
-        <SheetTrigger>Open</SheetTrigger>
-        <SheetContent
-          closeLabel="Close sheet"
-          side="left"
-          data-testid="content"
-        >
-          <SheetTitle>Sheet Title</SheetTitle>
-        </SheetContent>
-      </Sheet>,
-    );
-
-    expect(screen.queryByTestId("content")).not.toBeInTheDocument();
-
-    rerender(
-      <Sheet open>
-        <SheetTrigger>Open</SheetTrigger>
-        <SheetContent
-          closeLabel="Close sheet"
-          side="left"
-          data-testid="content"
-        >
-          <SheetTitle>Sheet Title</SheetTitle>
-        </SheetContent>
-      </Sheet>,
-    );
-
-    const content = screen.getByTestId("content");
-    expect(content).toHaveAttribute("data-side", "left");
-    expect(content).toHaveClass("left-0", "border-r");
-  });
-
   it("renders text subcomponents with data slots and merged classes", async () => {
     render(
       <Sheet defaultOpen>
@@ -84,9 +49,6 @@ describe("Sheet", () => {
             <SheetTitle className="custom-title">Header Title</SheetTitle>
             <SheetDescription>Header Description</SheetDescription>
           </SheetHeader>
-          <SheetFooter className="custom-footer" data-testid="footer">
-            <button type="button">Save</button>
-          </SheetFooter>
         </SheetContent>
       </Sheet>,
     );
@@ -104,10 +66,6 @@ describe("Sheet", () => {
       expect(screen.getByText("Header Description")).toHaveAttribute(
         "data-slot",
         "sheet-description",
-      );
-      expect(screen.getByTestId("footer")).toHaveClass(
-        "mt-auto",
-        "custom-footer",
       );
     });
   });

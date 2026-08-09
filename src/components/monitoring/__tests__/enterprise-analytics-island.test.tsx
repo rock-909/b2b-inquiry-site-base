@@ -51,9 +51,7 @@ function createCookieConsentValue(
     ready: overrides.ready ?? true,
     acceptAll: vi.fn(),
     rejectAll: vi.fn(),
-    updateConsent: vi.fn(),
     savePreferences: vi.fn(),
-    resetConsent: vi.fn(),
   };
 }
 

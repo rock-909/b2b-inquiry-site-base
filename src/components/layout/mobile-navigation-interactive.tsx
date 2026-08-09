@@ -4,23 +4,13 @@
 // Content assembly (MobileNavigationHeader, drawer layout) still lives here.
 // A deeper RSC boundary refactor would move content assembly to the server shell.
 
-import {
-  cloneElement,
-  isValidElement,
-  useState,
-  type ComponentProps,
-  type ReactNode,
-} from "react";
+import { useState, type ComponentProps } from "react";
 import { Menu, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { cn } from "@/lib/utils";
 import { usePathname } from "@/i18n/routing";
-import {
-  MobileNavigationLinks,
-  type MobileNavigationLinksProps,
-} from "@/components/layout/mobile-navigation";
+import { cn } from "@/lib/utils";
+import { MobileNavigationLinks } from "@/components/layout/mobile-navigation";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   Sheet,
   SheetContent,
@@ -31,13 +21,9 @@ import {
 } from "@/components/ui/sheet";
 
 interface MobileNavigationInteractiveProps {
-  children?: ReactNode;
-  className?: string;
   closeMenuLabel: string;
   initialOpen?: boolean;
   openMenuLabel: string;
-  siteDescription?: string | undefined;
-  siteName?: string | undefined;
 }
 
 interface MobileMenuButtonProps extends ComponentProps<"button"> {
@@ -107,25 +93,10 @@ function MobileNavigationHeader({
   );
 }
 
-function withInteractiveNavigationProps(
-  children: ReactNode,
-  props: MobileNavigationLinksProps,
-) {
-  if (!isValidElement<MobileNavigationLinksProps>(children)) {
-    return children;
-  }
-
-  return cloneElement(children, props);
-}
-
 export function MobileNavigationInteractive({
-  children,
-  className,
   initialOpen = false,
   openMenuLabel,
   closeMenuLabel,
-  siteName,
-  siteDescription,
 }: MobileNavigationInteractiveProps) {
   const tNavigation = useTranslations("navigation");
   const tAccessibility = useTranslations("accessibility");
@@ -135,9 +106,6 @@ export function MobileNavigationInteractive({
     pathname,
   }));
   const isOpen = menuState.pathname === pathname && menuState.isOpen;
-  const resolvedSiteName = siteName ?? tNavigation("siteName");
-  const resolvedSiteDescription =
-    siteDescription ?? tNavigation("siteDescription");
 
   const handleOpenChange = (open: boolean) => {
     setMenuState((currentState) => ({
@@ -147,20 +115,8 @@ export function MobileNavigationInteractive({
     }));
   };
 
-  const navigationContent = children ? (
-    withInteractiveNavigationProps(children, {
-      currentPathname: pathname,
-      onNavigate: () => handleOpenChange(false),
-    })
-  ) : (
-    <MobileNavigationLinks
-      currentPathname={pathname}
-      onNavigate={() => handleOpenChange(false)}
-    />
-  );
-
   return (
-    <div className={cn("header-mobile-only", className)}>
+    <div className="header-mobile-only">
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
         <SheetTrigger asChild>
           <MobileMenuButton
@@ -172,7 +128,6 @@ export function MobileNavigationInteractive({
           />
         </SheetTrigger>
         <SheetContent
-          side="right"
           closeLabel={closeMenuLabel}
           className="w-[300px] overflow-y-auto sm:w-[350px]"
           id="mobile-navigation"
@@ -181,11 +136,14 @@ export function MobileNavigationInteractive({
         >
           <MobileNavigationHeader
             mobileNavigationLabel={tAccessibility("mobileNavigation")}
-            siteDescription={resolvedSiteDescription}
-            siteName={resolvedSiteName}
+            siteDescription={tNavigation("siteDescription")}
+            siteName={tNavigation("siteName")}
           />
-          <Separator className="my-4" />
-          {navigationContent}
+          <div className="my-4 h-px w-full shrink-0 bg-border" />
+          <MobileNavigationLinks
+            currentPathname={pathname}
+            onNavigate={() => handleOpenChange(false)}
+          />
         </SheetContent>
       </Sheet>
     </div>

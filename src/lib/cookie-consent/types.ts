@@ -5,9 +5,6 @@
  * supporting GDPR/CCPA compliance requirements.
  */
 
-/** Cookie categories aligned with privacy regulations */
-export type CookieCategory = "necessary" | "analytics" | "marketing";
-
 /** User consent state for each category */
 export interface CookieConsent {
   /** Essential cookies (Turnstile, locale, theme) - always true */
@@ -43,17 +40,10 @@ export interface CookieConsentActions {
   acceptAll: () => void;
   /** Reject all optional cookies (keep necessary) */
   rejectAll: () => void;
-  /** Update specific category consent */
-  updateConsent: (
-    category: Exclude<CookieCategory, "necessary">,
-    value: boolean,
-  ) => void;
   /** Save custom consent preferences */
   savePreferences: (
     preferences: Partial<Omit<CookieConsent, "necessary">>,
   ) => void;
-  /** Reset consent to show banner again */
-  resetConsent: () => void;
 }
 
 /** Combined context value */

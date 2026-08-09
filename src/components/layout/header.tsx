@@ -28,8 +28,6 @@ interface HeaderNavItem {
 
 interface HeaderProps {
   className?: string;
-  variant?: "default" | "minimal" | "transparent";
-  sticky?: boolean;
   locale?: Locale;
   contactSalesLabel: string;
   openMenuLabel: string;
@@ -40,23 +38,8 @@ interface HeaderProps {
 
 const EMPTY_MAIN_NAV_ITEMS: HeaderNavItem[] = [];
 
-function getHeaderState(
-  variant: HeaderProps["variant"],
-  sticky: boolean,
-  locale: HeaderProps["locale"],
-) {
-  return {
-    isSticky: variant === "transparent" ? false : sticky,
-    isMinimal: variant === "minimal",
-    isTransparent: variant === "transparent",
-    showTestIds: !locale,
-  };
-}
-
 export function Header({
   className,
-  variant = "default",
-  sticky = true,
   locale,
   contactSalesLabel,
   openMenuLabel,
@@ -64,18 +47,12 @@ export function Header({
   mainNavigationLabel,
   mainNavItems = EMPTY_MAIN_NAV_ITEMS,
 }: HeaderProps) {
-  const { isSticky, isMinimal, isTransparent, showTestIds } = getHeaderState(
-    variant,
-    sticky,
-    locale,
-  );
+  const showTestIds = !locale;
 
   return (
     <header
       className={cn(
-        "w-full bg-background/80 backdrop-blur-md",
-        isSticky && "sticky top-0 z-50 pt-[env(safe-area-inset-top,0px)]",
-        isTransparent && "border-transparent bg-transparent backdrop-blur-none",
+        "sticky top-0 z-50 w-full bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md",
         "border-b border-border/10 transition-[background-color,border-color] duration-200",
         className,
       )}
@@ -92,7 +69,6 @@ export function Header({
 
           {/* Center section: Main Navigation (Desktop) */}
           <CenterNav
-            isMinimal={isMinimal}
             locale={locale}
             mainNavItems={mainNavItems}
             mainNavigationLabel={mainNavigationLabel}
@@ -111,12 +87,10 @@ export function Header({
 }
 
 function CenterNav({
-  isMinimal,
   locale,
   mainNavItems,
   mainNavigationLabel,
 }: {
-  isMinimal: boolean;
   locale?: Locale | undefined;
   mainNavItems: Array<{
     key: string;
@@ -125,7 +99,7 @@ function CenterNav({
   }>;
   mainNavigationLabel: string;
 }) {
-  if (isMinimal || !locale || mainNavItems.length === 0) return null;
+  if (!locale || mainNavItems.length === 0) return null;
 
   return (
     <nav
