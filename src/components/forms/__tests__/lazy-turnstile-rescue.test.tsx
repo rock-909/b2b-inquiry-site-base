@@ -29,14 +29,16 @@ describe("LazyTurnstile 救援行：懒加载模块挂起", () => {
 
     render(<LazyTurnstile onSuccess={vi.fn()} labels={labels} />);
 
-    expect(screen.queryByRole("link", { name: /sales@/u })).toBeNull();
+    expect(screen.queryByRole("link", { name: labels.rescueEmail })).toBeNull();
 
     act(() => {
       vi.advanceTimersByTime(RESCUE_TIMEOUT_MS);
     });
 
     // chunk 挂起和控件迟迟不出令牌是同一条出路：15 秒后必须给买家一个邮箱。
-    expect(screen.getByRole("link", { name: /sales@/u })).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: labels.rescueEmail }),
+    ).toBeVisible();
     expect(screen.getByRole("status")).toHaveTextContent(labels.slowToLoad);
 
     vi.useRealTimers();

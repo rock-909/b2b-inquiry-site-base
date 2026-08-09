@@ -340,14 +340,18 @@ describe("LazyTurnstile", () => {
     it("shows the rescue line when the widget never produces a token", async () => {
       const { labels } = await renderAndLoad();
 
-      expect(screen.queryByRole("link", { name: /sales@/u })).toBeNull();
+      expect(
+        screen.queryByRole("link", { name: labels.rescueEmail }),
+      ).toBeNull();
 
       act(() => vi.advanceTimersByTime(RESCUE_TIMEOUT_MS));
 
-      expect(screen.getByRole("link", { name: /sales@/u })).toBeVisible();
+      expect(
+        screen.getByRole("link", { name: labels.rescueEmail }),
+      ).toBeVisible();
       // 这条是页面静止 15 秒后凭空出现的，屏幕阅读器必须能播报出来
       expect(screen.getByRole("status")).toContainElement(
-        screen.getByRole("link", { name: /sales@/u }),
+        screen.getByRole("link", { name: labels.rescueEmail }),
       );
       // 超时不等于失败：控件可能只是慢，措辞不能吓退还在正常填表的买家
       expect(screen.getByRole("status")).toHaveTextContent(labels.slowToLoad);
@@ -357,32 +361,38 @@ describe("LazyTurnstile", () => {
     });
 
     it("stops the rescue timer once a token arrives", async () => {
-      await renderAndLoad();
+      const { labels } = await renderAndLoad();
 
       fireEvent.click(screen.getByTestId("turnstile-success"));
       act(() => vi.advanceTimersByTime(RESCUE_TIMEOUT_MS));
 
-      expect(screen.queryByRole("link", { name: /sales@/u })).toBeNull();
+      expect(
+        screen.queryByRole("link", { name: labels.rescueEmail }),
+      ).toBeNull();
     });
 
     it("stays quiet when an expired token is renewed in time", async () => {
-      await renderAndLoad();
+      const { labels } = await renderAndLoad();
 
       fireEvent.click(screen.getByTestId("turnstile-success"));
       fireEvent.click(screen.getByTestId("turnstile-expire"));
       // 过期是正常生命周期，widget 会自己续新挑战。起表不等于显示：这一刻
       // 什么都不该出现，否则每个停留够久的买家都会被一条救援行吓退。
-      expect(screen.queryByRole("link", { name: /sales@/u })).toBeNull();
+      expect(
+        screen.queryByRole("link", { name: labels.rescueEmail }),
+      ).toBeNull();
 
       act(() => vi.advanceTimersByTime(RESCUE_TIMEOUT_MS / 2));
       fireEvent.click(screen.getByTestId("turnstile-success"));
       act(() => vi.advanceTimersByTime(RESCUE_TIMEOUT_MS));
 
-      expect(screen.queryByRole("link", { name: /sales@/u })).toBeNull();
+      expect(
+        screen.queryByRole("link", { name: labels.rescueEmail }),
+      ).toBeNull();
     });
 
     it("restarts the rescue timer when the token expires and never renews", async () => {
-      await renderAndLoad();
+      const { labels } = await renderAndLoad();
 
       fireEvent.click(screen.getByTestId("turnstile-success"));
       fireEvent.click(screen.getByTestId("turnstile-expire"));
@@ -391,12 +401,14 @@ describe("LazyTurnstile", () => {
       // 禁用的按钮，而且这次连救援行都没有。
       act(() => vi.advanceTimersByTime(RESCUE_TIMEOUT_MS));
 
-      expect(screen.getByRole("link", { name: /sales@/u })).toBeVisible();
+      expect(
+        screen.getByRole("link", { name: labels.rescueEmail }),
+      ).toBeVisible();
     });
 
     it("restarts the rescue timer when the form resets the widget after a submit", async () => {
       let resetWidget: (() => void) | undefined;
-      await renderAndLoad({
+      const { labels } = await renderAndLoad({
         onReadyRef: (reset) => {
           resetWidget = reset;
         },
@@ -404,7 +416,9 @@ describe("LazyTurnstile", () => {
 
       fireEvent.click(screen.getByTestId("turnstile-success"));
       act(() => vi.advanceTimersByTime(RESCUE_TIMEOUT_MS));
-      expect(screen.queryByRole("link", { name: /sales@/u })).toBeNull();
+      expect(
+        screen.queryByRole("link", { name: labels.rescueEmail }),
+      ).toBeNull();
 
       // 提交落定后表单清令牌并 reset widget。此刻若 Turnstile 挂了，新挑战
       // 既不 onSuccess 也不 onError，只剩计时器能把买家从死路里捞出来。
@@ -412,7 +426,9 @@ describe("LazyTurnstile", () => {
       expect(widgetResetSpy).toHaveBeenCalledTimes(1);
       act(() => vi.advanceTimersByTime(RESCUE_TIMEOUT_MS));
 
-      expect(screen.getByRole("link", { name: /sales@/u })).toBeVisible();
+      expect(
+        screen.getByRole("link", { name: labels.rescueEmail }),
+      ).toBeVisible();
     });
 
     it("shows the rescue line as soon as the widget reports an error", async () => {
@@ -420,11 +436,15 @@ describe("LazyTurnstile", () => {
 
       fireEvent.click(screen.getByTestId("turnstile-error"));
 
-      expect(screen.getByRole("link", { name: /sales@/u })).toBeVisible();
+      expect(
+        screen.getByRole("link", { name: labels.rescueEmail }),
+      ).toBeVisible();
       // 报错了就说报错，不能拿「慢」搪塞
       expect(screen.getByRole("status")).toHaveTextContent(labels.loadFailed);
       // 救援行只能有一个 owner。将来若有人在别处又加一条，这里会变成 2。
-      expect(screen.getAllByRole("link", { name: /sales@/u })).toHaveLength(1);
+      expect(
+        screen.getAllByRole("link", { name: labels.rescueEmail }),
+      ).toHaveLength(1);
     });
 
     it("uses the unavailable label when the widget reports a missing site key", async () => {
@@ -433,8 +453,12 @@ describe("LazyTurnstile", () => {
       fireEvent.click(screen.getByTestId("turnstile-unavailable"));
 
       expect(screen.getByRole("status")).toHaveTextContent(labels.unavailable);
-      expect(screen.getAllByRole("link", { name: /sales@/u })).toHaveLength(1);
-      expect(screen.getByRole("link", { name: /sales@/u })).toHaveAttribute(
+      expect(
+        screen.getAllByRole("link", { name: labels.rescueEmail }),
+      ).toHaveLength(1);
+      expect(
+        screen.getByRole("link", { name: labels.rescueEmail }),
+      ).toHaveAttribute(
         "href",
         `mailto:${labels.rescueEmail}?subject=${encodeURIComponent(labels.rescueSubject)}`,
       );

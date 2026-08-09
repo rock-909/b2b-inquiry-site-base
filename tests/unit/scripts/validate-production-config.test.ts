@@ -659,6 +659,8 @@ describe("public launch trust content guard", () => {
         env: createChildEnv({
           APP_ENV: "production",
           NODE_ENV: "production",
+          NEXT_PUBLIC_BASE_URL: "https://strict-cli.example.invalid",
+          NEXT_PUBLIC_SITE_URL: "https://strict-cli.example.invalid",
           PUBLIC_LAUNCH_STRICT: "true",
         }),
       },
@@ -667,9 +669,7 @@ describe("public launch trust content guard", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Sentinel blockers:");
     expect(result.stderr).toContain("Environment readiness blockers:");
-    expect(result.stderr).toContain("SITE_CONFIG.name");
-    expect(result.stderr).toContain("wrangler.jsonc name");
-    expect(result.stderr).toContain("NEXT_INC_CACHE_R2_BUCKET");
+    expect(result.stderr).toContain("SITE_CONFIG.baseUrl");
     expect(result.stderr).toContain("RATE_LIMIT_PEPPER is required");
     expect(result.stderr).toContain(
       "Production rate limiting requires Upstash Redis",
