@@ -24,6 +24,8 @@ const CANONICAL_CLOUDFLARE_BUILD_SCRIPTS = {
 };
 const PINNED_OPEN_NEXT_DEPENDENCY =
   "https://pkg.pr.new/@opennextjs/cloudflare@69807b1";
+const PREVIEW_R2_BUCKET = "derived-site-next-cache-preview";
+const PRODUCTION_R2_BUCKET = "derived-site-next-cache-production";
 
 interface Failure {
   readonly file: string;
@@ -77,7 +79,12 @@ function writePassingSideFiles(rootDir: string): void {
   );
 }
 
-function writePassingWranglerConfig(rootDir: string): void {
+function writePassingWranglerConfig(
+  rootDir: string,
+  bucketNames: { preview?: string; production?: string } = {},
+): void {
+  const previewBucket = bucketNames.preview ?? PREVIEW_R2_BUCKET;
+  const productionBucket = bucketNames.production ?? PRODUCTION_R2_BUCKET;
   writeFixtureFile(
     rootDir,
     "wrangler.jsonc",
@@ -87,8 +94,8 @@ function writePassingWranglerConfig(rootDir: string): void {
       '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
       '  "assets": { "binding": "ASSETS" },',
       '  "env": {',
-      '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-preview" }] },',
-      '    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-production" }] }',
+      `    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${previewBucket}" }] },`,
+      `    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${productionBucket}" }] }`,
       "  }",
       "}",
     ].join("\n"),
@@ -156,8 +163,8 @@ describe("Cloudflare official-compare source contract", () => {
         "  // historical note: r2_buckets and d1_databases were never added",
         '  "assets": { "binding": "ASSETS" },',
         '  "env": {',
-        '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-preview" }] },',
-        '    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-production" }] }',
+        `    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${PREVIEW_R2_BUCKET}" }] },`,
+        `    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${PRODUCTION_R2_BUCKET}" }] }`,
         "  }",
         "}",
       ].join("\n"),
@@ -249,7 +256,7 @@ describe("Cloudflare official-compare source contract", () => {
         '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
         '  "assets": { "binding": "ASSETS" },',
         '  "env": {',
-        '    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "b2b-inquiry-site-base-next-cache-preview" }] }',
+        `    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${PREVIEW_R2_BUCKET}" }] }`,
         "  }",
         "}",
       ].join("\n"),
@@ -263,6 +270,44 @@ describe("Cloudflare official-compare source contract", () => {
         file: "wrangler.jsonc",
         missing: expect.arrayContaining([
           expect.stringContaining("env.production.r2_buckets"),
+        ]),
+      }),
+    ]);
+  });
+
+  it("rejects an empty R2 bucket name", () => {
+    const rootDir = createFixture();
+    writePassingSideFiles(rootDir);
+    writePassingWranglerConfig(rootDir, { preview: "" });
+
+    const failures =
+      loadChecker().collectCloudflareOfficialCompareFailures(rootDir);
+
+    expect(failures).toEqual([
+      expect.objectContaining({
+        file: "wrangler.jsonc",
+        missing: expect.arrayContaining([
+          expect.stringContaining("non-empty bucket_name"),
+        ]),
+      }),
+    ]);
+  });
+
+  it("rejects one R2 bucket shared by preview and production", () => {
+    const rootDir = createFixture();
+    writePassingSideFiles(rootDir);
+    writePassingWranglerConfig(rootDir, {
+      production: PREVIEW_R2_BUCKET,
+    });
+
+    const failures =
+      loadChecker().collectCloudflareOfficialCompareFailures(rootDir);
+
+    expect(failures).toEqual([
+      expect.objectContaining({
+        file: "wrangler.jsonc",
+        missing: expect.arrayContaining([
+          expect.stringContaining("different bucket_name values"),
         ]),
       }),
     ]);

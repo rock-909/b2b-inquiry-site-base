@@ -14,16 +14,7 @@ const WRANGLER_REQUIRED_COMPAT_FLAGS = [
   "nodejs_compat",
   "global_fetch_strictly_public",
 ];
-const REQUIRED_R2_BINDINGS = [
-  {
-    environment: "preview",
-    bucketName: "b2b-inquiry-site-base-next-cache-preview",
-  },
-  {
-    environment: "production",
-    bucketName: "b2b-inquiry-site-base-next-cache-production",
-  },
-];
+const REQUIRED_R2_ENVIRONMENTS = ["preview", "production"];
 const OPEN_NEXT_DRAFT_DEPENDENCY =
   "https://pkg.pr.new/@opennextjs/cloudflare@69807b1";
 
@@ -224,24 +215,31 @@ function checkWrangler(rootDir, failures) {
       missing.push(`compatibility_flags: ${flag}`);
     }
   }
-  for (const binding of REQUIRED_R2_BINDINGS) {
-    const buckets = getConfigValue(config, [
-      "env",
-      binding.environment,
-      "r2_buckets",
-    ]);
-    const hasBinding =
-      Array.isArray(buckets) &&
-      buckets.some(
-        (bucket) =>
-          bucket?.binding === "NEXT_INC_CACHE_R2_BUCKET" &&
-          bucket?.bucket_name === binding.bucketName,
-      );
-    if (!hasBinding) {
+  const r2BucketNames = {};
+  for (const environment of REQUIRED_R2_ENVIRONMENTS) {
+    const buckets = getConfigValue(config, ["env", environment, "r2_buckets"]);
+    const binding = Array.isArray(buckets)
+      ? buckets.find((bucket) => bucket?.binding === "NEXT_INC_CACHE_R2_BUCKET")
+      : undefined;
+    const bucketName =
+      typeof binding?.bucket_name === "string"
+        ? binding.bucket_name.trim()
+        : "";
+    if (!bucketName) {
       missing.push(
-        `env.${binding.environment}.r2_buckets: NEXT_INC_CACHE_R2_BUCKET -> ${binding.bucketName}`,
+        `env.${environment}.r2_buckets: NEXT_INC_CACHE_R2_BUCKET with non-empty bucket_name`,
       );
+    } else {
+      r2BucketNames[environment] = bucketName;
     }
+  }
+  if (
+    r2BucketNames.preview &&
+    r2BucketNames.preview === r2BucketNames.production
+  ) {
+    missing.push(
+      "env.preview and env.production NEXT_INC_CACHE_R2_BUCKET bindings must use different bucket_name values",
+    );
   }
 
   // Comments are already gone from the parsed object; searching its canonical
