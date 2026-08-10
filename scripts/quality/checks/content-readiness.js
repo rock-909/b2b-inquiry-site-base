@@ -287,18 +287,6 @@ function collectReadinessFiles(rootDir, target) {
   return results;
 }
 
-function getEffectiveSeverity(rule, _scanUnit, _index, options = {}) {
-  const strictClientLaunch = options.strictClientLaunch === true;
-  if (
-    strictClientLaunch &&
-    STRICT_CLIENT_LAUNCH_BLOCKER_RULE_IDS.has(rule.ruleId)
-  ) {
-    return "error";
-  }
-
-  return rule.severity;
-}
-
 function toJsonStringLiteral(value) {
   return JSON.stringify(value);
 }
@@ -540,7 +528,12 @@ function scanReadinessFile(rootDir, file, options = {}) {
           file: file.repoPath,
           line: unit.line,
           ruleId: rule.ruleId,
-          severity: getEffectiveSeverity(rule, unit, index, options),
+          severity: /** @type {"error" | "warning"} */ (
+            options.strictClientLaunch === true &&
+            STRICT_CLIENT_LAUNCH_BLOCKER_RULE_IDS.has(rule.ruleId)
+              ? "error"
+              : rule.severity
+          ),
           message: rule.message,
           match: match[0],
         });
@@ -556,7 +549,7 @@ function scanReadinessFile(rootDir, file, options = {}) {
       file: file.repoPath,
       line: logoReferenceUnit.line,
       ruleId: "missing-logo-asset",
-      severity: "error",
+      severity: /** @type {"error"} */ ("error"),
       message:
         "Runtime reference to /images/logo.svg exists, but public/images/logo.svg is missing.",
       match: LOGO_REFERENCE,
