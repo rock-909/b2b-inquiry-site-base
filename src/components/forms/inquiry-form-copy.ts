@@ -1,5 +1,4 @@
 import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
-import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 
 export type InquiryFormSource = "contact" | "request-quote";
 
@@ -41,7 +40,10 @@ type InquiryFormMessageKey =
 
 type InquiryTranslate = (key: InquiryFormMessageKey) => string;
 
-export function createInquiryFormCopy(t: InquiryTranslate) {
+export function createInquiryFormCopy(
+  t: InquiryTranslate,
+  rescueEmail: string,
+) {
   return {
     optional: t("optional"),
     fullName: t("fullName"),
@@ -66,7 +68,7 @@ export function createInquiryFormCopy(t: InquiryTranslate) {
       testMode: t("turnstile.testMode"),
       rescueBeforeEmail: t("turnstile.rescueBeforeEmail"),
       rescueAfterEmail: t("turnstile.rescueAfterEmail"),
-      rescueEmail: SINGLE_SITE_CONFIG.contact.email,
+      rescueEmail,
       rescueSubject: t("turnstile.rescueSubject"),
     },
     errors: {
@@ -95,8 +97,11 @@ export type InquiryFormCopy = ReturnType<typeof createInquiryFormCopy>;
 
 export function createInquiryFormCopyFromMessages(
   messages: Record<string, unknown>,
+  rescueEmail: string,
 ): InquiryFormCopy {
-  return createInquiryFormCopy((key: InquiryFormMessageKey) =>
-    readRequiredMessagePath(messages, ["inquiry", "form", ...key.split(".")]),
+  return createInquiryFormCopy(
+    (key: InquiryFormMessageKey) =>
+      readRequiredMessagePath(messages, ["inquiry", "form", ...key.split(".")]),
+    rescueEmail,
   );
 }

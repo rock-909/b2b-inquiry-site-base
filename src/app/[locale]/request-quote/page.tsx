@@ -101,7 +101,10 @@ export default async function RequestQuotePage({
     getTranslations({ locale, namespace: "requestQuote.metadata" }),
     getTranslations({ locale, namespace: "inquiry.form" }),
   ]);
-  const inquiryCopy: InquiryFormCopy = createInquiryFormCopy(tInquiryForm);
+  const inquiryCopy: InquiryFormCopy = createInquiryFormCopy(
+    tInquiryForm,
+    SITE_CONFIG.contact.email,
+  );
   const asideCopy: RequestQuoteAsideCopy = {
     afterSubmitTitle: tPage("afterSubmitTitle"),
     confidenceTitle: tPage("confidenceTitle"),

@@ -21,6 +21,7 @@ describe("inquiry form copy", () => {
   it("reads the same namespace from composed messages", () => {
     const fromMessages = createInquiryFormCopyFromMessages(
       getComposedMessages("en"),
+      "sales@example.invalid",
     );
     const fromHelper = createTestInquiryFormCopy();
 
