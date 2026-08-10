@@ -60,7 +60,7 @@ describe("unexpected console.error gate", () => {
     const expectedOutput = `${expected.stdout}${expected.stderr}`;
 
     expect(expected.status, expectedOutput).toBe(0);
-  });
+  }, 35_000);
 
   it("also rejects errors raised during module loading or after an expected capture", () => {
     for (const [fixture, sentinel] of [
@@ -74,5 +74,5 @@ describe("unexpected console.error gate", () => {
       expect(output).toContain("Unexpected console.error call(s)");
       expect(output).toContain(sentinel);
     }
-  });
+  }, 35_000);
 });

@@ -229,7 +229,10 @@ export function ContactFormWithFallback({
 }: {
   messages: Record<string, unknown>;
 }) {
-  const inquiryCopy = createInquiryFormCopyFromMessages(messages);
+  const inquiryCopy = createInquiryFormCopyFromMessages(
+    messages,
+    SINGLE_SITE_FACTS.contact.email,
+  );
   const inquiryFallback = <InquiryFormStaticFallback copy={inquiryCopy} />;
 
   return (

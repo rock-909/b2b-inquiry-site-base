@@ -55,7 +55,10 @@ function assertNonEmptyStringLeaves(value: unknown, label: string): void {
 
 describe("real i18n runtime message contract", () => {
   it("keeps the inquiry.form leaf set used by InquiryFormCopy", () => {
-    const copy = createInquiryFormCopyFromMessages(enMessages);
+    const copy = createInquiryFormCopyFromMessages(
+      enMessages,
+      "sales@example.invalid",
+    );
     assertNonEmptyStringLeaves(copy, "inquiry.form");
   });
 

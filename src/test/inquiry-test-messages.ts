@@ -42,7 +42,7 @@ export function getInquiryFormMessage(keyPath: string): string {
 }
 
 export function createTestInquiryFormCopy(): InquiryFormCopy {
-  return createInquiryFormCopy(getInquiryFormMessage);
+  return createInquiryFormCopy(getInquiryFormMessage, "sales@example.invalid");
 }
 
 export function createTestTurnstileLabels(): InquiryFormCopy["turnstile"] {

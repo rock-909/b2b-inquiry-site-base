@@ -523,7 +523,6 @@ function scanReadinessFile(rootDir, file, options = {}) {
       }
 
       for (const match of unit.value.matchAll(rule.pattern)) {
-        const index = match.index ?? 0;
         findings.push({
           file: file.repoPath,
           line: unit.line,
