@@ -128,6 +128,11 @@ export function flushPendingAttribution(): void {
 
 export function getAttributionSnapshot(): AttributionData {
   if (typeof window === "undefined") return {};
+  if (!hasMarketingConsent()) {
+    pendingAttribution = null;
+    sessionStorage.removeItem(UTM_STORAGE_KEY);
+    return {};
+  }
 
   try {
     const stored = sessionStorage.getItem(UTM_STORAGE_KEY);

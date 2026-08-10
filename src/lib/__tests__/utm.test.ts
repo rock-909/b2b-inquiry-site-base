@@ -319,7 +319,7 @@ describe("UTM Parameter Tracking", () => {
       expect(snapshot.fbclid).toBe("fb123");
     });
 
-    it("should return pending attribution before consent without writing storage", () => {
+    it("should not expose pending attribution before marketing consent", () => {
       mockLoadConsent.mockReturnValue(createStoredConsent(false));
       window.location.search = "?utm_source=google&utm_medium=cpc";
       window.location.pathname = "/en/contact";
@@ -331,12 +331,11 @@ describe("UTM Parameter Tracking", () => {
       const snapshot = getAttributionSnapshot();
 
       expect(mockSessionStorage.setItem).not.toHaveBeenCalled();
-      expect(snapshot).toMatchObject({
-        utmSource: "google",
-        utmMedium: "cpc",
-        landingPage: "/en/contact",
-      });
-      expect(snapshot.capturedAt).toEqual(expect.any(String));
+      expect(snapshot).toEqual({});
+
+      mockLoadConsent.mockReturnValue(createStoredConsent(true));
+      flushPendingAttribution();
+      expect(mockSessionStorage.setItem).not.toHaveBeenCalled();
     });
 
     it("should return empty object if no data available", () => {
@@ -379,6 +378,24 @@ describe("UTM Parameter Tracking", () => {
   });
 
   describe("appendAttributionToFormData", () => {
+    it("should not append stored attribution after marketing consent is rejected", () => {
+      mockLoadConsent.mockReturnValue(createStoredConsent(false));
+      mockSessionStorage.store["marketing_attribution"] = JSON.stringify({
+        utmSource: "google",
+        gclid: "rejected-click",
+      });
+
+      const formData = new FormData();
+      appendAttributionToFormData(formData);
+
+      expect(formData.get("utmSource")).toBeNull();
+      expect(formData.get("gclid")).toBeNull();
+      expect(mockSessionStorage.removeItem).toHaveBeenCalledWith(
+        "marketing_attribution",
+      );
+      expect(mockSessionStorage.store["marketing_attribution"]).toBeUndefined();
+    });
+
     it("should append attribution data to FormData", () => {
       mockSessionStorage.store["marketing_attribution"] = JSON.stringify({
         utmSource: "google",
