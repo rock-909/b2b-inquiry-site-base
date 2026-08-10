@@ -14,6 +14,7 @@ import {
 } from "@/constants/validation-limits";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
+import { saveConsent } from "@/lib/cookie-consent/storage";
 import { resolveInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
 import { lazyTurnstileLabelsSpy } from "@/test/inquiry-turnstile-mock";
@@ -100,6 +101,7 @@ describe("InquiryForm contract", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     lazyTurnstileLabelsSpy.mockClear();
+    window.localStorage.clear();
     window.sessionStorage.clear();
     delete (window as unknown as Record<string, unknown>).gtag;
     global.fetch = vi.fn(async () =>
@@ -718,6 +720,7 @@ describe("InquiryForm validated context", () => {
   });
 
   it("keeps attribution, honeypot, and Turnstile fields in offering submissions", async () => {
+    saveConsent({ necessary: true, analytics: false, marketing: true });
     window.sessionStorage.setItem(
       "marketing_attribution",
       JSON.stringify({
@@ -756,6 +759,33 @@ describe("InquiryForm validated context", () => {
       gclid: "gclid-rfq-123",
       landingPage: "/en/request-quote",
     });
+  });
+
+  it("omits attribution from submissions when marketing consent is rejected", async () => {
+    saveConsent({ necessary: true, analytics: false, marketing: false });
+    window.sessionStorage.setItem(
+      "marketing_attribution",
+      JSON.stringify({
+        utmSource: "google",
+        gclid: "rejected-click",
+        landingPage: "/en/contact",
+      }),
+    );
+    const { container } = renderInquiryForm("contact");
+    const { fullName, email, form } = getFormControls(container);
+
+    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
+    fireEvent.change(fullName, { target: { value: "Ada Buyer" } });
+    fireEvent.change(email, { target: { value: "ada@example.com" } });
+
+    await act(async () => {
+      fireEvent.submit(form);
+    });
+
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(getFetchBody()).not.toHaveProperty("utmSource");
+    expect(getFetchBody()).not.toHaveProperty("gclid");
+    expect(getFetchBody()).not.toHaveProperty("landingPage");
   });
 
   it("ignores request-quote context when contact uses general-context", () => {
