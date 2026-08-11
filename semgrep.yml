@@ -315,7 +315,7 @@ rules:
         - "**/__tests__/**"
         - "**/*.test.*"
         - "**/*.spec.*"
-        - "src/middleware.ts"
+        - "src/proxy.ts"
         - "src/lib/security/client-ip.ts"
     metadata:
       category: security

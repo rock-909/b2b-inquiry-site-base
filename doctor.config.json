@@ -193,7 +193,7 @@
           "src/lib/security/__tests__/distributed-rate-limit.test.ts",
           "src/lib/security/__tests__/rate-limit-key-strategies.test.ts",
           "tests/integration/api/lead-family-protection.test.ts",
-          "tests/unit/middleware.test.ts"
+          "tests/unit/proxy.test.ts"
         ],
         "rules": ["react-doctor/server-sequential-independent-await"]
       },

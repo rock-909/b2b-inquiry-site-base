@@ -24,7 +24,7 @@ function createPlainNotFound() {
   });
 }
 
-export default function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   if (isRetiredLocalePath(pathname)) {
     return createPlainNotFound();

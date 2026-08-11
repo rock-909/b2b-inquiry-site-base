@@ -30,7 +30,7 @@ vi.mock("@/config/paths/locales-config", () => ({
   },
 }));
 
-describe("middleware next-intl boundary", () => {
+describe("proxy next-intl boundary", () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -39,12 +39,12 @@ describe("middleware next-intl boundary", () => {
   });
 
   it("creates one next-intl middleware and delegates the request", async () => {
-    const { default: middleware } = await import("@/middleware");
+    const { proxy } = await import("@/proxy");
     const request = new NextRequest("http://localhost:3000/en/about");
     const intlResponse = NextResponse.next();
     intlMiddlewareMock.mockReturnValue(intlResponse);
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response).toBe(intlResponse);
     expect(createMiddlewareMock).toHaveBeenCalledTimes(1);
@@ -59,24 +59,24 @@ describe("middleware next-intl boundary", () => {
   });
 
   it("does not manually set NEXT_LOCALE for localized requests", async () => {
-    const { default: middleware } = await import("@/middleware");
+    const { proxy } = await import("@/proxy");
     const request = new NextRequest("http://localhost:3000/en/about", {
       headers: {
         cookie: "NEXT_LOCALE=en",
       },
     });
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("set-cookie")).toBeNull();
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
   });
 
   it("short-circuits retired Chinese locale paths with a lightweight 404", async () => {
-    const { default: middleware } = await import("@/middleware");
+    const { proxy } = await import("@/proxy");
     const request = new NextRequest("http://localhost:3000/zh/contact");
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.status).toBe(404);
     expect(response.headers.get("content-type")).toBe(
@@ -88,10 +88,10 @@ describe("middleware next-intl boundary", () => {
   });
 
   it("does not parse unsupported locale-like paths before next-intl", async () => {
-    const { default: middleware } = await import("@/middleware");
+    const { proxy } = await import("@/proxy");
     const request = new NextRequest("http://localhost:3000/fr/products/eu");
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("set-cookie")).toBeNull();
@@ -99,14 +99,12 @@ describe("middleware next-intl boundary", () => {
   });
 
   it("does not clean up next-intl response headers", async () => {
-    const { default: middleware } = await import("@/middleware");
+    const { proxy } = await import("@/proxy");
     const intlResponse = NextResponse.next();
     intlResponse.headers.set("x-middleware-set-cookie", "next-intl-owned");
     intlMiddlewareMock.mockReturnValue(intlResponse);
 
-    const response = middleware(
-      new NextRequest("http://localhost:3000/en/about"),
-    );
+    const response = proxy(new NextRequest("http://localhost:3000/en/about"));
 
     expect(response.headers.get("x-middleware-set-cookie")).toBe(
       "next-intl-owned",
@@ -114,14 +112,14 @@ describe("middleware next-intl boundary", () => {
   });
 
   it("does not own request overrides, nonce, CSP, health, or security headers", async () => {
-    const { default: middleware } = await import("@/middleware");
+    const { proxy } = await import("@/proxy");
     const request = new NextRequest("http://localhost:3000/en/contact", {
       headers: {
         "cf-connecting-ip": "198.51.100.77",
       },
     });
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("x-middleware-override-headers")).toBeNull();
     expect(response.headers.get("x-middleware-request-x-nonce")).toBeNull();
@@ -132,19 +130,19 @@ describe("middleware next-intl boundary", () => {
   });
 
   it("keeps matcher out of api, _next, and static files only", async () => {
-    const { config } = await import("@/middleware");
+    const { config } = await import("@/proxy");
 
     expect(config.matcher).toEqual(["/", "/((?!api|_next|.*\\..*).*)"]);
     expect(config.matcher.join(" ")).not.toContain("admin");
     expect(config.matcher.join(" ")).not.toContain("ops");
   });
 
-  it("keeps middleware as the Cloudflare runtime entrypoint until proxy support is proven", async () => {
+  it("keeps proxy as the Cloudflare runtime entrypoint", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
     const repoRoot = path.resolve(__dirname, "../..");
 
-    expect(fs.existsSync(path.join(repoRoot, "src/middleware.ts"))).toBe(true);
-    expect(fs.existsSync(path.join(repoRoot, "src/proxy.ts"))).toBe(false);
+    expect(fs.existsSync(path.join(repoRoot, "src/proxy.ts"))).toBe(true);
+    expect(fs.existsSync(path.join(repoRoot, "src/middleware.ts"))).toBe(false);
   });
 });

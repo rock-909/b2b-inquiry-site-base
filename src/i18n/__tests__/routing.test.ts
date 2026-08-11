@@ -123,7 +123,7 @@ describe("i18n Routing Configuration", () => {
   });
 
   // 用 `toBe` 比对象身份，不是比值：`routing.ts` 造一个字段相同的新对象也会让值相等
-  // 的断言全绿，但那样 app 代码和 middleware 就各拿一份配置了。
+  // 的断言全绿，但那样 app 代码和 proxy 就各拿一份配置了。
   it("re-exports the very object routing-config built", async () => {
     const routingConfigModule = await import("@/i18n/routing-config");
     const routingModule = await import("../routing");

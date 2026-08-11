@@ -48,7 +48,7 @@ export default defineConfig({
         "src/test/**",
         "**/__mocks__/**",
         "**/test-utils/**",
-        "src/middleware.ts",
+        "src/proxy.ts",
         // 排除自动生成的文件
         "**/*.generated.*",
         // 排除纯类型定义文件（无运行时代码）

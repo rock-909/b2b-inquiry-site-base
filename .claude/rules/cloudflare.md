@@ -1,6 +1,6 @@
 ---
 paths:
-  - "src/middleware.ts"
+  - "src/proxy.ts"
   - "open-next.config.ts"
   - "wrangler.jsonc"
   - "next.config.ts"
@@ -10,7 +10,7 @@ paths:
 # Cloudflare / OpenNext Rules
 
 Use this file when changing Cloudflare/OpenNext build, preview, deploy,
-middleware, worker config, or Cloudflare-only runtime behavior.
+proxy, worker config, or Cloudflare-only runtime behavior.
 
 This file contains the repository's Cloudflare/OpenNext choices and proof
 requirements, not generic Next.js API guidance.
@@ -48,11 +48,13 @@ Never run `pnpm build` and `pnpm website:build:cf` in parallel. They both write 
 
 ## Runtime entry
 
-Keep `src/middleware.ts` as the runtime entrypoint.
+Keep `src/proxy.ts` as the runtime entrypoint. Do not restore
+`src/middleware.ts` as cleanup.
 
-Do not introduce `src/proxy.ts` as cleanup. The current next-intl/OpenNext
-integration still uses `src/middleware.ts`; revisit only as a dedicated runtime
-migration with build and preview proof.
+The pinned OpenNext package requires the repository patch that bundles the
+Node.js proxy for workerd. Keep the dependency pin, `patchedDependencies`, and
+the patch file in sync until an official release covers Node proxy bundling,
+Cache Components, and the instrumentation fix.
 
 The matcher must remain static string literals.
 
@@ -62,11 +64,11 @@ proof rows above.
 ## Public submission identity
 
 Browser lead submissions go through the `/api/inquiry` route handler only.
-Middleware must not inject internal client-IP headers for public form flows.
+Proxy must not inject internal client-IP headers for public form flows.
 
 There is no live `'use server'` Server Action contact path. Any server-side
 submission code must validate internally and fail closed when request identity
-is unavailable rather than relying on middleware-provided trusted IP headers.
+is unavailable rather than relying on proxy-provided trusted IP headers.
 
 ## Cache and runtime bindings
 

@@ -18,14 +18,14 @@ vi.mock("@/config/paths/locales-config", () => ({
   },
 }));
 
-import middleware from "../middleware";
+import { proxy } from "../proxy";
 
 beforeEach(() => {
   vi.clearAllMocks();
   intlMiddlewareMock.mockImplementation(() => NextResponse.next());
 });
 
-describe("middleware locale cookie", () => {
+describe("proxy locale cookie", () => {
   beforeEach(() => {
     vi.unstubAllEnvs();
     vi.stubEnv("CF_PAGES", "1");
@@ -40,7 +40,7 @@ describe("middleware locale cookie", () => {
     const intlResponse = NextResponse.next();
     intlMiddlewareMock.mockReturnValue(intlResponse);
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response).toBe(intlResponse);
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
@@ -55,7 +55,7 @@ describe("middleware locale cookie", () => {
       },
     });
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("set-cookie")).toBeNull();
@@ -69,7 +69,7 @@ describe("middleware locale cookie", () => {
       },
     });
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.status).toBe(404);
     expect(response.headers.get("set-cookie")).toBeNull();
@@ -85,7 +85,7 @@ describe("middleware locale cookie", () => {
       },
     });
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("set-cookie")).toBeNull();
@@ -100,7 +100,7 @@ describe("middleware locale cookie", () => {
     });
 
     const request = new NextRequest("http://localhost/");
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("x-middleware-set-cookie")).toBe(
       "next-intl-owned",
@@ -116,7 +116,7 @@ describe("middleware locale cookie", () => {
       },
     });
 
-    const response = middleware(request);
+    const response = proxy(request);
 
     expect(response.headers.get("x-middleware-override-headers")).toBeNull();
     expect(response.headers.get("x-middleware-request-x-nonce")).toBeNull();

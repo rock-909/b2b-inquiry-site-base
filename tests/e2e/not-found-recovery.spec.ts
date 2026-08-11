@@ -18,7 +18,7 @@ test("unknown routes render the site 404 with a homepage recovery link", async (
   ).toBeVisible();
 });
 
-// 带点的地址走不到品牌 404 页，这是结构限制，不是漏测：middleware matcher 把它们
+// 带点的地址走不到品牌 404 页，这是结构限制，不是漏测：proxy matcher 把它们
 // 排除，`random.txt` 会被当作 locale 值落到 `[locale]` 段上，而品牌 404 页本身就
 // 住在这个段里、需要一个合法 locale 才能渲染。它们拿到的是 Next 自带的那张
 // "This page could not be found."，状态码仍然是 404（由 not-found-status.spec.ts

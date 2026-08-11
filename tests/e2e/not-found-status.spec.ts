@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test";
  * site is broken rather than the page is gone, which is a far more damaging
  * signal, and it shows buyers a server error when they follow a stale link.
  *
- * Paths containing a dot skip the middleware matcher, so they never reach the
+ * Paths containing a dot skip the proxy matcher, so they never reach the
  * locale routing that the [locale] segment's not-found page depends on. They
  * are the cases that regress silently.
  */
