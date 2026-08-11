@@ -11,11 +11,7 @@ const site = {
   optionalLabel: "optional",
 } as const;
 
-// BC-025 承诺的是"任何公开页面"，之前这里是一份四条的手抄清单（/about /contact
-// /privacy /terms）。产品列表页、OEM、两篇 guide、warranty、五个产品详情页都没走
-// 这条断言——某个没覆盖的页面单独加一个错的 Suspense 边界，门禁照样绿。清单改成
-// 从页面注册表和产品目录推导，跟 lighthouserc.js 那 16 条路由同源，新增路由自动
-// 进入覆盖面。
+// 公开页面清单来自当前页面配置，避免新增页面后漏掉 no-JS 重复渲染检查。
 const canonicalPublicPaths = [
   ...getSingleSitePublicStaticPages().map((path) => path || "/"),
 ];
@@ -216,7 +212,7 @@ test.describe("No-JS HTML contract (English-only)", () => {
 
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(
-      page.getByRole("heading", { name: /request a quote|get real numbers/i }),
+      page.getByRole("heading", { name: /start with the essentials/i }),
     ).toBeVisible();
 
     const html = await page.content();

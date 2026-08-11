@@ -79,7 +79,7 @@ describe("structured-data generators", () => {
       const schema = buildWebPageSchema({
         locale: "en",
         name: "Request a Quote",
-        description: "Get pricing within 12 hours.",
+        description: "Request pricing for the confirmed scope.",
         url: pageUrl,
       });
 

@@ -178,9 +178,9 @@ export const SINGLE_SITE_DEFINITION = {
       phone: contact.phone,
       email: contact.email,
       businessHours: {
-        weekdays: "UTC+8",
-        saturday: "By appointment",
-        sundayClosed: true,
+        weekdays: "Replace before launch",
+        saturday: "Replace before launch",
+        sundayClosed: false,
       },
     },
     certifications: [],

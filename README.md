@@ -10,6 +10,8 @@
 - 页面：Home、About、Request Quote、Contact、Privacy、Terms。
 - 业务身份、offering 和页面内容必须由派生站 owner 在公开上线前替换确认。
 
+模板内置的是询盘、安全和交付基础能力。产品目录、服务目录或混合 offering 页面属于派生站的业务内容层：多数 B2B 站都会增加这些页面，但不需要在模板核心里预置固定目录模型或运行时 mode。
+
 ## 快速开始
 
 环境要求：Node 24（版本见 `.node-version`）、pnpm 11（版本见 `package.json`，建议先执行 `corepack enable`）。

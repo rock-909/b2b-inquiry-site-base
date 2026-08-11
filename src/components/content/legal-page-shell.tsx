@@ -17,7 +17,7 @@ interface LegalPageShellProps {
   headings: HeadingItem[];
   locale: Locale;
   schemaType: "WebPage" | "Article";
-  /** Site-relative path (e.g. "/oem-wholesale"); enables BreadcrumbList output. */
+  /** Site-relative path (e.g. "/privacy"); enables BreadcrumbList output. */
   pagePath: string;
 }
 

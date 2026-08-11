@@ -12,26 +12,28 @@ web
 
 保留的 starter/profile 代码、测试和文档属于继承工具或历史说明；当前页面、内容、询盘路径和上线证明都应按本仓运行事实判断。
 
+模板核心是询盘基础能力，不是固定产品目录引擎。派生站通常会增加产品目录、服务目录或混合 offering 页面；目录负责说明“提供什么”，询盘链路负责把兴趣转成可处理的需求，两者互补而不冲突。
+
 ## Users
 
 当前站点优先服务海外 B2B 采购、批发/OEM 买家和技术评估方。
 
 | 角色 | 关心什么 | 网站要给的答案 |
 | --- | --- | --- |
-| 采购 / 供应链经理 | 供应商能不能稳定给货、响应是否清楚 | 产品线、规格范围、打样/报价路径、资料下载 |
-| 分销商 / 批发买家 | 是否适合自有渠道销售或项目备货 | OEM/批发范围、包装/资料、MOQ 与询盘信息要求 |
-| 技术评估方 | 产品结构、规格、适用边界 | HTML 规格表、产品详情、FAQ、PDF specs |
+| 采购 / 供应链经理 | 供应商能否满足需求、响应是否清楚 | Offering 范围、关键规格或服务边界、报价路径 |
+| 分销商 / 批发买家 | 是否适合自有渠道销售或项目备货 | OEM/批发范围、包装或交付资料、MOQ 与询盘要求 |
+| 技术评估方 | 产品结构、规格或服务边界是否适用 | 详情页、规格或 scope、FAQ，以及确有来源的下载件 |
 | 业主 / 操作方 | 询盘是否会被接住 | Request Quote、Contact、提交后预期、邮件/CRM 路径 |
 
 ## Product Purpose
 
-当前目标：让访问者快速理解供应商提供什么产品或服务，并自然进入报价、资料下载或联系路径。
+当前目标：让访问者快速理解供应商提供什么产品或服务，并自然进入报价或联系路径；资料下载只在派生业务确有可维护文件时增加。
 
 成功的样子：
 
 1. 首页 10 秒内说清供应商定位和核心产品线。
-2. 产品页能让买家判断哪条产品或服务适合自己的采购场景。
-3. 规格、FAQ、下载件和 RFQ 字段能减少来回沟通。
+2. 派生站按需要提供产品、服务或混合 offering 页面，让买家判断适用范围。
+3. 规格、scope、FAQ、可选下载件和 RFQ 字段能减少来回沟通。
 4. 询盘路径稳定，不能因为文档、旧 starter 内容或 profile 机制误导维护者。
 
 ## RFQ Conversion
@@ -50,9 +52,9 @@ owner source. Process expectations can explain what happens next, but not promis
 fixed timing. Specs, materials, structure, downloads, and FAQ should support the
 buyer's decision.
 
-- Use: factory supply, configured offerings, OEM / wholesale, request quote,
-  product specifications, application fit, datasheet/PDF download, project
-  requirements.
+- Use when true for the derived business: factory supply, configured offerings,
+  OEM / wholesale, request quote, product specifications, service scope,
+  application fit, maintained downloads, and project requirements.
 - Avoid: fake proof, unsupported certifications, exact price promises, guaranteed
   timing, vague “best quality”, and decorative badges without a real source.
 
@@ -89,7 +91,7 @@ buyer's decision.
 
 1. **证据贴着主张走**——每一条卖点旁边尽量有规格、流程、下载件或可验证细节。
 2. **节奏胜过密度**——宁可少而清楚，不把页面变成产品墙。
-3. **询盘路径清楚**——RFQ、Contact、PDF 下载和提交后预期必须互相支持。
+3. **询盘路径清楚**——RFQ、Contact、可选下载件和提交后预期必须互相支持。
 4. **维护面要清楚**——当前内容与 inherited starter 工具要分开标注。
 5. **工艺感来自细节**——留白、对齐、字号阶梯、动效克制，比大特效更重要。
 

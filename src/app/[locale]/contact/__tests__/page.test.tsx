@@ -33,30 +33,30 @@ vi.mock("react", async () => {
 
 const contactCopy = {
   header: {
-    title: "Legacy Contact",
-    description: "Legacy description",
+    title: "Contact",
+    description: "Share the essentials so the team can identify the next step.",
   },
   panel: {
     contact: {
-      title: "Email & WhatsApp",
+      title: "Email & inquiry form",
       emailLabel: "Email",
       phoneLabel: "Phone",
     },
     response: {
       title: "What happens next",
-      responseTimeLabel: "Reply within",
-      responseTimeValue: "12 hours",
-      bestForLabel: "Quote when",
-      bestForValue: "Details are sufficient",
-      prepareLabel: "Fastest route",
-      prepareValue: "Use the RFQ form; it asks the questions we'd ask anyway.",
+      responseTimeLabel: "Response target",
+      responseTimeValue: "Set before launch",
+      bestForLabel: "Useful first reply",
+      bestForValue: "The next confirmed step",
+      prepareLabel: "Help the team respond",
+      prepareValue: "Share the requirement, scope, timing and destination.",
     },
     hours: {
-      title: "Time zone",
-      weekdaysLabel: "China",
-      saturdayLabel: "Follow-up",
-      sundayLabel: "US/EU hours",
-      closedLabel: "Closed",
+      title: "Business hours",
+      weekdaysLabel: "Weekdays",
+      saturdayLabel: "Saturday",
+      sundayLabel: "Sunday",
+      closedLabel: "Set before launch",
     },
   },
 };
@@ -181,8 +181,8 @@ describe("ContactPage MDX migration", () => {
     expect(
       screen.getByRole("heading", { name: "What happens next" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Reply within")).toBeInTheDocument();
-    expect(screen.getByText("12 hours")).toBeInTheDocument();
+    expect(screen.getByText("Response target")).toBeInTheDocument();
+    expect(screen.getAllByText("Set before launch").length).toBeGreaterThan(0);
   });
 
   it("renders the public email and hides the owner TODO phone", async () => {
@@ -229,15 +229,15 @@ describe("ContactPage MDX migration", () => {
     expect(
       within(handoff).getByRole("heading", {
         level: 2,
-        name: "Fastest route",
+        name: "Start with the essentials",
       }),
     ).toBeInTheDocument();
     expect(handoff).toHaveTextContent(
-      "The RFQ form asks the questions we would ask anyway",
+      "A focused inquiry gives the business enough context",
     );
-    expect(handoff).toHaveTextContent("What you are protecting");
-    expect(handoff).toHaveTextContent("Dimensions");
-    expect(handoff).toHaveTextContent("Market and port");
+    expect(handoff).toHaveTextContent("What you need");
+    expect(handoff).toHaveTextContent("Scope and quantity");
+    expect(handoff).toHaveTextContent("Timing and destination");
     expect(formColumn.compareDocumentPosition(handoff)).toBe(
       Node.DOCUMENT_POSITION_PRECEDING,
     );
@@ -267,11 +267,14 @@ describe("ContactPage MDX migration", () => {
     // Response / expect / prepare confidence copy the page actually renders
     // from existing contact panel content, scoped to the confidence column.
     expect(
-      within(confidenceColumn).getAllByText(/reply|quote|details/i).length,
+      within(confidenceColumn).getAllByText(/response|step|requirement/i)
+        .length,
     ).toBeGreaterThan(0);
-    expect(within(confidenceColumn).getByText("12 hours")).toBeInTheDocument();
     expect(
-      within(confidenceColumn).getByText("Details are sufficient"),
+      within(confidenceColumn).getAllByText("Set before launch").length,
+    ).toBeGreaterThan(0);
+    expect(
+      within(confidenceColumn).getByText("The next confirmed step"),
     ).toBeInTheDocument();
     expect(confidenceColumn).not.toContainElement(
       screen.getByTestId("inquiry-form"),

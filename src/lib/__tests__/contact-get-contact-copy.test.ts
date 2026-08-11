@@ -7,25 +7,24 @@ function createCompleteContactMessages(): MessageRecord {
     contact: {
       title: "Contact",
       description:
-        "Fastest route: the RFQ form asks the questions we would ask anyway.",
+        "Share the essentials so the business can identify the next useful step.",
       panel: {
         contactTitle: "Email & RFQ",
         email: "Email",
         emailUnavailable: "Use the RFQ form if email is unavailable.",
         phone: "Phone",
-        hoursTitle: "Time zone",
-        weekdays: "China",
-        saturday: "Follow-up",
-        sunday: "US/EU hours",
-        closed: "Closed",
+        hoursTitle: "Business hours",
+        weekdays: "Weekdays",
+        saturday: "Saturday",
+        sunday: "Sunday",
+        closed: "Set before launch",
         responseTitle: "What happens next",
-        responseTimeLabel: "Reply within",
-        responseTimeValue: "12 hours",
-        bestForLabel: "Quote when",
-        bestForValue: "Details are sufficient",
-        prepareLabel: "Fastest route",
-        prepareValue:
-          "Use the RFQ form; it asks the questions we'd ask anyway.",
+        responseTimeLabel: "Response target",
+        responseTimeValue: "Set before launch",
+        bestForLabel: "Useful first reply",
+        bestForValue: "The next confirmed step",
+        prepareLabel: "Help the team respond",
+        prepareValue: "Share the requirement, scope, timing and destination.",
       },
     },
   };
@@ -37,11 +36,11 @@ describe("getContactCopyFromMessages", () => {
 
     expect(copy.header.title).toBe("Contact");
     expect(copy.header.description).toBe(
-      "Fastest route: the RFQ form asks the questions we would ask anyway.",
+      "Share the essentials so the business can identify the next useful step.",
     );
     expect(copy.panel.contact.title).toBe("Email & RFQ");
     expect(copy.panel.response.prepareValue).toBe(
-      "Use the RFQ form; it asks the questions we'd ask anyway.",
+      "Share the requirement, scope, timing and destination.",
     );
   });
 
