@@ -41,7 +41,7 @@ const RELEASE_PROOF_MANIFEST = deepFreeze({
     },
     {
       id: "focused-release-contract-tests",
-      label: "Middleware, i18n, and deploy workflow contracts",
+      label: "Proxy, i18n, and deploy workflow contracts",
       lane: RELEASE_PROOF_LANES.LOCAL_TEST_MODE,
       command: "pnpm",
       args: [
@@ -49,8 +49,8 @@ const RELEASE_PROOF_MANIFEST = deepFreeze({
         "vitest",
         "run",
         "tests/architecture/deploy-workflow-contract.test.ts",
-        "tests/unit/middleware.test.ts",
-        "src/__tests__/middleware-locale-cookie.test.ts",
+        "tests/unit/proxy.test.ts",
+        "src/__tests__/proxy-locale-cookie.test.ts",
         "src/i18n/__tests__/request.test.ts",
         "src/lib/__tests__/load-messages.fallback.test.ts",
       ],
@@ -79,7 +79,7 @@ const RELEASE_PROOF_MANIFEST = deepFreeze({
         "vitest",
         "run",
         "tests/integration/api/health.test.ts",
-        "src/__tests__/middleware-locale-cookie.test.ts",
+        "src/__tests__/proxy-locale-cookie.test.ts",
       ],
     },
     {

@@ -41,7 +41,7 @@ export async function generateLocaleMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   // 元数据生成先于布局渲染执行。布局里那句 `if (!isLocale(locale)) notFound()`
-  // 因此永远来不及拦住非法 locale：带点的地址（`/random.txt`）被 middleware
+  // 因此永远来不及拦住非法 locale：带点的地址（`/random.txt`）被 proxy
   // matcher 排除，原样落到 `[locale]` 上，某个页面的 generateMetadata 拿它去查
   // 路径表，直接 `throw new Error("Unknown locale")`，返回 500。
   // 同一句校验放在最早的入口这里，非法 locale 走正常的 404 兜底，而不是异常。

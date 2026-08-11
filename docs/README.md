@@ -18,7 +18,7 @@ docs/ 只保留当前项目真相、维护操作、正式上线标准、仍有�
 
 | 文档 | 独立保留原因 | 退役条件 |
 | --- | --- | --- |
-| `OpenNext Draft适配器.md` | 当前生产构建固定到尚未正式发布的上游 commit，需要跟踪 PR、正式 release 和回滚 | 迁移到正式支持版本，或撤回该适配器 |
+| `OpenNext Draft适配器.md` | Cloudflare 基线依赖固定的 Cache Components 预览包和 Node proxy bundler 补丁 | 正式版本同时覆盖 Node proxy、Cache Components 和 instrumentation 修复 |
 | `TypeScript 7双轨迁移.md` | TS7 CLI 与仍依赖旧 compiler API 的工具链并存，需要跟踪多个上游的支持窗口 | 项目完成单轨 TS7 迁移 |
 
 ## 规则

@@ -1,0 +1,469 @@
+diff --git a/dist/cli/build/build.js b/dist/cli/build/build.js
+index 791178bc5a733eb4e1fb69c20aab6dbabc90e830..843fb27c3aa4a60a4ca7f0298d5c907bd8bbfb02 100644
+--- a/dist/cli/build/build.js
++++ b/dist/cli/build/build.js
+@@ -8,6 +8,7 @@ import { printHeader } from "@opennextjs/aws/build/utils.js";
+ import logger from "@opennextjs/aws/logger.js";
+ import { ensureNextjsVersionSupported } from "../utils/nextjs-support.js";
+ import { bundleServer } from "./bundle-server.js";
++import { bundleNodeMiddleware } from "./open-next/bundle-node-middleware.js";
+ import { compileCacheAssetsManifestSqlFile } from "./open-next/compile-cache-assets-manifest.js";
+ import { compileEnvFiles } from "./open-next/compile-env-files.js";
+ import { compileImages } from "./open-next/compile-images.js";
+@@ -63,10 +64,9 @@ export async function build(options, config, projectOpts, wranglerConfig, allowU
+         setStandaloneBuildMode(options);
+         buildNextjsApp(options);
+     }
+-    // Make sure no Node.js middleware is used
+-    if (useNodeMiddleware(options)) {
+-        logger.error("Node.js middleware is not currently supported. Consider switching to Edge Middleware.");
+-        process.exit(1);
++    const hasNodeMiddleware = useNodeMiddleware(options);
++    if (hasNodeMiddleware) {
++        logger.warn("Node.js middleware support is experimental, make sure that `nodejs_compat` is enabled in your wrangler configuration.");
+     }
+     // Generate deployable bundle
+     printHeader("Generating bundle");
+@@ -78,6 +78,9 @@ export async function build(options, config, projectOpts, wranglerConfig, allowU
+     await compileSkewProtection(options, config);
+     // Compile middleware
+     await createMiddleware(options, { forceOnlyBuildOnce: true });
++    if (hasNodeMiddleware) {
++        await bundleNodeMiddleware(options);
++    }
+     patchMiddlewareCacheComponents(options);
+     createStaticAssets(options, { useBasePath: true });
+     if (config.dangerous?.disableIncrementalCache !== true) {
+diff --git a/dist/cli/build/bundle-server.js b/dist/cli/build/bundle-server.js
+index 9d98eb89780a4ba2f302fea48e85709cbe2f4aae..877660d73cf44c8f2e087591076d6ba44ceecb6e 100644
+--- a/dist/cli/build/bundle-server.js
++++ b/dist/cli/build/bundle-server.js
+@@ -53,7 +53,7 @@ export async function bundleServer(buildOpts, projectOpts) {
+     const nextConfig = JSON.parse(fs.readFileSync(serverFiles, "utf-8")).config;
+     const useTurbopack = buildHelper.getBundlerRuntime(buildOpts) === "turbopack";
+     console.log(`\x1b[35m⚙️ Bundling the OpenNext server...\n\x1b[0m`);
+-    await patchWebpackRuntime(buildOpts);
++    await patchWebpackRuntime(path.join(dotNextPath, "server"));
+     const useOg = patchVercelOgLibrary(buildOpts);
+     const outputPath = path.join(outputDir, "server-functions", "default");
+     const packagePath = getPackagePath(buildOpts);
+diff --git a/dist/cli/build/open-next/bundle-node-middleware.d.ts b/dist/cli/build/open-next/bundle-node-middleware.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2ffae976e157dde6816cc630c92d5dc6434c9daa
+--- /dev/null
++++ b/dist/cli/build/open-next/bundle-node-middleware.d.ts
+@@ -0,0 +1,35 @@
++/**
++ * Bundles the Node.js middleware (`proxy.ts` / `middleware.ts` with the `nodejs` runtime)
++ * into a Workers compatible `middleware/handler.mjs`.
++ *
++ * NOTE: Running Next.js Node.js middleware on workerd is experimental and is not supported
++ * by the OpenNext maintainers. It re-bundles the middleware compiled by Next.js, which is an
++ * internal output that can change between Next.js versions.
++ *
++ * `@opennextjs/aws` bundles the external middleware for a Node.js server:
++ * the OpenNext config is read from the filesystem at runtime and the middleware compiled
++ * by Next.js is loaded with `await import("./.next/server/middleware.js")`.
++ *
++ * workerd can not access the filesystem nor load modules at runtime, so the handler
++ * built by `@opennextjs/aws` is replaced with a fully self-contained bundle:
++ *
++ * - the config manifests are inlined by `openNextEdgePlugins` (as for the edge middleware)
++ * - the middleware compiled by Next.js is statically bundled from the traced files that
++ *   `@opennextjs/aws` copies to `middleware/<package path>/.next/server/middleware.js`
++ */
++import { type BuildOptions } from "@opennextjs/aws/build/helper.js";
++import { type Plugin } from "esbuild";
++/**
++ * Resolves the middleware compiled by Next.js to the copy created by `copyTracedFiles`.
++ */
++export declare function setCompiledMiddlewarePlugin(compiledMiddlewarePath: string): Plugin;
++/**
++ * Makes the Node.js builtins used by the bundled code (i.e. `require("crypto")` or
++ * `import from "node:crypto"`) resolve to the modules workerd provides via `nodejs_compat`.
++ *
++ * `require` calls are converted into ESM imports via a virtual module. The virtual module
++ * re-exports the default export so that the interop helpers in the middleware compiled by
++ * Next.js receive the full module (`export * from ...` alone would drop the default export).
++ */
++export declare function nodeBuiltinsPlugin(): Plugin;
++export declare function bundleNodeMiddleware(options: BuildOptions): Promise<void>;
+diff --git a/dist/cli/build/open-next/bundle-node-middleware.js b/dist/cli/build/open-next/bundle-node-middleware.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..0ad58dcda4ed2a1da32b481196592c52f434bc12
+--- /dev/null
++++ b/dist/cli/build/open-next/bundle-node-middleware.js
+@@ -0,0 +1,238 @@
++/**
++ * Bundles the Node.js middleware (`proxy.ts` / `middleware.ts` with the `nodejs` runtime)
++ * into a Workers compatible `middleware/handler.mjs`.
++ *
++ * NOTE: Running Next.js Node.js middleware on workerd is experimental and is not supported
++ * by the OpenNext maintainers. It re-bundles the middleware compiled by Next.js, which is an
++ * internal output that can change between Next.js versions.
++ *
++ * `@opennextjs/aws` bundles the external middleware for a Node.js server:
++ * the OpenNext config is read from the filesystem at runtime and the middleware compiled
++ * by Next.js is loaded with `await import("./.next/server/middleware.js")`.
++ *
++ * workerd can not access the filesystem nor load modules at runtime, so the handler
++ * built by `@opennextjs/aws` is replaced with a fully self-contained bundle:
++ *
++ * - the config manifests are inlined by `openNextEdgePlugins` (as for the edge middleware)
++ * - the middleware compiled by Next.js is statically bundled from the traced files that
++ *   `@opennextjs/aws` copies to `middleware/<package path>/.next/server/middleware.js`
++ */
++import { existsSync, readFileSync, writeFileSync } from "node:fs";
++import { builtinModules, isBuiltin } from "node:module";
++import path from "node:path";
++import { getBundlerRuntime, getPackagePath } from "@opennextjs/aws/build/helper.js";
++import logger from "@opennextjs/aws/logger.js";
++import { ContentUpdater } from "@opennextjs/aws/plugins/content-updater.js";
++import { openNextEdgePlugins } from "@opennextjs/aws/plugins/edge.js";
++import { openNextExternalMiddlewarePlugin } from "@opennextjs/aws/plugins/externalMiddleware.js";
++import { openNextReplacementPlugin } from "@opennextjs/aws/plugins/replacement.js";
++import { openNextResolvePlugin } from "@opennextjs/aws/plugins/resolve.js";
++import { getCrossPlatformPathRegex } from "@opennextjs/aws/utils/regex.js";
++import { build } from "esbuild";
++import { glob } from "glob";
++import { normalizePath } from "../../utils/normalize-path.js";
++import { patchWebpackRuntime } from "../patches/ast/webpack-runtime.js";
++import { patchInstrumentation } from "../patches/plugins/instrumentation.js";
++import { patchTurbopackRuntimeCode } from "../patches/plugins/turbopack.js";
++import { setWranglerExternal } from "../patches/plugins/wrangler-external.js";
++/**
++ * Inlines the chunks of the middleware compiled by Next.js.
++ *
++ * Both the webpack and the Turbopack runtimes resolve the chunks they need at runtime,
++ * which workerd does not support. The same patches as for the server are used to inline them.
++ *
++ * @param options Build options.
++ * @param dotNextServerDir The `.next/server` directory of the middleware output.
++ */
++async function inlineMiddlewareChunks(options, dotNextServerDir) {
++    if (getBundlerRuntime(options) !== "turbopack") {
++        await patchWebpackRuntime(dotNextServerDir);
++        return;
++    }
++    const runtimePath = path.join(dotNextServerDir, "chunks/[turbopack]_runtime.js");
++    if (!existsSync(runtimePath)) {
++        throw new Error(`Turbopack runtime not found at ${runtimePath}`);
++    }
++    // The Turbopack runtime resolves the chunks relative to the `.next` directory.
++    // `.wasm` chunks are needed too: they are inlined as static imports by `loadWasmChunk`.
++    const tracedFiles = await glob(path.join(dotNextServerDir, "**/*.{js,wasm}"), {
++        windowsPathsNoEscape: true,
++    });
++    writeFileSync(runtimePath, patchTurbopackRuntimeCode({
++        code: readFileSync(runtimePath, "utf-8"),
++        filePath: normalizePath(runtimePath),
++        tracedFiles,
++    }));
++}
++/**
++ * Resolves the middleware compiled by Next.js to the copy created by `copyTracedFiles`.
++ */
++export function setCompiledMiddlewarePlugin(compiledMiddlewarePath) {
++    return {
++        name: "compiled-middleware",
++        setup(build) {
++            build.onResolve({ filter: getCrossPlatformPathRegex("./.next/server/middleware.js") }, () => ({
++                path: compiledMiddlewarePath,
++            }));
++        },
++    };
++}
++/**
++ * Makes the Node.js builtins used by the bundled code (i.e. `require("crypto")` or
++ * `import from "node:crypto"`) resolve to the modules workerd provides via `nodejs_compat`.
++ *
++ * `require` calls are converted into ESM imports via a virtual module. The virtual module
++ * re-exports the default export so that the interop helpers in the middleware compiled by
++ * Next.js receive the full module (`export * from ...` alone would drop the default export).
++ */
++export function nodeBuiltinsPlugin() {
++    const namespace = "node-builtins";
++    // Match only Node.js builtins so esbuild does not call back on every import:
++    // the `node:` prefixed form and the bare names (`crypto`, `fs`, ...).
++    const builtinsFilter = new RegExp(`^(node:|(${builtinModules.join("|")})$)`);
++    return {
++        name: namespace,
++        setup(build) {
++            build.onResolve({ filter: builtinsFilter }, ({ path: specifier, kind }) => {
++                if (!isBuiltin(specifier)) {
++                    return undefined;
++                }
++                const prefixed = specifier.startsWith("node:") ? specifier : `node:${specifier}`;
++                return kind === "require-call" ? { path: prefixed, namespace } : { path: prefixed, external: true };
++            });
++            build.onLoad({ filter: /^node:/, namespace }, ({ path: builtin }) => ({
++                contents: `
++					import * as mod from "${builtin}";
++					export * from "${builtin}";
++					export default mod.default ?? mod;
++				`,
++                loader: "js",
++            }));
++        },
++    };
++}
++export async function bundleNodeMiddleware(options) {
++    const { config, outputDir } = options;
++    const middlewareDir = path.join(outputDir, "middleware");
++    const dotNextServerDir = path.join(middlewareDir, getPackagePath(options), ".next/server");
++    const compiledMiddleware = path.join(dotNextServerDir, "middleware.js");
++    if (!existsSync(compiledMiddleware)) {
++        throw new Error(`Compiled Node.js middleware not found at ${compiledMiddleware}`);
++    }
++    // The bundler runtime resolves the chunks of the middleware at runtime, which workerd does
++    // not support. Inline the chunks so that they are statically bundled.
++    await inlineMiddlewareChunks(options, dotNextServerDir);
++    logger.info("Bundling Node.js middleware...");
++    const middlewareConfig = config.middleware?.external ? config.middleware : undefined;
++    const overrides = {
++        ...middlewareConfig?.override,
++        originResolver: middlewareConfig?.originResolver,
++    };
++    function override(target) {
++        // String and lazy loaded overrides are supported, see `buildEdgeBundle`
++        return typeof overrides[target] === "string" || typeof overrides[target] === "function"
++            ? overrides[target]
++            : undefined;
++    }
++    const includeCache = config.dangerous?.enableCacheInterception;
++    const updater = new ContentUpdater(options);
++    // `next/dist/server/lib/trace/tracer.js` requires `@opentelemetry/api`, an optional
++    // dependency that most apps do not install. On the edge runtime Next.js does not fall
++    // back to its compiled copy when the require throws, so alias to that copy - but only
++    // when the app has not installed the real package, otherwise the real one is used.
++    const hasOpentelemetry = existsSync(path.join(options.appBuildOutputPath, "node_modules", "@opentelemetry", "api"));
++    await build({
++        entryPoints: [path.join(options.openNextDistDir, "adapters", "middleware.js")],
++        outfile: path.join(middlewareDir, "handler.mjs"),
++        allowOverwrite: true,
++        bundle: true,
++        format: "esm",
++        target: "es2022",
++        platform: "neutral",
++        minify: options.minify,
++        sourcemap: options.debug ? "inline" : false,
++        sourcesContent: false,
++        treeShaking: true,
++        conditions: ["module"],
++        mainFields: ["module", "main"],
++        external: ["node:*", "./open-next.config.mjs"],
++        define: {
++            // The base of the middleware compiled by Next.js is runtime agnostic.
++            // "edge" skips the setup of the Node.js environment (`setup-node-env.external.js`
++            // patches globals that are read-only in workerd). Node.js builtin modules used by
++            // the middleware are provided by workerd via `nodejs_compat`.
++            "process.env.NEXT_RUNTIME": '"edge"',
++            "process.env.NODE_ENV": '"production"',
++        },
++        alias: {
++            path: "node:path",
++            stream: "node:stream",
++            fs: "node:fs",
++            // See `hasOpentelemetry` above.
++            ...(hasOpentelemetry ? {} : { "@opentelemetry/api": "next/dist/compiled/@opentelemetry/api" }),
++        },
++        plugins: [
++            openNextResolvePlugin({
++                overrides: {
++                    wrapper: override("wrapper") ?? "cloudflare-edge",
++                    converter: override("converter") ?? "edge",
++                    ...(includeCache
++                        ? {
++                            tagCache: override("tagCache"),
++                            incrementalCache: override("incrementalCache"),
++                            queue: override("queue"),
++                        }
++                        : {}),
++                    originResolver: override("originResolver") ?? "pattern-env",
++                    proxyExternalRequest: override("proxyExternalRequest") ?? "fetch",
++                },
++                fnName: "middleware",
++            }),
++            openNextReplacementPlugin({
++                name: "externalMiddlewareOverrides",
++                target: getCrossPlatformPathRegex("adapters/middleware.js"),
++                deletes: includeCache ? [] : ["includeCacheInMiddleware"],
++            }),
++            // Handle the middleware with the OpenNext Node.js middleware handler
++            openNextExternalMiddlewarePlugin(path.join(options.openNextDistDir, "core", "nodeMiddlewareHandler.js")),
++            setCompiledMiddlewarePlugin(compiledMiddleware),
++            // `.wasm` and `.bin` files are bundled by wrangler, not by this build
++            setWranglerExternal(),
++            // Must be registered before `openNextEdgePlugins` to handle `require("node:*")` calls
++            nodeBuiltinsPlugin(),
++            patchInstrumentation(updater, options),
++            // Inline the config manifests
++            openNextEdgePlugins({
++                nextDir: path.join(options.appBuildOutputPath, ".next"),
++                isInCloudflare: true,
++            }),
++            updater.plugin,
++        ],
++        banner: {
++            js: `
++import { Buffer } from "node:buffer";
++globalThis.Buffer = Buffer;
++
++import { AsyncLocalStorage } from "node:async_hooks";
++globalThis.AsyncLocalStorage = AsyncLocalStorage;
++
++// Next.js sets \`__import_unsupported\` on \`globalThis\` with \`configurable: false\`.
++// When the middleware and the server share a Worker, the second call would throw,
++// so it is skipped when the property is already set. Otherwise it runs as usual.
++// See https://github.com/vercel/next.js/blob/5b7833e3/packages/next/src/server/web/globals.ts#L94-L98
++const defaultDefineProperty = Object.defineProperty;
++Object.defineProperty = function (o, p, a) {
++	if (p === "__import_unsupported" && Boolean(globalThis.__import_unsupported)) {
++		// \`Object.defineProperty\` returns the object it was passed.
++		return o;
++	}
++	return defaultDefineProperty(o, p, a);
++};
++
++globalThis.openNextDebug = ${options.debug};
++globalThis.openNextVersion = "${options.openNextVersion}";
++globalThis.nextVersion = "${options.nextVersion}";
++`,
++        },
++    });
++}
+diff --git a/dist/cli/build/patches/ast/webpack-runtime.d.ts b/dist/cli/build/patches/ast/webpack-runtime.d.ts
+index f03013c1567fae56ec350b1543f5217d146bf16c..bf75d810f3ff7017837b191c16ac1bb3a1cb4574 100644
+--- a/dist/cli/build/patches/ast/webpack-runtime.d.ts
++++ b/dist/cli/build/patches/ast/webpack-runtime.d.ts
+@@ -19,11 +19,10 @@
+  * For a single chunk:
+  *     require("./chunks/CHUNK_ID.js");
+  */
+-import { type BuildOptions } from "@opennextjs/aws/build/helper.js";
+ export declare function buildMultipleChunksRule(chunks: number[]): string;
+ export declare const singleChunkRule = "\nrule:\n  pattern: ($CHUNK_ID, $_PROMISES) => { $$$ }\n  inside: {pattern: $_.$_.require = $$$_, stopBy: end}\n  all:\n    - has: {pattern: $INSTALL(require(\"./chunks/\" + $$$)), stopBy: end}\n    - has: {pattern: $SELF_ID == $CHUNK_ID, stopBy: end}\n    - has: {pattern: \"$INSTALLED_CHUNK[$CHUNK_ID] = 1\", stopBy: end}\nfix: |\n  ($CHUNK_ID, _) => {\n    if (!$INSTALLED_CHUNK[$CHUNK_ID]) {\n      try {\n        $INSTALL(require(\"./chunks/$SELF_ID.js\"));\n      } catch {}\n    }\n  }\n";
+ /**
+  * Fixes the webpack-runtime.js and webpack-api-runtime.js files by inlining
+  * the webpack dynamic requires.
+  */
+-export declare function patchWebpackRuntime(buildOpts: BuildOptions): Promise<void>;
++export declare function patchWebpackRuntime(dotNextServerDir: string): Promise<void>;
+diff --git a/dist/cli/build/patches/ast/webpack-runtime.js b/dist/cli/build/patches/ast/webpack-runtime.js
+index e7b9a62666b06babc61d0fc2aa75c23f4cf39cfd..18a5f1e36de33239c22a989bcdfa153ba7fe58df 100644
+--- a/dist/cli/build/patches/ast/webpack-runtime.js
++++ b/dist/cli/build/patches/ast/webpack-runtime.js
+@@ -21,7 +21,6 @@
+  */
+ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+ import { join } from "node:path";
+-import { getPackagePath } from "@opennextjs/aws/build/helper.js";
+ import { patchCode } from "@opennextjs/aws/build/patch/astCodePatcher.js";
+ // Inline the code when there are multiple chunks
+ export function buildMultipleChunksRule(chunks) {
+@@ -68,15 +67,16 @@ fix: |
+  * Fixes the webpack-runtime.js and webpack-api-runtime.js files by inlining
+  * the webpack dynamic requires.
+  */
+-export async function patchWebpackRuntime(buildOpts) {
+-    const { outputDir } = buildOpts;
+-    const dotNextServerDir = join(outputDir, "server-functions/default", getPackagePath(buildOpts), ".next/server");
++export async function patchWebpackRuntime(dotNextServerDir) {
+     // Look for all the chunks.
+-    const chunks = readdirSync(join(dotNextServerDir, "chunks"))
+-        .filter((chunk) => /^\d+\.js$/.test(chunk))
+-        .map((chunk) => {
+-        return Number(chunk.replace(/\.js$/, ""));
+-    });
++    const chunksDir = join(dotNextServerDir, "chunks");
++    const chunks = existsSync(chunksDir)
++        ? readdirSync(chunksDir)
++            .filter((chunk) => /^\d+\.js$/.test(chunk))
++            .map((chunk) => {
++            return Number(chunk.replace(/\.js$/, ""));
++        })
++        : [];
+     patchFile(join(dotNextServerDir, "webpack-runtime.js"), chunks);
+     patchFile(join(dotNextServerDir, "webpack-api-runtime.js"), chunks);
+ }
+diff --git a/dist/cli/build/patches/plugins/turbopack.d.ts b/dist/cli/build/patches/plugins/turbopack.d.ts
+index 344485ead56c8935cbb22cb6fb0d842c1d246523..1067c6472da8d2a1eee4afbb1bf28abbbf10bbb7 100644
+--- a/dist/cli/build/patches/plugins/turbopack.d.ts
++++ b/dist/cli/build/patches/plugins/turbopack.d.ts
+@@ -15,6 +15,22 @@ export declare const replaceLoadWebAssemblyModuleRule = "\nrule:\n  kind: functi
+  * the synchronous `WebAssembly.instantiate` to produce the instance's exports.
+  */
+ export declare const replaceLoadWebAssemblyRule = "\nrule:\n  kind: function_declaration\n  has:\n    field: name\n    regex: \"^loadWebAssembly$\"\nfix: |-\n  async function loadWebAssembly(chunkPath, _edgeModule, imports) {\n    const mod = await loadWasmChunk(chunkPath);\n    const { exports } = await WebAssembly.instantiate(mod, imports);\n    return exports;\n  }\n";
++/**
++ * Inline the dynamic chunk requires of the Turbopack runtime.
++ *
++ * The runtime resolves the chunks it needs at runtime, which workerd does not support.
++ * The chunks are inlined so that they are statically bundled.
++ *
++ * @param code The code of the Turbopack runtime.
++ * @param filePath Path to the Turbopack runtime, in the OpenNext output.
++ * @param tracedFiles The files traced by Next.js, copied next to the runtime.
++ * @returns The patched code.
++ */
++export declare function patchTurbopackRuntimeCode({ code, filePath, tracedFiles, }: {
++    code: string;
++    filePath: string;
++    tracedFiles: string[];
++}): string;
+ export declare const patchTurbopackRuntime: CodePatcher;
+ /**
+  * Generate a `loadWasmChunk` function that maps a `.next`-relative chunk path to a
+diff --git a/dist/cli/build/patches/plugins/turbopack.js b/dist/cli/build/patches/plugins/turbopack.js
+index 8afb1055bd50a8ddb94d97e0193f0b585b671796..d7f9aae7cc1ea3b8e176a573c0909ab2195e8244 100644
+--- a/dist/cli/build/patches/plugins/turbopack.js
++++ b/dist/cli/build/patches/plugins/turbopack.js
+@@ -221,6 +221,29 @@ function discoverExternalSubpaths(mappings, tracedFiles) {
+     }
+     return subpaths;
+ }
++/**
++ * Inline the dynamic chunk requires of the Turbopack runtime.
++ *
++ * The runtime resolves the chunks it needs at runtime, which workerd does not support.
++ * The chunks are inlined so that they are statically bundled.
++ *
++ * @param code The code of the Turbopack runtime.
++ * @param filePath Path to the Turbopack runtime, in the OpenNext output.
++ * @param tracedFiles The files traced by Next.js, copied next to the runtime.
++ * @returns The patched code.
++ */
++export function patchTurbopackRuntimeCode({ code, filePath, tracedFiles, }) {
++    tracedFiles = tracedFiles.map(normalizePath);
++    filePath = normalizePath(filePath);
++    const mappings = discoverExternalModuleMappings(filePath);
++    const externalImportRule = buildExternalImportRule(mappings, tracedFiles, code);
++    let patched = patchCode(code, externalImportRule);
++    patched = patchCode(patched, inlineChunksRule);
++    patched = patchCode(patched, replaceLoadWebAssemblyModuleRule);
++    patched = patchCode(patched, replaceLoadWebAssemblyRule);
++    return `${patched}
++${inlineChunksFn(tracedFiles)}\n${loadWasmChunkFn(tracedFiles)}`;
++}
+ export const patchTurbopackRuntime = {
+     name: "inline-turbopack-chunks",
+     patches: [
+@@ -230,18 +253,7 @@ export const patchTurbopackRuntime = {
+                 escape: false,
+             }),
+             contentFilter: /loadRuntimeChunkPath/,
+-            patchCode: async ({ code, tracedFiles, filePath }) => {
+-                tracedFiles = tracedFiles.map(normalizePath);
+-                filePath = normalizePath(filePath);
+-                const mappings = discoverExternalModuleMappings(filePath);
+-                const externalImportRule = buildExternalImportRule(mappings, tracedFiles, code);
+-                let patched = patchCode(code, externalImportRule);
+-                patched = patchCode(patched, inlineChunksRule);
+-                patched = patchCode(patched, replaceLoadWebAssemblyModuleRule);
+-                patched = patchCode(patched, replaceLoadWebAssemblyRule);
+-                return `${patched}
+-${inlineChunksFn(tracedFiles)}\n${loadWasmChunkFn(tracedFiles)}`;
+-            },
++            patchCode: async ({ code, tracedFiles, filePath }) => patchTurbopackRuntimeCode({ code, filePath, tracedFiles }),
+         },
+     ],
+ };

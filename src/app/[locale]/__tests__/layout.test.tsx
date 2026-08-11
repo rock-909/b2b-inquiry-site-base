@@ -116,7 +116,7 @@ vi.mock("@/config/footer-links", () => ({
 
 vi.mock("@/i18n/locale-utils", () => ({
   coerceLocale: (locale: string) => locale,
-  // 跟着生产走：zh 是退役 locale，middleware 对 /zh 直接 404，layout 收不到它。
+  // 跟着生产走：zh 是退役 locale，proxy 对 /zh 直接 404，layout 收不到它。
   isLocale: (locale: string) => locale === "en",
 }));
 
@@ -152,7 +152,7 @@ describe("LocaleLayout", () => {
     });
   });
 
-  // 用 "fr" 而不是 "zh"：这里守的是 layout 自己的非法 locale 边界，跟 middleware 的
+  // 用 "fr" 而不是 "zh"：这里守的是 layout 自己的非法 locale 边界，跟 proxy 的
   // 退役 locale 规则是两件事。没有这条，把 layout 里的 `if (!isLocale(locale))`
   // 整段删掉，这个文件的其他用例照样全绿——它们只传 "en"。
   it("rejects an invalid locale before rendering the shell", async () => {
