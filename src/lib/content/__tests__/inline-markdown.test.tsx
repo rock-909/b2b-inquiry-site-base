@@ -5,36 +5,36 @@ import { stripInlineMarkdown } from "@/lib/content/inline-markdown-text";
 
 describe("InlineMarkdown", () => {
   it("renders plain text unchanged", () => {
-    render(<p><InlineMarkdown text="Plain factory copy." /></p>);
-    expect(screen.getByText("Plain factory copy.")).toBeInTheDocument();
+    render(<p><InlineMarkdown text="Plain supplier copy." /></p>);
+    expect(screen.getByText("Plain supplier copy.")).toBeInTheDocument();
   });
 
   it("renders bold segments", () => {
-    render(<p><InlineMarkdown text="Quoted **within 12 hours** always." /></p>);
-    expect(screen.getByText("within 12 hours")).toBeInTheDocument();
-    expect(screen.getByText("within 12 hours").tagName).toBe("STRONG");
+    render(<p><InlineMarkdown text="Keep **important details** visible." /></p>);
+    expect(screen.getByText("important details")).toBeInTheDocument();
+    expect(screen.getByText("important details").tagName).toBe("STRONG");
   });
 
   it("renders internal links as anchors", () => {
     render(
       <p>
-        <InlineMarkdown text="See [OEM & wholesale](/oem-wholesale) for private label." />
+        <InlineMarkdown text="See [how the business works](/about) for context." />
       </p>,
     );
-    const link = screen.getByRole("link", { name: "OEM & wholesale" });
-    expect(link).toHaveAttribute("href", "/oem-wholesale");
+    const link = screen.getByRole("link", { name: "how the business works" });
+    expect(link).toHaveAttribute("href", "/about");
   });
 
   it("renders bold text around links in the same string", () => {
     render(
       <p>
-        <InlineMarkdown text="**Full terms** in [warranty](/warranty) apply." />
+        <InlineMarkdown text="**Full details** are in the [terms](/terms)." />
       </p>,
     );
-    expect(screen.getByText("Full terms").tagName).toBe("STRONG");
-    expect(screen.getByRole("link", { name: "warranty" })).toHaveAttribute(
+    expect(screen.getByText("Full details").tagName).toBe("STRONG");
+    expect(screen.getByRole("link", { name: "terms" })).toHaveAttribute(
       "href",
-      "/warranty",
+      "/terms",
     );
   });
 
@@ -65,8 +65,8 @@ describe("InlineMarkdown", () => {
 describe("stripInlineMarkdown", () => {
   it("removes bold markers and unwraps internal links", () => {
     expect(
-      stripInlineMarkdown("3 years on **materials**. [Full terms](/warranty)."),
-    ).toBe("3 years on materials. Full terms.");
+      stripInlineMarkdown("Review **the scope**. [Full terms](/terms)."),
+    ).toBe("Review the scope. Full terms.");
   });
 
   it("leaves plain text unchanged", () => {

@@ -47,22 +47,22 @@
   },
   "contact": {
     "title": "Contact",
-    "description": "Fastest route: the RFQ form asks the questions we would ask anyway.",
+    "description": "Share the essentials so the business can identify the next useful step.",
     "inquiryHandoff": {
-      "title": "Fastest route",
-      "description": "The RFQ form asks the questions we would ask anyway, so we can reply sooner with a quote or only the missing essentials.",
+      "title": "Start with the essentials",
+      "description": "A focused inquiry gives the business enough context to respond with a useful next step.",
       "items": {
         "need": {
-          "title": "What you are protecting",
-          "description": "Door, garage, driveway, loading dock, perimeter, stock or resale order, or other."
+          "title": "What you need",
+          "description": "The product, service, application or problem you want to discuss."
         },
         "context": {
-          "title": "Dimensions",
-          "description": "Opening width x height or run length, mounting surface or ground type, plus photos or drawings if available."
+          "title": "Scope and quantity",
+          "description": "Quantity, dimensions, specifications, location or project scope, plus photos or drawings when useful."
         },
         "timing": {
-          "title": "Market and port",
-          "description": "Quantity, market, delivery port and timeline help us reply within 12 hours — with a quote when details are enough, or only the missing essentials."
+          "title": "Timing and destination",
+          "description": "Target date, destination market and any delivery or implementation constraints."
         }
       }
     },
@@ -71,33 +71,33 @@
       "email": "Email",
       "emailUnavailable": "Use the RFQ form if email is unavailable.",
       "phone": "Phone",
-      "hoursTitle": "Time zone",
-      "weekdays": "China",
-      "saturday": "Follow-up",
-      "sunday": "US/EU hours",
-      "closed": "Closed",
+      "hoursTitle": "Business hours",
+      "weekdays": "Weekdays",
+      "saturday": "Saturday",
+      "sunday": "Sunday",
+      "closed": "Set before launch",
       "responseTitle": "What happens next",
-      "responseTimeLabel": "Reply within",
-      "responseTimeValue": "12 hours",
-      "bestForLabel": "Quote when",
-      "bestForValue": "Details are sufficient",
-      "prepareLabel": "Fastest route",
-      "prepareValue": "Use the RFQ form; it asks the questions we'd ask anyway."
+      "responseTimeLabel": "Response target",
+      "responseTimeValue": "Set before launch",
+      "bestForLabel": "Useful first reply",
+      "bestForValue": "The next confirmed step",
+      "prepareLabel": "Help the team respond",
+      "prepareValue": "Share the requirement, scope, timing and destination."
     }
   },
   "requestQuote": {
     "metadata": {
-      "title": "Request a Quote — Reply Within 12 Hours",
-      "description": "Send dimensions, quantities, market and timeline. We reply within 12 hours. If the details are sufficient, the reply includes a quote. Otherwise, we ask only for the missing essentials."
+      "title": "Request a Quote",
+      "description": "Share your requirement, scope, quantity, destination and timing so the business can determine the next useful step."
     },
     "page": {
-      "heading": "Get real numbers",
-      "intro": "Two required fields, one optional message — send what you know and we reply within 12 hours. If the details are sufficient, the reply includes a quote. Otherwise, we ask only for the missing essentials.",
+      "heading": "Start with the essentials",
+      "intro": "Send what you know. The business can confirm fit, ask for missing details or prepare the next appropriate response.",
       "afterSubmitTitle": "After you submit",
-      "confidenceTitle": "Quote confidence",
-      "confidenceWarranty": "Written product-specific warranty terms",
-      "confidenceSamples": "Sample fees credited",
-      "confidencePricing": "No published-price games — the quote is the price conversation"
+      "confidenceTitle": "What a useful reply can cover",
+      "confidenceWarranty": "Applicable specifications, scope or service boundaries",
+      "confidenceSamples": "Sample, evaluation or discovery options when available",
+      "confidencePricing": "A written quote after the required details are confirmed"
     }
   },
   "inquiry": {
@@ -110,7 +110,7 @@
       "contextLabel": "Context from your link",
       "submit": "Send inquiry",
       "submitting": "Sending...",
-      "success": "Received. We reply within 12 hours. If the details are sufficient, the reply includes a quote. Otherwise, we ask only for the missing essentials. You'll hear from a person, not a sequence.",
+      "success": "Received. The team can review your inquiry and respond with the next useful step or the details still needed.",
       "referenceLabel": "Reference",
       "privacyNotice": "By submitting this form, you agree to our Privacy Policy and Terms of Service.",
       "noJsExplanation": "The secure inquiry form needs JavaScript because bot verification cannot run without it.",
@@ -124,7 +124,7 @@
         "devBypass": "Dev mode: Turnstile verification bypassed",
         "testMode": "Bot protection disabled in test mode",
         "rescueBeforeEmail": "Email us instead —",
-        "rescueAfterEmail": "Reply within 12 hours.",
+        "rescueAfterEmail": "Include your requirement and contact details.",
         "rescueSubject": "Quote request"
       },
       "errors": {

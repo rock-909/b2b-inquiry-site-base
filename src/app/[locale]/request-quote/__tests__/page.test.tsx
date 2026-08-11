@@ -123,7 +123,7 @@ describe("RequestQuotePage", () => {
     capturedInquiry.latest = null;
   });
 
-  it("uses the owner-approved RFQ meta title", async () => {
+  it("uses neutral RFQ metadata without a fixed response promise", async () => {
     await generateMetadata({
       params: Promise.resolve({ locale: "en" }),
     });
@@ -131,13 +131,13 @@ describe("RequestQuotePage", () => {
     expect(mockGenerateMetadataForPath).toHaveBeenCalledWith(
       expect.objectContaining({
         config: expect.objectContaining({
-          title: "Request a Quote — Reply Within 12 Hours",
+          title: "Request a Quote",
         }),
       }),
     );
   });
 
-  it("renders the owner-approved RFQ page shell and success copy", async () => {
+  it("renders a neutral RFQ page shell and success copy", async () => {
     const page = await RequestQuotePage({
       params: Promise.resolve({ locale: "en" }),
       searchParams: Promise.resolve({}),
@@ -146,11 +146,14 @@ describe("RequestQuotePage", () => {
     render(page);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Get real numbers" }),
+      screen.getByRole("heading", {
+        level: 1,
+        name: "Start with the essentials",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Received\. We reply within 12 hours\. If the details are sufficient, the reply includes a quote\. Otherwise, we ask only for the missing essentials\./u,
+        /Received\. The team can review your inquiry and respond with the next useful step or the details still needed\./u,
       ),
     ).toBeInTheDocument();
   });
@@ -169,7 +172,7 @@ describe("RequestQuotePage", () => {
         data: [
           expect.objectContaining({
             "@type": "WebPage",
-            name: "Request a Quote — Reply Within 12 Hours",
+            name: "Request a Quote",
             url: expect.stringMatching(/\/request-quote$/u),
             isPartOf: expect.objectContaining({
               "@id": expect.stringMatching(/#website$/u),

@@ -87,7 +87,9 @@ describe("inquiry form copy", () => {
       "Bot protection disabled in test mode",
     );
     expect(copy.turnstile.rescueBeforeEmail).toBe("Email us instead —");
-    expect(copy.turnstile.rescueAfterEmail).toBe("Reply within 12 hours.");
+    expect(copy.turnstile.rescueAfterEmail).toBe(
+      "Include your requirement and contact details.",
+    );
     expect(copy.turnstile.rescueSubject).toBe("Quote request");
   });
 });
