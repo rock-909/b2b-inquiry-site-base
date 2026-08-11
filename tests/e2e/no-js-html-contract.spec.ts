@@ -212,7 +212,7 @@ test.describe("No-JS HTML contract (English-only)", () => {
 
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(
-      page.getByRole("heading", { name: /request a quote|get real numbers/i }),
+      page.getByRole("heading", { name: /start with the essentials/i }),
     ).toBeVisible();
 
     const html = await page.content();
