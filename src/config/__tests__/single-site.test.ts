@@ -1,5 +1,3 @@
-import { existsSync } from "node:fs";
-import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_FACTS } from "@/config/single-site";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
@@ -44,28 +42,6 @@ describe("single-site", () => {
 
     expect(metadata.openGraph?.images).toEqual([{ url: REFERENCE_OG_IMAGE }]);
     expect(metadata.twitter?.images).toEqual([REFERENCE_OG_IMAGE]);
-  });
-
-  it("only exposes certification files that exist in public", () => {
-    const missingCertificationFiles = SINGLE_SITE_FACTS.certifications
-      .flatMap((certification) =>
-        certification.file
-          ? [{ file: certification.file, name: certification.name }]
-          : [],
-      )
-      .filter(({ file }) => {
-        const publicRelativePath = file.replace(/^\//, "");
-        const publicFilePath = path.resolve(
-          process.cwd(),
-          "public",
-          publicRelativePath,
-        );
-
-        // eslint-disable-next-line security/detect-non-literal-fs-filename -- Certification paths come from SINGLE_SITE_FACTS and must be checked as declared.
-        return !existsSync(publicFilePath);
-      });
-
-    expect(missingCertificationFiles).toEqual([]);
   });
 
   it("keeps owner-dependent public trust assets explicit during cutover", async () => {

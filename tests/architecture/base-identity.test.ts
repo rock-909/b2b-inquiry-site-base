@@ -16,6 +16,28 @@ describe("base identity", () => {
     expect(packageJson.name).toBe("b2b-inquiry-site-base");
   });
 
+  it("keeps site identity out of env defaults and MDX copy", () => {
+    const envSources = [
+      readFileSync(path.join(process.cwd(), "src/lib/env.ts"), "utf8"),
+      readFileSync(
+        path.join(process.cwd(), "src/lib/public-runtime-env.ts"),
+        "utf8",
+      ),
+      readFileSync(path.join(process.cwd(), ".env.example"), "utf8"),
+    ];
+    const contactSource = readFileSync(
+      path.join(process.cwd(), "content/pages/en/contact.mdx"),
+      "utf8",
+    );
+
+    for (const source of envSources) {
+      expect(source).not.toContain("NEXT_PUBLIC_APP_NAME");
+      expect(source).not.toContain("NEXT_PUBLIC_SITE_KEY");
+    }
+    expect(contactSource).not.toContain("Northstar Industrial Reference");
+    expect(contactSource).not.toContain("sales@example.invalid");
+  });
+
   it("uses the obvious non-production reference identity", async () => {
     vi.doMock("@/lib/env", () => ({
       env: {

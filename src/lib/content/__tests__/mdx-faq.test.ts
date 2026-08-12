@@ -21,13 +21,21 @@ describe("extractFaqFromMetadata", () => {
   it("extracts valid FaqItem array", () => {
     const metadata = {
       faq: [
-        { id: "moq", question: "What is MOQ?", answer: "500 pieces." },
-        { id: "lead-time", question: "Lead time?", answer: "15-20 days." },
+        {
+          id: "project-details",
+          question: "What details help?",
+          answer: "Share the scope and destination.",
+        },
+        {
+          id: "next-step",
+          question: "What happens next?",
+          answer: "The team reviews the request.",
+        },
       ],
     };
     const result = extractFaqFromMetadata(metadata);
     expect(result).toHaveLength(2);
-    expect(result[0]?.id).toBe("moq");
+    expect(result[0]?.id).toBe("project-details");
   });
 });
 

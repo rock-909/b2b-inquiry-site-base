@@ -57,20 +57,6 @@ export interface ContactInfo {
   businessHours?: BusinessHours;
 }
 
-export interface Certification {
-  name: string;
-  certificateNumber?: string;
-  file?: string;
-  validUntil?: string;
-}
-
-export interface BusinessStats {
-  exportCountries: number;
-  annualCapacity?: string;
-  clientsServed?: number;
-  onTimeDeliveryRate?: number;
-}
-
 export interface SocialLinks {
   linkedin?: string;
   facebook?: string;
@@ -97,8 +83,6 @@ export interface BrandAssets {
 export interface SiteFacts {
   company: CompanyInfo;
   contact: ContactInfo;
-  certifications: Certification[];
-  stats: BusinessStats;
   social: SocialLinks;
   brandAssets: BrandAssets;
 }

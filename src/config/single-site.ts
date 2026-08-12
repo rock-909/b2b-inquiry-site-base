@@ -11,8 +11,6 @@ import type {
 
 export type {
   BusinessHours,
-  BusinessStats,
-  Certification,
   CompanyInfo,
   ContactInfo,
   SiteConfig,
@@ -184,13 +182,6 @@ export const SINGLE_SITE_DEFINITION = {
         saturday: "Replace before launch",
         sundayClosed: false,
       },
-    },
-    certifications: [],
-    stats: {
-      exportCountries: 0,
-      annualCapacity: "Replace with owner-confirmed capacity before launch",
-      clientsServed: 0,
-      onTimeDeliveryRate: 0,
     },
     social,
     brandAssets: {

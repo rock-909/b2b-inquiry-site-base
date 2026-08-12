@@ -33,23 +33,11 @@ const FORBIDDEN_CONTROL_NAMES = [
   "phone",
   "company",
   "subject",
-  "legacyProductId",
   "quantity",
   "country",
   "port",
   "budget",
 ] as const;
-const RETIRED_PAYLOAD_FIELDS = [
-  "legacyInquiryKind",
-  "legacyProductId",
-] as const;
-
-function expectRetiredPayloadFieldsAbsent(body: Record<string, unknown>): void {
-  for (const field of RETIRED_PAYLOAD_FIELDS) {
-    expect(body).not.toHaveProperty(field);
-  }
-}
-
 function assertThreeFieldContract(
   container: HTMLElement,
   copy: ReturnType<typeof createTestInquiryFormCopy>,
@@ -162,7 +150,6 @@ describe("InquiryForm contract", () => {
       website: "https://spam.example",
       turnstileToken: "mock-inquiry-turnstile-token",
     });
-    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("posts to /api/inquiry with optional blank message", async () => {
@@ -191,7 +178,6 @@ describe("InquiryForm contract", () => {
       turnstileToken: "mock-inquiry-turnstile-token",
     });
     expect(getFetchBody()).not.toHaveProperty("message");
-    expectRetiredPayloadFieldsAbsent(getFetchBody());
     await screen.findByText(
       `${copy.success} ${copy.referenceLabel}: inq-ref-1`,
     );
@@ -230,7 +216,6 @@ describe("InquiryForm contract", () => {
       turnstileToken: "mock-inquiry-turnstile-token",
     });
     expect(getFetchBody()).not.toHaveProperty("offeringName");
-    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("submits on Enter from a text control once Turnstile is ready", async () => {
@@ -645,7 +630,6 @@ describe("InquiryForm validated context", () => {
       interest: "coastal project",
     });
     expect(getFetchBody()).not.toHaveProperty("offeringName");
-    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("renders the server-resolved offering label and submits offering id", async () => {
@@ -676,7 +660,6 @@ describe("InquiryForm validated context", () => {
       offeringId: "sample-offering",
     });
     expect(getFetchBody()).not.toHaveProperty("offeringName");
-    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("submits general inquiry with interest and no offering id", async () => {
@@ -700,7 +683,6 @@ describe("InquiryForm validated context", () => {
       interest,
     });
     expect(getFetchBody()).not.toHaveProperty("offeringId");
-    expectRetiredPayloadFieldsAbsent(getFetchBody());
   });
 
   it("pre-fills, edits, and clears the initial message", async () => {

@@ -80,9 +80,7 @@ export const clientEnvSchema = {
   // Base Configuration
   NEXT_PUBLIC_BASE_URL: z.url().default("http://localhost:3000"),
   NEXT_PUBLIC_SITE_URL: z.url().optional(),
-  NEXT_PUBLIC_APP_NAME: z.string().default("Northstar Industrial Reference"),
   NEXT_PUBLIC_APP_VERSION: z.string().default("1.0.0"),
-  NEXT_PUBLIC_SITE_KEY: z.string().default("b2b-inquiry-site-base"),
 
   // Analytics & Monitoring
   NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().optional(),
@@ -147,9 +145,7 @@ export const runtimeEnv = {
   // Client
   NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-  NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
   NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
-  NEXT_PUBLIC_SITE_KEY: process.env.NEXT_PUBLIC_SITE_KEY,
   NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   NEXT_PUBLIC_TURNSTILE_BYPASS: process.env.NEXT_PUBLIC_TURNSTILE_BYPASS,

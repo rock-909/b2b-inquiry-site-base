@@ -78,15 +78,6 @@ vi.mock("@/lib/api/cors-utils", () => ({
 }));
 
 describe("/api/inquiry route", () => {
-  const RETIRED_INPUT_FIELDS = [
-    "company",
-    "quantity",
-    "requirements",
-    "legacyItemLabel",
-    "legacyProductId",
-    "legacyInquiryKind",
-  ] as const;
-
   function createInquiryRequest(
     body: BodyInit | null,
     headers: Record<string, string> = {},
@@ -206,22 +197,6 @@ describe("/api/inquiry route", () => {
         details: ["errors.generic"],
       });
       expect(processValidatedInquiry).not.toHaveBeenCalled();
-    });
-
-    it("ignores retired offering identity fields without aliasing them", async () => {
-      const request = createInquiryRequest(
-        JSON.stringify({
-          ...generalInquiryData,
-          legacyProductId: "retired-offering",
-        }),
-      );
-
-      const response = await POST(request);
-
-      expect(response.status).toBe(200);
-      const callArgs = vi.mocked(processValidatedInquiry).mock
-        .calls[0]![0] as Record<string, unknown>;
-      expect(callArgs).not.toHaveProperty("legacyProductId");
     });
 
     it("passes attribution fields to processValidatedInquiry", async () => {
@@ -514,31 +489,6 @@ describe("/api/inquiry route", () => {
       const callArgs = vi.mocked(processValidatedInquiry).mock
         .calls[0]![0] as Record<string, unknown>;
       expect(callArgs.offeringId).toBeUndefined();
-    });
-
-    it("accepts an inquiry without legacy adapter fields", async () => {
-      const request = createInquiryRequest(
-        JSON.stringify({
-          ...validInquiryData,
-          company: "Legacy Co",
-          quantity: "100",
-          requirements: "Legacy note",
-          legacyItemLabel: "Retired item",
-          legacyProductId: "retired-offering",
-          legacyInquiryKind: "general-rfq",
-        }),
-      );
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      const callArgs = vi.mocked(processValidatedInquiry).mock
-        .calls[0]![0] as Record<string, unknown>;
-      for (const field of RETIRED_INPUT_FIELDS) {
-        expect(callArgs).not.toHaveProperty(field);
-      }
     });
 
     it("should return 400 when turnstile verification fails", async () => {

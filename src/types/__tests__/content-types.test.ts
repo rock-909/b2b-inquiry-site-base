@@ -21,11 +21,11 @@ describe("content type contracts", () => {
 
   it("FaqItem has stable id, question, answer", () => {
     const item: FaqItem = {
-      id: "what-is-moq",
-      question: "What is the MOQ?",
-      answer: "Our MOQ is 500 pieces per SKU.",
+      id: "what-details-help",
+      question: "What details help?",
+      answer: "Share the requirement, scope, destination, and timing.",
     };
-    expect(item.id).toBe("what-is-moq");
+    expect(item.id).toBe("what-details-help");
     expect(item.question).toBeTruthy();
     expect(item.answer).toBeTruthy();
   });
