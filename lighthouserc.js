@@ -58,6 +58,7 @@ const criticalUrls = [`${BASE_URL}/`];
 // to the static page registry, so a new route cannot quietly go unmeasured.
 const allUrls = [
   ...criticalUrls,
+  `${BASE_URL}/products`,
   `${BASE_URL}/about`,
   `${BASE_URL}/request-quote`,
   `${BASE_URL}/contact`,

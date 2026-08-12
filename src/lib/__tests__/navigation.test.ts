@@ -55,6 +55,7 @@ describe("navigation", () => {
       expect(SINGLE_SITE_NAVIGATION).toEqual(getSingleSiteNavigation());
       expect(mainNavigation).toEqual([
         { key: "home", href: "/", messageKey: "home" },
+        { key: "products", href: "/products", messageKey: "products" },
         { key: "about", href: "/about", messageKey: "about" },
         { key: "contact", href: "/contact", messageKey: "contactSales" },
       ]);
@@ -63,6 +64,7 @@ describe("navigation", () => {
     it("can derive the default materialized navigation explicitly", () => {
       expect(getSingleSiteNavigation()).toEqual([
         { key: "home", href: "/", messageKey: "home" },
+        { key: "products", href: "/products", messageKey: "products" },
         { key: "about", href: "/about", messageKey: "about" },
         { key: "contact", href: "/contact", messageKey: "contactSales" },
       ]);
