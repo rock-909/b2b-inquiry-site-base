@@ -70,7 +70,9 @@ The detail route uses `generateStaticParams()` from the configured locales and
 unknown slug and never falls back to another product. Because Cache Components
 streams a shell before page-level `notFound()` can set the response status, the
 thin proxy also rejects unknown static product slugs before streaming so they
-consistently return HTTP 404.
+consistently return HTTP 404. The same guard derives known static paths from
+the next-intl route registry and sends all other public paths to the prebuilt
+404 placeholder, avoiding an empty streamed shell on the first request.
 
 The static page registry gains the `/products` index. Dynamic detail URLs are
 derived directly from `OFFERINGS` for sitemap generation rather than being

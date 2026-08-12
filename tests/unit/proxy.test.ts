@@ -18,6 +18,7 @@ vi.mock("@/i18n/routing-config", () => ({
       "/": "/",
       "/about": "/about",
       "/contact": "/contact",
+      "/products": "/products",
       "/request-quote": "/request-quote",
     },
     localeCookie: { maxAge: 60 * 60 * 24 * 365 },
@@ -71,21 +72,19 @@ describe("proxy next-intl boundary", () => {
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
   });
 
-  it("delegates unsupported locale-like paths to next-intl", async () => {
+  it("returns the pre-rendered 404 for unsupported locale-like paths", async () => {
     const { proxy } = await import("@/proxy");
     const request = new NextRequest(
       "http://localhost:3000/unsupported-locale/contact",
     );
-    const intlResponse = NextResponse.next();
-    intlMiddlewareMock.mockReturnValue(intlResponse);
 
     const response = proxy(request);
 
-    expect(response).toBe(intlResponse);
-    expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
+    expect(response.status).toBe(404);
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
-  it("does not parse unsupported locale-like paths before next-intl", async () => {
+  it("returns the pre-rendered 404 for unsupported prefixed paths", async () => {
     const { proxy } = await import("@/proxy");
     const request = new NextRequest("http://localhost:3000/fr/products/eu");
 
@@ -93,7 +92,21 @@ describe("proxy next-intl boundary", () => {
 
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("set-cookie")).toBeNull();
-    expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(404);
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
+
+  it("returns the pre-rendered 404 for an unknown route", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest("http://localhost:3000/nope");
+
+    const response = proxy(request);
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost:3000/en/__not-found-placeholder",
+    );
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
   it("returns a real 404 before streaming an unknown product", async () => {

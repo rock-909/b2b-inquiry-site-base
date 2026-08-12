@@ -47,7 +47,7 @@ describe("proxy locale cookie", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
   });
 
-  it("lets unsupported locale-like prefixes fall through to next-intl", () => {
+  it("returns 404 for unsupported locale-like prefixes without setting a cookie", () => {
     const request = new NextRequest("http://localhost/fr/about", {
       headers: {
         cookie: "NEXT_LOCALE=zh",
@@ -58,10 +58,11 @@ describe("proxy locale cookie", () => {
 
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("set-cookie")).toBeNull();
-    expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(404);
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
-  it("lets unsupported locale-like product routes fall through to next-intl", () => {
+  it("returns 404 for unsupported product routes without setting a cookie", () => {
     const request = new NextRequest("http://localhost/fr/products/eu", {
       headers: {
         cookie: "NEXT_LOCALE=zh",
@@ -72,7 +73,8 @@ describe("proxy locale cookie", () => {
 
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("set-cookie")).toBeNull();
-    expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(404);
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
   it("returns next-intl responses without cleaning middleware-owned headers", () => {
