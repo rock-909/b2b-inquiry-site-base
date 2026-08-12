@@ -27,6 +27,7 @@ vi.mock("next-intl/server", () => ({
   }),
 }));
 vi.mock("@/i18n/routing", () => ({
+  routing: { locales: ["en"] },
   Link: ({ href, children }: { href: string; children: React.ReactNode }) => (
     <a href={href}>{children}</a>
   ),
@@ -60,7 +61,9 @@ describe("ProductDetailPage", () => {
   });
 
   it("pre-renders every configured offering", () => {
-    expect(generateStaticParams()).toEqual([{ slug: "sample-offering" }]);
+    expect(generateStaticParams()).toEqual([
+      { locale: "en", slug: "sample-offering" },
+    ]);
   });
 
   it("renders one canonical offering and its RFQ link", async () => {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { generateLocaleStaticParams } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,10 +22,10 @@ interface ProductDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
 
-export const dynamicParams = false;
-
 export function generateStaticParams() {
-  return OFFERINGS.map((offering) => ({ slug: offering.id }));
+  return generateLocaleStaticParams().flatMap(({ locale }) =>
+    OFFERINGS.map((offering) => ({ locale, slug: offering.id })),
+  );
 }
 
 function resolveOffering(slug: string) {

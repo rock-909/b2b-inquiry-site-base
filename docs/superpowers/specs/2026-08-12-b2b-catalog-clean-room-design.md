@@ -64,8 +64,10 @@ The route files live at:
 - `src/app/[locale]/products/page.tsx`
 - `src/app/[locale]/products/[slug]/page.tsx`
 
-The detail route uses `generateStaticParams()` from `OFFERINGS`. It calls
-`notFound()` for an unknown slug and never falls back to another product.
+The detail route uses `generateStaticParams()` from the configured locales and
+`OFFERINGS`. With Next.js 16 Cache Components enabled, it must include the root
+`locale` param and cannot export `dynamicParams`; it calls `notFound()` for an
+unknown slug and never falls back to another product.
 
 The static page registry gains the `/products` index. Dynamic detail URLs are
 derived directly from `OFFERINGS` for sitemap generation rather than being
