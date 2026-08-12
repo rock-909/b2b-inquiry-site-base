@@ -24,6 +24,8 @@ describe("base identity", () => {
         "utf8",
       ),
       readFileSync(path.join(process.cwd(), ".env.example"), "utf8"),
+      readFileSync(path.join(process.cwd(), ".env.production"), "utf8"),
+      readFileSync(path.join(process.cwd(), ".dev.vars.example"), "utf8"),
     ];
     const contactSource = readFileSync(
       path.join(process.cwd(), "content/pages/en/contact.mdx"),
