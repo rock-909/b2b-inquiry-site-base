@@ -18,7 +18,7 @@ describe("resolveInquiryContext", () => {
   });
 
   it("downgrades forged offeringId values to general-context", () => {
-    expect(resolveInquiryContext({ offeringId: "forged-offering" })).toEqual({
+    expect(resolveInquiryContext({ offeringId: "unknown-product" })).toEqual({
       kind: "general-context",
     });
   });

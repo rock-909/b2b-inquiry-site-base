@@ -52,6 +52,7 @@ const social = {
 
 const FOOTER_NAVIGATION_PAGE_TYPES = [
   "home",
+  "products",
   "about",
   "contact",
 ] as const satisfies readonly PageType[];
@@ -68,6 +69,7 @@ type FooterLinkPageType =
 
 const FOOTER_TRANSLATION_KEYS = {
   home: "footer.sections.navigation.home",
+  products: "footer.sections.navigation.products",
   about: "footer.sections.navigation.about",
   contact: "footer.sections.navigation.contact",
   requestQuote: "footer.sections.support.requestQuote",

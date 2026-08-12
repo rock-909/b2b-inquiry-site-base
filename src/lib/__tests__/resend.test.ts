@@ -99,8 +99,8 @@ describe("resend - Service Initialization", () => {
       firstName: "Jane",
       lastName: "Smith",
       email: "jane.smith@example.com",
-      offeringId: "custom-fabrication",
-      offeringName: "Custom Fabrication",
+      offeringId: "sample-offering",
+      offeringName: "Sample Offering",
       requirements: "Need bulk pricing",
     });
 
@@ -122,8 +122,8 @@ describe("resend - sendInquiryEmail", () => {
     firstName: "Jane",
     lastName: "Smith",
     email: "jane.smith@example.com",
-    offeringId: "custom-fabrication",
-    offeringName: "Custom Fabrication",
+    offeringId: "sample-offering",
+    offeringName: "Sample Offering",
     requirements: "Need bulk pricing",
   };
 
@@ -153,9 +153,9 @@ describe("resend - sendInquiryEmail", () => {
         from: "test@example.com",
         to: ["reply@example.com"],
         replyTo: "jane.smith@example.com",
-        subject: expect.stringContaining("Custom Fabrication"),
-        html: expect.stringContaining("Custom Fabrication"),
-        text: expect.stringContaining("Custom Fabrication"),
+        subject: expect.stringContaining("Sample Offering"),
+        html: expect.stringContaining("Sample Offering"),
+        text: expect.stringContaining("Sample Offering"),
         tags: expect.arrayContaining([{ name: "type", value: "inquiry" }]),
       }),
     );

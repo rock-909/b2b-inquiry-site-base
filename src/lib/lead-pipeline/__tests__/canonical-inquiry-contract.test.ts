@@ -87,7 +87,7 @@ describe("canonical inquiry contract", () => {
         type: INQUIRY_LEAD_TYPE,
         fullName: "Ada Buyer",
         email: "ada@example.com",
-        offeringId: "missing-offering",
+        offeringId: "unknown-product",
       }),
     ).toThrow();
   });

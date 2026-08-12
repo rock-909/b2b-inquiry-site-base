@@ -14,8 +14,8 @@ const validInquiryLeadData = {
   lastName: "Doe",
   email: "john.doe@example.com",
   message: "Test message",
-  offeringName: "Custom Fabrication",
-  offeringId: "custom-fabrication",
+  offeringName: "Sample Offering",
+  offeringId: "sample-offering",
 };
 
 function createMockBase(create: ReturnType<typeof vi.fn>) {
@@ -54,8 +54,8 @@ describe("createLeadRecord", () => {
       email: "Buyer+RFQ@Example.com",
       message: "Need details",
       interest: "OEM branding",
-      offeringName: "Custom Fabrication",
-      offeringId: "custom-fabrication",
+      offeringName: "Sample Offering",
+      offeringId: "sample-offering",
       requirements: "Custom packaging",
       referenceId: "INQ-test-123",
       utmSource: "google",
@@ -87,8 +87,8 @@ describe("createLeadRecord", () => {
           "Last Name": "Buyer",
           Message: "Need details",
           Interest: "OEM branding",
-          "Offering Name": "Custom Fabrication",
-          "Offering ID": "custom-fabrication",
+          "Offering Name": "Sample Offering",
+          "Offering ID": "sample-offering",
           Requirements: "Custom packaging",
           "UTM Source": "google",
           "UTM Medium": "cpc",

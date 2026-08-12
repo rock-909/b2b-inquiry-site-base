@@ -90,6 +90,13 @@ const TEXT_RULES = [
       "Starter sample product text is still present. Replace it before launch.",
   },
   {
+    ruleId: "sample-offering",
+    severity: "warning",
+    pattern: /\bsample(?:[\s_-]+)offering\b/giu,
+    message:
+      "Starter sample offering text is still present. Replace it before client launch.",
+  },
+  {
     ruleId: "replaceable-content",
     severity: "warning",
     pattern: /\breplaceable catalog example\b|\breplace with real\b/giu,
@@ -168,6 +175,7 @@ const STRICT_CLIENT_LAUNCH_BLOCKER_RULE_IDS = new Set([
   "placeholder",
   "replace-this-image",
   "replaceable-content",
+  "sample-offering",
   "sample-product",
   "starter-identity",
   "your-company",

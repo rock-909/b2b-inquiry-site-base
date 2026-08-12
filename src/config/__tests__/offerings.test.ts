@@ -12,12 +12,17 @@ describe("offerings", () => {
     expect(Object.keys(offeringsModule).sort()).toEqual([
       "OFFERINGS",
       "getOfferingById",
+      "getOfferingPath",
     ]);
     const offeringIds = new Set<string>();
     for (const offering of offeringsModule.OFFERINGS) {
       expect(offering).toEqual({
         id: expect.any(String) as string,
         name: expect.any(String) as string,
+        summary: expect.any(String) as string,
+        description: expect.any(String) as string,
+        highlights: expect.any(Array) as string[],
+        updatedAt: expect.any(String) as string,
       });
       expect(offering.id.trim()).toBe(offering.id);
       expect(offering.name.trim()).toBe(offering.name);
@@ -26,12 +31,14 @@ describe("offerings", () => {
     }
 
     const [firstOffering] = offeringsModule.OFFERINGS;
-    if (firstOffering !== undefined) {
-      expect(offeringsModule.getOfferingById(firstOffering.id)).toBe(
-        firstOffering,
-      );
-    }
+    expect(firstOffering?.id).toBe("sample-offering");
+    expect(offeringsModule.getOfferingById("sample-offering")).toBe(
+      firstOffering,
+    );
+    expect(offeringsModule.getOfferingPath("sample-offering")).toBe(
+      "/products/sample-offering",
+    );
 
-    expect(offeringsModule.getOfferingById("missing-offering")).toBeUndefined();
+    expect(offeringsModule.getOfferingById("unknown-product")).toBeUndefined();
   });
 });

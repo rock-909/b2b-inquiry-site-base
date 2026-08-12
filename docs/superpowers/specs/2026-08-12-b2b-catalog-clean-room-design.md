@@ -189,7 +189,7 @@ facts. Product fixtures use the agreed neutral vocabulary:
 - `example.invalid` for non-routable public URLs;
 - `buyer@example.com` for buyer email fixtures.
 
-`custom-fabrication`, donor product models, `/zh` migration fixtures, retired
+Old product fixtures, donor product models, `/zh` migration fixtures, retired
 locale narration, and donor incident comments are removed. Generic tests for
 MOQ, certification, or lead-time parsing may remain only when they test a
 content primitive rather than claim template business facts; their examples

@@ -2,6 +2,7 @@ import type { LocalizedPath, PageType } from "@/config/paths/types";
 
 export const NAVIGATION_MESSAGE_KEYS = [
   "navigation.home",
+  "navigation.products",
   "navigation.about",
   "navigation.contactSales",
 ] as const;
@@ -20,11 +21,13 @@ export function toNavigationNamespaceKey(
 }
 
 const STATIC_PAGE_LASTMOD_ISO = "2026-07-05T00:00:00Z";
+const CATALOG_PAGE_LASTMOD_ISO = "2026-08-12T00:00:00Z";
 export type PublicStaticPageChangeFrequency =
   "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
 
 type PublicStaticPageSeoKey =
   | "home"
+  | "products.metadata"
   | "content.pages.about"
   | "content.pages.request-quote"
   | "content.pages.contact"
@@ -66,6 +69,16 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
     lastmod: { source: "static", iso: STATIC_PAGE_LASTMOD_ISO },
     mdxCollection: null,
     routeOwner: "src/app/[locale]/page.tsx",
+  },
+  {
+    pageType: "products",
+    localizedPaths: localizedPath("/products"),
+    navigationKey: "navigation.products",
+    seoKey: "products.metadata",
+    sitemap: { include: true, changeFrequency: "monthly", priority: 0.9 },
+    lastmod: { source: "static", iso: CATALOG_PAGE_LASTMOD_ISO },
+    mdxCollection: null,
+    routeOwner: "src/app/[locale]/products/page.tsx",
   },
   {
     pageType: "about",

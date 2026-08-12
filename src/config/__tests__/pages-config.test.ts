@@ -10,6 +10,7 @@ import {
 
 const CORE_PAGE_TYPES = [
   "home",
+  "products",
   "about",
   "requestQuote",
   "contact",
@@ -18,10 +19,11 @@ const CORE_PAGE_TYPES = [
 ] as const;
 
 describe("pages.config", () => {
-  it("registers only the six core public pages", () => {
+  it("registers the catalog index with the core public pages", () => {
     expect(PUBLIC_STATIC_PAGE_TYPES).toEqual(CORE_PAGE_TYPES);
     expect(getStaticSitemapPages()).toEqual([
       "",
+      "/products",
       "/about",
       "/request-quote",
       "/contact",
@@ -48,6 +50,7 @@ describe("pages.config", () => {
     });
     expect(getStaticPageLastmodByPath()).toEqual({
       "": "2026-07-05T00:00:00Z",
+      "/products": "2026-08-12T00:00:00Z",
       "/request-quote": "2026-07-05T00:00:00Z",
     });
   });

@@ -60,6 +60,7 @@ describe("static public pages architecture contract", () => {
   it("keeps the current PageType set represented by the registry", () => {
     const expected = [
       "home",
+      "products",
       "about",
       "requestQuote",
       "contact",

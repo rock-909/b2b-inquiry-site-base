@@ -8,6 +8,7 @@ import {
   type StaticPageLastModConfig,
 } from "@/lib/sitemap-utils";
 import { LOCALES_CONFIG, SITE_CONFIG } from "@/config/paths";
+import { OFFERINGS, getOfferingPath } from "@/config/offerings";
 import {
   getSingleSitePublicStaticPages,
   getSingleSiteSitemapPageConfig,
@@ -82,6 +83,21 @@ function createSitemapEntry(
   };
 }
 
+function createProductEntries(
+  locale: string,
+  config: PageConfig,
+): MetadataRoute.Sitemap {
+  return OFFERINGS.map((offering) => {
+    const productPath = getOfferingPath(offering.id);
+    return createSitemapEntry({
+      url: buildAbsoluteUrl(locale, productPath),
+      lastModified: new Date(offering.updatedAt),
+      config,
+      alternates: buildAlternateLanguages(productPath),
+    });
+  });
+}
+
 // Generate static page entries for all locales
 async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
   const publicStaticPages = getSingleSitePublicStaticPages();
@@ -108,6 +124,10 @@ async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
       entries.push(
         createSitemapEntry({ url, lastModified, config, alternates }),
       );
+
+      if (page === "/products") {
+        entries.push(...createProductEntries(locale, config));
+      }
     }
   }
 
@@ -120,7 +140,7 @@ export function generateSitemap(): Promise<MetadataRoute.Sitemap> {
 
 /**
  * Dynamic sitemap generation for Next.js.
- * Includes the template's core static pages.
+ * Includes the template's public pages and configured products.
  */
 export default function sitemap(): Promise<MetadataRoute.Sitemap> {
   return generateSitemap();

@@ -200,7 +200,7 @@ describe("InquiryForm contract", () => {
   it("posts offering context as untrusted id plus free-text interest only", async () => {
     const { container } = renderInquiryForm("request-quote", {
       kind: "offering-context",
-      offeringId: "custom-fabrication",
+      offeringId: "sample-offering",
       displayLabel: "Forged browser label",
       interest: "Custom fabrication",
     });
@@ -224,7 +224,7 @@ describe("InquiryForm contract", () => {
     expect(getFetchBody()).toMatchObject({
       fullName: "Ada Buyer",
       email: "ada@example.com",
-      offeringId: "custom-fabrication",
+      offeringId: "sample-offering",
       interest: "Custom fabrication",
       website: "",
       turnstileToken: "mock-inquiry-turnstile-token",
@@ -406,8 +406,8 @@ describe("InquiryForm contract", () => {
     const estimatorMessage = "Need span data for 40m opening";
     const { container, copy } = renderInquiryForm("request-quote", {
       kind: "offering-context",
-      offeringId: "custom-fabrication",
-      displayLabel: "Custom Fabrication",
+      offeringId: "sample-offering",
+      displayLabel: "Sample Offering",
       initialMessage: estimatorMessage,
     });
     const { fullName, email, message, form } = getFormControls(container);
@@ -568,8 +568,8 @@ describe("InquiryForm hydration", () => {
       <InquiryForm
         context={{
           kind: "offering-context",
-          offeringId: "custom-fabrication",
-          displayLabel: "Custom Fabrication",
+          offeringId: "sample-offering",
+          displayLabel: "Sample Offering",
           initialMessage: "estimator-summary",
         }}
         copy={copy}
@@ -616,7 +616,7 @@ describe("InquiryForm validated context", () => {
 
   it("submits offeringId and interest from offering handoff", async () => {
     const context = resolveInquiryContext({
-      offeringId: "custom-fabrication",
+      offeringId: "sample-offering",
       interest: "coastal project",
       config: "Need span data",
     });
@@ -625,7 +625,7 @@ describe("InquiryForm validated context", () => {
 
     expect(message).toHaveValue("Need span data");
     expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
-      "Custom Fabrication",
+      "Sample Offering",
     );
     expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
       copy.contextLabel,
@@ -641,7 +641,7 @@ describe("InquiryForm validated context", () => {
 
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(getFetchBody()).toMatchObject({
-      offeringId: "custom-fabrication",
+      offeringId: "sample-offering",
       interest: "coastal project",
     });
     expect(getFetchBody()).not.toHaveProperty("offeringName");
@@ -651,12 +651,12 @@ describe("InquiryForm validated context", () => {
   it("renders the server-resolved offering label and submits offering id", async () => {
     const { container, copy } = renderInquiryForm("request-quote", {
       kind: "offering-context",
-      offeringId: "custom-fabrication",
-      displayLabel: "Custom Fabrication",
+      offeringId: "sample-offering",
+      displayLabel: "Sample Offering",
     });
 
     expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
-      "Custom Fabrication",
+      "Sample Offering",
     );
     expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
       copy.contextLabel,
@@ -673,7 +673,7 @@ describe("InquiryForm validated context", () => {
 
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(getFetchBody()).toMatchObject({
-      offeringId: "custom-fabrication",
+      offeringId: "sample-offering",
     });
     expect(getFetchBody()).not.toHaveProperty("offeringName");
     expectRetiredPayloadFieldsAbsent(getFetchBody());
@@ -731,8 +731,8 @@ describe("InquiryForm validated context", () => {
     );
     const { container } = renderInquiryForm("request-quote", {
       kind: "offering-context",
-      offeringId: "custom-fabrication",
-      displayLabel: "Custom Fabrication",
+      offeringId: "sample-offering",
+      displayLabel: "Sample Offering",
     });
     const { fullName, email, form } = getFormControls(container);
     const honeypot = form.querySelector<HTMLInputElement>(
@@ -752,7 +752,7 @@ describe("InquiryForm validated context", () => {
 
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(getFetchBody()).toMatchObject({
-      offeringId: "custom-fabrication",
+      offeringId: "sample-offering",
       website: "https://spam.example",
       turnstileToken: "mock-inquiry-turnstile-token",
       utmSource: "google",
@@ -789,7 +789,7 @@ describe("InquiryForm validated context", () => {
   });
 
   it("ignores request-quote context when contact uses general-context", () => {
-    setRequestQuoteSearch("?offeringId=custom-fabrication&config=hidden");
+    setRequestQuoteSearch("?offeringId=sample-offering&config=hidden");
     const { container } = renderInquiryForm("contact", GENERAL_CONTEXT);
 
     expect(screen.queryByTestId("inquiry-interest-context")).toBeNull();

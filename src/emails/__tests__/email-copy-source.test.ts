@@ -20,8 +20,8 @@ const inquiryEmailData: InquiryEmailData = {
   firstName: "John",
   lastName: "Doe",
   email: "john.doe@example.com",
-  offeringId: "custom-fabrication",
-  offeringName: "Custom Fabrication",
+  offeringId: "sample-offering",
+  offeringName: "Sample Offering",
   requirements: "Need urgent delivery.",
 };
 
@@ -90,7 +90,7 @@ describe("email copy source", () => {
       `[${inquiryEmailData.referenceId}] ${formatTemplate(
         emailTemplates.inquiry.subject,
         {},
-      )}: Custom Fabrication`,
+      )}: Sample Offering`,
     );
   });
 

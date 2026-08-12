@@ -5,6 +5,7 @@ import {
   getStaticSitemapPageConfigByPath,
   getStaticSitemapPages,
 } from "@/config/pages.config";
+import { OFFERINGS, getOfferingPath } from "@/config/offerings";
 import type { PageType } from "@/config/paths/types";
 import { getCanonicalPath } from "@/config/paths/utils";
 
@@ -29,6 +30,16 @@ export function shouldIndexPublicPage(
   const normalizedPath = path.trim() === "/" ? "" : path.trim();
   const canonicalPath = getCanonicalPath(pageType);
   const normalizedCanonicalPath = canonicalPath === "/" ? "" : canonicalPath;
+
+  if (pageType === "products") {
+    return (
+      normalizedPath === normalizedCanonicalPath ||
+      OFFERINGS.some(
+        (offering) => getOfferingPath(offering.id) === normalizedPath,
+      )
+    );
+  }
+
   return (
     PUBLIC_STATIC_PAGE_TYPES.includes(pageType) &&
     normalizedPath === normalizedCanonicalPath
