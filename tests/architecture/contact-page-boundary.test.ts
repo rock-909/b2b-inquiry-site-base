@@ -90,8 +90,6 @@ describe("Contact page source boundaries", () => {
     expect(source).not.toContain("CONTENT_MANIFEST");
     expect(source).not.toContain("@messages/en/critical.json");
     expect(source).not.toContain("@messages/en/deferred.json");
-    expect(source).not.toContain("@messages/zh/critical.json");
-    expect(source).not.toContain("@messages/zh/deferred.json");
     expect(source).not.toContain("mergeObjects");
   });
 

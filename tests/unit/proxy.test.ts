@@ -24,12 +24,6 @@ vi.mock("@/i18n/routing-config", () => ({
   },
 }));
 
-vi.mock("@/config/paths/locales-config", () => ({
-  LOCALES_CONFIG: {
-    retiredLocales: ["zh"],
-  },
-}));
-
 describe("proxy next-intl boundary", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -72,19 +66,18 @@ describe("proxy next-intl boundary", () => {
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
   });
 
-  it("short-circuits retired Chinese locale paths with a lightweight 404", async () => {
+  it("delegates unsupported locale-like paths to next-intl", async () => {
     const { proxy } = await import("@/proxy");
-    const request = new NextRequest("http://localhost:3000/zh/contact");
+    const request = new NextRequest(
+      "http://localhost:3000/unsupported-locale/contact",
+    );
+    const intlResponse = NextResponse.next();
+    intlMiddlewareMock.mockReturnValue(intlResponse);
 
     const response = proxy(request);
 
-    expect(response.status).toBe(404);
-    expect(response.headers.get("content-type")).toBe(
-      "text/plain; charset=utf-8",
-    );
-    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
-    await expect(response.text()).resolves.toBe("Not Found");
-    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+    expect(response).toBe(intlResponse);
+    expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
   });
 
   it("does not parse unsupported locale-like paths before next-intl", async () => {

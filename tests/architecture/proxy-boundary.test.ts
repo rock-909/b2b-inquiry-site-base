@@ -37,11 +37,11 @@ describe("proxy responsibility boundary", () => {
     expect(securitySource).not.toContain("export function isValidNonce");
   });
 
-  it("keeps retired custom locale patch routing narrow", () => {
+  it("keeps custom route decisions out of the neutral template proxy", () => {
     const proxySource = read("src/proxy.ts");
     const headerClientSource = read("src/components/layout/header-client.tsx");
 
-    expect(proxySource).toContain("isRetiredLocalePath");
+    expect(proxySource).not.toContain("LOCALES_CONFIG");
     expect(proxySource).not.toContain("fromLocaleFallback");
     expect(proxySource).not.toContain("getRoutingPathPatterns");
     expect(proxySource).not.toContain("matchesRoutePattern");
@@ -61,7 +61,7 @@ describe("proxy responsibility boundary", () => {
     expect(proxySource).not.toContain("extractLocaleFromLocationHeader");
   });
 
-  it("keeps proxy as a thin next-intl delegate with retired-locale 404s", () => {
+  it("keeps proxy as a thin next-intl delegate", () => {
     const proxySource = read("src/proxy.ts");
 
     expect(proxySource).toContain(
@@ -70,8 +70,6 @@ describe("proxy responsibility boundary", () => {
     expect(proxySource).toContain(
       "const intlMiddleware = createMiddleware(routing);",
     );
-    expect(proxySource).toContain("isRetiredLocalePath(pathname)");
-    expect(proxySource).toContain("return createPlainNotFound();");
     expect(proxySource).toContain("return intlMiddleware(request);");
   });
 });

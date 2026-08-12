@@ -13,7 +13,7 @@ describe("resolveLocaleParam", () => {
     expect(resolveLocaleParam({ locale: "en" })).toBe("en");
   });
 
-  it("calls notFound for a retired locale", () => {
+  it("calls notFound for an unsupported locale", () => {
     expect(() => resolveLocaleParam({ locale: "zh" })).toThrow(
       "NEXT_NOT_FOUND",
     );

@@ -114,31 +114,31 @@ describe("navigation", () => {
     it("should return true for exact root path match", () => {
       expect(isActivePath("/", "/")).toBe(true);
       expect(isActivePath("/en", "/")).toBe(true);
-      expect(isActivePath("/zh", "/")).toBe(false);
+      expect(isActivePath("/fr", "/")).toBe(false);
     });
 
     it("should return false for root path when current path is not root", () => {
       expect(isActivePath("/about", "/")).toBe(false);
       expect(isActivePath("/en/about", "/")).toBe(false);
-      expect(isActivePath("/zh/products", "/")).toBe(false);
+      expect(isActivePath("/fr/products", "/")).toBe(false);
     });
 
     it("should return true for matching paths", () => {
       expect(isActivePath("/about", "/about")).toBe(true);
       expect(isActivePath("/en/about", "/about")).toBe(true);
-      expect(isActivePath("/zh/about", "/about")).toBe(false);
+      expect(isActivePath("/fr/about", "/about")).toBe(false);
     });
 
     it("should return true for sub-paths", () => {
       expect(isActivePath("/about/team", "/about")).toBe(true);
       expect(isActivePath("/en/about/team", "/about")).toBe(true);
-      expect(isActivePath("/zh/products/enterprise", "/products")).toBe(false);
+      expect(isActivePath("/fr/products/enterprise", "/products")).toBe(false);
     });
 
     it("should return false for non-matching paths", () => {
       expect(isActivePath("/about", "/products")).toBe(false);
       expect(isActivePath("/en/about", "/products")).toBe(false);
-      expect(isActivePath("/zh/services", "/products")).toBe(false);
+      expect(isActivePath("/fr/services", "/products")).toBe(false);
     });
 
     it("should handle paths with trailing slashes", () => {
@@ -149,7 +149,7 @@ describe("navigation", () => {
     it("should handle edge cases", () => {
       expect(isActivePath("", "/")).toBe(true);
       expect(isActivePath("/en", "/")).toBe(true);
-      expect(isActivePath("/zh", "/")).toBe(false);
+      expect(isActivePath("/fr", "/")).toBe(false);
     });
 
     it("should not match partial path segments", () => {
@@ -161,7 +161,7 @@ describe("navigation", () => {
       // This test covers line 85 where cleanItemPath already ends with '/'
       expect(isActivePath("/about/team", "/about/")).toBe(true);
       expect(isActivePath("/en/about/team", "/about/")).toBe(true);
-      expect(isActivePath("/zh/products/enterprise", "/products/")).toBe(false);
+      expect(isActivePath("/fr/products/enterprise", "/products/")).toBe(false);
     });
   });
 

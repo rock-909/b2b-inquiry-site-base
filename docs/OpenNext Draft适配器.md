@@ -60,8 +60,7 @@ Next.js 16.3 将 `src/proxy.ts` 编译为 Node middleware。原版 OpenNext 1.20
 Cloudflare Worker
   -> .open-next/middleware/handler.mjs
   -> src/proxy.ts
-     -> 退休 locale 返回真实 404
-     -> 其余请求交给 next-intl
+     -> 请求交给 next-intl
   -> Next.js 页面
 ```
 
