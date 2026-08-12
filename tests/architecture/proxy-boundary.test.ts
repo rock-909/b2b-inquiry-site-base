@@ -37,7 +37,7 @@ describe("proxy responsibility boundary", () => {
     expect(securitySource).not.toContain("export function isValidNonce");
   });
 
-  it("keeps custom route decisions out of the neutral template proxy", () => {
+  it("keeps locale migration decisions out of the neutral template proxy", () => {
     const proxySource = read("src/proxy.ts");
     const headerClientSource = read("src/components/layout/header-client.tsx");
 
@@ -61,7 +61,7 @@ describe("proxy responsibility boundary", () => {
     expect(proxySource).not.toContain("extractLocaleFromLocationHeader");
   });
 
-  it("keeps proxy as a thin next-intl delegate", () => {
+  it("keeps proxy as a thin next-intl delegate after the product 404 guard", () => {
     const proxySource = read("src/proxy.ts");
 
     expect(proxySource).toContain(
@@ -70,6 +70,8 @@ describe("proxy responsibility boundary", () => {
     expect(proxySource).toContain(
       "const intlMiddleware = createMiddleware(routing);",
     );
+    expect(proxySource).toContain("getOfferingById");
+    expect(proxySource).toContain("NextResponse.rewrite");
     expect(proxySource).toContain("return intlMiddleware(request);");
   });
 });

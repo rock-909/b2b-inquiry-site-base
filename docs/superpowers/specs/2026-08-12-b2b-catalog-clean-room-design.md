@@ -67,7 +67,10 @@ The route files live at:
 The detail route uses `generateStaticParams()` from the configured locales and
 `OFFERINGS`. With Next.js 16 Cache Components enabled, it must include the root
 `locale` param and cannot export `dynamicParams`; it calls `notFound()` for an
-unknown slug and never falls back to another product.
+unknown slug and never falls back to another product. Because Cache Components
+streams a shell before page-level `notFound()` can set the response status, the
+thin proxy also rejects unknown static product slugs before streaming so they
+consistently return HTTP 404.
 
 The static page registry gains the `/products` index. Dynamic detail URLs are
 derived directly from `OFFERINGS` for sitemap generation rather than being

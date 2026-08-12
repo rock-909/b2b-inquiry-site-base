@@ -24,6 +24,11 @@ vi.mock("@/i18n/routing-config", () => ({
   },
 }));
 
+vi.mock("@/config/offerings", () => ({
+  getOfferingById: (id: string) =>
+    id === "sample-offering" ? { id } : undefined,
+}));
+
 describe("proxy next-intl boundary", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -89,6 +94,32 @@ describe("proxy next-intl boundary", () => {
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("set-cookie")).toBeNull();
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns a real 404 before streaming an unknown product", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest(
+      "http://localhost:3000/products/not-a-real-product",
+    );
+
+    const response = proxy(request);
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost:3000/en/__not-found-placeholder",
+    );
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
+
+  it("delegates a configured product to next-intl", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest(
+      "http://localhost:3000/products/sample-offering",
+    );
+
+    proxy(request);
+
+    expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
   });
 
   it("does not clean up next-intl response headers", async () => {
