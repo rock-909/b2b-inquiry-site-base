@@ -421,6 +421,7 @@ describe("content-readiness-check", () => {
       "messages/profiles/b2b-lead/en/messages.json": JSON.stringify({
         title: "Showcase Website Starter",
         product: "Sample Product",
+        offering: "Sample Offering",
         standard: "Example Standard A",
         email: "Send requests to your@email before launch.",
         phonePlaceholder: "+1-312-555-0198",
@@ -441,6 +442,7 @@ describe("content-readiness-check", () => {
     expect(strictResult.status).toBe("failed");
     expectFinding(strictResult.errors, "starter-identity");
     expectFinding(strictResult.errors, "sample-product");
+    expectFinding(strictResult.errors, "sample-offering");
     expectFinding(strictResult.errors, "example-standard");
     expectFinding(strictResult.errors, "your-email");
     expectFinding(strictResult.errors, "fake-phone");
@@ -497,7 +499,7 @@ describe("content-readiness-check", () => {
 
   it("scans canonical locale message pack files", () => {
     const rootDir = createFixture({
-      "messages/base/zh/messages.json": JSON.stringify({
+      "messages/base/fr/messages.json": JSON.stringify({
         headline: "lorem ipsum",
       }),
     });
@@ -509,7 +511,7 @@ describe("content-readiness-check", () => {
     expectFinding(
       result.errors,
       "lorem-ipsum",
-      "messages/base/zh/messages.json",
+      "messages/base/fr/messages.json",
     );
   });
 

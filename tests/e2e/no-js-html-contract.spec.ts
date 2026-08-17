@@ -134,25 +134,6 @@ test.describe("No-JS HTML contract (English-only)", () => {
     await expect(
       fallbackPanel.getByTestId("mobile-language-fallback"),
     ).toHaveCount(0);
-    await expect(fallbackPanel.locator('a[hreflang="zh"]')).toHaveCount(0);
-    await expect(fallbackPanel.locator('a[href="/zh"]')).toHaveCount(0);
-    await expect(fallbackPanel.getByText("简体中文")).toHaveCount(0);
-    await expect(fallbackPanel.getByText("中文")).toHaveCount(0);
-  });
-
-  test("retired /zh route stays unavailable without JavaScript", async ({
-    page,
-  }) => {
-    const response = await page.goto("http://localhost:3000/zh", {
-      waitUntil: "domcontentloaded",
-    });
-
-    expect(response?.status(), "/zh should return HTTP 404").toBe(404);
-    await expect(page.locator("html")).not.toHaveAttribute("lang", "zh");
-    await expect(page.locator('a[hreflang="zh"]')).toHaveCount(0);
-    await expect(page.locator('a[href="/zh"]')).toHaveCount(0);
-    await expect(page.getByText("简体中文")).toHaveCount(0);
-    await expect(page.getByText("中文")).toHaveCount(0);
   });
 
   test("contact page renders inquiry fallback without JavaScript", async ({

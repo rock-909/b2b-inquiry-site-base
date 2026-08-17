@@ -24,19 +24,11 @@ describe("public-runtime-env", () => {
     );
   });
 
-  it("reads legacy-compatible public keys such as NEXT_PUBLIC_BASE_URL", () => {
+  it("reads the public base URL override", () => {
     vi.stubEnv("NEXT_PUBLIC_BASE_URL", "https://example.test");
 
     expect(getPublicRuntimeEnvString("NEXT_PUBLIC_BASE_URL")).toBe(
       "https://example.test",
-    );
-  });
-
-  it("reads legacy-compatible public keys such as NEXT_PUBLIC_APP_NAME", () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_NAME", "Reference Site");
-
-    expect(getPublicRuntimeEnvString("NEXT_PUBLIC_APP_NAME")).toBe(
-      "Reference Site",
     );
   });
 

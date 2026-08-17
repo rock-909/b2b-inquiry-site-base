@@ -34,6 +34,7 @@ describe("page-dates", () => {
   it("keeps sitemap MDX page detection aligned with public static routes", () => {
     const nonMdxPages = new Set([
       "",
+      getCanonicalPath("products"),
       getCanonicalPath("requestQuote"),
     ]);
     const representativePageContracts = [
@@ -56,6 +57,7 @@ describe("page-dates", () => {
 
     expect(SINGLE_SITE_PUBLIC_STATIC_PAGE_ROUTES).toEqual([
       "home",
+      "products",
       "about",
       "requestQuote",
       "contact",

@@ -10,8 +10,8 @@ describe("runtime email content", () => {
       firstName: "Pat",
       lastName: "Lee",
       email: "pat@example.com",
-      offeringId: "custom-fabrication",
-      offeringName: "Custom Fabrication",
+      offeringId: "sample-offering",
+      offeringName: "Sample Offering",
       interest: "OEM branding",
       requirements: "Line one\nLine two",
     };
@@ -20,15 +20,15 @@ describe("runtime email content", () => {
 
     expect(content.text).toContain("Reference: INQ-abc123-deadbeef");
     expect(content.html).toContain("INQ-abc123-deadbeef");
-    expect(content.html).toContain("Custom Fabrication");
+    expect(content.html).toContain("Sample Offering");
     expect(content.html).toContain("Pat Lee");
     expect(content.html).toContain("pat@example.com");
     expect(content.html).toContain("OEM branding");
     expect(content.html).toContain("Line one");
     expect(content.html).toContain("Line two");
 
-    expect(content.text).toContain("Offering: Custom Fabrication");
-    expect(content.text).toContain("Offering ID: custom-fabrication");
+    expect(content.text).toContain("Offering: Sample Offering");
+    expect(content.text).toContain("Offering ID: sample-offering");
     expect(content.text).toContain("Interest: OEM branding");
     expect(content.text).toContain("Contact Name: Pat Lee");
     expect(content.text).toContain("Email: pat@example.com");

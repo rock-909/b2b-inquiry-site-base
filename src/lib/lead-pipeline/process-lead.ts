@@ -2,7 +2,6 @@ import "server-only";
 
 import { getOfferingById } from "@/config/offerings";
 import { airtableService } from "@/lib/airtable/instance";
-import { AIRTABLE_REQUEST_TIMEOUT_MS } from "@/lib/airtable/service";
 import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 import {
   INQUIRY_LEAD_TYPE,
@@ -40,18 +39,6 @@ const OWNER_EMAIL_FAILED_NOTICE =
 
 function normalizeErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
-}
-
-function withAirtableBudget<T>(operation: Promise<T>): Promise<T> {
-  let budgetTimer: ReturnType<typeof setTimeout> | undefined;
-  const budget = new Promise<never>((_resolve, reject) => {
-    budgetTimer = setTimeout(() => {
-      reject(new Error("AIRTABLE_REQUEST_TIMEOUT"));
-    }, AIRTABLE_REQUEST_TIMEOUT_MS);
-  });
-  return Promise.race([operation, budget]).finally(() => {
-    clearTimeout(budgetTimer);
-  });
 }
 
 function createProcessingFailureResult(referenceId?: string): LeadResult {
@@ -127,21 +114,19 @@ async function createInquiryLeadRecord(
     : `${OWNER_EMAIL_FAILED_NOTICE}${baseMessage}`;
 
   try {
-    await withAirtableBudget(
-      airtableService.createLead({
-        firstName,
-        lastName,
-        email: lead.email,
-        message,
-        ...(lead.interest ? { interest: lead.interest } : {}),
-        ...(offering
-          ? { offeringId: offering.id, offeringName: offering.name }
-          : {}),
-        ...(buyerText ? { requirements: buyerText } : {}),
-        referenceId,
-        ...pickAttributionFields(lead),
-      }),
-    );
+    await airtableService.createLead({
+      firstName,
+      lastName,
+      email: lead.email,
+      message,
+      ...(lead.interest ? { interest: lead.interest } : {}),
+      ...(offering
+        ? { offeringId: offering.id, offeringName: offering.name }
+        : {}),
+      ...(buyerText ? { requirements: buyerText } : {}),
+      referenceId,
+      ...pickAttributionFields(lead),
+    });
     return true;
   } catch (error) {
     logger.error("Inquiry Airtable createLead failed (non-blocking)", {
@@ -169,10 +154,8 @@ export async function processValidatedInquiry(
       referenceId,
     });
 
-    // 串行不是为了代码顺一点：邮件结果必须在记录创建之前拿到，才能把
-    // 「这封通知没发出去」一次写进记录。事后补一次更新做不到——Airtable
-    // 限流重试可能在预算过期后才落库，那时已经拿不到记录编号了。
-    // 代价：最坏耗时从 max(5s, 8s) 变成 5s + 8s。邮件有 5 秒硬超时，不会无限等。
+    // 邮件结果必须先落定，记录才能准确写入通知失败提示。
+    // 代价：最坏耗时是邮件预算加 Airtable 的 8 秒中止预算。
     const emailSent = await sendOwnerEmail(input, { referenceId });
     const recordCreated = await createInquiryLeadRecord(
       input,

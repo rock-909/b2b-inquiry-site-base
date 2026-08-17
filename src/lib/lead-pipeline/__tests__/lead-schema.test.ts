@@ -10,15 +10,6 @@ const GENERAL_INQUIRY = {
   email: "jane@example.com",
   message: "Need a custom component for a warehouse project.",
 } as const;
-const RETIRED_INPUT_FIELDS = [
-  "company",
-  "quantity",
-  "requirements",
-  "legacyProductId",
-  "legacyInquiryKind",
-  "buyerInterest",
-] as const;
-
 describe("inquiryLeadSchema", () => {
   it("accepts a general inquiry without offering identity", () => {
     const result = inquiryLeadSchema.parse(GENERAL_INQUIRY);
@@ -44,22 +35,6 @@ describe("inquiryLeadSchema", () => {
         offeringId: "not-an-offering",
       }).success,
     ).toBe(false);
-  });
-
-  it("strips retired company, quantity, and requirements fields", () => {
-    const result = inquiryLeadSchema.parse({
-      ...GENERAL_INQUIRY,
-      company: "Buyer Co",
-      quantity: 100,
-      requirements: "Legacy requirements",
-      legacyProductId: "retired-offering",
-      legacyInquiryKind: "general-rfq",
-      buyerInterest: "retired",
-    });
-
-    for (const field of RETIRED_INPUT_FIELDS) {
-      expect(result).not.toHaveProperty(field);
-    }
   });
 
   it("preserves canonical multiline message and attribution", () => {

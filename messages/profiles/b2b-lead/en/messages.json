@@ -1,6 +1,7 @@
 {
   "navigation": {
     "home": "Home",
+    "products": "Products",
     "about": "About",
     "contactSales": "Start an inquiry",
     "siteName": "{siteName}",
@@ -11,6 +12,7 @@
       "navigation": {
         "title": "Navigation",
         "home": "Home",
+        "products": "Products",
         "about": "About",
         "contact": "Contact"
       },
@@ -43,6 +45,23 @@
       "description": "Share the essentials and the team can follow up with the next useful question.",
       "primary": "Start an inquiry",
       "secondary": "Learn about the site"
+    }
+  },
+  "products": {
+    "metadata": {
+      "title": "Products",
+      "description": "Review the configured product range and continue to the inquiry path with the relevant product context."
+    },
+    "page": {
+      "eyebrow": "Product catalog",
+      "heading": "Products built around real buyer requirements",
+      "description": "Replace the reference entry with verified product facts before launch.",
+      "viewDetails": "View details"
+    },
+    "detail": {
+      "backToProducts": "Back to products",
+      "highlightsTitle": "Highlights",
+      "requestQuote": "Request a quote"
     }
   },
   "contact": {

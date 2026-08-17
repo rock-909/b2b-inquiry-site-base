@@ -10,6 +10,7 @@ import {
 
 const CORE_PATHS = {
   home: "/",
+  products: "/products",
   about: "/about",
   requestQuote: "/request-quote",
   contact: "/contact",
@@ -45,6 +46,6 @@ describe("paths", () => {
   });
 
   it("returns null for an unknown path", () => {
-    expect(getPageTypeFromPath("/products", "en")).toBeNull();
+    expect(getPageTypeFromPath("/unknown", "en")).toBeNull();
   });
 });

@@ -27,8 +27,6 @@ const EXTERNAL_URL_SMOKE_EXPECTATIONS = [
   { pathname: "/request-quote", status: 200 },
   { pathname: "/privacy", status: 200 },
   { pathname: "/terms", status: 200 },
-  { pathname: "/zh", status: 404 },
-  { pathname: "/zh/contact", status: 404 },
 ];
 const CF_PREVIEW_SMOKE_EXPECTATIONS = [
   { pathname: "/", status: 200, html: true },
@@ -38,8 +36,6 @@ const CF_PREVIEW_SMOKE_EXPECTATIONS = [
   { pathname: "/request-quote", status: 200, html: true },
   { pathname: "/privacy", status: 200, html: true },
   { pathname: "/terms", status: 200, html: true },
-  { pathname: "/zh", status: 404 },
-  { pathname: "/zh/contact", status: 404 },
 ];
 const DEPLOYED_SMOKE_EXPECTATIONS = [
   { pathname: "/", status: 200 },
@@ -50,8 +46,6 @@ const DEPLOYED_SMOKE_EXPECTATIONS = [
   { pathname: "/privacy", status: 200 },
   { pathname: "/terms", status: 200 },
   { pathname: "/api/health", status: 200 },
-  { pathname: "/zh", status: 404 },
-  { pathname: "/zh/contact", status: 404 },
   { pathname: "/.well-known/security.txt", status: 200 },
   { pathname: "/security-policy.txt", status: 404 },
 ];

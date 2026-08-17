@@ -65,16 +65,12 @@ describe("Cloudflare runtime env timing", () => {
     vi.resetModules();
 
     const runtimeValues: Record<string, string | undefined> = {};
-    const configure = vi.fn();
-    const create = vi.fn().mockResolvedValue([
-      {
-        id: "rec-runtime",
-        fields: {},
-        get: vi.fn().mockReturnValue("2026-07-03T00:00:00.000Z"),
-      },
-    ]);
-    const table = vi.fn().mockReturnValue({ create });
-    const base = vi.fn().mockReturnValue({ table });
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ records: [{ id: "rec-runtime" }] }), {
+        status: 200,
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
 
     vi.doMock("@/lib/env", () => ({
       ...createEnvMock(runtimeValues),
@@ -84,12 +80,6 @@ describe("Cloudflare runtime env timing", () => {
         AIRTABLE_BASE_ID: undefined,
         AIRTABLE_TABLE_NAME: undefined,
       },
-    }));
-
-    vi.doMock("airtable", () => ({
-      default: { configure, base },
-      configure,
-      base,
     }));
 
     vi.doMock("@/lib/logger", () => ({
@@ -113,11 +103,14 @@ describe("Cloudflare runtime env timing", () => {
       interest: "Runtime env check",
     });
 
-    expect(configure).toHaveBeenCalledWith(
-      expect.objectContaining({ apiKey: "runtime-airtable-key" }),
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.airtable.com/v0/appRuntime/Contacts",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer runtime-airtable-key",
+        }),
+      }),
     );
-    expect(base).toHaveBeenCalledWith("appRuntime");
-    expect(table).toHaveBeenCalledWith("Contacts");
   });
 
   it("lets Turnstile verification read Worker secrets at request time", async () => {

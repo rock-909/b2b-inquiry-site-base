@@ -144,7 +144,7 @@ function collectDepCruiserDeadToFiles(): string[] {
 function appRouteResolves(pathnameSegments: string[]): boolean {
   // Canonical URLs carry no locale segment under `localePrefix: 'never'`, but a
   // future prefix strategy would add one. Accept a leading configured locale;
-  // an unknown prefix (e.g. a re-introduced `/zh/...`) falls through to the
+  // an unknown prefix falls through to the
   // tree walk, which rejects it because no such route directory exists.
   const [firstSegment, ...restSegments] = pathnameSegments;
   const routeSegments = (routing.locales as readonly string[]).includes(

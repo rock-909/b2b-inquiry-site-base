@@ -107,6 +107,7 @@ describe("Footer Component", () => {
 
     expect(navigationLinks).toEqual([
       { href: "/", text: "Home" },
+      { href: "/products", text: "Products" },
       { href: "/about", text: "About" },
       { href: "/contact", text: "Contact" },
     ]);

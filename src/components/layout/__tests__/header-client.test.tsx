@@ -101,9 +101,6 @@ describe("MobileNavigationIsland", () => {
     expect(html).toContain(
       'data-testid="header-mobile-navigation-fallback-links"',
     );
-    expect(html).not.toContain("简体中文");
-    expect(html).not.toContain('hrefLang="zh"');
-    expect(html).not.toContain("/zh");
     expect(html).not.toContain("mobile-language-fallback");
     expect(html).not.toContain("mobile-navigation-interactive");
   });

@@ -11,6 +11,7 @@
  */
 export const SITE_PAGE_CASES = [
   ["/", /Turn qualified interest into a useful conversation/i],
+  ["/products", /Products built around real buyer requirements/i],
   ["/about", /About This Reference Site/i],
   ["/request-quote", /Start with the essentials/i],
   ["/contact", /Contact/i],

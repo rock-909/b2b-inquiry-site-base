@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   envValues: {
@@ -8,22 +8,10 @@ const mocks = vi.hoisted(() => ({
     NODE_ENV: "test",
   } as Record<string, string | undefined>,
   runtimeValues: {} as Record<string, string | undefined>,
-  configure: vi.fn(),
-  base: vi.fn(),
-  table: vi.fn(),
-  create: vi.fn(),
+  fetch: vi.fn(),
   warn: vi.fn(),
   info: vi.fn(),
   error: vi.fn(),
-}));
-
-vi.mock("airtable", () => ({
-  default: {
-    configure: mocks.configure,
-    base: mocks.base,
-  },
-  configure: mocks.configure,
-  base: mocks.base,
 }));
 
 vi.mock("@/lib/env", () => ({
@@ -56,14 +44,6 @@ const validLeadData = {
   interest: "Configuration check",
 };
 
-function createdRecord(id = "rec-config") {
-  return {
-    id,
-    fields: {},
-    get: vi.fn().mockReturnValue("2026-08-03T00:00:00.000Z"),
-  };
-}
-
 async function createService() {
   const { AirtableService } = await import("../airtable/service");
   return new AirtableService();
@@ -81,35 +61,65 @@ describe("Airtable Service configuration", () => {
       delete mocks.runtimeValues[key];
     }
 
-    mocks.configure.mockReset();
-    mocks.create.mockReset().mockResolvedValue([createdRecord()]);
-    mocks.table.mockReset().mockReturnValue({ create: mocks.create });
-    mocks.base.mockReset().mockReturnValue({ table: mocks.table });
+    mocks.fetch.mockReset().mockResolvedValue(
+      new Response(JSON.stringify({ records: [{ id: "rec-config" }] }), {
+        status: 200,
+      }),
+    );
+    vi.stubGlobal("fetch", mocks.fetch);
     mocks.warn.mockReset();
     mocks.info.mockReset();
     mocks.error.mockReset();
   });
 
-  it("initializes Airtable lazily on first createLead call", async () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("uses the native records API with an abort signal", async () => {
     const service = await createService();
     const { AIRTABLE_REQUEST_TIMEOUT_MS } = await import("../airtable/service");
 
-    expect(service.isReady()).toBe(false);
-    expect(mocks.configure).not.toHaveBeenCalled();
-    expect(mocks.base).not.toHaveBeenCalled();
+    expect(service.isReady()).toBe(true);
 
     await expect(service.createLead(validLeadData)).resolves.toEqual({
       id: "rec-config",
     });
 
-    expect(mocks.configure).toHaveBeenCalledWith({
-      endpointUrl: "https://api.airtable.com",
-      apiKey: "test-api-key",
-      requestTimeout: AIRTABLE_REQUEST_TIMEOUT_MS,
+    expect(mocks.fetch).toHaveBeenCalledWith(
+      "https://api.airtable.com/v0/test-base-id/test-table",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-api-key",
+        }),
+        signal: expect.any(AbortSignal),
+      }),
+    );
+    expect(AIRTABLE_REQUEST_TIMEOUT_MS).toBe(8000);
+  });
+
+  it("aborts the native request after the Airtable timeout", async () => {
+    const controller = new AbortController();
+    const timeout = vi
+      .spyOn(AbortSignal, "timeout")
+      .mockReturnValue(controller.signal);
+    mocks.fetch.mockImplementationOnce((_input, init) => {
+      return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(init.signal?.reason);
+        });
+      });
     });
-    expect(mocks.base).toHaveBeenCalledWith("test-base-id");
-    expect(mocks.table).toHaveBeenCalledWith("test-table");
-    expect(service.isReady()).toBe(true);
+    const service = await createService();
+    const { AIRTABLE_REQUEST_TIMEOUT_MS } = await import("../airtable/service");
+
+    const request = service.createLead(validLeadData);
+    controller.abort(new DOMException("Timed out", "TimeoutError"));
+
+    await expect(request).rejects.toThrow("Failed to create lead record");
+    expect(timeout).toHaveBeenCalledWith(AIRTABLE_REQUEST_TIMEOUT_MS);
+    expect(mocks.fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
   });
 
   it("uses Contacts as the table name when AIRTABLE_TABLE_NAME is missing", async () => {
@@ -118,7 +128,10 @@ describe("Airtable Service configuration", () => {
 
     await service.createLead(validLeadData);
 
-    expect(mocks.table).toHaveBeenCalledWith("Contacts");
+    expect(mocks.fetch).toHaveBeenCalledWith(
+      "https://api.airtable.com/v0/test-base-id/Contacts",
+      expect.any(Object),
+    );
   });
 
   it.each([
@@ -132,23 +145,18 @@ describe("Airtable Service configuration", () => {
     await expect(service.createLead(validLeadData)).rejects.toThrow(
       "Airtable service is not configured",
     );
-    expect(mocks.configure).not.toHaveBeenCalled();
-    expect(mocks.base).not.toHaveBeenCalled();
-    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.fetch).not.toHaveBeenCalled();
     expect(service.isReady()).toBe(false);
   });
 
-  it("surfaces initialization failures from the first createLead call", async () => {
-    mocks.configure.mockImplementation(() => {
-      throw new Error("Configuration failed");
-    });
+  it("surfaces native fetch failures from createLead", async () => {
+    mocks.fetch.mockRejectedValueOnce(new Error("Network failed"));
     const service = await createService();
 
     await expect(service.createLead(validLeadData)).rejects.toThrow(
-      "Airtable service initialization failed: Configuration failed",
+      "Failed to create lead record",
     );
-    expect(mocks.create).not.toHaveBeenCalled();
-    expect(service.isReady()).toBe(false);
+    expect(service.isReady()).toBe(true);
   });
 
   it("reads Cloudflare runtime env populated after construction", async () => {
@@ -163,10 +171,13 @@ describe("Airtable Service configuration", () => {
 
     await service.createLead(validLeadData);
 
-    expect(mocks.configure).toHaveBeenCalledWith(
-      expect.objectContaining({ apiKey: "runtime-airtable-key" }),
+    expect(mocks.fetch).toHaveBeenCalledWith(
+      "https://api.airtable.com/v0/runtime-base-id/Runtime%20Contacts",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer runtime-airtable-key",
+        }),
+      }),
     );
-    expect(mocks.base).toHaveBeenCalledWith("runtime-base-id");
-    expect(mocks.table).toHaveBeenCalledWith("Runtime Contacts");
   });
 });

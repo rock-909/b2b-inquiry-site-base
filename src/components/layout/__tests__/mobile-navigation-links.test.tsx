@@ -80,7 +80,12 @@ vi.mock("@/config/single-site-links", async (importOriginal) => {
   };
 });
 
-const EXPECTED_ITEM_LABELS = ["Home", "About", "Start an inquiry"] as const;
+const EXPECTED_ITEM_LABELS = [
+  "Home",
+  "Products",
+  "About",
+  "Start an inquiry",
+] as const;
 const CTA_LABEL = "Start an inquiry";
 
 describe("MobileNavigationLinks", () => {
@@ -103,6 +108,7 @@ describe("MobileNavigationLinks", () => {
     const html = renderToStaticMarkup(<MobileNavigationLinks />);
 
     expect(html).toContain("Home");
+    expect(html).toContain("Products");
     expect(html).toContain("About");
     expect(html).toContain('href="/"');
     expect(html).not.toContain("aria-expanded");

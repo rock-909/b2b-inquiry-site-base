@@ -2,10 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { checkA11y } from "./helpers/axe";
 import { waitForLoadWithFallback } from "./test-environment-setup";
 
-// English-only site: `resources` and `blog` are retired routes (they 404), and
-// `/zh/*` 404s as well. A 404 page still renders main#main-content + an h1 with
-// no overflow, so keeping those entries produced false-green assertions. Scope
-// the calibration to the real English core pages instead.
+// A 404 page still renders main#main-content + an h1 with no overflow, so scope
+// the calibration to real public pages instead of missing-route fixtures.
 const corePages = ["/", "/about", "/contact"] as const;
 
 async function preparePage(page: Page, path: string) {

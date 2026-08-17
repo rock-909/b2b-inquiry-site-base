@@ -18,16 +18,16 @@ vi.mock("@/i18n/routing-config", () => ({
       "/": "/",
       "/about": "/about",
       "/contact": "/contact",
+      "/products": "/products",
       "/request-quote": "/request-quote",
     },
     localeCookie: { maxAge: 60 * 60 * 24 * 365 },
   },
 }));
 
-vi.mock("@/config/paths/locales-config", () => ({
-  LOCALES_CONFIG: {
-    retiredLocales: ["zh"],
-  },
+vi.mock("@/config/offerings", () => ({
+  getOfferingById: (id: string) =>
+    id === "sample-offering" ? { id } : undefined,
 }));
 
 describe("proxy next-intl boundary", () => {
@@ -72,22 +72,19 @@ describe("proxy next-intl boundary", () => {
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
   });
 
-  it("short-circuits retired Chinese locale paths with a lightweight 404", async () => {
+  it("returns the pre-rendered 404 for unsupported locale-like paths", async () => {
     const { proxy } = await import("@/proxy");
-    const request = new NextRequest("http://localhost:3000/zh/contact");
+    const request = new NextRequest(
+      "http://localhost:3000/unsupported-locale/contact",
+    );
 
     const response = proxy(request);
 
     expect(response.status).toBe(404);
-    expect(response.headers.get("content-type")).toBe(
-      "text/plain; charset=utf-8",
-    );
-    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
-    await expect(response.text()).resolves.toBe("Not Found");
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
-  it("does not parse unsupported locale-like paths before next-intl", async () => {
+  it("returns the pre-rendered 404 for unsupported prefixed paths", async () => {
     const { proxy } = await import("@/proxy");
     const request = new NextRequest("http://localhost:3000/fr/products/eu");
 
@@ -95,7 +92,47 @@ describe("proxy next-intl boundary", () => {
 
     expect(response.headers.get("location")).toBeNull();
     expect(response.headers.get("set-cookie")).toBeNull();
-    expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(404);
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
+
+  it("returns the pre-rendered 404 for an unknown route", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest("http://localhost:3000/nope");
+
+    const response = proxy(request);
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost:3000/en/__not-found-placeholder",
+    );
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
+
+  it("returns a real 404 before streaming an unknown product", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest(
+      "http://localhost:3000/products/not-a-real-product",
+    );
+
+    const response = proxy(request);
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost:3000/en/__not-found-placeholder",
+    );
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
+
+  it("delegates a configured product to next-intl", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest(
+      "http://localhost:3000/products/sample-offering",
+    );
+
+    proxy(request);
+
+    expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
   });
 
   it("does not clean up next-intl response headers", async () => {

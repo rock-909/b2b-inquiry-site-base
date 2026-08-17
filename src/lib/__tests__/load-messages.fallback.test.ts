@@ -22,7 +22,7 @@ describe("load-messages canonical runtime source", () => {
     expect(messages).not.toHaveProperty("blog");
     expect(messages).not.toHaveProperty("customProject");
     expect(messages).not.toHaveProperty("language");
-    expect(messages).not.toHaveProperty("products");
+    expect(messages).toHaveProperty("products");
   });
 
   it("uses the shared composed packs without site-specific overlay drift", async () => {

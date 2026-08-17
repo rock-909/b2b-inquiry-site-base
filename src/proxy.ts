@@ -1,33 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
-import { LOCALES_CONFIG } from "@/config/paths/locales-config";
+import { getOfferingById } from "@/config/offerings";
 import { routing } from "@/i18n/routing-config";
-import { HTTP_NOT_FOUND } from "@/constants";
 
 const intlMiddleware = createMiddleware(routing);
 
-const PLAIN_NOT_FOUND_HEADERS = {
-  "content-type": "text/plain; charset=utf-8",
-  "x-robots-tag": "noindex, nofollow",
-} as const;
-
-function isRetiredLocalePath(pathname: string): boolean {
-  return LOCALES_CONFIG.retiredLocales.some(
+export function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname.replace(/\/+$/u, "") || "/";
+  const localePrefix = routing.locales.find(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
   );
-}
+  const publicPath = localePrefix
+    ? pathname.slice(localePrefix.length + 1) || "/"
+    : pathname;
+  const productMatch = publicPath.match(/^\/products\/([^/]+)$/u);
+  const productId = productMatch?.[1];
+  const isKnownStaticPath = Object.prototype.hasOwnProperty.call(
+    routing.pathnames,
+    publicPath,
+  );
 
-function createPlainNotFound() {
-  return new NextResponse("Not Found", {
-    status: HTTP_NOT_FOUND,
-    headers: PLAIN_NOT_FOUND_HEADERS,
-  });
-}
-
-export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  if (isRetiredLocalePath(pathname)) {
-    return createPlainNotFound();
+  if (!isKnownStaticPath && (!productId || !getOfferingById(productId))) {
+    const notFoundUrl = request.nextUrl.clone();
+    notFoundUrl.pathname = `/${routing.defaultLocale}/__not-found-placeholder`;
+    return NextResponse.rewrite(notFoundUrl, { status: 404 });
   }
 
   return intlMiddleware(request);

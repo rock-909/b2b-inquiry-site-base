@@ -8,7 +8,12 @@ import { SINGLE_SITE_ROUTE_HREFS } from "@/config/single-site-links";
 
 export type { SiteNavigationItem } from "@/config/site-types";
 
-const MAIN_NAVIGATION_PAGE_TYPES = ["home", "about", "contact"] as const;
+const MAIN_NAVIGATION_PAGE_TYPES = [
+  "home",
+  "products",
+  "about",
+  "contact",
+] as const;
 
 function requireNavigationKey(
   pageType: (typeof MAIN_NAVIGATION_PAGE_TYPES)[number],

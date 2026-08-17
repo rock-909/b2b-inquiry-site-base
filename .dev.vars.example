@@ -11,8 +11,6 @@ NODE_ENV=development
 NEXTJS_ENV=development
 NEXT_PUBLIC_BASE_URL=http://localhost:8787
 NEXT_PUBLIC_SITE_URL=http://localhost:8787
-NEXT_PUBLIC_APP_NAME=Northstar Industrial Reference
-NEXT_PUBLIC_SITE_KEY=b2b-inquiry-site-base
 NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare
 DEPLOYMENT_PLATFORM=cloudflare
 

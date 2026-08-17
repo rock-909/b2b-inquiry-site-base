@@ -89,10 +89,6 @@ function createPreviewFetchMock() {
         });
       }
 
-      if (["/zh", "/zh/contact"].includes(pathname)) {
-        return response(404, "Not Found", { "content-type": "text/plain" });
-      }
-
       return response(404, HEALTHY_HTML, {
         "content-type": "text/html; charset=utf-8",
       });
@@ -110,10 +106,6 @@ function createExternalUrlFetchMock() {
       )
     ) {
       return response(200, "healthy external page");
-    }
-
-    if (["/zh", "/zh/contact"].includes(pathname)) {
-      return response(404, "not found");
     }
 
     return response(404, "not found");
@@ -140,14 +132,7 @@ function createDeployedFetchMock() {
         return response(200, "healthy deployed page");
       }
 
-      if (
-        [
-          "/zh",
-          "/zh/contact",
-          "/invalid/contact",
-          "/security-policy.txt",
-        ].includes(pathname)
-      ) {
+      if (["/invalid/contact", "/security-policy.txt"].includes(pathname)) {
         return response(404, "not found");
       }
 
@@ -173,12 +158,6 @@ function listenForExternalUrlSmoke(): Promise<{
       ) {
         serverResponse.writeHead(200, { "content-type": "text/plain" });
         serverResponse.end("ok");
-        return;
-      }
-
-      if (["/zh", "/zh/contact"].includes(pathname)) {
-        serverResponse.writeHead(404, { "content-type": "text/plain" });
-        serverResponse.end("not found");
         return;
       }
 
@@ -226,14 +205,7 @@ function listenForDeployedSmoke(): Promise<{
         return;
       }
 
-      if (
-        [
-          "/zh",
-          "/zh/contact",
-          "/invalid/contact",
-          "/security-policy.txt",
-        ].includes(pathname)
-      ) {
+      if (["/invalid/contact", "/security-policy.txt"].includes(pathname)) {
         serverResponse.writeHead(404, { "content-type": "text/plain" });
         serverResponse.end("not found");
         return;
@@ -355,8 +327,6 @@ describe("external URL smoke", () => {
       "/request-quote",
       "/privacy",
       "/terms",
-      "/zh",
-      "/zh/contact",
     ]);
   });
 
@@ -378,8 +348,6 @@ describe("external URL smoke", () => {
       "/request-quote",
       "/privacy",
       "/terms",
-      "/zh",
-      "/zh/contact",
     ]);
     expect(result.stdout).toContain("[external-url-smoke] All checks passed");
   });
@@ -516,8 +484,6 @@ describe("cloudflare preview smoke", () => {
       "/request-quote",
       "/privacy",
       "/terms",
-      "/zh",
-      "/zh/contact",
       "/api/health",
       "/",
       "/invalid/contact",
@@ -526,13 +492,11 @@ describe("cloudflare preview smoke", () => {
       "/request-quote",
       "/privacy",
       "/terms",
-      "/zh",
-      "/zh/contact",
       "/api/health",
     ]);
   });
 
-  it("proves preview pages, removed locale routes, and optional api-health probes", async () => {
+  it("proves preview pages and optional api-health probes", async () => {
     const fetchMock = createPreviewFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -554,8 +518,6 @@ describe("cloudflare preview smoke", () => {
       "/request-quote",
       "/privacy",
       "/terms",
-      "/zh",
-      "/zh/contact",
       "/api/health",
     ]);
   });
@@ -600,34 +562,6 @@ describe("cloudflare preview smoke", () => {
       ).resolves.toBe(false);
     },
   );
-
-  it("fails when the removed Chinese route becomes live again", async () => {
-    const consoleError = captureExpectedConsoleErrors(
-      "[cf-preview-smoke] Failures detected:",
-      "  - Expected /zh to return 404",
-    );
-    const previewFetchMock = createPreviewFetchMock();
-    const fetchMock = vi.fn(
-      async (
-        input: RequestInfo | URL,
-        init?: RequestInit,
-      ): Promise<Response> => {
-        if (getRequestPath(input) === "/zh") {
-          return response(200, HEALTHY_HTML, {
-            "content-type": "text/html; charset=utf-8",
-          });
-        }
-
-        return previewFetchMock(input, init);
-      },
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    await expect(
-      runCloudflarePreviewSmoke(["--base-url", "https://preview.example"]),
-    ).resolves.toBe(false);
-    expect(consoleError).toHaveBeenCalledTimes(2);
-  });
 });
 
 describe("deployed smoke", () => {
@@ -657,8 +591,6 @@ describe("deployed smoke", () => {
       "/privacy",
       "/terms",
       "/api/health",
-      "/zh",
-      "/zh/contact",
       "/.well-known/security.txt",
       "/security-policy.txt",
     ]);
@@ -735,8 +667,6 @@ describe("deployed smoke", () => {
         "/privacy",
         "/terms",
         "/api/health",
-        "/zh",
-        "/zh/contact",
         "/.well-known/security.txt",
         "/security-policy.txt",
       ].sort(),

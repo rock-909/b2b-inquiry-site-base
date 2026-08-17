@@ -79,7 +79,7 @@ const _entries: ContentEntry[] = [
         "description": "Reference contact page showing the minimum information a future business should replace."
       }
     },
-    "content": "\nThis page is a **non-production reference**. Replace the identity, email, location, response time and operating hours with owner-confirmed details.\n\nThe fastest route is the **[inquiry form](/request-quote)**. A useful request normally includes the requirement, quantity or scope, destination market and timing.\n\n**Reference email:** sales@example.invalid\n\n**Reference business:** Northstar Industrial Reference\n\n**Reference location:** Replace with the real registered or operating location.\n"
+    "content": "\nThis page is a **non-production reference**. Replace the identity, email, location, response time and operating hours with owner-confirmed details.\n\nThe fastest route is the **[inquiry form](/request-quote)**. A useful request normally includes the requirement, quantity or scope, destination market and timing.\n"
   },
   {
     "type": "pages",

@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import sitemap from "@/app/sitemap";
 
 describe("sitemap", () => {
-  it("contains the six core routes once", async () => {
+  it("contains the public pages and configured product routes once", async () => {
     const entries = await sitemap();
     const paths = entries.map((entry) => new URL(entry.url).pathname);
 
     expect(paths).toEqual([
       "/",
+      "/products",
+      "/products/sample-offering",
       "/about",
       "/request-quote",
       "/contact",

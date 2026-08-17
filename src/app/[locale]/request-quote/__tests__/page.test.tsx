@@ -187,23 +187,23 @@ describe("RequestQuotePage", () => {
   });
 
   it("passes offering-context for a valid offeringId", async () => {
-    await renderPageWith({ offeringId: "custom-fabrication" });
+    await renderPageWith({ offeringId: "sample-offering" });
 
     expect(capturedInquiry.latest?.context).toEqual({
       kind: "offering-context",
-      offeringId: "custom-fabrication",
-      displayLabel: "Custom Fabrication",
+      offeringId: "sample-offering",
+      displayLabel: "Sample Offering",
     });
   });
 
   it("downgrades forged or repeated offeringId values to general-context", async () => {
-    await renderPageWith({ offeringId: "forged-offering" });
+    await renderPageWith({ offeringId: "unknown-product" });
     expect(capturedInquiry.latest?.context).toEqual({
       kind: "general-context",
     });
 
     await renderPageWith({
-      offeringId: ["custom-fabrication", "custom-fabrication"],
+      offeringId: ["sample-offering", "sample-offering"],
     });
     expect(capturedInquiry.latest?.context).toEqual({
       kind: "general-context",
@@ -212,7 +212,7 @@ describe("RequestQuotePage", () => {
 
   it("passes estimator config into the validated initial message", async () => {
     await renderPageWith({
-      offeringId: "custom-fabrication",
+      offeringId: "sample-offering",
       config: "Estimated 12 straight units",
     });
 

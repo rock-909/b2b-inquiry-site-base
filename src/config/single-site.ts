@@ -11,8 +11,6 @@ import type {
 
 export type {
   BusinessHours,
-  BusinessStats,
-  Certification,
   CompanyInfo,
   ContactInfo,
   SiteConfig,
@@ -52,6 +50,7 @@ const social = {
 
 const FOOTER_NAVIGATION_PAGE_TYPES = [
   "home",
+  "products",
   "about",
   "contact",
 ] as const satisfies readonly PageType[];
@@ -68,6 +67,7 @@ type FooterLinkPageType =
 
 const FOOTER_TRANSLATION_KEYS = {
   home: "footer.sections.navigation.home",
+  products: "footer.sections.navigation.products",
   about: "footer.sections.navigation.about",
   contact: "footer.sections.navigation.contact",
   requestQuote: "footer.sections.support.requestQuote",
@@ -182,13 +182,6 @@ export const SINGLE_SITE_DEFINITION = {
         saturday: "Replace before launch",
         sundayClosed: false,
       },
-    },
-    certifications: [],
-    stats: {
-      exportCountries: 0,
-      annualCapacity: "Replace with owner-confirmed capacity before launch",
-      clientsServed: 0,
-      onTimeDeliveryRate: 0,
     },
     social,
     brandAssets: {

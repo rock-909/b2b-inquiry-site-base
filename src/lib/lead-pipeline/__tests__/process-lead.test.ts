@@ -1,5 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AIRTABLE_REQUEST_TIMEOUT_MS } from "@/lib/airtable/service";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { logger } from "@/lib/logger";
 import { TEST_OFFERING } from "@/test/offerings";
 import { INQUIRY_LEAD_TYPE, type InquiryLeadInput } from "../lead-schema";
@@ -33,10 +32,6 @@ describe("processValidatedInquiry", () => {
     vi.clearAllMocks();
     mockCreateLead.mockResolvedValue({ id: "rec-123" });
     mockSendProductInquiryEmail.mockResolvedValue("email-123");
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   it("delivers one validated inquiry to owner email and Airtable", async () => {
@@ -205,18 +200,4 @@ describe("processValidatedInquiry", () => {
   // 由上面 "marks the record when the owner email failed" 覆盖，串行等待由
   // "waits for the owner email to settle before touching airtable" 覆盖，
   // 所以直接删掉，不留一个名不副实的绿灯。
-
-  it("does not hang when Airtable exceeds its request budget", async () => {
-    vi.useFakeTimers();
-    mockCreateLead.mockReturnValue(new Promise(() => {}));
-
-    const resultPromise = processValidatedInquiry(VALID_LEAD);
-    await vi.advanceTimersByTimeAsync(AIRTABLE_REQUEST_TIMEOUT_MS);
-
-    await expect(resultPromise).resolves.toMatchObject({
-      success: true,
-      emailSent: true,
-      recordCreated: false,
-    });
-  });
 });

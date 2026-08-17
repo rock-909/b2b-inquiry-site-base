@@ -1,6 +1,5 @@
 import "server-only";
 
-import type AirtableNS from "airtable";
 import type {
   CreatedAirtableRecord,
   InquiryLeadData,
@@ -85,8 +84,7 @@ function buildLeadFields(data: InquiryLeadData, now: string): AirtableFields {
 }
 
 interface AirtableLikeError {
-  error: string;
-  message: string;
+  errorType: string;
   statusCode: number;
 }
 
@@ -97,8 +95,7 @@ function isAirtableLikeError(error: unknown): error is AirtableLikeError {
 
   const candidate = error as Record<string, unknown>;
   return (
-    typeof candidate.error === "string" &&
-    typeof candidate.message === "string" &&
+    typeof candidate.errorType === "string" &&
     typeof candidate.statusCode === "number"
   );
 }
@@ -106,40 +103,55 @@ function isAirtableLikeError(error: unknown): error is AirtableLikeError {
 function buildCreateLeadRecordLogContext(
   error: unknown,
 ): Record<string, string | number> {
-  if (error instanceof Error) {
-    return { error: error.message };
+  if (isAirtableLikeError(error)) {
+    return { errorType: error.errorType, statusCode: error.statusCode };
   }
 
-  if (isAirtableLikeError(error)) {
-    return { errorType: error.error, statusCode: error.statusCode };
+  if (error instanceof Error) {
+    return { error: error.message };
   }
 
   return { error: "Unknown error" };
 }
 
 export async function createLeadRecord(params: {
-  base: AirtableNS.Base;
+  apiKey: string;
+  baseId: string;
   tableName: string;
   data: InquiryLeadData;
+  signal: AbortSignal;
 }): Promise<CreatedAirtableRecord> {
-  const { base, tableName, data } = params;
+  const { apiKey, baseId, tableName, data, signal } = params;
 
   try {
     const now = new Date().toISOString();
     const fields = buildLeadFields(data, now);
-
-    const [createdRecord] = await base.table(tableName).create([
+    const response = await fetch(
+      `https://api.airtable.com/v0/${encodeURIComponent(baseId)}/${encodeURIComponent(tableName)}`,
       {
-        fields,
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ records: [{ fields }] }),
+        signal,
       },
-    ]);
+    );
 
-    if (!createdRecord) {
-      throw new Error("Failed to create lead record");
+    if (!response.ok) {
+      throw Object.assign(new Error("Airtable request failed"), {
+        errorType: "AIRTABLE_HTTP_ERROR",
+        statusCode: response.status,
+      });
     }
 
+    const body = (await response.json()) as {
+      records?: Array<{ id?: unknown }>;
+    };
+    const createdRecord = body.records?.[0];
     const recordId =
-      typeof createdRecord.id === "string" ? createdRecord.id.trim() : "";
+      typeof createdRecord?.id === "string" ? createdRecord.id.trim() : "";
 
     if (recordId.length === 0) {
       throw new Error("Airtable success response is missing a record id");
