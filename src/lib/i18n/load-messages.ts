@@ -55,14 +55,14 @@ function interpolateSiteMessageValues(
   return value;
 }
 
-function loadMessageSource(locale: Locale): Messages {
+async function loadMessageSource(locale: Locale): Promise<Messages> {
   const safeLocale = coerceLocale(locale);
   const loadedMessages = getComposedMessages(safeLocale);
-  const siteValues = getSiteMessageValues();
+  const siteValues = await getSiteMessageValues();
 
   return interpolateSiteMessageValues(loadedMessages, siteValues) as Messages;
 }
 
 export function loadCompleteMessages(locale: string): Promise<Messages> {
-  return Promise.resolve(loadMessageSource(coerceLocale(locale)));
+  return loadMessageSource(coerceLocale(locale));
 }

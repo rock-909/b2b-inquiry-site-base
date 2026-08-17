@@ -67,7 +67,7 @@ describe("release proof manifest", () => {
     // other two named starter-era flags that no longer exist anywhere.
     expect([...lanes]).toEqual(["local/test-mode"]);
     expect(releaseProofFlow).toContain(
-      "node scripts/starter-checks.js content-readiness",
+      "node scripts/quality/checks/content-readiness.js",
     );
   });
 

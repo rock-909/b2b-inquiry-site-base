@@ -177,7 +177,6 @@ describe("env module boundaries", () => {
     expect(source).toContain("export const clientEnvSchema");
     expect(source).toContain("export const runtimeEnv");
     expect(source).toContain("export function getRuntimeEnvString");
-    expect(source).toContain("export function requireEnvVar");
   });
 
   it("keeps zod-free public runtime env in a dedicated client-safe module", () => {

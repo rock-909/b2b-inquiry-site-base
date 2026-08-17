@@ -338,7 +338,6 @@ rules:
         - "**/__tests__/**"
         - "**/*.test.*"
         - "**/*.spec.*"
-        - "src/app/api/csp-report/**"
     metadata:
       category: correctness
       technology: [nextjs]

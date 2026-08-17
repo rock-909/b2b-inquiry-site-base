@@ -18,10 +18,6 @@ function isReleaseVerifyBlockedEnv(name) {
   return value === "true" || value === "1";
 }
 
-function formatReleaseCommand(step) {
-  return formatReleaseProofCommand(step);
-}
-
 function runReleaseVerifyCommand(step, rootDir) {
   const result = spawnSync(step.command, step.args, {
     cwd: rootDir,
@@ -180,12 +176,23 @@ async function runReleaseVerify({
   return 0;
 }
 
+if (require.main === module) {
+  runReleaseVerify().then(
+    (status) => {
+      process.exitCode = status;
+    },
+    (error) => {
+      console.error("[release-verify] Unexpected error:", error);
+      process.exitCode = 1;
+    },
+  );
+}
+
 module.exports = {
   LOCAL_E2E_HOSTS,
   RELEASE_PROOF_MANIFEST,
   RELEASE_PROOF_SEQUENCE,
   RELEASE_VERIFY_COMMANDS,
-  formatReleaseCommand,
   isLocalPortInUse,
   isReleaseVerifyBlockedEnv,
   parseWranglerDryRunGzipKiB,

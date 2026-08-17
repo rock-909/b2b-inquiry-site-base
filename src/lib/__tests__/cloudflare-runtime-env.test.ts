@@ -137,8 +137,8 @@ describe("Cloudflare runtime env timing", () => {
         TURNSTILE_ALLOWED_HOSTS: undefined,
       },
     }));
-    vi.doMock("@/config/paths/site-config", () => ({
-      SITE_CONFIG: { baseUrl: "https://example.com" },
+    vi.doMock("@/config/single-site", () => ({
+      SINGLE_SITE_CONFIG: { baseUrl: "https://example.com" },
     }));
     vi.doMock("@/lib/logger", () => ({
       logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
@@ -191,8 +191,8 @@ describe("Cloudflare runtime env timing", () => {
       },
       getRuntimeEnvBoolean: () => undefined,
     }));
-    vi.doMock("@/config/paths/site-config", () => ({
-      SITE_CONFIG: { baseUrl: "https://example.com" },
+    vi.doMock("@/config/single-site", () => ({
+      SINGLE_SITE_CONFIG: { baseUrl: "https://example.com" },
     }));
     vi.doMock("@/lib/logger", () => ({
       logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },

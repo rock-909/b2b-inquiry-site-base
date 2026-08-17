@@ -59,7 +59,7 @@ async function breakIncrement(error: unknown): Promise<void> {
  * 让 store 根本建不起来：生产环境缺 Upstash 配置时，构造函数就抛。
  *
  * store 是第一次请求时才惰性建的，而 `getRateLimitStore()` 写在 try 里面，所以
- * 这个抛出跟 increment 失败落在同一个 catch，一样按 preset 的 failureMode 处理，
+ * 这个抛出跟 increment 失败落在同一个 catch，一样走 fail-closed，
  * 不是一条独立的启动期 fail-closed 通道。
  */
 async function breakFactory(error: unknown): Promise<void> {
@@ -167,35 +167,8 @@ describe("distributed-rate-limit", () => {
   // =========================================================================
   // 2. checkDistributedRateLimit Tests
   // =========================================================================
-  describe("preset selection coverage", () => {
-    it.each([
-      ["inquiry", RATE_LIMIT_PRESETS.inquiry.maxRequests],
-      ["csp", RATE_LIMIT_PRESETS.csp.maxRequests],
-    ] as const)("uses the %s preset", async (preset, maxRequests) => {
-      const result = await checkDistributedRateLimit(
-        `preset-${preset}`,
-        preset,
-      );
-
-      expect(result.allowed).toBe(true);
-      expect(result.remaining).toBe(maxRequests - 1);
-    });
-
-    // 原来这里是五条测试，外加下面两个 describe 里的两条，一共七条，排列组合
-    // 抄出来的：{increment 抛普通错 / increment 超时 / 工厂函数抛错} ×
-    // {inquiry 关门 / csp 开门}，每格抄一遍同样的断言，其中有两条是同一组合
-    // （普通错 × csp）写了两遍，隔着五百多行。六个组合写成七条，这张表把它压回
-    // 六行，断言只写一处。
-    //
-    // 超时那一维保留。实现现在的 catch 块确实不看 error 是什么，两类错误走同一行，
-    // 但那是当下的实现，不是要守的契约：给 AbortError 加一条特判、让超时改走
-    // 放行，是完全可能有人写的改动，删掉这一维就没人拦得住。
-    //
-    // 期望值是从 `RATE_LIMIT_PRESETS[preset].failureMode` 推出来的，所以这张表
-    // 单独看是循环的：把 inquiry 改成 fail-open，它会跟着变绿。真值在下面
-    // 「pins the $preset preset」那条，那里 closed 和 open 是手写死的。两条合起来
-    // 才封住：一条钉住配置该是什么，一条钉住代码有没有照配置办事。
-    const failureModeMatrix = [
+  describe("storage failures", () => {
+    const storageFailures = [
       {
         label: "store increment rejects",
         breakStore: breakIncrement,
@@ -211,48 +184,33 @@ describe("distributed-rate-limit", () => {
         breakStore: breakFactory,
         error: new Error("factory boom"),
       },
-    ].flatMap(({ label, breakStore, error }) =>
-      (["inquiry", "csp"] as const).map((preset) => ({
-        name: `${label}, ${preset} preset`,
-        breakStore,
-        error,
-        preset,
-      })),
-    );
+    ];
 
-    it.each(failureModeMatrix)(
-      "degrades per the preset failure mode: $name",
-      async ({ breakStore, error, preset }) => {
+    it.each(storageFailures)(
+      "fails closed when $label",
+      async ({ breakStore, error, label }) => {
         await breakStore(error);
-        const config = RATE_LIMIT_PRESETS[preset];
-        const failClosed = config.failureMode === "closed";
+        const config = RATE_LIMIT_PRESETS.inquiry;
 
         const result = await checkDistributedRateLimit(
-          `failure-${preset}`,
-          preset,
+          `failure-${label}`,
+          "inquiry",
         );
 
         expect(result).toMatchObject({
-          allowed: !failClosed,
-          remaining: failClosed ? 0 : config.maxRequests - 1,
-          degraded: true,
+          allowed: false,
+          remaining: 0,
+          deniedReason: "storage_failure",
         });
-        expect(result.retryAfter).toBe(
-          failClosed ? Math.ceil(config.windowMs / 1000) : null,
-        );
-        expect("deniedReason" in result).toBe(failClosed);
-        if (failClosed) {
-          expect(result.deniedReason).toBe("storage_failure");
-        }
+        expect(result.retryAfter).toBe(Math.ceil(config.windowMs / 1000));
 
-        // 降级是要留痕的：业主看日志才知道限流当时没在工作。warn 说的是这次
-        // 放行还是拦下，error 带上原始错误供排查，两条都得在。
+        // 存储失败要留痕：warn 说明请求被 fail-closed，error 带原始错误供排查。
         //
         // 断的是「就是刚才扔进去那个对象」，不是 `expect.any(Error)`。实现原样
         // 转发 `{ error }`，所以身份可以对上；写成 any(Error) 反而会误伤——
         // 超时那两行扔的 DOMException 在这套测试环境里就不算 Error 的实例。
         expect(mockLoggerWarn).toHaveBeenCalledWith(
-          expect.stringContaining(failClosed ? "fail-closed" : "fail-open"),
+          expect.stringContaining("fail-closed"),
         );
         expect(mockLoggerError).toHaveBeenCalledWith(
           "[Rate Limit] Storage backend error details",
@@ -291,14 +249,6 @@ describe("distributed-rate-limit", () => {
 
     // 「窗口过期后重新放行」上面那条计数测试已经走过，而且还断了过期后
     // remaining 回到 max-1，比这里只看 allowed 更细。
-    it("should keep non-degraded responses clean during normal operation", async () => {
-      const normalResult = await checkDistributedRateLimit(
-        "normal-user",
-        "inquiry",
-      );
-      expect(normalResult.degraded).toBeUndefined();
-    });
-
     it("should track different identifiers separately", async () => {
       // Exhaust limit for user-a
       for (let i = 0; i < 10; i++) {
@@ -311,26 +261,6 @@ describe("distributed-rate-limit", () => {
 
       expect(blockedUserA.allowed).toBe(false);
       expect(allowedUserB.allowed).toBe(true);
-    });
-
-    it("should track different presets separately", async () => {
-      const identifier = "multi-preset-user";
-
-      for (let i = 0; i < 10; i++) {
-        await checkDistributedRateLimit(identifier, "inquiry");
-      }
-      const blockedInquiry = await checkDistributedRateLimit(
-        identifier,
-        "inquiry",
-      );
-
-      const allowedCsp = await checkDistributedRateLimit(identifier, "csp");
-
-      expect(blockedInquiry.allowed).toBe(false);
-      expect(allowedCsp.allowed).toBe(true);
-      // 只看 allowed 是空转的：csp 上限 100，就算两个预设共用一个计数器，累计
-      // 十二次也远没到，照样放行。要钉准确的 remaining——共用计数时这里是 88。
-      expect(allowedCsp.remaining).toBe(RATE_LIMIT_PRESETS.csp.maxRequests - 1);
     });
   });
 
@@ -401,21 +331,12 @@ describe("distributed-rate-limit", () => {
       }
     });
 
-    // 两条预设各一条测试，断的是同一组字段。表格化以后，加第三个预设时补一行
-    // 就行，不用再抄一遍断言。
-    it.each([
-      { preset: "inquiry", maxRequests: 10, failureMode: "closed" },
-      { preset: "csp", maxRequests: 100, failureMode: "open" },
-    ] as const)(
-      "pins the $preset preset at $maxRequests per window, failing $failureMode",
-      ({ preset, maxRequests, failureMode }) => {
-        expect(RATE_LIMIT_PRESETS[preset]).toEqual({
-          maxRequests,
-          windowMs: MINUTE_MS,
-          failureMode,
-        });
-      },
-    );
+    it("pins the inquiry preset at 10 requests per minute", () => {
+      expect(RATE_LIMIT_PRESETS.inquiry).toEqual({
+        maxRequests: 10,
+        windowMs: MINUTE_MS,
+      });
+    });
   });
 
   describe("resetRateLimitStore", () => {
@@ -573,7 +494,6 @@ describe("distributed-rate-limit", () => {
       // 顺序有讲究：先说清桩本身还认得实现发的命令，再说结果对不对。反过来的话，
       // 桩过期了报出来的是一串计数，看的人会先去查限流逻辑。
       expect(unknownCommands).toEqual([]);
-      expect(results.filter((result) => result.degraded)).toEqual([]);
       expect(results.filter((result) => result.allowed)).toHaveLength(max);
     });
   });

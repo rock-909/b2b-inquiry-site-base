@@ -9,14 +9,13 @@ export type { Locale, LocalizedPath, PageType } from "@/config/paths/types";
 // 重新导出配置
 export { PATHS_CONFIG } from "@/config/paths/paths-config";
 export { LOCALES_CONFIG } from "@/config/paths/locales-config";
-export { SITE_CONFIG } from "@/config/paths/site-config";
 
 // 重新导出工具函数
 export {
   getCanonicalPath,
   getLocalizedPath,
   getPageTypeFromPath,
-  getPathnames,
+  PATHNAMES,
 } from "@/config/paths/utils";
 
 // 重新导出类型
@@ -26,4 +25,4 @@ export type {
   ConfiguredLocale,
   LocalesConfig,
 } from "@/config/paths/locales-config";
-export type { SiteConfig } from "@/config/paths/site-config";
+export type { SiteConfig } from "@/config/single-site";

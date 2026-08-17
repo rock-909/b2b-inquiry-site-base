@@ -8,7 +8,7 @@ import {
   buildWebPageSchema,
   generateArticleData,
 } from "@/lib/structured-data-generators";
-import { SITE_CONFIG } from "@/config/paths";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import type { LegalPageMetadata, Locale } from "@/types/content.types";
 
 interface LegalPageShellProps {
@@ -82,7 +82,7 @@ export async function LegalPageShell({
   const t = await getTranslations({ locale, namespace: "legal" });
   const tNav = await getTranslations({ locale, namespace: "navigation" });
 
-  const pageUrl = new URL(pagePath, SITE_CONFIG.baseUrl).toString();
+  const pageUrl = new URL(pagePath, SINGLE_SITE_CONFIG.baseUrl).toString();
   const schema = await buildShellPageSchema({
     metadata,
     locale,
@@ -93,7 +93,10 @@ export async function LegalPageShell({
   const schemas: Array<Record<string, unknown>> = [
     schema,
     buildBreadcrumbListSchema([
-      { name: tNav("home"), url: new URL("/", SITE_CONFIG.baseUrl).toString() },
+      {
+        name: tNav("home"),
+        url: new URL("/", SINGLE_SITE_CONFIG.baseUrl).toString(),
+      },
       { name: metadata.title, url: pageUrl },
     ]),
   ];

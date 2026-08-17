@@ -3,33 +3,20 @@ import {
   getMdxPageLastModified,
   isMdxDrivenPage,
 } from "@/lib/content/page-dates";
-import {
-  getStaticPageLastModified,
-  type StaticPageLastModConfig,
-} from "@/lib/sitemap-utils";
-import { LOCALES_CONFIG, SITE_CONFIG } from "@/config/paths";
+import { LOCALES_CONFIG } from "@/config/paths";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { OFFERINGS, getOfferingPath } from "@/config/offerings";
 import {
   getSingleSitePublicStaticPages,
   getSingleSiteSitemapPageConfig,
-  getSingleSiteStaticPageLastmod,
   type SingleSiteSitemapPageConfig,
 } from "@/config/single-site-seo";
 import { routing } from "@/i18n/routing";
 
 // Base URL for the site - uses centralized SITE_CONFIG for consistency
-const BASE_URL = SITE_CONFIG.baseUrl;
+const BASE_URL = SINGLE_SITE_CONFIG.baseUrl;
 
 type PageConfig = SingleSiteSitemapPageConfig;
-
-function createStaticPageLastmod(): StaticPageLastModConfig {
-  return new Map(
-    Object.entries(getSingleSiteStaticPageLastmod()).map(([route, isoDate]) => [
-      route,
-      new Date(isoDate),
-    ]),
-  );
-}
 
 // Helper to get page config
 function getPageConfig(path: string): PageConfig {
@@ -63,7 +50,7 @@ function buildAlternateLanguages(path: string): Record<string, string> {
 
 interface SitemapEntryParams {
   url: string;
-  lastModified: Date;
+  lastModified?: Date | undefined;
   config: PageConfig;
   alternates: Record<string, string>;
 }
@@ -74,7 +61,7 @@ function createSitemapEntry(
 ): MetadataRoute.Sitemap[number] {
   return {
     url: params.url,
-    lastModified: params.lastModified,
+    ...(params.lastModified ? { lastModified: params.lastModified } : {}),
     changeFrequency: params.config.changeFrequency,
     priority: params.config.priority,
     alternates: {
@@ -101,7 +88,6 @@ function createProductEntries(
 // Generate static page entries for all locales
 async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
   const publicStaticPages = getSingleSitePublicStaticPages();
-  const staticPageLastmod = createStaticPageLastmod();
   const mdxPages = publicStaticPages.filter(isMdxDrivenPage);
   const mdxDates = new Map<string, Date>();
   await Promise.all(
@@ -117,9 +103,7 @@ async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
       const config = getPageConfig(page);
       const url = buildAbsoluteUrl(locale, page);
       const alternates = buildAlternateLanguages(page);
-      const lastModified =
-        mdxDates.get(page) ??
-        getStaticPageLastModified(page, staticPageLastmod);
+      const lastModified = mdxDates.get(page);
 
       entries.push(
         createSitemapEntry({ url, lastModified, config, alternates }),

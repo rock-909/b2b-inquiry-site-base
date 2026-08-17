@@ -180,7 +180,7 @@ describe("page content checks", () => {
     const consoleError = captureExpectedConsoleErrors(
       "Content manifest artifacts are stale:",
       "  - ",
-      "Run `node scripts/starter-checks.js content-manifest`",
+      "Run `node scripts/quality/checks/content-manifest.js`",
     );
     createPage("en", "about.mdx", validFrontmatter());
     const context = createContentManifestContext(tmpDir);
@@ -218,8 +218,10 @@ describe("page content checks", () => {
     const result = spawnSync(
       "node",
       [
-        path.resolve(__dirname, "../../../scripts/starter-checks.js"),
-        "content-slugs",
+        path.resolve(
+          __dirname,
+          "../../../scripts/quality/checks/content-slugs.js",
+        ),
       ],
       { cwd: tmpDir, encoding: "utf8" },
     );

@@ -122,7 +122,7 @@ pnpm install --frozen-lockfile
 pnpm exec prettier --check package.json next.config.ts tests/architecture/next-config-contract.test.ts
 git diff --check
 pnpm website:check
-node scripts/starter-checks.js client-boundary --build-artifacts
+node scripts/quality/checks/client-boundary.js --build-artifacts
 pnpm component:check
 pnpm react:doctor
 pnpm website:build:cf

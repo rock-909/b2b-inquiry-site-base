@@ -632,7 +632,7 @@ describe("public launch trust content guard", () => {
   it("allows intentionally empty optional social links in the real strict public-launch CLI", () => {
     const result = spawnSync(
       process.execPath,
-      ["scripts/starter-checks.js", "validate-production-config"],
+      ["scripts/quality/checks/production-config.js"],
       {
         cwd: process.cwd(),
         encoding: "utf8",
@@ -652,7 +652,7 @@ describe("public launch trust content guard", () => {
   it("separates template sentinel blockers from missing production readiness in the strict CLI", () => {
     const result = spawnSync(
       process.execPath,
-      ["scripts/starter-checks.js", "validate-production-config"],
+      ["scripts/quality/checks/production-config.js"],
       {
         cwd: process.cwd(),
         encoding: "utf8",

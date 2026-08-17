@@ -7,9 +7,8 @@
 import Image from "next/image";
 import { getPublicLogoPath } from "@/config/public-trust";
 import { Link } from "@/i18n/routing";
-import { SINGLE_SITE_FACTS } from "@/config/single-site";
+import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import { cn } from "@/lib/utils";
-import { SITE_CONFIG } from "@/config/paths/site-config";
 
 export interface LogoProps {
   className?: string;
@@ -50,7 +49,7 @@ export function Logo({
   className,
   showText = true,
   size = "md",
-  ariaLabel = SITE_CONFIG.name,
+  ariaLabel = SINGLE_SITE_CONFIG.name,
   constrainText = false,
 }: LogoProps) {
   const { width, height } = SINGLE_SITE_FACTS.brandAssets.logo;
@@ -70,7 +69,7 @@ export function Logo({
       {logoPath ? (
         <Image
           src={logoPath}
-          alt={`${SITE_CONFIG.name} Logo`}
+          alt={`${SINGLE_SITE_CONFIG.name} Logo`}
           width={width}
           height={height}
           className={cn(
@@ -93,7 +92,7 @@ export function Logo({
             getTextSizeClass(size),
           )}
         >
-          {SITE_CONFIG.name}
+          {SINGLE_SITE_CONFIG.name}
         </span>
       )}
     </Link>

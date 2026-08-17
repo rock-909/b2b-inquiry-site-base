@@ -1,5 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { SINGLE_SITE_FACTS } from "@/config/single-site";
+import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import type {
   ArticleData,
   BreadcrumbData,
@@ -10,10 +10,9 @@ import {
   getPublicContactPhone,
   getPublicLogoPath,
 } from "@/config/public-trust";
-import { SITE_CONFIG } from "@/config/paths/site-config";
 import { routing, type Locale } from "@/i18n/routing";
 
-const FALLBACK_BASE_URL = SITE_CONFIG.baseUrl;
+const FALLBACK_BASE_URL = SINGLE_SITE_CONFIG.baseUrl;
 type StructuredDataTranslator = Awaited<
   ReturnType<typeof getTranslations<"structured-data">>
 >;
@@ -47,9 +46,9 @@ export function websiteStructuredDataId(baseUrl: string = FALLBACK_BASE_URL) {
 
 function getSocialProfileUrls(t: StructuredDataTranslator): string[] {
   const twitter =
-    t("organization.social.twitter") ?? SITE_CONFIG.social.twitter;
+    t("organization.social.twitter") ?? SINGLE_SITE_CONFIG.social.twitter;
   const linkedin =
-    t("organization.social.linkedin") ?? SITE_CONFIG.social.linkedin;
+    t("organization.social.linkedin") ?? SINGLE_SITE_CONFIG.social.linkedin;
 
   return [twitter, linkedin].filter((url) => /^https?:\/\//iu.test(url));
 }
@@ -73,20 +72,20 @@ export function generateOrganizationData(
   const baseUrl = data.url ?? FALLBACK_BASE_URL;
   const logoPath = data.logo ?? getPublicLogoPath();
   const telephone = getPublicContactPhone(
-    data.phone ?? SITE_CONFIG.contact.phone,
+    data.phone ?? SINGLE_SITE_CONFIG.contact.phone,
   );
   const sameAs = getSocialProfileUrls(t);
-  const email = data.email ?? SITE_CONFIG.contact.email;
+  const email = data.email ?? SINGLE_SITE_CONFIG.contact.email;
 
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": organizationStructuredDataId(baseUrl),
-    name: data.name ?? t("organization.name") ?? SITE_CONFIG.name,
+    name: data.name ?? t("organization.name") ?? SINGLE_SITE_CONFIG.name,
     description:
       data.description ??
       t("organization.description") ??
-      SITE_CONFIG.description,
+      SINGLE_SITE_CONFIG.description,
     url: baseUrl,
     ...(email ? { email } : {}),
     foundingDate: String(SINGLE_SITE_FACTS.company.established),
@@ -115,11 +114,11 @@ export function generateWebSiteData(
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": websiteStructuredDataId(baseUrl),
-    name: data.name ?? t("website.name") ?? SITE_CONFIG.name,
+    name: data.name ?? t("website.name") ?? SINGLE_SITE_CONFIG.name,
     description:
       data.description ??
       t("website.description") ??
-      SITE_CONFIG.seo.defaultDescription,
+      SINGLE_SITE_CONFIG.seo.defaultDescription,
     url: baseUrl,
     publisher: {
       "@id": organizationStructuredDataId(baseUrl),
@@ -147,12 +146,13 @@ export function generateArticleData(
     author: {
       "@type": "Organization",
       "@id": organizationId,
-      name: data.author ?? t("article.defaultAuthor") ?? SITE_CONFIG.name,
+      name:
+        data.author ?? t("article.defaultAuthor") ?? SINGLE_SITE_CONFIG.name,
     },
     publisher: {
       "@type": "Organization",
       "@id": organizationId,
-      name: t("organization.name") ?? SITE_CONFIG.name,
+      name: t("organization.name") ?? SINGLE_SITE_CONFIG.name,
       ...(logoPath
         ? {
             logo: {

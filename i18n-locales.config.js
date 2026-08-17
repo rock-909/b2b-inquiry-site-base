@@ -3,7 +3,7 @@
  * 统一配置翻译工具的语言列表
  *
  * 用于以下脚本：
- * - scripts/starter-checks.js translations  (验证翻译文件一致性)
+ * - scripts/quality/checks/translations.js  (验证翻译文件一致性)
  *
  * Runtime locale truth lives in LOCALES_CONFIG
  * (src/config/paths/locales-config.ts). This file is a CommonJS mirror for

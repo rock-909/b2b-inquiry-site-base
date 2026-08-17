@@ -9,7 +9,6 @@ type SafeJsonParseFailure = {
   ok: false;
   errorCode:
     | typeof API_ERROR_CODES.INVALID_JSON_BODY
-    | typeof API_ERROR_CODES.INVALID_REQUEST
     | typeof API_ERROR_CODES.PAYLOAD_TOO_LARGE;
   statusCode: typeof HTTP_BAD_REQUEST | typeof HTTP_PAYLOAD_TOO_LARGE;
 };
@@ -17,10 +16,6 @@ export type SafeJsonParseResult<T> =
   SafeJsonParseSuccess<T> | SafeJsonParseFailure;
 
 const DEFAULT_MAX_JSON_BODY_BYTES = 64 * 1024;
-
-type EmptyBodyErrorCode =
-  | typeof API_ERROR_CODES.INVALID_JSON_BODY
-  | typeof API_ERROR_CODES.INVALID_REQUEST;
 
 function createPayloadTooLargeFailure(): SafeJsonParseFailure {
   return {
@@ -38,24 +33,8 @@ function createInvalidJsonFailure(): SafeJsonParseFailure {
   };
 }
 
-function createJsonFailure(
-  errorCode: EmptyBodyErrorCode,
-): SafeJsonParseFailure {
-  return {
-    ok: false,
-    errorCode,
-    statusCode: HTTP_BAD_REQUEST,
-  };
-}
-
-function isAcceptableJsonRoot(
-  raw: unknown,
-  allowTopLevelArray: boolean,
-): boolean {
-  if (raw === null || typeof raw !== "object") {
-    return false;
-  }
-  return Array.isArray(raw) ? allowTopLevelArray : true;
+function isAcceptableJsonRoot(raw: unknown): boolean {
+  return raw !== null && typeof raw === "object" && !Array.isArray(raw);
 }
 
 function resolveMaxBytes(options?: { maxBytes?: number }): number {
@@ -107,9 +86,7 @@ async function readBodyWithinLimit(
 /**
  * 安全解析 JSON 请求体，统一处理解析错误和非法结构。
  *
- * - 默认仅当解析结果为非 null 对象且不是数组时视为成功；
- * - 顶层数组默认拒绝（普通写接口应提交对象）；仅当调用方显式传入
- *   `allowTopLevelArray: true` 时才接受数组，用于 Reporting API 批量报文；
+ * - 仅当解析结果为非 null 对象且不是数组时视为成功；
  * - 解析失败或结果不是对象时，返回 { ok: false, errorCode: API_ERROR_CODES.INVALID_JSON_BODY }；
  * - 不直接决定 HTTP 状态码，由调用方根据结果返回 400 等响应；
  * - 使用统一日志格式记录解析失败，便于观察和告警。
@@ -121,10 +98,6 @@ export async function safeParseJson<T>(
     route?: string;
     /** 请求体大小上限，默认 64KB */
     maxBytes?: number;
-    /** 空请求体错误码；默认保持 INVALID_JSON_BODY */
-    emptyBodyErrorCode?: EmptyBodyErrorCode;
-    /** 允许顶层 JSON 数组（Reporting API report-to 批量报文）；默认拒绝 */
-    allowTopLevelArray?: boolean;
   },
 ): Promise<SafeJsonParseResult<T>> {
   const maxBytes = resolveMaxBytes(options);
@@ -150,14 +123,12 @@ export async function safeParseJson<T>(
     }
 
     if (!rawText.trim()) {
-      return createJsonFailure(
-        options?.emptyBodyErrorCode ?? API_ERROR_CODES.INVALID_JSON_BODY,
-      );
+      return createInvalidJsonFailure();
     }
 
     const raw = JSON.parse(rawText) as unknown;
 
-    if (!isAcceptableJsonRoot(raw, options?.allowTopLevelArray ?? false)) {
+    if (!isAcceptableJsonRoot(raw)) {
       logger.warn("Invalid JSON structure - expected object", {
         route,
         receivedType: Array.isArray(raw) ? "array" : typeof raw,

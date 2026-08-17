@@ -77,7 +77,7 @@ describe("CI preview environment contract", () => {
     const clientBoundaryStepIndex = cloudflareBuildSteps.findIndex(
       (candidate) =>
         candidate.run ===
-        "node scripts/starter-checks.js client-boundary --build-artifacts",
+        "node scripts/quality/checks/client-boundary.js --build-artifacts",
     );
     const cloudflareBuildStepIndex = cloudflareBuildSteps.findIndex(
       (candidate) => candidate.name === "Cloudflare/OpenNext 构建",

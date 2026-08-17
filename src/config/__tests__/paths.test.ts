@@ -3,8 +3,8 @@ import {
   getCanonicalPath,
   getLocalizedPath,
   getPageTypeFromPath,
-  getPathnames,
   LOCALES_CONFIG,
+  PATHNAMES,
   PATHS_CONFIG,
 } from "@/config/paths";
 
@@ -42,7 +42,7 @@ describe("paths", () => {
     const expected = Object.fromEntries(
       Object.values(CORE_PATHS).map((path) => [path, path]),
     );
-    expect(getPathnames()).toEqual(expected);
+    expect(PATHNAMES).toEqual(expected);
   });
 
   it("returns null for an unknown path", () => {

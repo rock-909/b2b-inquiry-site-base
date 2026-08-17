@@ -59,8 +59,6 @@
       },
       {
         "files": [
-          "scripts/starter-checks.js",
-          "src/app/api/csp-report/__tests__/route-post.test.ts",
           "src/app/api/inquiry/__tests__/route.test.ts",
           "src/lib/__tests__/structured-data.test.ts",
           "src/lib/api/safe-parse-json.ts",
@@ -71,7 +69,7 @@
         "rules": ["react-doctor/async-await-in-loop"]
       },
       {
-        "files": ["scripts/starter-checks.js", "tests/e2e/global-setup.ts"],
+        "files": ["tests/e2e/global-setup.ts"],
         "rules": ["react-doctor/async-parallel"]
       },
       {
@@ -106,13 +104,7 @@
         "rules": ["react-doctor/js-flatmap-filter"]
       },
       {
-        "files": ["src/config/paths/__tests__/site-config.test.ts"],
-        "rules": ["react-doctor/js-index-maps"]
-      },
-      {
         "files": [
-          "scripts/starter-checks.js",
-          "src/config/paths/__tests__/site-config.test.ts",
           "tests/architecture/design-token-contract.test.ts",
           "tests/architecture/env-boundary.test.ts"
         ],
@@ -182,9 +174,7 @@
       },
       {
         "files": [
-          "scripts/starter-checks.js",
           "src/app/[locale]/contact/__tests__/page.test.tsx",
-          "src/app/api/csp-report/__tests__/route-get-options.test.ts",
           "src/app/api/inquiry/__tests__/route.test.ts",
           "src/lib/__tests__/load-messages-runtime.test.ts",
           "src/components/forms/__tests__/inquiry-form.test.tsx",

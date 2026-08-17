@@ -5,8 +5,8 @@ import {
   generateMetadataForPath,
 } from "../seo-metadata";
 
-vi.mock("@/config/paths", () => ({
-  SITE_CONFIG: {
+vi.mock("@/config/single-site", () => ({
+  SINGLE_SITE_CONFIG: {
     baseUrl: "https://example.com",
     name: "Test Site",
     seo: {
@@ -15,9 +15,6 @@ vi.mock("@/config/paths", () => ({
       defaultDescription: "Default Description",
     },
   },
-}));
-
-vi.mock("@/config/single-site", () => ({
   SINGLE_SITE_FACTS: {
     company: {
       established: 2021,
@@ -48,8 +45,8 @@ describe("SEO Metadata", () => {
 
     it("joins paths safely when SITE_CONFIG.baseUrl has a trailing slash", async () => {
       vi.resetModules();
-      vi.doMock("@/config/paths", () => ({
-        SITE_CONFIG: {
+      vi.doMock("@/config/single-site", () => ({
+        SINGLE_SITE_CONFIG: {
           baseUrl: "https://example.com/",
           name: "Test Site",
           seo: {
@@ -57,6 +54,10 @@ describe("SEO Metadata", () => {
             defaultTitle: "Default Title",
             defaultDescription: "Default Description",
           },
+        },
+        SINGLE_SITE_FACTS: {
+          company: { established: 2021 },
+          brandAssets: { ogImage: "/images/facts-og.png" },
         },
       }));
 

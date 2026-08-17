@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { SITE_CONFIG, type Locale, type PageType } from "@/config/paths";
+import { type Locale, type PageType } from "@/config/paths";
 import { shouldIndexPublicPage } from "@/config/single-site-seo";
-import { SINGLE_SITE_FACTS } from "@/config/single-site";
+import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import { routing } from "@/i18n/routing-config";
 import { getRuntimeAppEnv, getRuntimeEnvString } from "@/lib/env";
 import { interpolate } from "@/lib/interpolate";
@@ -62,7 +62,7 @@ function buildCanonicalForPath(path: string): string {
   const normalizedPath = normalizePath(path);
   return new URL(
     normalizedPath === "" ? "/" : normalizedPath,
-    SITE_CONFIG.baseUrl,
+    SINGLE_SITE_CONFIG.baseUrl,
   ).toString();
 }
 
@@ -75,14 +75,14 @@ function buildLanguagesForPath(path: string): Record<string, string> {
     locale,
     new URL(
       normalizedPath === "" ? "/" : normalizedPath,
-      SITE_CONFIG.baseUrl,
+      SINGLE_SITE_CONFIG.baseUrl,
     ).toString(),
   ]);
   entries.push([
     "x-default",
     new URL(
       normalizedPath === "" ? "/" : normalizedPath,
-      SITE_CONFIG.baseUrl,
+      SINGLE_SITE_CONFIG.baseUrl,
     ).toString(),
   ]);
 
@@ -131,7 +131,7 @@ function resolveMetadataTitle(config: SEOConfig): string {
     return interpolateSeoString(config.title);
   }
 
-  return SITE_CONFIG.seo.defaultTitle;
+  return SINGLE_SITE_CONFIG.seo.defaultTitle;
 }
 
 function resolveMetadataDescription(config: SEOConfig): string {
@@ -142,7 +142,7 @@ function resolveMetadataDescription(config: SEOConfig): string {
     return interpolateSeoString(config.description);
   }
 
-  return SITE_CONFIG.seo.defaultDescription;
+  return SINGLE_SITE_CONFIG.seo.defaultDescription;
 }
 
 export function generateMetadataForPath(
@@ -155,7 +155,7 @@ export function generateMetadataForPath(
   const languages = buildLanguagesForPath(path);
   const title = resolveMetadataTitle(seoConfig);
   const description = resolveMetadataDescription(seoConfig);
-  const siteName = SITE_CONFIG.name;
+  const siteName = SINGLE_SITE_CONFIG.name;
   const openGraphType =
     (seoConfig.type === "product" ? "website" : seoConfig.type) || "website";
 

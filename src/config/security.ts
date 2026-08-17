@@ -12,22 +12,6 @@ export interface SecurityHeader {
 }
 
 /**
- * Named endpoint for the modern Reporting API (`Reporting-Endpoints` header +
- * CSP `report-to` directive). Runs in parallel with the legacy `report-uri`
- * directive, which stays for Firefox/Safari compatibility.
- */
-const CSP_REPORT_TO_ENDPOINT = "csp-endpoint";
-
-/**
- * Resolve the CSP report destination. Env override wins; otherwise the built-in
- * `/api/csp-report` route handles reports.
- */
-function resolveCspReportUri(): string {
-  const configured = getRuntimeEnvString("CSP_REPORT_URI")?.trim();
-  return configured && configured.length > 0 ? configured : "/api/csp-report";
-}
-
-/**
  * Security configuration for the application
  * Includes CSP, security headers, and other security-related settings
  */
@@ -43,7 +27,6 @@ function resolveCspReportUri(): string {
 export function generateCSP(): string {
   const isDevelopment = isRuntimeDevelopment();
   const isProduction = isRuntimeProduction();
-  const reportUri = resolveCspReportUri();
 
   // Base CSP directives
   const cspDirectives = {
@@ -114,11 +97,6 @@ export function generateCSP(): string {
     "base-uri": ["'self'"],
     "form-action": ["'self'"],
     "frame-ancestors": ["'none'"],
-    // Legacy reporting channel (Firefox/Safari). Kept alongside `report-to`.
-    "report-uri": [reportUri],
-    // Modern Reporting API channel; endpoint URL is published via the
-    // `Reporting-Endpoints` response header in getSecurityHeaders().
-    "report-to": [CSP_REPORT_TO_ENDPOINT],
     "upgrade-insecure-requests": isProduction ? [] : undefined,
   };
 
@@ -189,12 +167,6 @@ export function getSecurityHeaders(): SecurityHeader[] {
       key: cspHeaderKey,
       value: generateCSP(),
     },
-    // Modern Reporting API endpoint map. Binds the CSP `report-to` endpoint
-    // name to the report URL. Kept in sync with the `report-to` directive.
-    {
-      key: "Reporting-Endpoints",
-      value: `${CSP_REPORT_TO_ENDPOINT}="${resolveCspReportUri()}"`,
-    },
     // Permissions Policy (formerly Feature Policy)
     {
       key: "Permissions-Policy",
@@ -234,24 +206,4 @@ function isCspReportOnly(): boolean {
 
   const mode = getRuntimeEnvString("NEXT_PUBLIC_SECURITY_MODE") || "strict";
   return mode === "relaxed";
-}
-
-/**
- * Legacy CSP report payload shape for `/api/csp-report`.
- */
-export interface CSPReport {
-  "csp-report": {
-    "document-uri": string;
-    referrer: string;
-    "violated-directive": string;
-    "effective-directive": string;
-    "original-policy": string;
-    disposition: string;
-    "blocked-uri": string;
-    "line-number": number;
-    "column-number": number;
-    "source-file": string;
-    "status-code": number;
-    "script-sample": string;
-  };
 }

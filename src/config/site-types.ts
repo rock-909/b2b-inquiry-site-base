@@ -34,8 +34,6 @@ export interface SiteConfig {
 export interface CompanyInfo {
   name: string;
   established: number;
-  yearsInBusiness: number;
-  employees: number;
   location: {
     country: string;
     city: string;

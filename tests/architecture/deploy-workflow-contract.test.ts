@@ -51,10 +51,13 @@ describe("Cloudflare deploy workflow contract", () => {
 
   it("runs strict production gates before deployment", () => {
     const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
-    const configGate = findStepIndex(steps, "validate-production-config");
+    const configGate = findStepIndex(
+      steps,
+      "scripts/quality/checks/production-config.js",
+    );
     const contentGate = findStepIndex(
       steps,
-      "content-readiness --strict-client-launch",
+      "scripts/quality/checks/content-readiness.js --strict-client-launch",
     );
     const deploy = steps.findIndex((step) => step.id === "deploy_production");
     const deployStep = steps[deploy];
@@ -86,7 +89,7 @@ describe("Cloudflare deploy workflow contract", () => {
   it("keeps post-deploy verification serialized after the deploy job", () => {
     const workflow = loadDeployWorkflow();
     const smokeStep = workflowSteps(workflow, "post-deploy-verification").find(
-      (step) => step.run?.includes("starter-checks.js deployed-smoke"),
+      (step) => step.run?.includes("cloudflare-smoke.js deployed-smoke"),
     );
 
     expect(
@@ -136,7 +139,7 @@ describe("Cloudflare deploy workflow contract", () => {
     expect(smoke?.name).toBe("外部 URL smoke（preview 输入）");
     expect(smoke?.if).toContain("inputs.environment == 'preview'");
     expect(smoke?.run).toContain(
-      'node scripts/starter-checks.js external-url-smoke --base-url "${PREVIEW_URL}"',
+      'node scripts/quality/checks/cloudflare-smoke.js external-url-smoke --base-url "${PREVIEW_URL}"',
     );
     expect(smoke?.run).not.toContain("inputs.preview_url");
     expect(smoke?.env?.PREVIEW_URL).toBe("${{ inputs.preview_url }}");

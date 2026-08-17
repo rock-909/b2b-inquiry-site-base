@@ -139,7 +139,7 @@ jobs:
         if: ${{ inputs.environment == 'production' }}
         run: |
           set -euo pipefail
-          PUBLIC_LAUNCH_STRICT=true APP_ENV=production node scripts/starter-checks.js validate-production-config
+          PUBLIC_LAUNCH_STRICT=true APP_ENV=production node scripts/quality/checks/production-config.js
         env:
           CI: true
           NODE_ENV: production
@@ -157,7 +157,7 @@ jobs:
         if: ${{ inputs.environment == 'production' }}
         run: |
           set -euo pipefail
-          node scripts/starter-checks.js content-readiness --strict-client-launch
+          node scripts/quality/checks/content-readiness.js --strict-client-launch
 
       - name: 外部 URL smoke（preview 输入）
         if: ${{ inputs.environment == 'preview' }}
@@ -167,7 +167,7 @@ jobs:
             echo "❌ preview 外部 URL smoke 需要填写 preview_url" >&2
             exit 1
           fi
-          node scripts/starter-checks.js external-url-smoke --base-url "${PREVIEW_URL}"
+          node scripts/quality/checks/cloudflare-smoke.js external-url-smoke --base-url "${PREVIEW_URL}"
         env:
           CI: true
           NODE_ENV: production
@@ -323,10 +323,10 @@ jobs:
         run: |
           set -euo pipefail
           echo "Cloudflare deployed proof: running final post-deploy smoke against the deployed URL"
-          if [ ! -f ./scripts/starter-checks.js ]; then
-            echo "❌ Missing ./scripts/starter-checks.js in workflow checkout" >&2
+          if [ ! -f ./scripts/quality/checks/cloudflare-smoke.js ]; then
+            echo "❌ Missing Cloudflare smoke checker in workflow checkout" >&2
             ls -la ./scripts || true
             ls -la ./scripts/deploy || true
             exit 1
           fi
-          node ./scripts/starter-checks.js deployed-smoke --base-url "${{ needs.build-and-deploy.outputs.deployment_url }}"
+          node ./scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url "${{ needs.build-and-deploy.outputs.deployment_url }}"

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { SITE_CONFIG } from "@/config/paths";
-import { SINGLE_SITE_FACTS } from "@/config/single-site";
+import {
+  SINGLE_SITE_CONFIG as SITE_CONFIG,
+  SINGLE_SITE_FACTS,
+} from "@/config/single-site";
 import {
   buildWebPageSchema,
   generateArticleData,

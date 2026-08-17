@@ -33,7 +33,6 @@ vi.stubEnv("AIRTABLE_BASE_ID", "test-base-id");
 vi.stubEnv("AIRTABLE_TABLE_NAME", "test-table");
 vi.stubEnv("EMAIL_FROM", "test@example.com");
 vi.stubEnv("EMAIL_REPLY_TO", "reply@example.com");
-vi.stubEnv("CSP_REPORT_URI", "https://example.com/csp-report");
 vi.stubEnv("ADMIN_API_TOKEN", "test-admin-token");
 vi.stubEnv("TURNSTILE_BYPASS", "false");
 vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "test-account-id");
@@ -50,7 +49,6 @@ vi.mock("@t3-oss/env-nextjs", () => ({
     AIRTABLE_TABLE_NAME: "test-table",
     EMAIL_FROM: "test@example.com",
     EMAIL_REPLY_TO: "reply@example.com",
-    CSP_REPORT_URI: "https://example.com/csp-report",
     ADMIN_API_TOKEN: "test-admin-token",
     TURNSTILE_BYPASS: false,
     CLOUDFLARE_ACCOUNT_ID: "test-account-id",
@@ -70,7 +68,6 @@ vi.mock("@/lib/env", () => {
     AIRTABLE_TABLE_NAME: "test-table",
     EMAIL_FROM: "test@example.com",
     EMAIL_REPLY_TO: "reply@example.com",
-    CSP_REPORT_URI: "https://example.com/csp-report",
     ADMIN_API_TOKEN: "test-admin-token",
     ALLOW_MEMORY_RATE_LIMIT: false,
     CLOUDFLARE_ACCOUNT_ID: "test-account-id",
@@ -116,14 +113,6 @@ vi.mock("@/lib/env", () => {
       const value = mockEnv[key];
       return typeof value === "boolean" ? value : undefined;
     },
-    getRuntimeNodeEnv: () => {
-      const value = readProcessEnvValue("NODE_ENV") ?? mockEnv.NODE_ENV;
-      return value === "development" ||
-        value === "test" ||
-        value === "production"
-        ? value
-        : undefined;
-    },
     getRuntimeAppEnv: () => {
       const value = readProcessEnvValue("APP_ENV") ?? mockEnv.APP_ENV;
       return value === "local" ||
@@ -138,24 +127,5 @@ vi.mock("@/lib/env", () => {
       (readProcessEnvValue("NODE_ENV") ?? mockEnv.NODE_ENV) === "development",
     isRuntimeProduction: () =>
       (readProcessEnvValue("NODE_ENV") ?? mockEnv.NODE_ENV) === "production",
-    isRuntimeTest: () =>
-      (readProcessEnvValue("NODE_ENV") ?? mockEnv.NODE_ENV) === "test",
-    isRuntimeCi: () => readProcessEnvValue("CI") === "true",
-    isRuntimePlaywright: () =>
-      readProcessEnvValue("PLAYWRIGHT_TEST") === "true",
-    isRuntimeProductionBuildPhase: () =>
-      readProcessEnvValue("NEXT_PHASE") === "phase-production-build",
-    isRuntimeCloudflare: () =>
-      readProcessEnvValue("DEPLOYMENT_PLATFORM") === "cloudflare" ||
-      readProcessEnvValue("NEXT_PUBLIC_DEPLOYMENT_PLATFORM") === "cloudflare",
-    requireEnvVar: (key: string) => {
-      const value = mockEnv[key];
-      if (!value || typeof value === "boolean" || typeof value === "number") {
-        throw new Error(
-          `Required environment variable ${key} is not set or is not a string`,
-        );
-      }
-      return value;
-    },
   };
 });

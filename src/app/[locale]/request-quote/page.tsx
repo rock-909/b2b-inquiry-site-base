@@ -11,8 +11,11 @@ import {
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
-import { getLocalizedPath, SITE_CONFIG } from "@/config/paths";
+import { getLocalizedPath } from "@/config/paths";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
+import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
 import { resolveInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
 import { buildWebPageSchema } from "@/lib/structured-data-generators";
@@ -35,18 +38,23 @@ export async function generateMetadata({
   params,
 }: RequestQuotePageParams): Promise<Metadata> {
   const locale = resolveLocaleParam(await params);
-  const t = await getTranslations({
-    locale,
-    namespace: "requestQuote.metadata",
-  });
+  const messages = getComposedMessages(locale);
 
   return generateMetadataForPath({
     locale,
     pageType: "requestQuote",
     path: getLocalizedPath("requestQuote", locale),
     config: {
-      title: t("title"),
-      description: t("description"),
+      title: readRequiredMessagePath(messages, [
+        "requestQuote",
+        "metadata",
+        "title",
+      ]),
+      description: readRequiredMessagePath(messages, [
+        "requestQuote",
+        "metadata",
+        "description",
+      ]),
     },
   });
 }
@@ -103,7 +111,7 @@ export default async function RequestQuotePage({
   ]);
   const inquiryCopy: InquiryFormCopy = createInquiryFormCopy(
     tInquiryForm,
-    SITE_CONFIG.contact.email,
+    SINGLE_SITE_CONFIG.contact.email,
   );
   const asideCopy: RequestQuoteAsideCopy = {
     afterSubmitTitle: tPage("afterSubmitTitle"),
@@ -114,7 +122,7 @@ export default async function RequestQuotePage({
   };
   const inquiryFallback = <InquiryFormStaticFallback copy={inquiryCopy} />;
   const pagePath = getLocalizedPath("requestQuote", locale);
-  const pageUrl = new URL(pagePath, SITE_CONFIG.baseUrl).toString();
+  const pageUrl = new URL(pagePath, SINGLE_SITE_CONFIG.baseUrl).toString();
 
   return (
     <>

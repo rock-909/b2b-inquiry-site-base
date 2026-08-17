@@ -21,8 +21,6 @@ vi.mock("@/lib/env", () => ({
     mocks.runtimeValues[key] ?? mocks.envValues[key],
   getRuntimeEnvBoolean: (key: string) =>
     (mocks.runtimeValues[key] ?? mocks.envValues[key]) === "true",
-  getRuntimeNodeEnv: () => "test",
-  isRuntimePlaywright: () => false,
 }));
 
 vi.mock("@/lib/logger", () => ({

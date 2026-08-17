@@ -112,24 +112,10 @@ function getRequestFallbackIP(platform: DeploymentPlatform | null): string {
   return FALLBACK_IP;
 }
 
-function canTrustPlatformHeaders(platformContext: {
-  platform: DeploymentPlatform;
-  config: TrustedProxyConfig;
-}): boolean {
-  return (
-    platformContext.platform === PLATFORM_CLOUDFLARE ||
-    platformContext.platform === PLATFORM_DEVELOPMENT
-  );
-}
-
 export function getClientIP(request: NextRequest): string {
   const platformContext = getPlatformContext();
   if (!platformContext) {
     return getRequestFallbackIP(null);
-  }
-
-  if (!canTrustPlatformHeaders(platformContext)) {
-    return getRequestFallbackIP(platformContext.platform);
   }
 
   const headerIP = readTrustedHeaderIP(request.headers, platformContext.config);

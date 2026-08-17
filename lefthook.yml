@@ -22,7 +22,7 @@ pre-commit:
     i18n-sync:
       run: |
         if git diff --cached --name-only | grep -E '^(messages/|content/|i18n\.(json|ts)$|src/.+i18n|translation\.config\.js)' >/dev/null; then
-          node scripts/starter-checks.js translations
+          node scripts/quality/checks/translations.js
         else
           echo "跳过 i18n 同步检查（无相关变更）"; exit 0;
         fi
@@ -45,13 +45,13 @@ pre-push:
         if [ "$RUN_FAST_PUSH" = "1" ]; then
           echo "⏭️  RUN_FAST_PUSH=1: 跳过构建验证（仅用于紧急推送）";
         else
-          node scripts/starter-checks.js content-manifest --check && node scripts/starter-checks.js content-slugs --strict-frontmatter && node scripts/starter-checks.js validate-production-config && pnpm build && node scripts/starter-checks.js client-boundary --build-artifacts
+          node scripts/quality/checks/content-manifest.js --check && node scripts/quality/checks/content-slugs.js --strict-frontmatter && node scripts/quality/checks/production-config.js && pnpm build && node scripts/quality/checks/client-boundary.js --build-artifacts
         fi
       fail_text: '构建验证失败 - 请修复构建错误后再推送'
 
     # 翻译验证始终执行。
     translation-check:
-      run: node scripts/starter-checks.js translations
+      run: node scripts/quality/checks/translations.js
       fail_text: '翻译验证失败 - 请确保所有翻译文件同步'
 
     # 架构和循环依赖检查；紧急场景可跳过。

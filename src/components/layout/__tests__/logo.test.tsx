@@ -5,7 +5,7 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { SITE_CONFIG } from "@/config/paths/site-config";
+import { SINGLE_SITE_CONFIG as SITE_CONFIG } from "@/config/single-site";
 import { Logo } from "../logo";
 
 // Mock @/i18n/routing Link (locale-aware navigation)

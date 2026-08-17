@@ -17,10 +17,6 @@ import { logger, sanitizeEmail } from "@/lib/logger";
 import { pickAttributionFields } from "@/lib/marketing/attribution-fields";
 import { resendService } from "@/lib/resend-instance";
 
-interface LeadProcessingContext {
-  referenceId: string;
-}
-
 export interface LeadResult {
   success: boolean;
   emailSent: boolean;
@@ -52,10 +48,7 @@ function createProcessingFailureResult(referenceId?: string): LeadResult {
   };
 }
 
-function createInquiryEmailData(
-  lead: InquiryLeadInput,
-  referenceId: string,
-): InquiryEmailData {
+function createOwnerLead(lead: InquiryLeadInput, referenceId: string) {
   const { firstName, lastName } = splitName(lead.fullName);
   const offering = getOfferingById(lead.offeringId);
   const requirements = resolveBuyerMessage({ message: lead.message });
@@ -70,41 +63,48 @@ function createInquiryEmailData(
       ? { offeringId: offering.id, offeringName: offering.name }
       : {}),
     ...(requirements ? { requirements } : {}),
+    attribution: pickAttributionFields(lead),
   };
 }
 
-async function sendOwnerEmail(
-  lead: InquiryLeadInput,
-  context: LeadProcessingContext,
-): Promise<boolean> {
+type OwnerLead = ReturnType<typeof createOwnerLead>;
+
+function createInquiryEmailData(lead: OwnerLead): InquiryEmailData {
+  return {
+    referenceId: lead.referenceId,
+    firstName: lead.firstName,
+    lastName: lead.lastName,
+    email: lead.email,
+    ...(lead.interest ? { interest: lead.interest } : {}),
+    ...(lead.offeringId && lead.offeringName
+      ? { offeringId: lead.offeringId, offeringName: lead.offeringName }
+      : {}),
+    ...(lead.requirements ? { requirements: lead.requirements } : {}),
+  };
+}
+
+async function sendOwnerEmail(lead: OwnerLead): Promise<boolean> {
   try {
-    await resendService.sendInquiryEmail(
-      createInquiryEmailData(lead, context.referenceId),
-    );
+    await resendService.sendInquiryEmail(createInquiryEmailData(lead));
     return true;
   } catch (error) {
     logger.error("Owner inquiry email failed", {
       error: normalizeErrorMessage(error),
       email: sanitizeEmail(lead.email),
-      referenceId: context.referenceId,
+      referenceId: lead.referenceId,
     });
     return false;
   }
 }
 
 async function createInquiryLeadRecord(
-  lead: InquiryLeadInput,
-  context: LeadProcessingContext,
+  lead: OwnerLead,
   emailSent: boolean,
 ): Promise<boolean> {
-  const { firstName, lastName } = splitName(lead.fullName);
-  const { referenceId } = context;
-  const offering = getOfferingById(lead.offeringId);
-  const buyerText = resolveBuyerMessage({ message: lead.message });
   const baseMessage = generateInquiryMessage({
-    offeringName: offering?.name,
+    offeringName: lead.offeringName,
     interest: lead.interest,
-    requirements: buyerText,
+    requirements: lead.requirements,
   });
   // 邮件没发出去时，业主唯一能看到这条线索的地方就是这条记录。
   // 提示写进自由文本的 Message 字段：写什么都不会被 Airtable 拒收，
@@ -115,17 +115,17 @@ async function createInquiryLeadRecord(
 
   try {
     await airtableService.createLead({
-      firstName,
-      lastName,
+      firstName: lead.firstName,
+      lastName: lead.lastName,
       email: lead.email,
       message,
       ...(lead.interest ? { interest: lead.interest } : {}),
-      ...(offering
-        ? { offeringId: offering.id, offeringName: offering.name }
+      ...(lead.offeringId && lead.offeringName
+        ? { offeringId: lead.offeringId, offeringName: lead.offeringName }
         : {}),
-      ...(buyerText ? { requirements: buyerText } : {}),
-      referenceId,
-      ...pickAttributionFields(lead),
+      ...(lead.requirements ? { requirements: lead.requirements } : {}),
+      referenceId: lead.referenceId,
+      ...lead.attribution,
     });
     return true;
   } catch (error) {
@@ -133,7 +133,7 @@ async function createInquiryLeadRecord(
       error: normalizeErrorMessage(error),
       email: sanitizeEmail(lead.email),
       leadDeliveryPolicy: LEAD_DELIVERY_POLICY,
-      referenceId,
+      referenceId: lead.referenceId,
     });
     return false;
   }
@@ -156,12 +156,9 @@ export async function processValidatedInquiry(
 
     // 邮件结果必须先落定，记录才能准确写入通知失败提示。
     // 代价：最坏耗时是邮件预算加 Airtable 的 8 秒中止预算。
-    const emailSent = await sendOwnerEmail(input, { referenceId });
-    const recordCreated = await createInquiryLeadRecord(
-      input,
-      { referenceId },
-      emailSent,
-    );
+    const ownerLead = createOwnerLead(input, referenceId);
+    const emailSent = await sendOwnerEmail(ownerLead);
+    const recordCreated = await createInquiryLeadRecord(ownerLead, emailSent);
 
     if (!emailSent && !recordCreated) {
       return createProcessingFailureResult(referenceId);

@@ -72,7 +72,6 @@ export const serverEnvSchema = {
     .string()
     .default("true")
     .transform((val) => val === "true"),
-  CSP_REPORT_URI: z.url().optional(),
   CORS_ALLOWED_ORIGINS: z.string().optional(),
 };
 
@@ -139,7 +138,6 @@ export const runtimeEnv = {
   PLAYWRIGHT_TEST: process.env.PLAYWRIGHT_TEST,
   SKIP_ENV_VALIDATION: process.env.SKIP_ENV_VALIDATION,
   SECURITY_HEADERS_ENABLED: process.env.SECURITY_HEADERS_ENABLED,
-  CSP_REPORT_URI: process.env.CSP_REPORT_URI,
   CORS_ALLOWED_ORIGINS: process.env.CORS_ALLOWED_ORIGINS,
 
   // Client
@@ -219,18 +217,8 @@ function readValidatedEnvValue(key: keyof typeof env) {
   }
 }
 
-type RuntimeNodeEnv = "development" | "test" | "production";
 type RuntimeAppEnv =
   "local" | "development" | "test" | "preview" | "production";
-
-function coerceRuntimeNodeEnv(
-  value: string | undefined,
-): RuntimeNodeEnv | undefined {
-  if (value === "development" || value === "test" || value === "production") {
-    return value;
-  }
-  return undefined;
-}
 
 function coerceRuntimeAppEnv(
   value: string | undefined,
@@ -269,52 +257,14 @@ export function getRuntimeEnvBoolean(
   return typeof value === "boolean" ? value : undefined;
 }
 
-export function getRuntimeNodeEnv(): RuntimeNodeEnv | undefined {
-  return coerceRuntimeNodeEnv(getRuntimeEnvString("NODE_ENV"));
-}
-
 export function getRuntimeAppEnv(): RuntimeAppEnv | undefined {
   return coerceRuntimeAppEnv(getRuntimeEnvString("APP_ENV"));
 }
 
 export function isRuntimeDevelopment(): boolean {
-  return getRuntimeNodeEnv() === "development";
+  return getRuntimeEnvString("NODE_ENV") === "development";
 }
 
 export function isRuntimeProduction(): boolean {
-  return getRuntimeNodeEnv() === "production";
-}
-
-export function isRuntimeTest(): boolean {
-  return getRuntimeNodeEnv() === "test";
-}
-
-export function isRuntimeCi(): boolean {
-  return getRuntimeEnvString("CI") === "true";
-}
-
-export function isRuntimePlaywright(): boolean {
-  return getRuntimeEnvBoolean("PLAYWRIGHT_TEST") === true;
-}
-
-export function isRuntimeProductionBuildPhase(): boolean {
-  return getRuntimeEnvString("NEXT_PHASE") === "phase-production-build";
-}
-
-export function isRuntimeCloudflare(): boolean {
-  return (
-    getRuntimeEnvString("DEPLOYMENT_PLATFORM") === "cloudflare" ||
-    getRuntimeEnvString("NEXT_PUBLIC_DEPLOYMENT_PLATFORM") === "cloudflare"
-  );
-}
-
-// 提供必需环境变量检查（仅用于字符串类型的环境变量）
-export function requireEnvVar(key: keyof typeof env): string {
-  const value = env[key];
-  if (!value || typeof value === "boolean" || typeof value === "number") {
-    throw new Error(
-      `Required environment variable ${key} is not set or is not a string`,
-    );
-  }
-  return value;
+  return getRuntimeEnvString("NODE_ENV") === "production";
 }

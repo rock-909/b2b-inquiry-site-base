@@ -532,6 +532,10 @@ function runTranslationCheck() {
   return true;
 }
 
+if (require.main === module) {
+  if (!runTranslationCheck()) process.exitCode = 1;
+}
+
 module.exports = {
   collectLeafPaths,
   compareLocales,

@@ -4,7 +4,6 @@ import {
   PUBLIC_STATIC_PAGE_DEFINITIONS,
   PUBLIC_STATIC_PAGE_TYPES,
   getMdxPageSlugByStaticPath,
-  getStaticPageLastmodByPath,
   getStaticSitemapPages,
 } from "@/config/pages.config";
 
@@ -41,17 +40,12 @@ describe("pages.config", () => {
     }
   });
 
-  it("keeps MDX and static lastmod ownership explicit", () => {
+  it("keeps MDX ownership explicit", () => {
     expect(getMdxPageSlugByStaticPath()).toEqual({
       "/about": "about",
       "/contact": "contact",
       "/privacy": "privacy",
       "/terms": "terms",
-    });
-    expect(getStaticPageLastmodByPath()).toEqual({
-      "": "2026-07-05T00:00:00Z",
-      "/products": "2026-08-12T00:00:00Z",
-      "/request-quote": "2026-07-05T00:00:00Z",
     });
   });
 });

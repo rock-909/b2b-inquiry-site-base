@@ -14,10 +14,10 @@ export function splitName(fullName: string): SplitNameResult {
   const parts = normalizedName.split(/\s+/);
 
   if (parts.length === 1) {
-    return { firstName: parts[0]!, lastName: "" };
+    return { firstName: parts[0] ?? "", lastName: "" };
   }
 
-  const lastName = parts.pop()!;
+  const lastName = parts.pop() ?? "";
   return { firstName: parts.join(" "), lastName };
 }
 

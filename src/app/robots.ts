@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
-import { SITE_CONFIG } from "@/config/paths";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { SINGLE_SITE_ROBOTS_DISALLOW_PATHS } from "@/config/single-site-seo";
 import { getRuntimeAppEnv } from "@/lib/env";
 
 // Base URL for the site - uses centralized SITE_CONFIG for consistency
-const BASE_URL = SITE_CONFIG.baseUrl;
+const BASE_URL = SINGLE_SITE_CONFIG.baseUrl;
 
 /**
  * Dynamic robots.txt generation for Next.js.

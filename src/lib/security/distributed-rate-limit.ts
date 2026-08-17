@@ -19,15 +19,12 @@ import {
   resetRateLimitStoreWarnings,
 } from "@/lib/security/stores/rate-limit-store";
 
-// Rate limit configuration per endpoint
-// failureMode: "open" = allow on storage failure; "closed" = deny on storage failure
+// Public inquiry writes fail closed when the shared store is unavailable.
 export const RATE_LIMIT_PRESETS = {
   inquiry: {
     maxRequests: 10,
     windowMs: MINUTE_MS,
-    failureMode: "closed" as const,
   },
-  csp: { maxRequests: 100, windowMs: MINUTE_MS, failureMode: "open" as const },
 } as const;
 
 export type RateLimitPreset = keyof typeof RATE_LIMIT_PRESETS;
@@ -37,8 +34,6 @@ interface RateLimitResult {
   remaining: number;
   resetTime: number;
   retryAfter: number | null;
-  /** Indicates storage failure triggered fail-open or fail-closed behavior */
-  degraded?: boolean;
   /** Reason for denial: 'limit' = real rate limit exceeded, 'storage_failure' = backend unavailable */
   deniedReason?: "limit" | "storage_failure";
 }
@@ -52,24 +47,18 @@ function getRateLimitStore(): RateLimitStore {
   return rateLimitStore;
 }
 
-/**
- * Get rate limit config for preset (safe access pattern)
- */
-function getRateLimitConfig(preset: RateLimitPreset): {
+type RateLimitConfig = {
   maxRequests: number;
   windowMs: number;
-  failureMode: "open" | "closed";
-} {
-  return RATE_LIMIT_PRESETS[preset];
-}
+};
 
 async function executeRateLimitCheck(
   key: string,
-  config: ReturnType<typeof getRateLimitConfig>,
+  config: RateLimitConfig,
 ): Promise<RateLimitResult> {
   try {
     // getRateLimitStore inside try so any constructor/factory failure
-    // is caught and handled by the failureMode logic below. The store owns its
+    // is caught and denied below. The store owns its
     // own network timeout (Redis fetch AbortController), so no extra timeout
     // wrapper is needed here.
     const store = getRateLimitStore();
@@ -88,20 +77,14 @@ async function executeRateLimitCheck(
       ...(allowed ? {} : { deniedReason: "limit" as const }),
     };
   } catch (error) {
-    const failClosed = config.failureMode === "closed";
-    logger.warn(
-      failClosed
-        ? "[Rate Limit] Storage failure — fail-closed, denying request (degraded)"
-        : "[Rate Limit] Storage failure — fail-open, allowing request (degraded)",
-    );
+    logger.warn("[Rate Limit] Storage failure — fail-closed, denying request");
     logger.error("[Rate Limit] Storage backend error details", { error });
     return {
-      allowed: !failClosed,
-      remaining: failClosed ? 0 : config.maxRequests - 1,
+      allowed: false,
+      remaining: 0,
       resetTime: Date.now() + config.windowMs,
-      retryAfter: failClosed ? Math.ceil(config.windowMs / 1000) : null,
-      degraded: true,
-      ...(failClosed ? { deniedReason: "storage_failure" as const } : {}),
+      retryAfter: Math.ceil(config.windowMs / 1000),
+      deniedReason: "storage_failure",
     };
   }
 }
@@ -116,7 +99,7 @@ export function checkDistributedRateLimit(
   identifier: string,
   preset: RateLimitPreset,
 ): Promise<RateLimitResult> {
-  const config = getRateLimitConfig(preset);
+  const config = RATE_LIMIT_PRESETS[preset];
   const key = `ratelimit:${preset}:${identifier}`;
   return executeRateLimitCheck(key, config);
 }

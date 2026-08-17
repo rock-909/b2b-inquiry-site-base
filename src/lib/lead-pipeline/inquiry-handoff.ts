@@ -4,7 +4,10 @@ import {
   MAX_LEAD_INTEREST_LENGTH,
 } from "@/constants/validation-limits";
 
-function capBuyerInterest(raw: string | null | undefined): string | undefined {
+function capString(
+  raw: string | null | undefined,
+  maxLength: number,
+): string | undefined {
   if (!raw) {
     return undefined;
   }
@@ -14,20 +17,7 @@ function capBuyerInterest(raw: string | null | undefined): string | undefined {
     return undefined;
   }
 
-  return trimmed.slice(0, MAX_LEAD_INTEREST_LENGTH);
-}
-
-function capConfigPrefill(raw: string | null | undefined): string | undefined {
-  if (!raw) {
-    return undefined;
-  }
-
-  const trimmed = raw.trim();
-  if (trimmed.length === 0) {
-    return undefined;
-  }
-
-  return trimmed.slice(0, MAX_INQUIRY_CONFIG_PREFILL_LENGTH);
+  return trimmed.slice(0, maxLength);
 }
 
 export type InquirySearchParams = Record<string, string | string[] | undefined>;
@@ -53,8 +43,8 @@ function readOptionalDescription(
   const value = searchParams[key];
   const raw = Array.isArray(value) ? value[0] : value;
   return key === "interest"
-    ? capBuyerInterest(raw ?? null)
-    : capConfigPrefill(raw ?? null);
+    ? capString(raw, MAX_LEAD_INTEREST_LENGTH)
+    : capString(raw, MAX_INQUIRY_CONFIG_PREFILL_LENGTH);
 }
 
 function readOfferingId(searchParams: InquirySearchParams): string | undefined {
