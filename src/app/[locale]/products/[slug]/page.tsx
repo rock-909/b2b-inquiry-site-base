@@ -9,7 +9,7 @@ import {
   getOfferingById,
   getOfferingPath,
 } from "@/config/offerings";
-import { SITE_CONFIG } from "@/config/paths";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
@@ -62,8 +62,14 @@ export default async function ProductDetailPage({
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "products" });
   const productPath = getOfferingPath(offering.id);
-  const productUrl = new URL(productPath, SITE_CONFIG.baseUrl).toString();
-  const productsUrl = new URL("/products", SITE_CONFIG.baseUrl).toString();
+  const productUrl = new URL(
+    productPath,
+    SINGLE_SITE_CONFIG.baseUrl,
+  ).toString();
+  const productsUrl = new URL(
+    "/products",
+    SINGLE_SITE_CONFIG.baseUrl,
+  ).toString();
 
   return (
     <>
@@ -74,10 +80,10 @@ export default async function ProductDetailPage({
             name: offering.name,
             description: offering.description,
             url: productUrl,
-            brand: SITE_CONFIG.name,
+            brand: SINGLE_SITE_CONFIG.name,
           }),
           buildBreadcrumbListSchema([
-            { name: "Home", url: SITE_CONFIG.baseUrl },
+            { name: "Home", url: SINGLE_SITE_CONFIG.baseUrl },
             { name: "Products", url: productsUrl },
             { name: offering.name, url: productUrl },
           ]),

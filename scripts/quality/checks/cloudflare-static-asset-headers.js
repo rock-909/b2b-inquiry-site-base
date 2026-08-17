@@ -157,6 +157,12 @@ function runCloudflareStaticAssetHeaderCli(options = {}) {
   return true;
 }
 
+if (require.main === module) {
+  if (!runCloudflareStaticAssetHeaderCli({ rootDir: process.cwd() })) {
+    process.exitCode = 1;
+  }
+}
+
 module.exports = {
   collectCloudflareStaticAssetHeaderFailures,
   runCloudflareStaticAssetHeaderCli,

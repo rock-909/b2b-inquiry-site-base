@@ -140,7 +140,6 @@ const contact = {
 } as const;
 
 const establishedYear = 2026;
-const siteFactSnapshotYear = 2026;
 
 /**
  * Single-site canonical source for the current cutover phase.
@@ -166,8 +165,6 @@ export const SINGLE_SITE_DEFINITION = {
     company: {
       name: "Northstar Industrial Reference",
       established: establishedYear,
-      yearsInBusiness: siteFactSnapshotYear - establishedYear,
-      employees: 0,
       location: {
         country: "Replace before launch",
         city: "Replace before launch",

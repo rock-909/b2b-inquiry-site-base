@@ -3,7 +3,7 @@
  * Pure helpers — no runtime env reads.
  *
  * Shared by:
- * - src/config/paths/site-config.ts (via createRequire)
+ * - production readiness checks
  * - scripts/quality/checks/production-config.js
  *
  * Accepts only an https origin suitable as a public production base URL:

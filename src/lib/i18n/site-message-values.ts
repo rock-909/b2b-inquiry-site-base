@@ -6,11 +6,11 @@ export interface SiteMessageValues {
   currentYear: string;
 }
 
-export function getSiteMessageValues(): SiteMessageValues {
-  const currentYear = String(
-    SINGLE_SITE_FACTS.company.established +
-      SINGLE_SITE_FACTS.company.yearsInBusiness,
-  );
+// eslint-disable-next-line require-await -- Next Cache Components 要求 use cache 函数为 async。
+export async function getSiteMessageValues(): Promise<SiteMessageValues> {
+  "use cache";
+
+  const currentYear = String(new Date().getUTCFullYear());
 
   return {
     siteName: SINGLE_SITE_CONFIG.name,

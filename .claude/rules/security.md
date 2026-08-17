@@ -85,24 +85,17 @@ happy-path proof to prove CRM persistence.
 | Endpoint | Expected protection |
 | --- | --- |
 | `/api/inquiry` | Turnstile + validation + body size gate + inquiry rate limit + honeypot while wired |
-| `/api/csp-report` | body size gate + rate limit; never trust payload content |
 | `/api/health` | public health only; no credentials, config dumps, or env details |
 
 Turnstile verification is internal to the protected write routes. Do not add a
 public token preflight endpoint: Turnstile tokens are single-use, so a preflight
 would consume the token before the real submission.
 
-### CSP report endpoint
-
-`/api/csp-report` accepts only bounded report payloads in the supported report
-shapes, never trusts payload content, and keeps its health probe read-only.
-
 ### JSON body parsing contract
 
 Public write routes parse request bodies through `safeParseJson`
 (`src/lib/api/safe-parse-json.ts`) instead of hand-rolling body reads, so size,
-empty-body, and top-level-array policy stay consistent. Only an endpoint that
-actually accepts batches may opt into arrays.
+empty-body, and top-level-array policy stay consistent.
 
 ### Inquiry anti-abuse (active public writer)
 
@@ -131,9 +124,6 @@ errors or markers in the public JSON.
   justifies the trade-off.
 - Do not mix nonce-based CSP into ordinary security cleanup; it needs a separate
   dynamic-rendering and Cloudflare/OpenNext proof.
-- CSP reports go to `/api/csp-report`.
-- Each accepted CSP violation is logged once: routine reports use `logger.warn`;
-  suspicious patterns use a single `logger.error`.
 - Do not use unfiltered `dangerouslySetInnerHTML`.
 - URL values must allow only `https://`, `http://`, or site-relative `/`.
 

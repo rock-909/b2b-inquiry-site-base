@@ -42,7 +42,6 @@ const NON_RUNTIME_EXAMPLE_ENV_KEYS = new Set([
 const FRAMEWORK_MANAGED_RUNTIME_KEYS = new Set(["NEXT_PHASE", "NODE_ENV"]);
 const TEST_INTERNAL_ENV_KEYS = new Set(["VITEST", "VITEST_WORKER_ID"]);
 const TOOLING_ENV_USAGE_ROOTS = [
-  "scripts/starter-checks.js",
   "scripts/quality/checks",
   "playwright.config.ts",
   "tests/e2e",

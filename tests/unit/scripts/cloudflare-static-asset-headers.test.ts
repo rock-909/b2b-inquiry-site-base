@@ -202,7 +202,7 @@ https://example.com/_next/static*
     ]);
   });
 
-  it("keeps the starter-checks command target runnable", () => {
+  it("runs the direct checker", () => {
     expect(
       runCloudflareStaticAssetHeaderCli({ rootDir: createFixture() }),
     ).toBe(true);

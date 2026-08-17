@@ -20,8 +20,8 @@ async function loadTurnstileConfig({
     },
     getRuntimeEnvString: () => undefined,
   }));
-  vi.doMock("@/config/paths/site-config", () => ({
-    SITE_CONFIG: { baseUrl },
+  vi.doMock("@/config/single-site", () => ({
+    SINGLE_SITE_CONFIG: { baseUrl },
   }));
   return import("@/lib/security/turnstile-config");
 }
@@ -37,7 +37,7 @@ describe("turnstile-config", () => {
   afterEach(() => {
     process.env = originalEnv;
     vi.doUnmock("@/lib/env");
-    vi.doUnmock("@/config/paths/site-config");
+    vi.doUnmock("@/config/single-site");
   });
 
   it("parses configured hosts by trimming, lowercasing, and dropping empties", async () => {

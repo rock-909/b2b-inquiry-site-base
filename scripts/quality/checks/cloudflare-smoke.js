@@ -630,7 +630,7 @@ function runCloudflarePreviewDeployedProof() {
   }
 
   const smokeArgs = [
-    "scripts/starter-checks.js",
+    "scripts/quality/checks/cloudflare-smoke.js",
     "deployed-smoke",
     "--base-url",
     baseUrl,
@@ -651,6 +651,38 @@ function runCloudflarePreviewDeployedProof() {
   console.log(JSON.stringify(result, null, 2));
 
   return smokeResult.status ?? 1;
+}
+
+async function main([command, ...args] = process.argv.slice(2)) {
+  const handlers = {
+    "cf-preview-smoke": runCloudflarePreviewSmoke,
+    "external-url-smoke": runExternalUrlSmoke,
+    "deployed-smoke": runDeployedSmoke,
+    "cf-preview-deployed": runCloudflarePreviewDeployedProof,
+  };
+  const handler = handlers[command];
+
+  if (!handler) {
+    console.error(
+      "Usage: node scripts/quality/checks/cloudflare-smoke.js <cf-preview-smoke|external-url-smoke|deployed-smoke|cf-preview-deployed> [options]",
+    );
+    return 1;
+  }
+
+  const result = await handler(args);
+  return typeof result === "number" ? result : result ? 0 : 1;
+}
+
+if (require.main === module) {
+  main().then(
+    (status) => {
+      process.exitCode = status;
+    },
+    (error) => {
+      console.error("[cloudflare-smoke] Unexpected error:", error);
+      process.exitCode = 1;
+    },
+  );
 }
 
 module.exports = {

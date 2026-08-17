@@ -10,7 +10,12 @@ import { Footer } from "@/components/footer/footer";
 import { FOOTER_COLUMNS } from "@/config/footer-links";
 import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import { getComposedMessages } from "@/lib/i18n/composed-messages";
-import { getSiteMessageValues } from "@/lib/i18n/site-message-values";
+import {
+  getSiteMessageValues,
+  type SiteMessageValues,
+} from "@/lib/i18n/site-message-values";
+
+const siteValues = await getSiteMessageValues();
 
 function readMessageValue(
   messages: Record<string, unknown>,
@@ -31,11 +36,9 @@ function readMessageValue(
     return undefined;
   }
 
-  const siteValues = getSiteMessageValues();
-
   return value.replace(
     /\{(siteName|companyName|currentYear)\}/gu,
-    (match, key: string) => siteValues[key as keyof typeof siteValues] ?? match,
+    (match, key: string) => siteValues[key as keyof SiteMessageValues] ?? match,
   );
 }
 

@@ -5,7 +5,7 @@
 
 import "server-only";
 
-import { SITE_CONFIG } from "@/config/paths/site-config";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { EMAIL_COPY } from "@/emails/email-copy";
 import { env, getRuntimeEnvString } from "@/lib/env";
 import {
@@ -68,8 +68,8 @@ export class ResendService {
   private readEmailConfig(): typeof this.emailConfig {
     const replyTo = this.readEmailEnv("EMAIL_REPLY_TO");
     return {
-      from: this.readEmailEnv("EMAIL_FROM") || SITE_CONFIG.contact.email,
-      replyTo: replyTo || SITE_CONFIG.contact.email,
+      from: this.readEmailEnv("EMAIL_FROM") || SINGLE_SITE_CONFIG.contact.email,
+      replyTo: replyTo || SINGLE_SITE_CONFIG.contact.email,
     };
   }
 

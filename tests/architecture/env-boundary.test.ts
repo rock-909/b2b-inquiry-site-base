@@ -177,7 +177,6 @@ describe("env module boundaries", () => {
     expect(source).toContain("export const clientEnvSchema");
     expect(source).toContain("export const runtimeEnv");
     expect(source).toContain("export function getRuntimeEnvString");
-    expect(source).toContain("export function requireEnvVar");
   });
 
   it("keeps zod-free public runtime env in a dedicated client-safe module", () => {
@@ -250,7 +249,7 @@ describe("env module boundaries", () => {
     expect(read(ENV_FACADE)).not.toContain("NEXT_PUBLIC_CSP_NONCE");
   });
 
-  it("keeps the consolidated logger browser-safe while retaining sanitizers", () => {
+  it("keeps the consolidated logger browser-safe while retaining active sanitizers", () => {
     const loggerSource = read(LOGGER);
 
     expect(loggerSource).not.toContain('import "server-only"');
@@ -260,7 +259,6 @@ describe("env module boundaries", () => {
     expect(loggerSource).not.toContain("env-runtime");
     expect(loggerSource).toContain("sanitizeEmail");
     expect(loggerSource).toContain("sanitizeIP");
-    expect(loggerSource).toContain("sanitizeLogContext");
   });
 
   it("keeps Client Components off PII logger helpers", () => {
@@ -271,9 +269,7 @@ describe("env module boundaries", () => {
 
       return (
         isClientComponent &&
-        (source.includes("sanitizeEmail") ||
-          source.includes("sanitizeIP") ||
-          source.includes("sanitizeLogContext"))
+        (source.includes("sanitizeEmail") || source.includes("sanitizeIP"))
       );
     });
 

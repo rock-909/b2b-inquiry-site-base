@@ -1,7 +1,6 @@
 import {
   PUBLIC_STATIC_PAGE_TYPES,
   type PublicStaticPageChangeFrequency,
-  getStaticPageLastmodByPath,
   getStaticSitemapPageConfigByPath,
   getStaticSitemapPages,
 } from "@/config/pages.config";
@@ -50,10 +49,6 @@ export function getSingleSiteSitemapPageConfigByPath(): Readonly<
   Record<string, SingleSiteSitemapPageConfig>
 > {
   return getStaticSitemapPageConfigByPath();
-}
-
-export function getSingleSiteStaticPageLastmod(): Record<string, string> {
-  return getStaticPageLastmodByPath();
 }
 
 export const SINGLE_SITE_PUBLIC_STATIC_PAGE_ROUTES =

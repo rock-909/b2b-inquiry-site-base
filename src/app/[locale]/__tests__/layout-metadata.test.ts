@@ -12,8 +12,8 @@ const { mockSiteConfig } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock("@/config/paths", () => ({
-  SITE_CONFIG: mockSiteConfig,
+vi.mock("@/config/single-site", () => ({
+  SINGLE_SITE_CONFIG: mockSiteConfig,
 }));
 
 describe("Locale layout metadata", () => {

@@ -634,6 +634,10 @@ function runContentReadinessCli(args = []) {
   return result.status !== "failed";
 }
 
+if (require.main === module) {
+  if (!runContentReadinessCli(process.argv.slice(2))) process.exitCode = 1;
+}
+
 module.exports = {
   collectContentReadinessFindings,
   collectReadinessScanFiles,

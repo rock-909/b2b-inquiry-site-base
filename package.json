@@ -18,12 +18,12 @@
     "knip:check": "knip",
     "react:doctor": "npx --loglevel=error -y react-doctor@0.9.11 --verbose --scope changed --blocking warning",
     "react:doctor:report": "npx --loglevel=error -y react-doctor@0.9.11 --json --no-score --blocking none",
-    "release:verify": "node scripts/starter-checks.js release-verify",
+    "release:verify": "node scripts/quality/checks/release-verify.js",
     "website:check": "pnpm type-check && pnpm type-check:tests && pnpm lint:check && pnpm test && pnpm build",
     "website:build:cf": "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
     "website:build:cf:debug": "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
     "website:lighthouse": "node scripts/lighthouse-preflight.js && NEXT_DIST_DIR=.next-lighthouse APP_ENV=production pnpm build && lhci autorun --config=./lighthouserc.js",
-    "content:check": "node scripts/starter-checks.js content-manifest --check && node scripts/starter-checks.js content-slugs --strict-frontmatter && node scripts/starter-checks.js translations && node scripts/starter-checks.js message-key-usage"
+    "content:check": "node scripts/quality/checks/content-manifest.js --check && node scripts/quality/checks/content-slugs.js --strict-frontmatter && node scripts/quality/checks/translations.js"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",

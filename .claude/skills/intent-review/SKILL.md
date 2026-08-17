@@ -136,7 +136,7 @@ A change can satisfy the requirement and still be wrong for this codebase.
 3. **This repo's red lines** — each is a high-severity finding:
    - User-facing copy hardcoded instead of going through a translation key
    - Hand-edits to `src/lib/content-manifest.generated.ts` (regenerate it with
-     `node scripts/starter-checks.js content-manifest`)
+     `node scripts/quality/checks/content-manifest.js`)
    - A gate or test asserting a point-in-time snapshot — commit hash, item count,
      push state — instead of the behavior the rule describes
    - A gate whose failure path is unreachable, or a test that cannot fail

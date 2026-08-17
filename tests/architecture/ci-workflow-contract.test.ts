@@ -76,7 +76,7 @@ describe("CI workflow contract", () => {
 
     expect(qualitySteps).toContainEqual({
       name: "preview config smoke",
-      run: "APP_ENV=preview node scripts/starter-checks.js validate-production-config",
+      run: "APP_ENV=preview node scripts/quality/checks/production-config.js",
     });
   });
 

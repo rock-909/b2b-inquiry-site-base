@@ -57,7 +57,7 @@ export function stripPort(ip: string): string {
  * Parse first IP from X-Forwarded-For style headers.
  */
 export function parseFirstIP(headerValue: string): string {
-  const firstIP = headerValue.split(",", 1).at(0)!;
+  const firstIP = headerValue.split(",", 1).at(0) ?? "";
   return stripPort(firstIP.trim());
 }
 

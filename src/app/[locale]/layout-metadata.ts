@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { SITE_CONFIG } from "@/config/paths";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { isLocale } from "@/i18n/locale-utils";
 import { getRuntimeAppEnv, getRuntimeEnvString } from "@/lib/env";
 
@@ -51,15 +51,15 @@ export async function generateLocaleMetadata({
     notFound();
   }
 
-  const metadataBaseUrl = SITE_CONFIG.baseUrl || "http://localhost:3000";
+  const metadataBaseUrl = SINGLE_SITE_CONFIG.baseUrl || "http://localhost:3000";
 
   return {
     metadataBase: new URL(metadataBaseUrl),
     title: {
-      default: SITE_CONFIG.seo.defaultTitle,
-      template: SITE_CONFIG.seo.titleTemplate,
+      default: SINGLE_SITE_CONFIG.seo.defaultTitle,
+      template: SINGLE_SITE_CONFIG.seo.titleTemplate,
     },
-    description: SITE_CONFIG.seo.defaultDescription,
+    description: SINGLE_SITE_CONFIG.seo.defaultDescription,
     robots:
       getRuntimeAppEnv() === "production" ? INDEXABLE_ROBOTS : NOINDEX_ROBOTS,
     verification: {

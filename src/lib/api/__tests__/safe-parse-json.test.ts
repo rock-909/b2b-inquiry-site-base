@@ -22,22 +22,18 @@ describe("safeParseJson", () => {
     });
   });
 
-  it("can map empty body to INVALID_REQUEST for CSP report compatibility", async () => {
-    const result = await safeParseJson(createRequest(""), {
-      emptyBodyErrorCode: API_ERROR_CODES.INVALID_REQUEST,
-    });
+  it("keeps malformed JSON mapped to INVALID_JSON_BODY", async () => {
+    const result = await safeParseJson(createRequest("not-json"));
 
     expect(result).toEqual({
       ok: false,
-      errorCode: API_ERROR_CODES.INVALID_REQUEST,
+      errorCode: API_ERROR_CODES.INVALID_JSON_BODY,
       statusCode: 400,
     });
   });
 
-  it("keeps malformed JSON mapped to INVALID_JSON_BODY even with empty body override", async () => {
-    const result = await safeParseJson(createRequest("not-json"), {
-      emptyBodyErrorCode: API_ERROR_CODES.INVALID_REQUEST,
-    });
+  it("rejects a top-level array", async () => {
+    const result = await safeParseJson(createRequest("[]"));
 
     expect(result).toEqual({
       ok: false,

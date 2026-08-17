@@ -20,19 +20,8 @@ export function toNavigationNamespaceKey(
   return key.slice("navigation.".length) as NavigationNamespaceKey;
 }
 
-const STATIC_PAGE_LASTMOD_ISO = "2026-07-05T00:00:00Z";
-const CATALOG_PAGE_LASTMOD_ISO = "2026-08-12T00:00:00Z";
 export type PublicStaticPageChangeFrequency =
   "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
-
-type PublicStaticPageSeoKey =
-  | "home"
-  | "products.metadata"
-  | "content.pages.about"
-  | "content.pages.request-quote"
-  | "content.pages.contact"
-  | "content.pages.privacy"
-  | "content.pages.terms";
 
 interface PublicStaticPageSitemapConfig {
   include: boolean;
@@ -44,9 +33,7 @@ export interface PublicStaticPageDefinition {
   pageType: PageType;
   localizedPaths: LocalizedPath;
   navigationKey: NavigationMessageKey | null;
-  seoKey: PublicStaticPageSeoKey;
   sitemap: PublicStaticPageSitemapConfig;
-  lastmod: { source: "static"; iso: string } | { source: "mdx" };
   mdxCollection: { collection: "pages"; slug: string } | null;
   routeOwner: string;
 }
@@ -64,9 +51,7 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
     pageType: "home",
     localizedPaths: localizedPath("/"),
     navigationKey: "navigation.home",
-    seoKey: "home",
     sitemap: { include: true, changeFrequency: "daily", priority: 1 },
-    lastmod: { source: "static", iso: STATIC_PAGE_LASTMOD_ISO },
     mdxCollection: null,
     routeOwner: "src/app/[locale]/page.tsx",
   },
@@ -74,9 +59,7 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
     pageType: "products",
     localizedPaths: localizedPath("/products"),
     navigationKey: "navigation.products",
-    seoKey: "products.metadata",
     sitemap: { include: true, changeFrequency: "monthly", priority: 0.9 },
-    lastmod: { source: "static", iso: CATALOG_PAGE_LASTMOD_ISO },
     mdxCollection: null,
     routeOwner: "src/app/[locale]/products/page.tsx",
   },
@@ -84,9 +67,7 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
     pageType: "about",
     localizedPaths: localizedPath("/about"),
     navigationKey: "navigation.about",
-    seoKey: "content.pages.about",
     sitemap: { include: true, changeFrequency: "monthly", priority: 0.8 },
-    lastmod: { source: "mdx" },
     mdxCollection: { collection: "pages", slug: "about" },
     routeOwner: "src/app/[locale]/about/page.tsx",
   },
@@ -94,9 +75,7 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
     pageType: "requestQuote",
     localizedPaths: localizedPath("/request-quote"),
     navigationKey: null,
-    seoKey: "content.pages.request-quote",
     sitemap: { include: true, changeFrequency: "monthly", priority: 0.9 },
-    lastmod: { source: "static", iso: STATIC_PAGE_LASTMOD_ISO },
     mdxCollection: null,
     routeOwner: "src/app/[locale]/request-quote/page.tsx",
   },
@@ -104,9 +83,7 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
     pageType: "contact",
     localizedPaths: localizedPath("/contact"),
     navigationKey: "navigation.contactSales",
-    seoKey: "content.pages.contact",
     sitemap: { include: true, changeFrequency: "monthly", priority: 0.8 },
-    lastmod: { source: "mdx" },
     mdxCollection: { collection: "pages", slug: "contact" },
     routeOwner: "src/app/[locale]/contact/page.tsx",
   },
@@ -114,9 +91,7 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
     pageType: "privacy",
     localizedPaths: localizedPath("/privacy"),
     navigationKey: null,
-    seoKey: "content.pages.privacy",
     sitemap: { include: true, changeFrequency: "yearly", priority: 0.5 },
-    lastmod: { source: "mdx" },
     mdxCollection: { collection: "pages", slug: "privacy" },
     routeOwner: "src/app/[locale]/privacy/page.tsx",
   },
@@ -124,9 +99,7 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
     pageType: "terms",
     localizedPaths: localizedPath("/terms"),
     navigationKey: null,
-    seoKey: "content.pages.terms",
     sitemap: { include: true, changeFrequency: "yearly", priority: 0.5 },
-    lastmod: { source: "mdx" },
     mdxCollection: { collection: "pages", slug: "terms" },
     routeOwner: "src/app/[locale]/terms/page.tsx",
   },
@@ -182,21 +155,6 @@ export function getStaticSitemapPageConfigByPath() {
     string,
     { changeFrequency: PublicStaticPageChangeFrequency; priority: number }
   >;
-}
-
-export function getStaticPageLastmodByPath(): Record<string, string> {
-  return Object.fromEntries(
-    PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((definition) =>
-      definition.lastmod.source === "static"
-        ? [
-            [
-              toSitemapStaticPath(definition.localizedPaths.en),
-              definition.lastmod.iso,
-            ],
-          ]
-        : [],
-    ),
-  );
 }
 
 export function getMdxPageSlugByStaticPath(): Record<string, string> {

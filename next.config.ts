@@ -121,9 +121,9 @@ const nextConfig: NextConfig = {
   // 但 Turbopack 在处理它们时遇到问题，所以我们暂时移除这个配置
   // 让 Next.js 使用默认的外部包处理方式
 
-  // Webpack 配置 - 仅用于 resolve.alias/externals
+  // Webpack 配置 - 仅用于 resolve.alias
   // Next.js 16 默认使用 Turbopack，此配置仅在 build:webpack 兜底时生效
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     // Path alias configuration for @/ -> src/
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -131,17 +131,6 @@ const nextConfig: NextConfig = {
       "@messages": path.resolve(__dirname, "messages"),
       "@content": path.resolve(__dirname, "content"),
     };
-
-    // 服务端将部分重型依赖标记为 external，避免捆绑到通用 chunk 触发初始化顺序问题
-    if (isServer) {
-      // 保持 Node.js 运行时从 node_modules 动态加载
-      // 避免在构建期/收集阶段加载第三方库内部复杂依赖
-      // 尤其是 airtable 等 SDK
-      // 说明：commonjs 形式 external 不会影响运行时 require/import
-      (config.externals ||= [] as unknown[]).push({
-        airtable: "commonjs airtable",
-      });
-    }
 
     return config;
   },

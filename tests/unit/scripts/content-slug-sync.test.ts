@@ -5,14 +5,17 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-const CLI_PATH = path.resolve(__dirname, "../../../scripts/starter-checks.js");
+const CLI_PATH = path.resolve(
+  __dirname,
+  "../../../scripts/quality/checks/content-slugs.js",
+);
 const trashRoot = path.join(os.tmpdir(), "b2b-inquiry-content-cli-trash");
 let tmpDir: string;
 
 function runCli(args: string[]) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>(
     (resolve) => {
-      const proc = spawn("node", [CLI_PATH, "content-slugs", ...args], {
+      const proc = spawn("node", [CLI_PATH, ...args], {
         cwd: tmpDir,
       });
       let stdout = "";

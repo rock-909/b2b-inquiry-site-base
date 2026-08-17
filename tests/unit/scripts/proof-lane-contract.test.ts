@@ -1,7 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { STARTER_CHECK_COMMANDS } from "../../../scripts/starter-checks.js";
 import {
   RELEASE_PROOF_MANIFEST,
   getReleaseProofSequence,
@@ -75,8 +74,6 @@ describe("package proof command surface", () => {
 
   it("keeps release-facing package scripts wired to existing commands", () => {
     const scripts = readPackageScripts();
-    const knownChecks = new Set(STARTER_CHECK_COMMANDS);
-
     for (const scriptName of LEAF_RELEASE_SCRIPTS) {
       expect(scripts[scriptName]?.trim(), scriptName).toBeTruthy();
     }
@@ -88,11 +85,14 @@ describe("package proof command surface", () => {
         `${scriptName} is missing from package.json`,
       ).toBeDefined();
 
-      const referencedChecks = [
-        ...command!.matchAll(/starter-checks\.js\s+([\w-]+)/gu),
-      ].map((match) => match[1]!);
-      for (const check of referencedChecks) {
-        expect(knownChecks, `${scriptName} -> ${check}`).toContain(check);
+      const nodeScripts = [...command!.matchAll(/\bnode\s+([\w./-]+)/gu)].map(
+        (match) => match[1]!,
+      );
+      for (const scriptPath of nodeScripts) {
+        expect(
+          repoPathExists(scriptPath),
+          `${scriptName} -> ${scriptPath}`,
+        ).toBe(true);
       }
 
       const nestedScripts = [...command!.matchAll(/\bpnpm\s+([\w:-]+)/gu)]
@@ -105,7 +105,7 @@ describe("package proof command surface", () => {
       }
 
       expect(
-        referencedChecks.length + nestedScripts.length,
+        nodeScripts.length + nestedScripts.length,
         `${scriptName} reaches no check or nested script`,
       ).toBeGreaterThan(0);
     }
@@ -132,18 +132,6 @@ describe("package proof command surface", () => {
         /\bNEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare\b/u,
       );
     }
-  });
-
-  // 保护当前公开命令面，不维护历史脚本名清单。
-  it("keeps phase and mutation lanes out of public package scripts and release proof", () => {
-    const scriptNames = Object.keys(readPackageScripts());
-    const releaseProofFlow = RELEASE_PROOF_SEQUENCE.join("\n");
-
-    expect(
-      scriptNames.filter((name) => name.startsWith("test:mutation")),
-    ).toEqual([]);
-    expect(scriptNames.filter((name) => name.includes(":phase"))).toEqual([]);
-    expect(releaseProofFlow).not.toMatch(/:?phase\d/u);
   });
 
   // 发布序列引用的 Node 脚本必须真实存在。

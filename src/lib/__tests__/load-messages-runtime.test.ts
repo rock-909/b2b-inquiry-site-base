@@ -1,32 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-function createRuntimeEnvMock({
-  ci = false,
-  development = false,
-  playwright = false,
-  productionBuild = false,
-  cloudflare = false,
-}: {
-  ci?: boolean;
-  development?: boolean;
-  playwright?: boolean;
-  productionBuild?: boolean;
-  cloudflare?: boolean;
-}) {
-  const env = {};
-
-  return {
-    env,
-    runtimeEnv: env,
-    isRuntimeCi: () => ci,
-    isRuntimeDevelopment: () => development,
-    isRuntimePlaywright: () => playwright,
-    isRuntimeProduction: () => false,
-    isRuntimeProductionBuildPhase: () => productionBuild,
-    isRuntimeCloudflare: () => cloudflare,
-  };
-}
-
 interface FactualSourceMessages {
   navigation: {
     siteName: string;
@@ -134,13 +107,10 @@ function assertFactualCompleteMessages(
 afterEach(() => {
   vi.resetModules();
   vi.clearAllMocks();
-  vi.doUnmock("@/lib/env");
 });
 
 describe("load-messages runtime loading", () => {
   it("returns concrete factual brand values from complete message loading", async () => {
-    vi.doMock("@/lib/env", () => createRuntimeEnvMock({ ci: true }));
-
     const [
       { loadCompleteMessages },
       { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS },
@@ -148,10 +118,7 @@ describe("load-messages runtime loading", () => {
       import("@/lib/i18n/load-messages"),
       import("@/config/single-site"),
     ]);
-    const currentYear = String(
-      SINGLE_SITE_FACTS.company.established +
-        SINGLE_SITE_FACTS.company.yearsInBusiness,
-    );
+    const currentYear = String(new Date().getUTCFullYear());
     const expectedEnCopyright = `© ${currentYear} ${SINGLE_SITE_CONFIG.name}. All rights reserved.`;
     const enMessages = await loadCompleteMessages("en");
     assertFactualSourceMessages(enMessages);
@@ -172,8 +139,6 @@ describe("load-messages runtime loading", () => {
   });
 
   it("keeps the neutral homepage copy in complete runtime messages", async () => {
-    vi.doMock("@/lib/env", () => createRuntimeEnvMock({ ci: true }));
-
     const { loadCompleteMessages } = await import("@/lib/i18n/load-messages");
 
     const enMessages = await loadCompleteMessages("en");
@@ -206,8 +171,6 @@ describe("load-messages runtime loading", () => {
   });
 
   it("returns concrete structured-data names from complete source loading", async () => {
-    vi.doMock("@/lib/env", () => createRuntimeEnvMock({ ci: true }));
-
     const [
       { loadCompleteMessages },
       { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS },

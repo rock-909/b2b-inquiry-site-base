@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  resetStorageFailureTracker,
-  withRateLimit,
-  type RateLimitContext,
-} from "../with-rate-limit";
+import { withRateLimit, type RateLimitContext } from "../with-rate-limit";
 
 // Use vi.hoisted for mock functions to ensure proper initialization
 const mockCheckDistributedRateLimit = vi.hoisted(() => vi.fn());
@@ -17,10 +13,6 @@ const mockLoggerError = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/security/distributed-rate-limit", () => ({
   checkDistributedRateLimit: mockCheckDistributedRateLimit,
   createRateLimitHeaders: mockCreateRateLimitHeaders,
-  RATE_LIMIT_PRESETS: {
-    inquiry: { failureMode: "closed", windowMs: 60000 },
-    csp: { failureMode: "open", windowMs: 60000 },
-  },
 }));
 
 vi.mock("@/lib/security/client-ip", () => ({
@@ -46,7 +38,6 @@ describe("withRateLimit", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    resetStorageFailureTracker();
 
     // Default mock implementations
     mockGetClientIP.mockReturnValue(TEST_CLIENT_IP);
@@ -125,7 +116,6 @@ describe("withRateLimit", () => {
 
       expect(capturedContext).toBeDefined();
       expect(capturedContext?.clientIP).toBe(TEST_CLIENT_IP);
-      expect(capturedContext?.degraded).toBeUndefined();
     });
 
     it("should use correct preset for rate limit check", async () => {
@@ -247,7 +237,6 @@ describe("withRateLimit", () => {
         remaining: 0,
         resetTime: Date.now() + 60000,
         retryAfter: 60,
-        degraded: true,
         deniedReason: "storage_failure" as const,
       });
       mockCreateRateLimitHeaders.mockReturnValue(new Headers());
@@ -263,32 +252,6 @@ describe("withRateLimit", () => {
         success: false,
         errorCode: "SERVICE_UNAVAILABLE",
       });
-      expect(mockHandler).not.toHaveBeenCalled();
-    });
-
-    it("does not add degraded header for fail-closed storage failure", async () => {
-      mockCheckDistributedRateLimit.mockResolvedValue({
-        allowed: false,
-        remaining: 0,
-        resetTime: Date.now() + 60000,
-        retryAfter: 60,
-        degraded: true,
-        deniedReason: "storage_failure" as const,
-      });
-      mockCreateRateLimitHeaders.mockReturnValue(new Headers());
-
-      const mockHandler = createMockHandler({ success: true });
-      const wrappedHandler = withRateLimit("inquiry", mockHandler);
-
-      const response = await wrappedHandler(createMockRequest());
-      const body = await response.json();
-
-      expect(response.status).toBe(503);
-      expect(body).toEqual({
-        success: false,
-        errorCode: "SERVICE_UNAVAILABLE",
-      });
-      expect(response.headers.get("X-RateLimit-Degraded")).toBeNull();
       expect(mockHandler).not.toHaveBeenCalled();
     });
 
@@ -308,121 +271,6 @@ describe("withRateLimit", () => {
       });
       expect(mockCheckDistributedRateLimit).not.toHaveBeenCalled();
       expect(mockHandler).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("degraded mode (storage failure)", () => {
-    it("should allow request in degraded mode", async () => {
-      mockCheckDistributedRateLimit.mockResolvedValue({
-        allowed: true,
-        remaining: 4,
-        resetTime: Date.now() + 60000,
-        retryAfter: null,
-        degraded: true,
-      });
-
-      const mockHandler = createMockHandler({ success: true });
-      const wrappedHandler = withRateLimit("csp", mockHandler);
-
-      const response = await wrappedHandler(createMockRequest());
-
-      expect(response.status).toBe(200);
-      expect(mockHandler).toHaveBeenCalled();
-    });
-
-    it("should set X-RateLimit-Degraded header in degraded mode", async () => {
-      mockCheckDistributedRateLimit.mockResolvedValue({
-        allowed: true,
-        remaining: 4,
-        resetTime: Date.now() + 60000,
-        retryAfter: null,
-        degraded: true,
-      });
-
-      const wrappedHandler = withRateLimit(
-        "csp",
-        createMockHandler({ success: true }),
-      );
-
-      const response = await wrappedHandler(createMockRequest());
-
-      expect(response.headers.get("X-RateLimit-Degraded")).toBe("true");
-    });
-
-    it("should pass degraded flag to handler context", async () => {
-      mockCheckDistributedRateLimit.mockResolvedValue({
-        allowed: true,
-        remaining: 4,
-        resetTime: Date.now() + 60000,
-        retryAfter: null,
-        degraded: true,
-      });
-
-      let capturedContext: RateLimitContext | undefined;
-      const mockHandler = vi.fn().mockImplementation((_req, ctx) => {
-        capturedContext = ctx;
-        return NextResponse.json({ success: true });
-      });
-
-      const wrappedHandler = withRateLimit("csp", mockHandler);
-      await wrappedHandler(createMockRequest());
-
-      expect(capturedContext?.degraded).toBe(true);
-    });
-
-    it("should log warning in degraded mode", async () => {
-      mockCheckDistributedRateLimit.mockResolvedValue({
-        allowed: true,
-        remaining: 4,
-        resetTime: Date.now() + 60000,
-        retryAfter: null,
-        degraded: true,
-      });
-
-      const wrappedHandler = withRateLimit(
-        "csp",
-        createMockHandler({ success: true }),
-      );
-
-      await wrappedHandler(createMockRequest());
-
-      expect(mockLoggerWarn).toHaveBeenCalledWith(
-        "Rate limit storage degraded (fail-open)",
-        expect.objectContaining({
-          preset: "csp",
-          alertTriggered: false,
-        }),
-      );
-    });
-
-    it("should trigger alert after threshold exceeded", async () => {
-      mockCheckDistributedRateLimit.mockResolvedValue({
-        allowed: true,
-        remaining: 4,
-        resetTime: Date.now() + 60000,
-        retryAfter: null,
-        degraded: true,
-      });
-
-      const wrappedHandler = withRateLimit(
-        "csp",
-        createMockHandler({ success: true }),
-      );
-
-      // Make 4 requests to exceed threshold of 3
-      await wrappedHandler(createMockRequest());
-      await wrappedHandler(createMockRequest());
-      await wrappedHandler(createMockRequest());
-      await wrappedHandler(createMockRequest());
-
-      // After 4th request, alert should be triggered
-      expect(mockLoggerError).toHaveBeenCalledWith(
-        "ALERT: Rate limit storage failure threshold exceeded",
-        expect.objectContaining({
-          failureCount: expect.any(Number),
-          windowMs: expect.any(Number),
-        }),
-      );
     });
   });
 

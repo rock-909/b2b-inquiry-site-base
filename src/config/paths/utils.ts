@@ -63,10 +63,6 @@ export function getCanonicalPath<T extends PageType>(
  */
 export const PATHNAMES = createPathnames();
 
-export function getPathnames(): typeof PATHNAMES {
-  return PATHNAMES;
-}
-
 /**
  * 获取页面类型（根据路径反向查找）
  */

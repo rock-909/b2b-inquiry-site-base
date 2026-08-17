@@ -3,8 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import robots from "../robots";
 
 // Mock config before import
-vi.mock("@/config/paths", () => ({
-  SITE_CONFIG: {
+vi.mock("@/config/single-site", () => ({
+  SINGLE_SITE_CONFIG: {
     baseUrl: "https://example.com",
   },
 }));

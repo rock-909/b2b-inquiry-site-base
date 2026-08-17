@@ -75,7 +75,5 @@ describe("single-site", () => {
     expect(
       getPublicLogoPath(SINGLE_SITE_FACTS.brandAssets.logo),
     ).toBeUndefined();
-    // 从 establishedYear 减出来的值，买家在页面上看得见。算错方向就是负数。
-    expect(SINGLE_SITE_FACTS.company.yearsInBusiness).toBeGreaterThanOrEqual(0);
   });
 });

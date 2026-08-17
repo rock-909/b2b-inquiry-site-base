@@ -233,17 +233,13 @@ function listenForDeployedSmoke(): Promise<{
   });
 }
 
-function createMinimalStarterChecksFixture(): string {
+function createMinimalCloudflareSmokeFixture(): string {
   const rootDir = mkdtempSync(
-    path.join(os.tmpdir(), "b2b-minimal-starter-checks-"),
+    path.join(os.tmpdir(), "b2b-minimal-cloudflare-smoke-"),
   );
   const focusedChecksDir = path.join(rootDir, "scripts", "quality", "checks");
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
   mkdirSync(focusedChecksDir, { recursive: true });
-  copyFileSync(
-    path.resolve("scripts/starter-checks.js"),
-    path.join(rootDir, "scripts", "starter-checks.js"),
-  );
   copyFileSync(
     path.resolve("scripts/quality/checks/cloudflare-smoke.js"),
     path.join(focusedChecksDir, "cloudflare-smoke.js"),
@@ -330,11 +326,11 @@ describe("external URL smoke", () => {
     ]);
   });
 
-  it("keeps the starter-checks facade wired to the external-url-smoke CLI", async () => {
+  it("runs external-url-smoke through the direct CLI", async () => {
     const { baseUrl, paths } = await listenForExternalUrlSmoke();
 
     const result = await runNodeCommand([
-      "scripts/starter-checks.js",
+      "scripts/quality/checks/cloudflare-smoke.js",
       "external-url-smoke",
       "--base-url",
       baseUrl,
@@ -644,13 +640,18 @@ describe("deployed smoke", () => {
 
   it("runs deployed smoke from a minimal fixture without node_modules", async () => {
     const { baseUrl, paths } = await listenForDeployedSmoke();
-    const fixtureRoot = createMinimalStarterChecksFixture();
+    const fixtureRoot = createMinimalCloudflareSmokeFixture();
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- fixed child path under a test-owned fixture root
     expect(existsSync(path.join(fixtureRoot, "node_modules"))).toBe(false);
 
     const result = await runNodeCommand(
-      ["scripts/starter-checks.js", "deployed-smoke", "--base-url", baseUrl],
+      [
+        "scripts/quality/checks/cloudflare-smoke.js",
+        "deployed-smoke",
+        "--base-url",
+        baseUrl,
+      ],
       fixtureRoot,
     );
 

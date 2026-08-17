@@ -8,7 +8,8 @@ import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card } from "@/components/ui/card";
 import { OFFERINGS, getOfferingPath } from "@/config/offerings";
-import { getLocalizedPath, SITE_CONFIG } from "@/config/paths";
+import { getLocalizedPath } from "@/config/paths";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
@@ -57,7 +58,7 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
             locale,
             name: tMetadata("title"),
             description: tMetadata("description"),
-            url: new URL(pagePath, SITE_CONFIG.baseUrl).toString(),
+            url: new URL(pagePath, SINGLE_SITE_CONFIG.baseUrl).toString(),
           }),
         ]}
       />

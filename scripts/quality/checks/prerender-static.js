@@ -262,6 +262,10 @@ function runPrerenderStaticCheck() {
   return false;
 }
 
+if (require.main === module) {
+  if (!runPrerenderStaticCheck()) process.exitCode = 1;
+}
+
 module.exports = {
   DYNAMIC_ROUTE_EXEMPTIONS,
   collectPrerenderStaticFindings,

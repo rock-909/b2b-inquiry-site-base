@@ -2,13 +2,15 @@ import net from "node:net";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   RELEASE_VERIFY_COMMANDS,
-  formatReleaseCommand,
   isLocalPortInUse,
   parseWranglerDryRunGzipKiB,
   runReleaseVerify,
   validateArtifactBudget,
 } from "../../../scripts/quality/checks/release-verify.js";
-import { getReleaseVerifyCommands } from "../../../scripts/quality/release-proof-manifest.js";
+import {
+  formatReleaseProofCommand,
+  getReleaseVerifyCommands,
+} from "../../../scripts/quality/release-proof-manifest.js";
 import { captureExpectedConsoleErrors } from "@/test/console";
 
 const openServers: net.Server[] = [];
@@ -74,7 +76,7 @@ describe("release verify runner", () => {
     const status = await runReleaseVerify({
       rootDir: "/repo",
       runCommand: (step) => {
-        executedCommands.push(formatReleaseCommand(step));
+        executedCommands.push(formatReleaseProofCommand(step));
         return 0;
       },
       portInUse: async (port) => {
@@ -92,7 +94,7 @@ describe("release verify runner", () => {
     expect(playwrightCommand?.requiresFreePort).toBe(3000);
     expect(checkedPorts).toEqual([playwrightCommand?.requiresFreePort]);
     expect(executedCommands).not.toContain(
-      playwrightCommand ? formatReleaseCommand(playwrightCommand) : "",
+      playwrightCommand ? formatReleaseProofCommand(playwrightCommand) : "",
     );
     expect(errorSpy).toHaveBeenCalledWith(
       "release-proof cannot start local-playwright-smoke because localhost:3000 is already in use.",

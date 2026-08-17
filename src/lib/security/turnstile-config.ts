@@ -1,5 +1,5 @@
 import { env, getRuntimeEnvString } from "@/lib/env";
-import { SITE_CONFIG } from "@/config/paths/site-config";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { logger } from "@/lib/logger";
 
 /**
@@ -22,7 +22,7 @@ function parseConfiguredHosts(): string[] {
  */
 function deriveFallbackHosts(): string[] {
   const hosts = new Set<string>();
-  const baseUrl = SITE_CONFIG.baseUrl?.trim() ?? "";
+  const baseUrl = SINGLE_SITE_CONFIG.baseUrl?.trim() ?? "";
 
   if (baseUrl !== "") {
     try {
@@ -48,10 +48,6 @@ function getAllowedTurnstileHostsFromConfig(): string[] {
   return configured.length > 0 ? configured : deriveFallbackHosts();
 }
 
-function getAllowedTurnstileHostsSet(): Set<string> {
-  return new Set(getAllowedTurnstileHostsFromConfig());
-}
-
 /**
  * Return the list of hostnames that are allowed to appear in Turnstile verification responses.
  */
@@ -66,5 +62,5 @@ export function isAllowedTurnstileHostname(hostname?: string | null): boolean {
   if (!hostname) return false;
 
   const normalized = hostname.toLowerCase();
-  return getAllowedTurnstileHostsSet().has(normalized);
+  return new Set(getAllowedTurnstileHostsFromConfig()).has(normalized);
 }

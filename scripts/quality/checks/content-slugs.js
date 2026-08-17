@@ -477,7 +477,7 @@ function printContentSlugHelp() {
 MDX Content Slug Sync Validator
 
 Usage:
-  node scripts/starter-checks.js content-slugs [options]
+  node scripts/quality/checks/content-slugs.js [options]
 
 Options:
   --json              Output JSON report to reports/content-slug-sync-report.json
@@ -486,9 +486,9 @@ Options:
   --help, -h          Show this help
 
 Examples:
-  node scripts/starter-checks.js content-slugs
-  node scripts/starter-checks.js content-slugs --json
-  node scripts/starter-checks.js content-slugs --strict-frontmatter
+  node scripts/quality/checks/content-slugs.js
+  node scripts/quality/checks/content-slugs.js --json
+  node scripts/quality/checks/content-slugs.js --strict-frontmatter
 `);
 }
 
@@ -673,6 +673,10 @@ function runContentSlugCheck(args = [], rootDir = process.cwd()) {
   if (options.json) writeContentSlugJsonReport(finalResult, rootDir);
 
   return finalResult.ok;
+}
+
+if (require.main === module) {
+  if (!runContentSlugCheck(process.argv.slice(2))) process.exitCode = 1;
 }
 
 module.exports = {
