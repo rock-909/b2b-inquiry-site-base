@@ -5,7 +5,7 @@ import {
   type LocaleParam,
 } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card } from "@/components/ui/card";
 import { OFFERINGS, getOfferingPath } from "@/config/offerings";
 import { getLocalizedPath, SITE_CONFIG } from "@/config/paths";
@@ -81,11 +81,13 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
               <p className="mt-3 flex-1 text-pretty text-muted-foreground">
                 {offering.summary}
               </p>
-              <Button asChild className="mt-6 self-start">
-                <Link href={getOfferingPath(offering.id)} prefetch={false}>
-                  {t("page.viewDetails")}
-                </Link>
-              </Button>
+              <Link
+                href={getOfferingPath(offering.id)}
+                prefetch={false}
+                className={buttonVariants({ className: "mt-6 self-start" })}
+              >
+                {t("page.viewDetails")}
+              </Link>
             </Card>
           ))}
         </div>

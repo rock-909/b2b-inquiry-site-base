@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { generateLocaleStaticParams } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
   OFFERINGS,
   getOfferingById,
@@ -112,14 +112,13 @@ export default async function ProductDetailPage({
           </ul>
         </section>
 
-        <Button asChild className="mt-10">
-          <Link
-            href={`/request-quote?offeringId=${encodeURIComponent(offering.id)}`}
-            prefetch={false}
-          >
-            {t("detail.requestQuote")}
-          </Link>
-        </Button>
+        <Link
+          href={`/request-quote?offeringId=${encodeURIComponent(offering.id)}`}
+          prefetch={false}
+          className={buttonVariants({ className: "mt-10" })}
+        >
+          {t("detail.requestQuote")}
+        </Link>
       </article>
     </>
   );

@@ -77,7 +77,7 @@ export function ContactMethodsCard({
   const publicPhone = getPublicContactPhone(SINGLE_SITE_FACTS.contact.phone);
 
   return (
-    <Card className="gap-0 p-0 shadow-[var(--shadow-xs)]">
+    <Card className="gap-0 p-0 shadow-[var(--surface-shadow)]">
       <div className="border-b border-border px-6 py-5">
         <h3 className="text-lg font-semibold">{copy.title}</h3>
       </div>
@@ -142,7 +142,7 @@ export function ResponseExpectationsCard({
   hoursCopy: ContactPageData["copy"]["panel"]["hours"];
 }) {
   return (
-    <Card className="gap-0 p-0 shadow-[var(--shadow-xs)]">
+    <Card className="gap-0 p-0 shadow-[var(--surface-shadow)]">
       <div className="border-b border-border px-6 py-5">
         <h3 className="text-lg font-semibold">{responseCopy.title}</h3>
       </div>

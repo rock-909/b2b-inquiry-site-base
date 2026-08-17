@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
 
 import { HeroGuideOverlay } from "@/components/grid/hero-guide-overlay";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Link } from "@/i18n/routing";
 
 type HeroSectionHref = ComponentProps<typeof Link>["href"];
@@ -48,16 +48,20 @@ export function HeroSectionView({ content }: HeroSectionViewProps) {
             {content.subtitle}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href={content.primaryCta.href} prefetch={false}>
-                {content.primaryCta.label}
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href={content.secondaryCta.href} prefetch={false}>
-                {content.secondaryCta.label}
-              </Link>
-            </Button>
+            <Link
+              href={content.primaryCta.href}
+              prefetch={false}
+              className={buttonVariants()}
+            >
+              {content.primaryCta.label}
+            </Link>
+            <Link
+              href={content.secondaryCta.href}
+              prefetch={false}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              {content.secondaryCta.label}
+            </Link>
           </div>
         </div>
       </div>

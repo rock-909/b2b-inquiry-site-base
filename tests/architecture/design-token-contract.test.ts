@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+const THEME_CSS = "src/app/theme.css";
 const GLOBALS_CSS = "src/app/globals.css";
 const FOOTER_COMPONENT_SOURCE = "src/components/footer/footer.tsx";
 
@@ -92,6 +93,35 @@ function findHighContrastOverrideBlock(blocks: readonly string[]) {
 }
 
 describe("design token contract", () => {
+  it("keeps theme.css as the single theme source imported by globals.css", () => {
+    const globals = stripCssComments(readRepoFile(GLOBALS_CSS));
+    const theme = stripCssComments(readRepoFile(THEME_CSS));
+
+    expect(globals).toContain('@import "./theme.css";');
+
+    for (const token of [
+      "--background",
+      "--foreground",
+      "--primary",
+      "--primary-foreground",
+      "--muted-foreground",
+      "--border",
+      "--input",
+      "--ring",
+      "--success-foreground",
+      "--warning-foreground",
+      "--error-foreground",
+      "--info-foreground",
+      "--control-radius",
+      "--surface-radius",
+      "--surface-shadow",
+    ]) {
+      expect(theme, `${THEME_CSS} should define ${token}`).toContain(
+        `${token}:`,
+      );
+    }
+  });
+
   it("keeps selected production UI files off raw brand palette classes", () => {
     for (const filePath of RAW_COLOR_PRODUCTION_FILES) {
       const source = stripCssComments(readRepoFile(filePath));
@@ -146,40 +176,40 @@ describe("design token contract", () => {
   });
 
   it("does not keep old brand color values in the browser runtime CSS", () => {
-    const css = stripCssComments(readRepoFile(GLOBALS_CSS));
+    const css = stripCssComments(readRepoFile(THEME_CSS));
 
     expect(
       css.match(BANNED_INLINE_BRAND_PATTERN),
-      `${GLOBALS_CSS} should not keep old brand hex or rgba values, including high-contrast overrides`,
+      `${THEME_CSS} should not keep old brand hex or rgba values, including high-contrast overrides`,
     ).toBeNull();
   });
 
   it("keeps high contrast overrides off old brand values", () => {
-    const css = stripCssComments(readRepoFile(GLOBALS_CSS));
+    const css = stripCssComments(readRepoFile(THEME_CSS));
     const highContrastBlocks = extractHighContrastBlocks(css);
     const highContrastOverrideBlock =
       findHighContrastOverrideBlock(highContrastBlocks);
 
     expect(
       highContrastBlocks.length,
-      `${GLOBALS_CSS} should define at least one @media (prefers-contrast: high) block`,
+      `${THEME_CSS} should define at least one @media (prefers-contrast: high) block`,
     ).toBeGreaterThan(0);
 
     expect(
       highContrastOverrideBlock,
-      `${GLOBALS_CSS} should include a high contrast override block for --ring or focus-visible states`,
+      `${THEME_CSS} should include a high contrast override block for --ring`,
     ).toBeTruthy();
 
     for (const block of highContrastBlocks) {
       expect(
         block.match(BANNED_INLINE_BRAND_PATTERN),
-        `${GLOBALS_CSS} high contrast blocks should not keep old brand hex or rgba values`,
+        `${THEME_CSS} high contrast blocks should not keep old brand hex or rgba values`,
       ).toBeNull();
     }
   });
 
   it("keeps WCAG AA contrast for input, ring, primary button and primary text", () => {
-    const css = stripCssComments(readRepoFile(GLOBALS_CSS));
+    const css = stripCssComments(readRepoFile(THEME_CSS));
     const light = buildThemeTokenMap(css, "light");
     const dark = buildThemeTokenMap(css, "dark");
 
@@ -223,7 +253,7 @@ describe("design token contract", () => {
   });
 
   it("keeps WCAG AA contrast for muted foreground on background, card, and muted surfaces", () => {
-    const css = stripCssComments(readRepoFile(GLOBALS_CSS));
+    const css = stripCssComments(readRepoFile(THEME_CSS));
     const light = buildThemeTokenMap(css, "light");
     const dark = buildThemeTokenMap(css, "dark");
 
@@ -252,7 +282,7 @@ describe("design token contract", () => {
   });
 
   it("keeps WCAG AA contrast for field error text on form surfaces", () => {
-    const css = stripCssComments(readRepoFile(GLOBALS_CSS));
+    const css = stripCssComments(readRepoFile(THEME_CSS));
     const light = buildThemeTokenMap(css, "light");
     const dark = buildThemeTokenMap(css, "dark");
 

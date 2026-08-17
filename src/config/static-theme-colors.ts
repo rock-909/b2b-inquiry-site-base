@@ -1,8 +1,8 @@
 /**
- * sRGB bridge for src/app/globals.css.
+ * sRGB bridge for src/app/theme.css.
  *
  * Values are a manually reviewed sRGB snapshot derived from the current
- * src/app/globals.css semantic token palette.
+ * src/app/theme.css semantic token palette.
  * Use this file for email templates and non-CSS surfaces only.
  * This is not the brand truth source; browser UI must consume CSS tokens.
  */

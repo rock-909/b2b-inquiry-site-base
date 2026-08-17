@@ -1,12 +1,12 @@
 "use client";
 
 import * as React from "react";
-import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />;
+  return <SheetPrimitive.Root {...props} />;
 }
 
 function SheetTrigger({
@@ -24,12 +24,12 @@ function SheetPortal({
 function SheetOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
+}: React.ComponentProps<typeof SheetPrimitive.Backdrop>) {
   return (
-    <SheetPrimitive.Overlay
+    <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0",
+        "absolute inset-0 z-50 bg-black/50 data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
         className,
       )}
       {...props}
@@ -37,8 +37,21 @@ function SheetOverlay({
   );
 }
 
+function SheetViewport({
+  className,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Viewport>) {
+  return (
+    <SheetPrimitive.Viewport
+      data-slot="sheet-viewport"
+      className={cn("pointer-events-none fixed inset-0 z-50", className)}
+      {...props}
+    />
+  );
+}
+
 interface SheetContentProps extends React.ComponentProps<
-  typeof SheetPrimitive.Content
+  typeof SheetPrimitive.Popup
 > {
   closeLabel: string;
 }
@@ -49,29 +62,40 @@ function SheetContent({
   closeLabel,
   ...props
 }: SheetContentProps) {
-  const { "aria-describedby": ariaDescribedBy, ...restProps } = props;
+  const closeButtonRef = React.useRef<HTMLButtonElement>(null);
+  const {
+    "aria-describedby": ariaDescribedBy,
+    initialFocus,
+    ...restProps
+  } = props;
 
   return (
     <SheetPortal>
       <SheetOverlay />
-      <SheetPrimitive.Content
-        data-slot="sheet-content"
-        className={cn(
-          "fixed z-50 flex flex-col gap-4 bg-background p-6 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=closed]:animate-out data-[state=open]:duration-500 data-[state=open]:animate-in",
-          "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
-          className,
-        )}
-        {...(ariaDescribedBy !== undefined
-          ? { "aria-describedby": ariaDescribedBy }
-          : {})}
-        {...restProps}
-      >
-        {children}
-        <SheetPrimitive.Close className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none data-[state=open]:bg-secondary">
-          <XIcon className="size-4" />
-          <span className="sr-only">{closeLabel}</span>
-        </SheetPrimitive.Close>
-      </SheetPrimitive.Content>
+      <SheetViewport>
+        <SheetPrimitive.Popup
+          data-slot="sheet-content"
+          className={cn(
+            "pointer-events-auto absolute inset-y-0 right-0 flex h-full w-3/4 flex-col gap-4 border-l bg-background p-6 shadow-lg transition ease-in-out data-[closed]:duration-300 data-[closed]:animate-out data-[open]:duration-500 data-[open]:animate-in",
+            "data-[closed]:slide-out-to-right data-[open]:slide-in-from-right sm:max-w-sm",
+            className,
+          )}
+          initialFocus={initialFocus ?? closeButtonRef}
+          {...(ariaDescribedBy !== undefined
+            ? { "aria-describedby": ariaDescribedBy }
+            : {})}
+          {...restProps}
+        >
+          {children}
+          <SheetPrimitive.Close
+            ref={closeButtonRef}
+            className="absolute top-4 right-4 rounded-xs opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none"
+          >
+            <XIcon className="size-4" />
+            <span className="sr-only">{closeLabel}</span>
+          </SheetPrimitive.Close>
+        </SheetPrimitive.Popup>
+      </SheetViewport>
     </SheetPortal>
   );
 }

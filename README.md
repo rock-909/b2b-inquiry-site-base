@@ -46,6 +46,8 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 4. `docs/开发与维护.md`
 5. `docs/正式上线标准.md`
 
+派生站整体换肤从 `src/app/theme.css` 开始；组件结构和 variant 看 `docs/design/组件治理.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
+
 历史 starter 派生说明已经退出当前文档入口；需要追溯时看 Git 历史，不要把它们当当前站的业务入口。
 
 ## 技术基础

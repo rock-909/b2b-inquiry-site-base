@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { logger } from "@/lib/logger";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Link } from "@/i18n/routing";
 
 export interface RouteErrorCopy {
@@ -38,9 +39,9 @@ export function RouteErrorView({
           <Button type="button" onClick={reset}>
             {copy.tryAgain}
           </Button>
-          <Button variant="outline" asChild>
-            <Link href="/">{copy.goHome}</Link>
-          </Button>
+          <Link href="/" className={buttonVariants({ variant: "outline" })}>
+            {copy.goHome}
+          </Link>
         </div>
       </div>
     </div>

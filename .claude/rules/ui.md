@@ -1,9 +1,12 @@
 ---
 paths:
-  - "src/components/**/*.tsx"
+  - "src/components/**/*.{ts,tsx}"
   - "src/app/**/page.tsx"
   - "src/app/**/layout.tsx"
+  - "src/app/theme.css"
+  - "src/app/globals.css"
   - "src/**/*.stories.tsx"
+  - "components.json"
 ---
 
 # UI Rules
@@ -42,41 +45,42 @@ Decision order:
 5. Add a new `src/components/ui/` primitive only with a clear current need and
    tests when behavior exists.
 
-Use project wrappers in `src/components/ui/` instead of importing Radix
-primitives directly from page sections or business components.
+Use project wrappers in `src/components/ui/` instead of importing Base UI
+directly from page sections or business components.
 
 External UI references such as shadcn are references only; project-approved UI
 lives in adapted local wrappers under `src/components/ui/*`.
 
-## Radix UI foundation
+## Base UI foundation
 
-The project uses local UI wrappers plus Radix Primitives.
+The project uses local UI wrappers plus Base UI for complex interactions.
 
-- Radix Primitives are approved for complex interactions.
+- Base UI is approved for complex focus, keyboard, overlay, disclosure, and
+  selection behavior.
 - Tailwind and project tokens own controls, page layout, responsive structure,
   and brand expression.
-- Runtime color truth remains in `src/app/globals.css`.
-- `@radix-ui/themes` is retired and forbidden in production UI.
+- `src/app/theme.css` is the website theme entry. `src/app/globals.css` imports
+  it and owns the Tailwind adapter and global behavior.
 
 Business code must import UI from local wrappers, for example
 `@/components/ui/*`.
 
 Do not:
 
-- import, dynamically import, or require `@radix-ui/themes` anywhere in
-  production UI;
-- style `.rt-*` classes or depend on Radix internal DOM;
-- use `!important` to solve Radix/Tailwind conflicts;
+- import Base UI directly outside `src/components/ui/*`;
+- depend on Base UI internal DOM beyond its documented public attributes and
+  CSS variables;
+- use `!important` to solve Base UI/Tailwind conflicts;
 - keep empty compatibility wrappers for retired vendor boundaries.
 
-Use Radix Primitive-backed wrappers for genuinely complex interaction. Use
+Use Base UI-backed wrappers for genuinely complex interaction. Use
 native HTML plus Tailwind and project tokens for ordinary inputs, textareas,
 badges, status panels, cards, narrative UI, and page layout.
 
 Use this judgment split:
 
 - Complex focus, keyboard, overlay, selection, or disclosure behavior: prefer
-  governed Radix Primitive wrappers.
+  governed Base UI wrappers.
 - Straightforward native form and semantic HTML behavior: prefer local wrappers.
 - Marketing/storytelling surfaces: prefer Tailwind, project tokens, and local
   section composition.
@@ -84,6 +88,14 @@ Use this judgment split:
   `src/components/ui` surface should contain only wrappers that a page imports.
 - Replacing live native form controls with wrappers must preserve FormData,
   labels, no-JS fallback, state, and stable user-facing locators.
+
+Base UI composition uses `render`. The rendered component must pass Base UI
+props and `ref` through to its final DOM element. Link CTAs stay links and call
+the shared variant function such as `buttonVariants()` directly.
+
+Base UI state attributes such as `data-open` and `data-closed`, plus its
+positioning and sizing CSS variables, are runtime interaction data. They are
+not brand design tokens.
 
 ## Mobile navigation boundaries
 
@@ -116,10 +128,18 @@ dropdown, drawer, or progress state.
 
 ## Design tokens
 
-Design values live in `src/app/globals.css`.
+Website design values live in `src/app/theme.css`.
+
+- For an overall derived-site restyle, start with `theme.css`.
+- For component structure or variants, change `src/components/ui/*`.
+- For a page-specific design, change that page or its domain component.
+- Tokens are the convenient first entry for Agents, not a restriction against
+  changing components or pages when the design requires it.
 
 - Use semantic tokens such as `bg-primary`, `text-foreground`, `border-border`,
   `ring-ring`, or explicit CSS variable classes.
+- Components may use semantic roles and the small set of global visual-feel
+  tokens in `theme.css`; they must not consume raw visual materials directly.
 - Do not add raw brand hex values in browser UI.
 - Do not add raw Tailwind palette classes in production UI unless the class is
   inside a test fixture.
@@ -133,7 +153,8 @@ decisions. Ordinary section H2 uses `.text-section` via `SectionHead`.
 ## Tailwind CSS v4
 
 Tailwind config is in `@theme inline` inside `globals.css`; there is no
-`tailwind.config.ts`.
+`tailwind.config.ts`. This block adapts values from `theme.css` and must not
+become a second theme source.
 
 Do not build class names through string interpolation. Use literal maps or
 inline style for truly dynamic values.

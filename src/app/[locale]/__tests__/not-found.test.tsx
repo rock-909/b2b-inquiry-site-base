@@ -16,18 +16,6 @@ vi.mock("next-intl", () => ({
   },
 }));
 
-// Mock Button component
-vi.mock("@/components/ui/button", () => ({
-  Button: ({
-    children,
-    asChild,
-  }: React.PropsWithChildren<{ asChild?: boolean }>) => (
-    <button data-testid="home-button" data-as-child={asChild}>
-      {children}
-    </button>
-  ),
-}));
-
 // Mock Link component
 vi.mock("@/i18n/routing", () => ({
   Link: ({ children, href }: React.PropsWithChildren<{ href: string }>) => (
@@ -112,11 +100,12 @@ describe("LocaleNotFound", () => {
       expect(headings[0]).toHaveTextContent("Page not found");
     });
 
-    it("should have accessible button", async () => {
+    it("should expose the home action as an accessible link", async () => {
       await renderLocaleNotFound();
 
-      const button = screen.getByTestId("home-button");
-      expect(button).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Back to homepage" }),
+      ).toHaveAttribute("href", "/");
     });
   });
 });

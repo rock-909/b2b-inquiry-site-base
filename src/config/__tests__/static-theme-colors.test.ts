@@ -85,7 +85,7 @@ describe("static theme colors", () => {
   });
 
   it("documents the bridge boundary instead of pretending to be brand truth", () => {
-    expect(BRIDGE_SOURCE).toContain("sRGB bridge for src/app/globals.css");
+    expect(BRIDGE_SOURCE).toContain("sRGB bridge for src/app/theme.css");
     expect(BRIDGE_SOURCE).toContain("manually reviewed sRGB snapshot");
     expect(BRIDGE_SOURCE).toContain("semantic token palette");
     expect(BRIDGE_SOURCE).toContain("non-CSS surfaces only");

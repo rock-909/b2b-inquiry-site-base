@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Link } from "@/i18n/routing";
 
 export function LocalizedNotFoundView() {
@@ -19,9 +19,9 @@ export function LocalizedNotFoundView() {
             {t("description")}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/">{t("goHome")}</Link>
-        </Button>
+        <Link href="/" className={buttonVariants()}>
+          {t("goHome")}
+        </Link>
       </div>
     </div>
   );
