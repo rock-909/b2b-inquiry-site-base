@@ -35,18 +35,16 @@ describe("Button", () => {
     expect(submitInquiry).not.toHaveBeenCalled();
   });
 
-  // 产品页 CTA 走的就是这条：Slot 把按钮的 class 和 data-slot 合并到子链接上，
-  // 渲染出来的必须还是一个 link，不能变成嵌在按钮里的链接。
-  it("hands its styling to the child element when asChild is set", () => {
+  it("lets links reuse the same variants without changing their semantics", () => {
     render(
-      <Button asChild>
-        <a href="/request-quote">Request a Quote</a>
-      </Button>,
+      <a href="/request-quote" className={buttonVariants()}>
+        Request a Quote
+      </a>,
     );
 
     const link = screen.getByRole("link", { name: "Request a Quote" });
     expect(link).toHaveAttribute("href", "/request-quote");
-    expect(link).toHaveAttribute("data-slot", "button");
+    expect(link.className).toContain("var(--button-primary-bg)");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 

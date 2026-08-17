@@ -19,6 +19,8 @@ Use this file when adding or changing tests, mocks, fixtures, or behavior proof.
 | Schema validation | real validator by default; mock only for adapter wiring |
 | Component DOM/prop change | update the closest behavior proof when the change affects a real contract |
 | Client Component, hook, or React behavior change | focused behavior test |
+| Headless primitive or wrapper change | public DOM, ARIA, and interaction contract; not vendor internals |
+| Token reorganization with unchanged visuals | same-environment before/after evidence |
 
 ## Assertions
 
@@ -66,6 +68,8 @@ Heavy mutation and broad review lanes are opt-in only.
 - Do not relax thresholds, remove business content, or add broad lazy loading
   only to improve a metric.
 - Revert optimizations whose measured gain does not justify their complexity.
+- Dependency migration bundle comparisons must use the same build conditions
+  and the same client entry. npm install size is not browser bundle proof.
 
 ## Reliability
 
@@ -85,6 +89,13 @@ Add back/forward, locale, or hash cases only when the behavior depends on them.
 
 Prefer user-facing locators. Use `getByTestId()` only when those locators are not
 practical. Avoid CSS class selectors for user flows.
+
+Focus traps, scroll locking, focus restoration, backdrop dismissal, and touch
+behavior require real-browser proof. Component tests may cover wrapper wiring
+but must not claim jsdom proves these browser behaviors.
+
+Do not turn one migration screenshot, a CSS line count, or a specific dependency
+version into a permanent test contract.
 
 ## Validation and mocks
 

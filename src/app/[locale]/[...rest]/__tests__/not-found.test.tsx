@@ -14,12 +14,6 @@ vi.mock("next-intl", () => ({
   },
 }));
 
-vi.mock("@/components/ui/button", () => ({
-  Button: ({ children }: React.PropsWithChildren<{ asChild?: boolean }>) => (
-    <>{children}</>
-  ),
-}));
-
 vi.mock("@/i18n/routing", () => ({
   Link: ({ children, href }: React.PropsWithChildren<{ href: string }>) => (
     <a href={href}>{children}</a>

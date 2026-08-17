@@ -5,7 +5,7 @@
 /**
  * MobileNavigationInteractive — the client drawer island.
  *
- * Sole owner of drawer interaction proofs against the REAL Radix Sheet:
+ * Sole owner of drawer interaction proofs against the real Base UI Sheet:
  * open/close via trigger, close button, Escape, nav-link click and route
  * change; keyboard focus movement; active-route wiring; translated chrome;
  * and graceful degradation. Static link-list content is proven in

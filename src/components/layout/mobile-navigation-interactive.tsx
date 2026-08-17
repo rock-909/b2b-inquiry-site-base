@@ -118,21 +118,22 @@ export function MobileNavigationInteractive({
   return (
     <div className="header-mobile-only">
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-        <SheetTrigger asChild>
-          <MobileMenuButton
-            isOpen={isOpen}
-            aria-controls="mobile-navigation"
-            closeMenuLabel={closeMenuLabel}
-            openMenuLabel={openMenuLabel}
-            labelTestId="mobile-menu-toggle-label"
-          />
-        </SheetTrigger>
+        <SheetTrigger
+          render={
+            <MobileMenuButton
+              isOpen={isOpen}
+              aria-controls="mobile-navigation"
+              closeMenuLabel={closeMenuLabel}
+              openMenuLabel={openMenuLabel}
+              labelTestId="mobile-menu-toggle-label"
+            />
+          }
+        />
         <SheetContent
           closeLabel={closeMenuLabel}
           className="w-[300px] overflow-y-auto sm:w-[350px]"
           id="mobile-navigation"
           data-testid="mobile-menu-content"
-          onEscapeKeyDown={() => handleOpenChange(false)}
         >
           <MobileNavigationHeader
             mobileNavigationLabel={tAccessibility("mobileNavigation")}

@@ -1,4 +1,5 @@
 @import "tailwindcss" source(none);
+@import "./theme.css";
 
 @source "../app";
 @source "../components";
@@ -13,323 +14,9 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ==================== PRIMITIVE TOKENS ==================== */
-/* 这一层是 Radix 那套 1-12 色阶角色，是本站色彩推理的模型。
-   这些是原始值，会变；组件代码一律用下面的语义 token，不要直接引用原始值。 */
-
 :root {
-  /* Brand scale — tweakcn Twitter preset. */
-  --brand-1: oklch(0.97 0.02 245);
-  --brand-2: oklch(0.9392 0.0166 250.8453);
-  --brand-3: oklch(0.9 0.04 245);
-  --brand-4: oklch(0.82 0.08 245);
-  --brand-5: oklch(0.75 0.12 245);
-  --brand-6: oklch(0.7 0.14 245);
-  --brand-7: oklch(0.6818 0.1584 243.354);
-  --brand-8: oklch(0.67 0.16 245);
-  --brand-9: oklch(0.6723 0.1606 244.9955);
-  --brand-10: oklch(0.58 0.15 245);
-  --brand-11: oklch(0.45 0.12 245);
-  --brand-12: oklch(0.3 0.08 245);
-
-  /* Neutral scale — Twitter/X light surfaces. */
-  --neutral-1: oklch(1 0 0);
-  --neutral-2: oklch(0.9784 0.0011 197.1387);
-  --neutral-3: oklch(0.9222 0.0013 286.3737);
-  --neutral-4: oklch(0.94 0.01 232);
-  --neutral-5: oklch(0.9317 0.0118 231.6594);
-  --neutral-6: oklch(0.82 0.01 240);
-  --neutral-7: oklch(0.68 0.01 240);
-  --neutral-8: oklch(0.5637 0.0078 247.9662);
-  --neutral-9: oklch(0.446 0.012 250);
-  --neutral-10: oklch(0.373 0.012 250);
-  --neutral-11: oklch(0.278 0.01 250);
-  --neutral-12: oklch(0.1884 0.0128 248.5103);
-
-  /* Border Radius — tweakcn Twitter preset */
-  --radius: 1.3rem;
-  --radius-none: 0;
-  --radius-sharp: 0.125rem;
-  --radius-base: 0.25rem;
-  --radius-soft: 0.375rem;
-  --radius-round: 9999px;
-
-  /* Foundation */
-  --background: var(--neutral-1);
-  --foreground: var(--neutral-12);
-  --site-header-height: 4rem;
-
-  /* Surfaces — tweakcn Twitter: white canvas + #f7f8f8 cards */
-  --card: var(--neutral-2);
-  --card-foreground: var(--neutral-12);
-  --popover: var(--neutral-1);
-  --popover-foreground: var(--neutral-12);
-
-  /* Brand Primary — Twitter blue */
-  --primary: var(--brand-9);
-  --primary-foreground: var(--neutral-1);
-  --primary-dark: var(--brand-10);
-  --primary-light: var(--brand-2);
-  --primary-50: var(--brand-1);
-  /* Readable brand text on light surfaces (WCAG 4.5:1+) */
-  --primary-text: var(--brand-11);
-
-  /* Secondary — charcoal pill/button surface */
-  --secondary: var(--neutral-12);
-  --secondary-foreground: var(--neutral-1);
-
-  /* Accent — light blue hover wash */
-  --accent: var(--brand-2);
-  --accent-foreground: var(--brand-9);
-
-  /* Muted */
-  --muted: var(--neutral-3);
-  --muted-foreground: var(--neutral-9);
-
-  /* Status Colors */
-  --success: oklch(0.56 0.13 155);
-  --success-muted: oklch(0.965 0.025 155);
-  --success-border: oklch(0.86 0.06 155);
-  --success-foreground: oklch(0.3 0.075 155);
-  --success-light: var(--success-muted);
-
-  --warning: oklch(0.66 0.14 72);
-  --warning-muted: oklch(0.965 0.035 72);
-  --warning-border: oklch(0.86 0.075 72);
-  --warning-foreground: oklch(0.34 0.075 72);
-
-  --error: oklch(0.6188 0.2376 25.7658);
-  --error-muted: oklch(0.965 0.025 27);
-  --error-border: oklch(0.86 0.065 27);
-  --error-foreground: oklch(0.35 0.13 27);
-
-  --info: var(--brand-9);
-  --info-muted: var(--brand-2);
-  --info-border: var(--brand-5);
-  --info-foreground: var(--brand-11);
-
-  --destructive: var(--error);
-  --destructive-foreground: var(--neutral-1);
-
-  /* Borders & Inputs */
-  --border: var(--neutral-5);
-  --border-light: var(--neutral-4);
-  --input: var(--neutral-8);
-  --ring: var(--brand-10);
-
-  /* Shadows — tweakcn Twitter uses flat surfaces; shadow opacity is 0 */
-  --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
-  --shadow-sm:
-    0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
-    0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0);
-  --shadow-md:
-    0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
-    0px 2px 4px -1px hsl(202.8169 89.1213% 53.1373% / 0);
-  --shadow-lg:
-    0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
-    0px 4px 6px -1px hsl(202.8169 89.1213% 53.1373% / 0);
-  --shadow-xl:
-    0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
-    0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0);
-
-  /* Section Divider */
-  --divider: var(--neutral-5);
-
-  /* Grid System */
-  --grid-guide: color-mix(in oklch, var(--neutral-12) 6%, transparent);
-
-  /* Animation */
-  --duration-instant: 50ms;
-  --duration-fast: 150ms;
-  --duration-normal: 200ms;
-  --duration-slow: 300ms;
-  --duration-slower: 400ms;
-
-  --ease-linear: linear;
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
-  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
-
-  --transition-colors:
-    color var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out);
-  --transition-opacity: opacity var(--duration-normal) var(--ease-smooth);
-  --transition-transform: transform var(--duration-normal) var(--ease-out);
-  --transition-shadow: box-shadow var(--duration-fast) var(--ease-out);
-  --transition-all: all var(--duration-normal) var(--ease-smooth);
-
-  /* Typography — system sans + Chinese fallbacks */
-  --font-sans:
-    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  --font-mono:
-    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
-    monospace;
-  --font-chinese:
-    "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", sans-serif;
-
-  /* Container */
-  --container-max: 1080px;
-
-  /* Footer surface — white canvas with divider, not a gray band */
-  --footer-bg: var(--neutral-1);
-  --footer-text: var(--neutral-10);
-  --footer-heading: var(--neutral-11);
-  --footer-link: var(--neutral-9);
-  --footer-divider: color-mix(in oklch, var(--neutral-12) 10%, transparent);
-
+  /* Runtime layout state updated by the cookie banner. */
   --cookie-banner-height: 0px;
-
-  /* Typography — tweakcn Twitter preset */
-  --tracking-normal: 0em;
-}
-
-/* ==================== DARK THEME ==================== */
-/* tweakcn Twitter preset — dark surfaces. */
-
-.dark {
-  color-scheme: dark;
-
-  --brand-1: oklch(0.19 0.03 245);
-  --brand-2: oklch(0.1928 0.0331 242.5459);
-  --brand-3: oklch(0.24 0.04 245);
-  --brand-4: oklch(0.32 0.06 245);
-  --brand-5: oklch(0.4 0.08 245);
-  --brand-6: oklch(0.5 0.11 245);
-  --brand-7: oklch(0.6818 0.1584 243.354);
-  --brand-8: oklch(0.64 0.15 245);
-  --brand-9: oklch(0.6692 0.1607 245.011);
-  --brand-10: oklch(0.58 0.14 245);
-  --brand-11: oklch(0.78 0.08 245);
-  --brand-12: oklch(0.9 0.04 245);
-
-  --neutral-1: oklch(0 0 0);
-  --neutral-2: oklch(0.2097 0.008 274.5332);
-  --neutral-3: oklch(0.209 0 0);
-  --neutral-4: oklch(0.2674 0.0047 248.0045);
-  --neutral-5: oklch(0.2674 0.0047 248.0045);
-  --neutral-6: oklch(0.36 0.008 248);
-  --neutral-7: oklch(0.44 0.01 248);
-  --neutral-8: oklch(0.5637 0.0078 247.9662);
-  --neutral-9: oklch(0.64 0.008 248);
-  --neutral-10: oklch(0.74 0.006 248);
-  --neutral-11: oklch(0.84 0.004 248);
-  --neutral-12: oklch(0.9328 0.0025 228.7857);
-
-  --success-muted: oklch(0.22 0.03 155);
-  --success-border: oklch(0.34 0.05 155);
-  --success-foreground: oklch(0.82 0.08 155);
-
-  --warning-muted: oklch(0.24 0.035 72);
-  --warning-border: oklch(0.36 0.06 72);
-  --warning-foreground: oklch(0.84 0.08 72);
-
-  --error-muted: oklch(0.22 0.04 27);
-  --error-border: oklch(0.36 0.08 27);
-  --error-foreground: oklch(0.84 0.1 27);
-
-  --info-muted: var(--brand-2);
-  --info-border: var(--brand-5);
-  --info-foreground: var(--brand-11);
-
-  --shadow-xs: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0);
-  --shadow-sm:
-    0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
-    0px 1px 2px -1px hsl(202.8169 89.1213% 53.1373% / 0);
-  --shadow-md:
-    0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
-    0px 2px 4px -1px hsl(202.8169 89.1213% 53.1373% / 0);
-  --shadow-lg:
-    0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
-    0px 4px 6px -1px hsl(202.8169 89.1213% 53.1373% / 0);
-  --shadow-xl:
-    0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0),
-    0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0);
-
-  --footer-bg: var(--neutral-2);
-  --footer-text: var(--neutral-10);
-  --footer-heading: var(--neutral-11);
-  --footer-link: var(--neutral-9);
-  --footer-divider: color-mix(in oklch, var(--neutral-12) 10%, transparent);
-
-  --grid-guide: color-mix(in oklch, var(--neutral-12) 6%, transparent);
-
-  --background: var(--neutral-1);
-  --foreground: var(--neutral-12);
-  --card: var(--neutral-2);
-  --card-foreground: oklch(0.8853 0 0);
-  --popover: var(--neutral-1);
-  --popover-foreground: var(--neutral-12);
-  --secondary: oklch(0.9622 0.0035 219.5331);
-  --secondary-foreground: oklch(0.1884 0.0128 248.5103);
-  --accent: var(--brand-2);
-  --accent-foreground: var(--brand-9);
-  --muted: var(--neutral-3);
-  --muted-foreground: var(--neutral-9);
-  --border: var(--neutral-5);
-  --border-light: var(--neutral-4);
-  --input: var(--neutral-8);
-  --primary: var(--brand-9);
-  --primary-dark: var(--brand-10);
-  --primary-foreground: var(--neutral-1);
-  --ring: var(--brand-7);
-}
-
-/* ==================== COMPONENT TOKENS ==================== */
-
-:root {
-  /* Button — runtime sizing/radius pilot (Button-only; not a global migration) */
-  --button-radius: 0.75rem;
-  --button-height-sm: 2rem;
-  --button-height-default: 2.5rem;
-  --button-height-lg: 3rem;
-  --button-font-weight: 500;
-
-  --button-primary-bg: var(--brand-11);
-  --button-primary-fg: var(--primary-foreground);
-  --button-primary-hover-bg: var(--brand-12);
-
-  --button-accent-bg: var(--accent);
-  --button-accent-fg: var(--accent-foreground);
-  --button-accent-hover-bg: var(--brand-4);
-
-  --button-secondary-bg: var(--secondary);
-  --button-secondary-fg: var(--secondary-foreground);
-  --button-secondary-border: var(--border);
-  --button-secondary-hover-border: var(--neutral-5);
-
-  --button-outline-bg: transparent;
-  --button-outline-fg: var(--primary-text);
-  --button-outline-border: var(--primary-text);
-  --button-outline-hover-bg: color-mix(
-    in oklch,
-    var(--primary-text) 10%,
-    transparent
-  );
-
-  --button-ghost-bg: transparent;
-  --button-ghost-fg: var(--foreground);
-  --button-ghost-hover-bg: var(--accent);
-
-  --button-destructive-bg: var(--destructive);
-  --button-destructive-fg: var(--destructive-foreground);
-
-  /* Card — tweakcn Twitter radius, flat surface */
-  --card-radius: var(--radius-lg);
-  --card-padding: 1.5rem;
-
-  /* Input */
-  --input-height: 2.5rem;
-  --input-padding-x: 1rem;
-  --input-radius: var(--radius-md);
-
-  /* Table */
-  --table-radius: var(--radius-soft);
-  --table-header-bg: var(--neutral-3);
-  --table-row-hover-bg: color-mix(in oklch, var(--primary) 8%, transparent);
 }
 
 /* ==================== TAILWIND THEME BINDINGS ==================== */
@@ -357,16 +44,14 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* 1.3rem tweakcn Twitter radius */
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-sm: calc(var(--surface-radius) - 4px);
+  --radius-md: calc(var(--surface-radius) - 2px);
+  --radius-lg: var(--surface-radius);
+  --radius-xl: calc(var(--surface-radius) + 4px);
+  --radius-2xl: calc(var(--surface-radius) + 8px);
 
-  /* Shadow-Border System (box-shadow as border for smooth transitions) */
-  --shadow-border: var(--shadow-xs);
-  --shadow-card: var(--shadow-sm);
+  --shadow-border: var(--control-shadow);
+  --shadow-card: var(--surface-shadow);
 }
 
 /* ==================== BASE LAYER ==================== */
@@ -377,6 +62,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    position: relative;
+    isolation: isolate;
     font-family: var(--font-sans), var(--font-chinese);
     letter-spacing: var(--tracking-normal);
   }
@@ -436,11 +123,9 @@
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     :root {
-      --duration-instant: 0.01ms;
       --duration-fast: 0.01ms;
       --duration-normal: 0.01ms;
       --duration-slow: 0.01ms;
-      --duration-slower: 0.01ms;
     }
 
     *,
@@ -455,11 +140,6 @@
 
   /* High contrast mode */
   @media (prefers-contrast: high) {
-    :root {
-      --border: var(--neutral-8);
-      --ring: var(--brand-10);
-    }
-
     *:focus-visible {
       outline: 3px solid var(--ring) !important;
       outline-offset: 2px !important;
@@ -657,7 +337,7 @@
 
   .card-border {
     @apply border border-border;
-    border-radius: var(--radius);
+    border-radius: var(--surface-radius);
   }
 
   @media (min-width: 768px) {
@@ -703,7 +383,7 @@
 
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--surface-hover-shadow);
   }
 
   /* Fade in animation */

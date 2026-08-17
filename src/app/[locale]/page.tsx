@@ -7,7 +7,7 @@ import {
 } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { HeroSection } from "@/components/sections/hero-section";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { getLocalizedPath } from "@/config/paths";
 import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
 import { Link } from "@/i18n/routing";
@@ -59,22 +59,20 @@ export default async function HomePage({ params }: HomePageProps) {
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link
-                href={SINGLE_SITE_HOME_LINK_TARGETS.primaryCta}
-                prefetch={false}
-              >
-                {t("finalCta.primary")}
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link
-                href={SINGLE_SITE_HOME_LINK_TARGETS.secondaryCta}
-                prefetch={false}
-              >
-                {t("finalCta.secondary")}
-              </Link>
-            </Button>
+            <Link
+              href={SINGLE_SITE_HOME_LINK_TARGETS.primaryCta}
+              prefetch={false}
+              className={buttonVariants()}
+            >
+              {t("finalCta.primary")}
+            </Link>
+            <Link
+              href={SINGLE_SITE_HOME_LINK_TARGETS.secondaryCta}
+              prefetch={false}
+              className={buttonVariants({ variant: "outline" })}
+            >
+              {t("finalCta.secondary")}
+            </Link>
           </div>
         </div>
       </section>
