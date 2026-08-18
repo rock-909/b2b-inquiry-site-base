@@ -8,11 +8,15 @@ const { mockCreateLead, mockSendProductInquiryEmail } = vi.hoisted(() => ({
   mockSendProductInquiryEmail: vi.fn(),
 }));
 
-vi.mock("@/lib/airtable/instance", () => ({
-  airtableService: { createLead: mockCreateLead },
+vi.mock("@/lib/airtable/service", () => ({
+  AirtableService: class {
+    public readonly createLead = mockCreateLead;
+  },
 }));
-vi.mock("@/lib/resend-instance", () => ({
-  resendService: { sendInquiryEmail: mockSendProductInquiryEmail },
+vi.mock("@/lib/resend-core", () => ({
+  ResendService: class {
+    public readonly sendInquiryEmail = mockSendProductInquiryEmail;
+  },
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
 
@@ -38,6 +42,7 @@ describe("processValidatedInquiry observability", () => {
       expect.objectContaining({
         type: INQUIRY_LEAD_TYPE,
         email: "[REDACTED_EMAIL]",
+        leadDeliveryPolicy: "email-primary-airtable-backup",
         referenceId: expect.stringMatching(/^INQ-/),
       }),
     );

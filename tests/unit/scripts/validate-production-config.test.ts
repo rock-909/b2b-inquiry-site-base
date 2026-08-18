@@ -1,17 +1,12 @@
 import { spawnSync } from "node:child_process";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  renameSync,
-} from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
 import { load } from "js-yaml";
 import ts from "typescript";
 import { afterEach, describe, expect, it } from "vitest";
+import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
   isSentinelBlocker,
   shouldValidateProductionRuntimeContract,
@@ -68,22 +63,86 @@ const SAFE_PRODUCTION_PUBLIC_KEYS = [
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "../../..");
 const tempDirs: string[] = [];
-const TEMP_TRASH_ROOT = path.join(
-  os.tmpdir(),
-  "b2b-inquiry-production-export-test-trash",
-);
+const FIXTURE_PREFIX = "b2b-inquiry-production-";
+
+const STARTER_PUBLIC_LAUNCH_FIXTURE = {
+  getPublicContactEmail: () => undefined,
+  getPublicContactPhone: () => undefined,
+  getPublicLogoPath: () => undefined,
+  SINGLE_SITE_DEFINITION: {
+    config: {
+      baseUrl: "https://example.com",
+      name: "Showcase Website Starter",
+      description:
+        "Public demo starter for launching a showcase website foundation",
+      seo: {
+        titleTemplate: "%s | Showcase Website Starter",
+        defaultTitle: "Showcase Website Starter - Public Demo Starter Site",
+        defaultDescription:
+          "A public demo starter site for teams that need a deployable showcase website foundation before they have a real website.",
+      },
+      social: {
+        twitter: "https://x.com/example",
+        linkedin: "https://www.linkedin.com/company/example",
+      },
+      contact: {
+        phone: "+86-518-0000-0000",
+        email: "starter-contact@example.com",
+      },
+    },
+  },
+  SINGLE_SITE_FACTS: {
+    company: {
+      name: "Showcase Website Starter",
+      location: {
+        city: "Replace before launch",
+        address: "Replace before launch",
+      },
+    },
+    contact: { phone: "+86-518-0000-0000" },
+    brandAssets: { logo: { status: "pending" } },
+  },
+};
+
+const READY_PUBLIC_LAUNCH_FIXTURE = {
+  getPublicContactEmail: (email: string) => email,
+  getPublicContactPhone: (phone: string) => phone,
+  getPublicLogoPath: (logo: { horizontal: string }) => logo.horizontal,
+  SINGLE_SITE_DEFINITION: {
+    config: {
+      baseUrl: "https://reference-site.com",
+      name: "Reference Industrial",
+      description: "Industrial products and buyer support.",
+      seo: {
+        titleTemplate: "%s | Reference Industrial",
+        defaultTitle: "Reference Industrial",
+        defaultDescription: "Industrial products and buyer support.",
+      },
+      social: { twitter: "", linkedin: "" },
+      contact: {
+        phone: "+1 212 555 0199",
+        email: "sales@reference-site.com",
+      },
+    },
+  },
+  SINGLE_SITE_FACTS: {
+    company: {
+      name: "Reference Industrial LLC",
+      location: { city: "New York", address: "1 Industrial Way" },
+    },
+    contact: { phone: "+1 212 555 0199" },
+    brandAssets: {
+      logo: { status: "ready", horizontal: "/images/logo.svg" },
+    },
+  },
+};
+
+type PublicLaunchFixture =
+  typeof STARTER_PUBLIC_LAUNCH_FIXTURE | typeof READY_PUBLIC_LAUNCH_FIXTURE;
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- cleanup only checks a test-owned temp directory
-    if (!existsSync(tempDir)) continue;
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- cleanup moves fixtures to a recoverable temp trash directory
-    mkdirSync(TEMP_TRASH_ROOT, { recursive: true });
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- both paths are test-owned temp directories
-    renameSync(
-      tempDir,
-      path.join(TEMP_TRASH_ROOT, `${path.basename(tempDir)}-${Date.now()}`),
-    );
+    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
   }
 });
 
@@ -155,7 +214,7 @@ function executeProductionExport(exportScript: string): {
   }
 
   const tempDir = mkdtempSync(
-    path.join(os.tmpdir(), "b2b-inquiry-production-export-"),
+    path.join(os.tmpdir(), `${FIXTURE_PREFIX}export-`),
   );
   tempDirs.push(tempDir);
   const githubEnvPath = path.join(tempDir, "github-env");
@@ -174,6 +233,46 @@ function executeProductionExport(exportScript: string): {
         readFileSync(githubEnvPath, "utf8").trimEnd().split("\n")
       : [],
   };
+}
+
+function createPublicLaunchInput(
+  publicLaunch: PublicLaunchFixture = STARTER_PUBLIC_LAUNCH_FIXTURE,
+  baseUrl = "https://reference-site.com",
+) {
+  const rootDir = mkdtempSync(
+    path.join(os.tmpdir(), `${FIXTURE_PREFIX}config-`),
+  );
+  tempDirs.push(rootDir);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- 写入本测试刚创建的临时目录
+  writeFileSync(
+    path.join(rootDir, "wrangler.jsonc"),
+    JSON.stringify({
+      name: "reference-site",
+      env: {
+        preview: {
+          r2_buckets: [
+            {
+              binding: "NEXT_INC_CACHE_R2_BUCKET",
+              bucket_name: "reference-site-next-cache-preview",
+            },
+          ],
+        },
+        production: {
+          vars: {
+            NEXT_PUBLIC_SITE_URL: baseUrl,
+            NEXT_PUBLIC_BASE_URL: baseUrl,
+          },
+          r2_buckets: [
+            {
+              binding: "NEXT_INC_CACHE_R2_BUCKET",
+              bucket_name: "reference-site-next-cache-production",
+            },
+          ],
+        },
+      },
+    }),
+  );
+  return { rootDir, publicLaunch };
 }
 
 describe("validate-production-config runtime contract", () => {
@@ -361,42 +460,6 @@ describe("validate-production-config runtime contract", () => {
     );
   });
 
-  it("rejects degraded in-memory stores in production", () => {
-    const env = {
-      ...createValidProductionEnv(),
-      UPSTASH_REDIS_REST_URL: undefined,
-      UPSTASH_REDIS_REST_TOKEN: undefined,
-      ALLOW_MEMORY_RATE_LIMIT: "true",
-    };
-
-    const result = validateProductionRuntimeContract(env);
-
-    expect(result.errors).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining(
-          "Degraded in-memory rate-limit store flag (ALLOW_MEMORY_RATE_LIMIT) cannot be used in production",
-        ),
-      ]),
-    );
-  });
-
-  it("does not reject an explicit false in-memory store fallback flag", () => {
-    const env = {
-      ...createValidProductionEnv(),
-      ALLOW_MEMORY_RATE_LIMIT: "false",
-    };
-
-    const result = validateProductionRuntimeContract(env);
-
-    expect(result.errors).not.toEqual(
-      expect.arrayContaining([
-        expect.stringContaining(
-          "Degraded in-memory rate-limit store flag (ALLOW_MEMORY_RATE_LIMIT) cannot be used in production",
-        ),
-      ]),
-    );
-  });
-
   it("fails fast on partial store configuration", () => {
     const partialUpstash = validateProductionRuntimeContract({
       ...createValidProductionEnv(),
@@ -487,7 +550,10 @@ describe("validateProductionConfig CI vs deploy gate", () => {
       NODE_ENV: "production",
     };
 
-    const result = validateProductionConfig(env);
+    const result = validateProductionConfig(
+      env,
+      createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE),
+    );
 
     expect(result.errors).toEqual([]);
     expect(result.runtimeContractChecked).toBe(false);
@@ -500,7 +566,10 @@ describe("validateProductionConfig CI vs deploy gate", () => {
       DEPLOYMENT_PLATFORM: "development",
     };
 
-    const result = validateProductionConfig(env);
+    const result = validateProductionConfig(
+      env,
+      createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE),
+    );
 
     expect(result.errors).toEqual([]);
     expect(result.runtimeContractChecked).toBe(false);
@@ -513,7 +582,10 @@ describe("validateProductionConfig CI vs deploy gate", () => {
       PUBLIC_LAUNCH_STRICT: "true",
     };
 
-    const result = validateProductionConfig(env);
+    const result = validateProductionConfig(
+      env,
+      createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE),
+    );
 
     expect(result.runtimeContractChecked).toBe(true);
     expect(result.errors).toEqual(
@@ -525,17 +597,7 @@ describe("validateProductionConfig CI vs deploy gate", () => {
     );
   });
 
-  it("keeps runtime errors as hard failures when VALIDATE_CONFIG_SKIP_RUNTIME is absent", () => {
-    const env: NodeJS.ProcessEnv = {
-      NODE_ENV: "production",
-    };
-
-    const result = validateProductionConfig(env);
-
-    expect(result.errors.length).toBeGreaterThan(0);
-  });
-
-  it("keeps runtime errors as hard failures even when CI=true without the skip flag", () => {
+  it("keeps runtime errors as hard failures when CI=true", () => {
     const env: NodeJS.ProcessEnv = {
       NODE_ENV: "production",
       CI: "true",
@@ -548,15 +610,36 @@ describe("validateProductionConfig CI vs deploy gate", () => {
 });
 
 describe("public launch trust content guard", () => {
-  it("checks the actual wrangler production public URLs in strict mode", () => {
-    const result = validateProductionConfig({
-      ...createValidProductionEnv(),
-      APP_ENV: "production",
-      NODE_ENV: "production",
-      PUBLIC_LAUNCH_STRICT: "true",
-      NEXT_PUBLIC_SITE_URL: "https://launch.reference-site.test",
-      NEXT_PUBLIC_BASE_URL: "https://launch.reference-site.test",
-    });
+  it("accepts explicit owner-ready site and Wrangler fixtures", () => {
+    const result = validateProductionConfig(
+      {
+        ...createValidProductionEnv(),
+        APP_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+        NEXT_PUBLIC_SITE_URL: "https://reference-site.com",
+        NEXT_PUBLIC_BASE_URL: "https://reference-site.com",
+      },
+      createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE),
+    );
+
+    expect(result.errors).toEqual([]);
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("rejects explicit non-launch Wrangler production URLs", () => {
+    const result = validateProductionConfig(
+      {
+        ...createValidProductionEnv(),
+        APP_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+        NEXT_PUBLIC_SITE_URL: "https://reference-site.com",
+        NEXT_PUBLIC_BASE_URL: "https://reference-site.com",
+      },
+      createPublicLaunchInput(
+        READY_PUBLIC_LAUNCH_FIXTURE,
+        "https://example.invalid",
+      ),
+    );
 
     expect(result.errors).toEqual(
       expect.arrayContaining([
@@ -577,7 +660,7 @@ describe("public launch trust content guard", () => {
       VALIDATE_PUBLIC_LAUNCH_CONTENT: "true",
     };
 
-    const result = validateProductionConfig(env);
+    const result = validateProductionConfig(env, createPublicLaunchInput());
 
     expect(result.errors).toEqual([]);
     expect(result.warnings).toEqual(
@@ -595,7 +678,7 @@ describe("public launch trust content guard", () => {
       PUBLIC_LAUNCH_STRICT: "true",
     };
 
-    const result = validateProductionConfig(env);
+    const result = validateProductionConfig(env, createPublicLaunchInput());
 
     expect(result.errors).toEqual(
       expect.arrayContaining([
@@ -606,11 +689,14 @@ describe("public launch trust content guard", () => {
   });
 
   it("blocks starter identity and SEO defaults in client launch strict mode", () => {
-    const result = validateProductionConfig({
-      APP_ENV: "preview",
-      NODE_ENV: "production",
-      PUBLIC_LAUNCH_STRICT: "true",
-    });
+    const result = validateProductionConfig(
+      {
+        APP_ENV: "preview",
+        NODE_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+      },
+      createPublicLaunchInput(),
+    );
 
     expect(result.errors).toEqual(
       expect.arrayContaining([
@@ -695,21 +781,29 @@ describe("public launch trust content guard", () => {
   });
 
   it("treats workers.dev and example.invalid as non-launch public URLs", () => {
-    const workersDev = validateProductionConfig({
-      ...createValidProductionEnv(),
-      APP_ENV: "production",
-      NODE_ENV: "production",
-      PUBLIC_LAUNCH_STRICT: "true",
-      NEXT_PUBLIC_SITE_URL:
-        "https://reference-site-preview.example.workers.dev",
-    });
-    const exampleInvalid = validateProductionConfig({
-      ...createValidProductionEnv(),
-      APP_ENV: "production",
-      NODE_ENV: "production",
-      PUBLIC_LAUNCH_STRICT: "true",
-      NEXT_PUBLIC_SITE_URL: "https://reference-site-production.example.invalid",
-    });
+    const input = createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE);
+    const workersDev = validateProductionConfig(
+      {
+        ...createValidProductionEnv(),
+        APP_ENV: "production",
+        NODE_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+        NEXT_PUBLIC_SITE_URL:
+          "https://reference-site-preview.example.workers.dev",
+      },
+      input,
+    );
+    const exampleInvalid = validateProductionConfig(
+      {
+        ...createValidProductionEnv(),
+        APP_ENV: "production",
+        NODE_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+        NEXT_PUBLIC_SITE_URL:
+          "https://reference-site-production.example.invalid",
+      },
+      input,
+    );
 
     expect(workersDev.errors).toEqual(
       expect.arrayContaining([expect.stringContaining("NEXT_PUBLIC_SITE_URL")]),
@@ -720,21 +814,29 @@ describe("public launch trust content guard", () => {
   });
 
   it("treats workers.dev and example.invalid base URLs as non-launch public URLs", () => {
-    const workersDev = validateProductionConfig({
-      ...createValidProductionEnv(),
-      APP_ENV: "production",
-      NODE_ENV: "production",
-      PUBLIC_LAUNCH_STRICT: "true",
-      NEXT_PUBLIC_BASE_URL:
-        "https://reference-site-preview.example.workers.dev",
-    });
-    const exampleInvalid = validateProductionConfig({
-      ...createValidProductionEnv(),
-      APP_ENV: "production",
-      NODE_ENV: "production",
-      PUBLIC_LAUNCH_STRICT: "true",
-      NEXT_PUBLIC_BASE_URL: "https://reference-site-production.example.invalid",
-    });
+    const input = createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE);
+    const workersDev = validateProductionConfig(
+      {
+        ...createValidProductionEnv(),
+        APP_ENV: "production",
+        NODE_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+        NEXT_PUBLIC_BASE_URL:
+          "https://reference-site-preview.example.workers.dev",
+      },
+      input,
+    );
+    const exampleInvalid = validateProductionConfig(
+      {
+        ...createValidProductionEnv(),
+        APP_ENV: "production",
+        NODE_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+        NEXT_PUBLIC_BASE_URL:
+          "https://reference-site-production.example.invalid",
+      },
+      input,
+    );
 
     expect(workersDev.errors).toEqual(
       expect.arrayContaining([expect.stringContaining("NEXT_PUBLIC_BASE_URL")]),

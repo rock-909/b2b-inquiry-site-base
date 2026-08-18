@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { createInquiryFormCopyFromMessages } from "@/components/forms/inquiry-form-copy";
 import {
   MAX_LEAD_EMAIL_LENGTH,
@@ -18,9 +18,9 @@ describe("inquiry form copy", () => {
     expect(copy.submit).toBe("Send inquiry");
   });
 
-  it("reads the same namespace from composed messages", () => {
+  it("reads the same namespace from the canonical messages", () => {
     const fromMessages = createInquiryFormCopyFromMessages(
-      getComposedMessages("en"),
+      getSourceMessages("en"),
       "sales@example.invalid",
     );
     const fromHelper = createTestInquiryFormCopy();
@@ -58,7 +58,7 @@ describe("inquiry form copy", () => {
 
   it("uses fieldSummary for generic validation failures instead of a generic leaf", () => {
     const copy = createTestInquiryFormCopy();
-    const messages = getComposedMessages("en") as Record<string, unknown>;
+    const messages = getSourceMessages("en") as Record<string, unknown>;
 
     expect(copy.errors.fieldSummary).toBe(
       "Please review the highlighted fields and try again.",
@@ -68,7 +68,7 @@ describe("inquiry form copy", () => {
     ).toBeDefined();
   });
 
-  it("reads all eight turnstile leaves from inquiry.form.turnstile", () => {
+  it("reads the inquiry Turnstile copy", () => {
     const copy = createTestInquiryFormCopy();
 
     expect(copy.turnstile.unavailable).toBe(
@@ -76,9 +76,6 @@ describe("inquiry form copy", () => {
     );
     expect(copy.turnstile.loadFailed).toBe(
       "Security verification failed to load.",
-    );
-    expect(copy.turnstile.slowToLoad).toBe(
-      "Security verification is taking longer than usual.",
     );
     expect(copy.turnstile.devBypass).toBe(
       "Dev mode: Turnstile verification bypassed",

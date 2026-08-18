@@ -8,7 +8,7 @@
  * 证明的是虚构文案，改动真实文案不会让任何测试变红。
  */
 
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import type { Locale } from "@/types/content.types";
 
 function flatten(
@@ -37,7 +37,7 @@ function flatten(
 
 /** 真实消息包合成后的全部叶子，扁平成点号 key。 */
 export function getFlatMessages(locale: Locale = "en"): Map<string, string> {
-  return flatten(getComposedMessages(locale) as Record<string, unknown>);
+  return flatten(getSourceMessages(locale) as Record<string, unknown>);
 }
 
 /**

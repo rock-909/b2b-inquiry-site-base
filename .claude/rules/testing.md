@@ -107,15 +107,15 @@ Use shared test utilities instead of duplicating mock systems:
 - `@/test/utils`
 - `@/test/i18n-messages`
 
-Test translations come from the same composed message graph as production.
-When locales are added, extend that fixture/composition map instead of adding a
-hand-written catalog. Local translation mocks are allowed only for explicit
-mock-wiring tests.
+Test translations come from the same canonical locale file as production.
+When locales are added, add the matching `messages/base/{locale}/messages.json`
+file instead of adding a hand-written catalog. Local translation mocks are
+allowed only for explicit mock-wiring tests.
 
 `src/test/__tests__/mock-translations.test.ts` protects two required behaviors:
 
 - a real empty-string message remains empty;
-- overriding a key absent from the real packs throws.
+- overriding a key absent from the real locale file throws.
 
 ## Skips
 

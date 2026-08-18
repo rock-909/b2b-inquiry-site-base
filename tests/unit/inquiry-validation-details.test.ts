@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MAX_LEAD_MESSAGE_LENGTH } from "@/constants/validation-limits";
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import {
   INQUIRY_FIELD_ERROR_KEYS,
   INQUIRY_VALIDATION_DETAIL_KEYS,
@@ -25,7 +25,7 @@ function getMessageValue(messages: JsonObject, keyPath: string): unknown {
   }, messages);
 }
 
-const runtimeMessages = getComposedMessages("en");
+const runtimeMessages = getSourceMessages("en");
 
 const validBase = {
   type: INQUIRY_LEAD_TYPE,
@@ -50,7 +50,6 @@ const inquiryFailureInputs: ReadonlyArray<Record<string, unknown>> = [
   { ...validBase, message: "A".repeat(5000) },
   { ...validBase, utmSource: "x".repeat(257) },
   { ...validBase, utmSource: 42 },
-  { ...validBase, gclid: true },
 ];
 
 describe("inquiry validation detail mapping", () => {

@@ -55,16 +55,11 @@ describe("Cloudflare deploy workflow contract", () => {
       steps,
       "scripts/quality/checks/production-config.js",
     );
-    const contentGate = findStepIndex(
-      steps,
-      "scripts/quality/checks/content-readiness.js --strict-client-launch",
-    );
     const deploy = steps.findIndex((step) => step.id === "deploy_production");
     const deployStep = steps[deploy];
 
     expect(configGate).toBeGreaterThanOrEqual(0);
-    expect(contentGate).toBeGreaterThan(configGate);
-    expect(deploy).toBeGreaterThan(contentGate);
+    expect(deploy).toBeGreaterThan(configGate);
     expect(deployStep?.if).toContain("inputs.environment == 'production'");
     expect(deployStep?.run).toContain(
       "pnpm exec opennextjs-cloudflare deploy --env production",
@@ -88,15 +83,25 @@ describe("Cloudflare deploy workflow contract", () => {
 
   it("keeps post-deploy verification serialized after the deploy job", () => {
     const workflow = loadDeployWorkflow();
+    const buildSteps = workflowSteps(workflow, "build-and-deploy");
     const smokeStep = workflowSteps(workflow, "post-deploy-verification").find(
       (step) => step.run?.includes("cloudflare-smoke.js deployed-smoke"),
     );
+    const deployStep = buildSteps.find(
+      (step) => step.id === "deploy_production",
+    );
+    const summaryStep = buildSteps.find((step) => step.name === "部署总结");
 
     expect(
       normalizeNeeds(workflow.jobs?.["post-deploy-verification"]?.needs),
     ).toContain("build-and-deploy");
     expect(smokeStep?.run).toContain(
       "needs.build-and-deploy.outputs.deployment_url",
+    );
+    expect(deployStep?.run).toContain("worker-url=${DEPLOY_URL}");
+    expect(summaryStep?.run).toContain("Worker 诊断 URL");
+    expect(summaryStep?.run).toContain(
+      "正式域名、DNS、TLS 和 custom domain 由上线负责人确认",
     );
   });
 

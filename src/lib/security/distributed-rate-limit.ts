@@ -1,33 +1,22 @@
 /**
  * Distributed Rate Limiting
  *
- * Provides single-instance rate limiting backed by a pluggable store. Store
- * increments are atomic (Redis INCR is server-atomic; the in-memory store is
- * synchronous), so a single `increment` call per check is race-free without any
- * process-local serialization. Cross-instance consistency requires a
- * distributed store backend (Upstash Redis / KV); without one, limits are
- * best-effort per-instance only.
+ * Production uses Upstash Redis; development and tests use a process-local Map.
+ * Both paths perform one atomic increment per check.
  *
  * Store implementations are in ./stores/rate-limit-store.ts.
  */
 
-import { logger } from "@/lib/logger";
 import { MINUTE_MS } from "@/constants";
+import { getRuntimeEnvString } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import {
-  type RateLimitStore,
-  createRateLimitStore,
-  resetRateLimitStoreWarnings,
+  MemoryRateLimitStore,
+  RedisRateLimitStore,
 } from "@/lib/security/stores/rate-limit-store";
 
-// Public inquiry writes fail closed when the shared store is unavailable.
-export const RATE_LIMIT_PRESETS = {
-  inquiry: {
-    maxRequests: 10,
-    windowMs: MINUTE_MS,
-  },
-} as const;
-
-export type RateLimitPreset = keyof typeof RATE_LIMIT_PRESETS;
+const MAX_REQUESTS = 10;
+const WINDOW_MS = MINUTE_MS;
 
 interface RateLimitResult {
   allowed: boolean;
@@ -38,36 +27,47 @@ interface RateLimitResult {
   deniedReason?: "limit" | "storage_failure";
 }
 
-let rateLimitStore: RateLimitStore | null = null;
+let rateLimitStore: MemoryRateLimitStore | RedisRateLimitStore | null = null;
 
-function getRateLimitStore(): RateLimitStore {
-  if (!rateLimitStore) {
-    rateLimitStore = createRateLimitStore();
+function getRateLimitStore(): MemoryRateLimitStore | RedisRateLimitStore {
+  if (rateLimitStore) {
+    return rateLimitStore;
   }
+
+  const upstashUrl = getRuntimeEnvString("UPSTASH_REDIS_REST_URL");
+  const upstashToken = getRuntimeEnvString("UPSTASH_REDIS_REST_TOKEN");
+
+  if (upstashUrl && upstashToken) {
+    logger.info("[Rate Limit] Using Upstash Redis store");
+    rateLimitStore = new RedisRateLimitStore(upstashUrl, upstashToken);
+    return rateLimitStore;
+  }
+
+  if (getRuntimeEnvString("NODE_ENV") === "production") {
+    throw new Error(
+      "[Rate Limit] Production requires Upstash Redis. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
+    );
+  }
+
+  logger.warn("[Rate Limit] Using in-memory store (development only)");
+  rateLimitStore = new MemoryRateLimitStore();
   return rateLimitStore;
 }
 
-type RateLimitConfig = {
-  maxRequests: number;
-  windowMs: number;
-};
-
-async function executeRateLimitCheck(
-  key: string,
-  config: RateLimitConfig,
+export async function checkInquiryRateLimit(
+  identifier: string,
 ): Promise<RateLimitResult> {
   try {
-    // getRateLimitStore inside try so any constructor/factory failure
-    // is caught and denied below. The store owns its
-    // own network timeout (Redis fetch AbortController), so no extra timeout
-    // wrapper is needed here.
     const store = getRateLimitStore();
-    const entry = await store.increment(key, config.windowMs);
+    const entry = await store.increment(
+      `ratelimit:inquiry:${identifier}`,
+      WINDOW_MS,
+    );
     const { count } = entry;
     const resetTime = entry.expiresAt;
     const now = Date.now();
-    const remaining = Math.max(0, config.maxRequests - count);
-    const allowed = count <= config.maxRequests;
+    const remaining = Math.max(0, MAX_REQUESTS - count);
+    const allowed = count <= MAX_REQUESTS;
 
     return {
       allowed,
@@ -82,41 +82,11 @@ async function executeRateLimitCheck(
     return {
       allowed: false,
       remaining: 0,
-      resetTime: Date.now() + config.windowMs,
-      retryAfter: Math.ceil(config.windowMs / 1000),
+      resetTime: Date.now() + WINDOW_MS,
+      retryAfter: Math.ceil(WINDOW_MS / 1000),
       deniedReason: "storage_failure",
     };
   }
-}
-
-/**
- * Check rate limit for a given identifier and preset.
- *
- * Performs exactly one atomic store increment per call, so no process-local
- * serialization is required.
- */
-export function checkDistributedRateLimit(
-  identifier: string,
-  preset: RateLimitPreset,
-): Promise<RateLimitResult> {
-  const config = RATE_LIMIT_PRESETS[preset];
-  const key = `ratelimit:${preset}:${identifier}`;
-  return executeRateLimitCheck(key, config);
-}
-
-/**
- * Create rate limit headers for response
- */
-export function createRateLimitHeaders(result: RateLimitResult): Headers {
-  const headers = new Headers();
-  headers.set("X-RateLimit-Remaining", String(result.remaining));
-  headers.set("X-RateLimit-Reset", String(result.resetTime));
-
-  if (result.retryAfter !== null) {
-    headers.set("Retry-After", String(result.retryAfter));
-  }
-
-  return headers;
 }
 
 /**
@@ -124,5 +94,4 @@ export function createRateLimitHeaders(result: RateLimitResult): Headers {
  */
 export function resetRateLimitStore(): void {
   rateLimitStore = null;
-  resetRateLimitStoreWarnings();
 }

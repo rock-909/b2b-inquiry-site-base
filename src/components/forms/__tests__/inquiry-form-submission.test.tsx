@@ -11,7 +11,7 @@ import { TURNSTILE_VERIFY_TIMEOUT_MS } from "@/lib/security/turnstile";
 import { UPSTASH_OPERATION_TIMEOUT_MS } from "@/lib/security/stores/rate-limit-store";
 
 vi.mock(
-  "@/components/forms/lazy-turnstile",
+  "@/components/security/turnstile",
   async () => await import("@/test/inquiry-turnstile-mock"),
 );
 

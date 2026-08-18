@@ -6,8 +6,7 @@ import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { PATHS_CONFIG } from "@/config/paths/paths-config";
 import type { Locale, PageType } from "@/config/paths/types";
 
-type StaticPathname =
-  (typeof PATHS_CONFIG)[PageType][typeof LOCALES_CONFIG.defaultLocale];
+type StaticPathname = (typeof PATHS_CONFIG)[PageType];
 type DerivedPathname = StaticPathname;
 type PathnameMap = Readonly<Record<DerivedPathname, DerivedPathname>>;
 
@@ -16,8 +15,8 @@ function getCanonicalPathValue(path: string): string {
 }
 
 function createPathnames(): Readonly<PathnameMap> {
-  const staticPathnames = Object.values(PATHS_CONFIG).map((paths) => {
-    const path = getCanonicalPathValue(paths[LOCALES_CONFIG.defaultLocale]);
+  const staticPathnames = Object.values(PATHS_CONFIG).map((configuredPath) => {
+    const path = getCanonicalPathValue(configuredPath);
     return [path, path] as const;
   });
 
@@ -39,20 +38,16 @@ export function getLocalizedPath(pageType: PageType, locale: Locale): string {
   if (!Object.prototype.hasOwnProperty.call(PATHS_CONFIG, pageType)) {
     throw new Error(`Unknown page type: ${pageType}`);
   }
-  const pathConfig = PATHS_CONFIG[pageType];
-  if (!Object.prototype.hasOwnProperty.call(pathConfig, locale)) {
+  if (locale !== LOCALES_CONFIG.defaultLocale) {
     throw new Error(`Unknown locale: ${locale}`);
   }
-  return pathConfig[locale];
+  return PATHS_CONFIG[pageType];
 }
 
 export function getCanonicalPath<T extends PageType>(
   pageType: T,
-): (typeof PATHS_CONFIG)[T][typeof LOCALES_CONFIG.defaultLocale] {
-  return getLocalizedPath(
-    pageType,
-    LOCALES_CONFIG.defaultLocale,
-  ) as (typeof PATHS_CONFIG)[T][typeof LOCALES_CONFIG.defaultLocale];
+): (typeof PATHS_CONFIG)[T] {
+  return PATHS_CONFIG[pageType];
 }
 
 /**
@@ -84,11 +79,12 @@ export function getPageTypeFromPath(
   }
 
   // 查找匹配的页面类型
-  for (const [pageType, paths] of Object.entries(PATHS_CONFIG)) {
-    if (
-      Object.prototype.hasOwnProperty.call(paths, locale) &&
-      paths[locale] === path
-    ) {
+  if (locale !== LOCALES_CONFIG.defaultLocale) {
+    throw new Error(`Unknown locale: ${locale}`);
+  }
+
+  for (const [pageType, configuredPath] of Object.entries(PATHS_CONFIG)) {
+    if (configuredPath === path) {
       return pageType as PageType;
     }
   }

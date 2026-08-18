@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -33,19 +32,6 @@ describe("ThemeSwitcher", () => {
     vi.mocked(useTranslations).mockImplementation((namespace?: string) =>
       mockThemeTranslations(namespace),
     );
-  });
-
-  it("keeps the idle-loaded switcher free of next/dynamic runtime", () => {
-    const source = readFileSync("src/components/ui/theme-switcher.tsx", "utf8");
-
-    expect(source).not.toContain("next/dynamic");
-  });
-
-  it("does not initialize hydration state from an effect", () => {
-    const source = readFileSync("src/components/ui/theme-switcher.tsx", "utf8");
-
-    expect(source).toContain("useSyncExternalStore");
-    expect(source).not.toContain("setMounted");
   });
 
   it("renders the active theme highlight without a second dynamic boundary", async () => {
@@ -167,22 +153,5 @@ describe("ThemeSwitcher", () => {
     expect(
       buttons.every((button) => !button.hasAttribute("aria-pressed")),
     ).toBe(true);
-  });
-
-  it("defaults data-testid to theme-toggle when not provided", async () => {
-    const mockSetTheme = vi.fn();
-    vi.mocked(useTheme).mockReturnValue({
-      theme: "light",
-      setTheme: mockSetTheme,
-      resolvedTheme: "light",
-      themes: ["light", "dark", "system"],
-      systemTheme: "light",
-    });
-
-    const { ThemeSwitcher } = await import("../theme-switcher");
-
-    render(<ThemeSwitcher />);
-
-    expect(await screen.findByTestId("theme-toggle")).toBeInTheDocument();
   });
 });

@@ -1,111 +1,48 @@
-import { readFileSync } from "node:fs";
-import { act, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const {
-  mockCookieConsentProvider,
-  mockCookieBanner,
-  mockEnterpriseAnalyticsIsland,
-  mockEnterpriseAnalyticsState,
-} = vi.hoisted(() => {
-  const mockEnterpriseAnalyticsState = { shouldThrow: false };
-
-  return {
-    mockCookieConsentProvider: vi.fn(({ children }) => (
-      <div data-testid="cookie-consent-provider">{children}</div>
-    )),
-    mockCookieBanner: vi.fn(() => <div data-testid="cookie-banner" />),
-    mockEnterpriseAnalyticsState,
-    mockEnterpriseAnalyticsIsland: vi.fn(() => {
-      if (mockEnterpriseAnalyticsState.shouldThrow) {
-        throw new Error("analytics island failed to load");
-      }
-
-      return <div data-testid="enterprise-analytics-island" />;
-    }),
-  };
-});
-
-vi.mock("@/lib/cookie-consent", () => ({
-  CookieConsentProvider: mockCookieConsentProvider,
-}));
+import { CookieConsentIsland } from "@/components/cookie/cookie-consent-island";
 
 vi.mock("@/components/cookie/cookie-banner", () => ({
-  CookieBanner: mockCookieBanner,
+  CookieBanner: ({ onAccept }: { onAccept: () => void }) => (
+    <button type="button" onClick={onAccept}>
+      allow
+    </button>
+  ),
 }));
 
 vi.mock("@/components/monitoring/enterprise-analytics-island", () => ({
-  EnterpriseAnalyticsIsland: mockEnterpriseAnalyticsIsland,
+  EnterpriseAnalyticsIsland: ({
+    analyticsAllowed,
+  }: {
+    analyticsAllowed: boolean;
+  }) => <div data-testid="analytics" data-allowed={String(analyticsAllowed)} />,
 }));
 
 describe("CookieConsentIsland", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.resetModules();
-    vi.unstubAllEnvs();
-    mockEnterpriseAnalyticsState.shouldThrow = false;
+    localStorage.clear();
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "");
   });
 
-  it("keeps the consent island free of next/dynamic runtime", () => {
-    const source = readFileSync(
-      "src/components/cookie/cookie-consent-island.tsx",
-      "utf8",
+  it("renders nothing when analytics is not configured", () => {
+    const { container } = render(<CookieConsentIsland />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("asks once when GA is configured and enables analytics after acceptance", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+    render(<CookieConsentIsland />);
+
+    const allow = await screen.findByRole("button", { name: "allow" });
+    expect(screen.getByTestId("analytics")).toHaveAttribute(
+      "data-allowed",
+      "false",
     );
-
-    expect(source).not.toContain("next/dynamic");
-  });
-
-  it("renders CookieConsentProvider wrapping children", async () => {
-    const { CookieConsentIsland } = await import("../cookie-consent-island");
-    render(<CookieConsentIsland />);
-
-    expect(screen.getByTestId("cookie-consent-provider")).toBeInTheDocument();
-  });
-
-  it("renders the cookie banner", async () => {
-    const { CookieConsentIsland } = await import("../cookie-consent-island");
-    render(<CookieConsentIsland />);
-
-    expect(screen.getByTestId("cookie-banner")).toBeInTheDocument();
-  });
-
-  it("renders EnterpriseAnalyticsIsland in production", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-
-    const { CookieConsentIsland } = await import("../cookie-consent-island");
-    render(<CookieConsentIsland />);
-
-    expect(
-      await screen.findByTestId("enterprise-analytics-island"),
-    ).toBeInTheDocument();
-  });
-
-  it("does not render EnterpriseAnalyticsIsland in development", async () => {
-    vi.stubEnv("NODE_ENV", "development");
-
-    const { CookieConsentIsland } = await import("../cookie-consent-island");
-    render(<CookieConsentIsland />);
-
-    expect(
-      screen.queryByTestId("enterprise-analytics-island"),
-    ).not.toBeInTheDocument();
-  });
-
-  it("keeps the cookie banner usable when analytics island rendering fails", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-    mockEnterpriseAnalyticsState.shouldThrow = true;
-    const onCaughtError = vi.fn();
-    const { CookieConsentIsland } = await import("../cookie-consent-island");
-    render(<CookieConsentIsland />, { onCaughtError });
-
-    await act(async () => {
-      await vi.dynamicImportSettled();
-    });
-
-    expect(screen.getByTestId("cookie-banner")).toBeInTheDocument();
-    expect(
-      screen.queryByTestId("enterprise-analytics-island"),
-    ).not.toBeInTheDocument();
-    expect(onCaughtError).toHaveBeenCalledTimes(1);
+    fireEvent.click(allow);
+    expect(screen.queryByRole("button", { name: "allow" })).toBeNull();
+    expect(screen.getByTestId("analytics")).toHaveAttribute(
+      "data-allowed",
+      "true",
+    );
   });
 });

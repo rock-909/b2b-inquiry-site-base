@@ -1,7 +1,7 @@
 # Site Audit Profile
 
 Use this as the repo-specific audit adapter. It overrides any global
-`ai-smell-audit` repo profile that still mentions Showcase Website Starter.
+legacy starter profiles that do not describe this repository.
 
 ## Critical chains
 
@@ -22,7 +22,7 @@ Use this as the repo-specific audit adapter. It overrides any global
   - `.claude/rules/security.md`
 - Messages:
   - `messages/base/**`
-  - `messages/profiles/b2b-lead/**`
+  - `messages/base/{locale}/messages.json`
   - `.claude/rules/i18n.md`
 - Launch/release proof:
   - `docs/正式上线标准.md`

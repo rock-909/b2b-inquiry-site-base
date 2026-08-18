@@ -10,9 +10,9 @@ interface LighthouseConfig {
   };
 }
 
-function loadConfig(daily: boolean): LighthouseConfig {
-  const previous = process.env.CI_DAILY;
-  process.env.CI_DAILY = daily ? "true" : "";
+function loadConfig(fullCoverage: boolean): LighthouseConfig {
+  const previous = process.env.CI_FULL_COVERAGE;
+  process.env.CI_FULL_COVERAGE = fullCoverage ? "true" : "";
   const require = createRequire(import.meta.url);
   const configPath = join(process.cwd(), "lighthouserc.js");
   delete require.cache[require.resolve(configPath)];
@@ -20,13 +20,13 @@ function loadConfig(daily: boolean): LighthouseConfig {
   try {
     return require(configPath) as LighthouseConfig;
   } finally {
-    if (previous === undefined) delete process.env.CI_DAILY;
-    else process.env.CI_DAILY = previous;
+    if (previous === undefined) delete process.env.CI_FULL_COVERAGE;
+    else process.env.CI_FULL_COVERAGE = previous;
   }
 }
 
 describe("lighthouse route contract", () => {
-  it("audits every core route in the daily sweep", () => {
+  it("audits every core route in the full-coverage sweep", () => {
     const paths = loadConfig(true).ci.collect.url.map(
       (url) => new URL(url).pathname,
     );

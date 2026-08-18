@@ -31,7 +31,6 @@ type InquiryFormMessageKey =
   | "errors.message.tooLong"
   | "turnstile.unavailable"
   | "turnstile.loadFailed"
-  | "turnstile.slowToLoad"
   | "turnstile.devBypass"
   | "turnstile.testMode"
   | "turnstile.rescueBeforeEmail"
@@ -63,7 +62,6 @@ export function createInquiryFormCopy(
     turnstile: {
       unavailable: t("turnstile.unavailable"),
       loadFailed: t("turnstile.loadFailed"),
-      slowToLoad: t("turnstile.slowToLoad"),
       devBypass: t("turnstile.devBypass"),
       testMode: t("turnstile.testMode"),
       rescueBeforeEmail: t("turnstile.rescueBeforeEmail"),

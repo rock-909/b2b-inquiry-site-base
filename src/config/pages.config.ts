@@ -1,4 +1,4 @@
-import type { LocalizedPath, PageType } from "@/config/paths/types";
+import type { PageType } from "@/config/paths/types";
 
 export const NAVIGATION_MESSAGE_KEYS = [
   "navigation.home",
@@ -31,108 +31,83 @@ interface PublicStaticPageSitemapConfig {
 
 export interface PublicStaticPageDefinition {
   pageType: PageType;
-  localizedPaths: LocalizedPath;
+  path: string;
   navigationKey: NavigationMessageKey | null;
   sitemap: PublicStaticPageSitemapConfig;
-  mdxCollection: { collection: "pages"; slug: string } | null;
-  routeOwner: string;
-}
-
-function localizedPath(path: string): LocalizedPath {
-  return Object.freeze({ en: path });
+  contentSlug: string | null;
 }
 
 function toSitemapStaticPath(path: string): string {
   return path === "/" ? "" : path;
 }
 
-export const PUBLIC_STATIC_PAGE_DEFINITIONS = Object.freeze([
+export const PUBLIC_STATIC_PAGE_DEFINITIONS = [
   {
     pageType: "home",
-    localizedPaths: localizedPath("/"),
+    path: "/",
     navigationKey: "navigation.home",
     sitemap: { include: true, changeFrequency: "daily", priority: 1 },
-    mdxCollection: null,
-    routeOwner: "src/app/[locale]/page.tsx",
+    contentSlug: null,
   },
   {
     pageType: "products",
-    localizedPaths: localizedPath("/products"),
+    path: "/products",
     navigationKey: "navigation.products",
     sitemap: { include: true, changeFrequency: "monthly", priority: 0.9 },
-    mdxCollection: null,
-    routeOwner: "src/app/[locale]/products/page.tsx",
+    contentSlug: null,
   },
   {
     pageType: "about",
-    localizedPaths: localizedPath("/about"),
+    path: "/about",
     navigationKey: "navigation.about",
     sitemap: { include: true, changeFrequency: "monthly", priority: 0.8 },
-    mdxCollection: { collection: "pages", slug: "about" },
-    routeOwner: "src/app/[locale]/about/page.tsx",
+    contentSlug: "about",
   },
   {
     pageType: "requestQuote",
-    localizedPaths: localizedPath("/request-quote"),
+    path: "/request-quote",
     navigationKey: null,
     sitemap: { include: true, changeFrequency: "monthly", priority: 0.9 },
-    mdxCollection: null,
-    routeOwner: "src/app/[locale]/request-quote/page.tsx",
+    contentSlug: null,
   },
   {
     pageType: "contact",
-    localizedPaths: localizedPath("/contact"),
+    path: "/contact",
     navigationKey: "navigation.contactSales",
     sitemap: { include: true, changeFrequency: "monthly", priority: 0.8 },
-    mdxCollection: { collection: "pages", slug: "contact" },
-    routeOwner: "src/app/[locale]/contact/page.tsx",
+    contentSlug: "contact",
   },
   {
     pageType: "privacy",
-    localizedPaths: localizedPath("/privacy"),
+    path: "/privacy",
     navigationKey: null,
     sitemap: { include: true, changeFrequency: "yearly", priority: 0.5 },
-    mdxCollection: { collection: "pages", slug: "privacy" },
-    routeOwner: "src/app/[locale]/privacy/page.tsx",
+    contentSlug: "privacy",
   },
   {
     pageType: "terms",
-    localizedPaths: localizedPath("/terms"),
+    path: "/terms",
     navigationKey: null,
     sitemap: { include: true, changeFrequency: "yearly", priority: 0.5 },
-    mdxCollection: { collection: "pages", slug: "terms" },
-    routeOwner: "src/app/[locale]/terms/page.tsx",
+    contentSlug: "terms",
   },
-] as const satisfies readonly PublicStaticPageDefinition[]);
+] as const satisfies readonly PublicStaticPageDefinition[];
 
 export const PUBLIC_STATIC_PAGE_TYPES = PUBLIC_STATIC_PAGE_DEFINITIONS.map(
   (definition) => definition.pageType,
 ) as readonly PageType[];
 
-export function getStaticPageDefinitionsByType(): Readonly<
-  Partial<Record<PageType, PublicStaticPageDefinition>>
-> {
-  return Object.freeze(
-    Object.fromEntries(
-      PUBLIC_STATIC_PAGE_DEFINITIONS.map((definition) => [
-        definition.pageType,
-        definition,
-      ]),
-    ),
-  ) as Partial<Record<PageType, PublicStaticPageDefinition>>;
-}
-
 export function getPublicStaticPageDefinition(
   pageType: PageType,
 ): PublicStaticPageDefinition | undefined {
-  return getStaticPageDefinitionsByType()[pageType];
+  return PUBLIC_STATIC_PAGE_DEFINITIONS.find(
+    (definition) => definition.pageType === pageType,
+  );
 }
 
 export function getStaticSitemapPages(): string[] {
   return PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((definition) =>
-    definition.sitemap.include
-      ? [toSitemapStaticPath(definition.localizedPaths.en)]
-      : [],
+    definition.sitemap.include ? [toSitemapStaticPath(definition.path)] : [],
   );
 }
 
@@ -142,7 +117,7 @@ export function getStaticSitemapPageConfigByPath() {
       definition.sitemap.include
         ? [
             [
-              toSitemapStaticPath(definition.localizedPaths.en),
+              toSitemapStaticPath(definition.path),
               {
                 changeFrequency: definition.sitemap.changeFrequency,
                 priority: definition.sitemap.priority,
@@ -157,17 +132,12 @@ export function getStaticSitemapPageConfigByPath() {
   >;
 }
 
-export function getMdxPageSlugByStaticPath(): Record<string, string> {
+export function getStaticContentPageSlugByPath(): Record<string, string> {
   return Object.fromEntries(
     PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((definition) =>
-      definition.mdxCollection === null
+      definition.contentSlug === null
         ? []
-        : [
-            [
-              toSitemapStaticPath(definition.localizedPaths.en),
-              definition.mdxCollection.slug,
-            ],
-          ],
+        : [[toSitemapStaticPath(definition.path), definition.contentSlug]],
     ),
   );
 }

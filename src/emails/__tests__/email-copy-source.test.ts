@@ -47,7 +47,7 @@ function getEmailTemplates(): EmailTemplates {
 
   if (!isObjectRecord(messagePack.emailTemplates)) {
     throw new Error(
-      "messages/base/en/messages.json must define emailTemplates before EMAIL_COPY can use message-pack authoring.",
+      "messages/base/en/messages.json must define emailTemplates before EMAIL_COPY can use canonical message authoring.",
     );
   }
 
@@ -74,13 +74,13 @@ function expectNoUnresolvedPlaceholders(value: string | string[]): void {
 }
 
 describe("email copy source", () => {
-  it("uses default English message-pack copy for common field labels", () => {
+  it("uses canonical English message copy for common field labels", () => {
     const emailTemplates = getEmailTemplates();
 
     expect(EMAIL_COPY.common.fields).toEqual(emailTemplates.common.fields);
   });
 
-  it("uses default English message-pack copy for inquiry email copy", () => {
+  it("uses canonical English message copy for inquiry email copy", () => {
     const emailTemplates = getEmailTemplates();
 
     expect(EMAIL_COPY.inquiry.title).toBe(emailTemplates.inquiry.title);

@@ -3,14 +3,13 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-const PRODUCTION_ROOTS = ["messages", "content", "src"] as const;
+const PRODUCTION_ROOTS = ["messages", "src"] as const;
 const SOURCE_EXTENSIONS = new Set([
   ".cjs",
   ".js",
   ".json",
   ".jsx",
   ".md",
-  ".mdx",
   ".mjs",
   ".ts",
   ".tsx",

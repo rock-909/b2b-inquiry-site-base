@@ -54,7 +54,7 @@ test.describe("Contact Form - Test-Mode Smoke", () => {
     await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => {});
 
     // Progressive enhancement: scroll the form column into view so InquiryForm
-    // and LazyTurnstile can mount before interaction.
+    // and Turnstile test mode can settle before interaction.
     await page
       .getByTestId("contact-form-column")
       .scrollIntoViewIfNeeded({ timeout: 10_000 });

@@ -59,11 +59,9 @@ describe("weekly dependency audit workflow", () => {
   it("opens one real issue and still fails when the audit step fails", () => {
     const auditStep = requireStep((step) => step.id === "audit");
     const issueStep = requireStep(
-      (step) => step.name === "Open dependency audit issue",
+      (step) => step.uses === "actions/github-script@v8",
     );
-    const failStep = requireStep(
-      (step) => step.name === "Fail when the dependency audit step fails",
-    );
+    const failStep = requireStep((step) => step.run === "exit 1");
 
     expect(auditStep).toMatchObject({
       "continue-on-error": true,

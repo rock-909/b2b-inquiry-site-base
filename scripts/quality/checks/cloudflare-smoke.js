@@ -1,6 +1,11 @@
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const {
+  OFFERINGS,
+  getOfferingById,
+  getOfferingPath,
+} = require("../../../src/config/offerings.ts");
 
 const ROOT = process.cwd();
 
@@ -12,39 +17,42 @@ const DEPLOY_SMOKE_REQUEST_TIMEOUT_MS = 30000;
 const DEPLOY_SMOKE_REQUEST_RETRIES = 2;
 const DEPLOY_SMOKE_RETRY_DELAY_MS = 1000;
 const MIN_HTML_BODY_LENGTH = 1024;
+const SMOKE_OFFERING = OFFERINGS[0];
+const MISSING_OFFERING_ID = "__smoke-missing-offering__";
+
+if (!SMOKE_OFFERING) {
+  throw new Error("Cloudflare smoke requires at least one configured offering");
+}
+if (getOfferingById(MISSING_OFFERING_ID)) {
+  throw new Error(`${MISSING_OFFERING_ID} must remain an unknown offering id`);
+}
+
+const SMOKE_OFFERING_PATH = getOfferingPath(SMOKE_OFFERING.id);
+const MISSING_OFFERING_PATH = getOfferingPath(MISSING_OFFERING_ID);
 const CORE_PUBLIC_PAGE_PATHS = [
   "/",
+  "/products",
+  SMOKE_OFFERING_PATH,
   "/about",
   "/contact",
   "/request-quote",
   "/privacy",
   "/terms",
 ];
-const EXTERNAL_URL_SMOKE_EXPECTATIONS = [
-  { pathname: "/", status: 200 },
-  { pathname: "/about", status: 200 },
-  { pathname: "/contact", status: 200 },
-  { pathname: "/request-quote", status: 200 },
-  { pathname: "/privacy", status: 200 },
-  { pathname: "/terms", status: 200 },
-];
+const EXTERNAL_URL_SMOKE_EXPECTATIONS = CORE_PUBLIC_PAGE_PATHS.map(
+  (pathname) => ({ pathname, status: 200 }),
+);
 const CF_PREVIEW_SMOKE_EXPECTATIONS = [
-  { pathname: "/", status: 200, html: true },
-  { pathname: "/invalid/contact", status: 404, html: true },
-  { pathname: "/about", status: 200, html: true },
-  { pathname: "/contact", status: 200, html: true },
-  { pathname: "/request-quote", status: 200, html: true },
-  { pathname: "/privacy", status: 200, html: true },
-  { pathname: "/terms", status: 200, html: true },
+  ...CORE_PUBLIC_PAGE_PATHS.map((pathname) => ({
+    pathname,
+    status: 200,
+    html: true,
+  })),
+  { pathname: MISSING_OFFERING_PATH, status: 404, html: true },
 ];
 const DEPLOYED_SMOKE_EXPECTATIONS = [
-  { pathname: "/", status: 200 },
-  { pathname: "/invalid/contact", status: 404 },
-  { pathname: "/about", status: 200 },
-  { pathname: "/contact", status: 200 },
-  { pathname: "/request-quote", status: 200 },
-  { pathname: "/privacy", status: 200 },
-  { pathname: "/terms", status: 200 },
+  ...EXTERNAL_URL_SMOKE_EXPECTATIONS,
+  { pathname: MISSING_OFFERING_PATH, status: 404 },
   { pathname: "/api/health", status: 200 },
   { pathname: "/.well-known/security.txt", status: 200 },
   { pathname: "/security-policy.txt", status: 404 },
@@ -482,6 +490,9 @@ async function runDeployedSmoke(args = []) {
   const retryEvents = [];
 
   console.log(`[post-deploy-smoke] Probing ${baseUrl}`);
+  console.log(
+    "[post-deploy-smoke] Scope: deployed routes only; DNS, TLS, and custom-domain confirmation stay manual.",
+  );
 
   // One concurrent round so every mandatory route is probed together; per-route
   // retry state stays local inside requestDeployedSmoke.

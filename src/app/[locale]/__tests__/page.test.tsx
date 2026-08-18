@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import messages from "../../../../messages/profiles/b2b-lead/en/messages.json";
+import messages from "../../../../messages/base/en/messages.json";
 import HomePage from "@/app/[locale]/page";
 
 vi.mock("@/components/sections/hero-section", () => ({

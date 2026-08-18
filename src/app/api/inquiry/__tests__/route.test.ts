@@ -4,12 +4,14 @@ import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import * as safeParseJsonModule from "@/lib/api/safe-parse-json";
 import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
 import * as leadSchemaModule from "@/lib/lead-pipeline/lead-schema";
-import { checkDistributedRateLimit } from "@/lib/security/distributed-rate-limit";
+import { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
 import { verifyTurnstileDetailed } from "@/lib/security/turnstile";
 import { TEST_OFFERING } from "@/test/offerings";
 import { OPTIONS, POST } from "../route";
 
 // Mock dependencies before imports
+const mockGetIPKey = vi.hoisted(() => vi.fn(() => "ip:abc123def456"));
+
 vi.mock("@/lib/logger", () => ({
   logger: {
     info: vi.fn(),
@@ -22,14 +24,17 @@ vi.mock("@/lib/logger", () => ({
     email ? "[REDACTED_EMAIL]" : "[NO_EMAIL]",
 }));
 
+vi.mock("@/lib/security/rate-limit-key-strategies", () => ({
+  getIPKey: mockGetIPKey,
+}));
+
 vi.mock("@/lib/security/distributed-rate-limit", () => ({
-  checkDistributedRateLimit: vi.fn(async () => ({
+  checkInquiryRateLimit: vi.fn(async () => ({
     allowed: true,
     remaining: 5,
     resetTime: Date.now() + 60000,
     retryAfter: null,
   })),
-  createRateLimitHeaders: vi.fn(() => new Headers()),
 }));
 
 vi.mock("@/lib/lead-pipeline/process-lead", () => ({
@@ -37,7 +42,6 @@ vi.mock("@/lib/lead-pipeline/process-lead", () => ({
     Promise.resolve({
       success: true,
       emailSent: true,
-      ownerNotified: true,
       recordCreated: true,
       referenceId: "ref-123",
     }),
@@ -129,8 +133,10 @@ describe("/api/inquiry route", () => {
       const data = await response.json();
 
       expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.data.referenceId).toBe("ref-123");
+      expect(data).toEqual({
+        success: true,
+        data: { referenceId: "ref-123" },
+      });
       expect(processValidatedInquiry).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "inquiry",
@@ -206,7 +212,6 @@ describe("/api/inquiry route", () => {
           utmSource: "google",
           utmMedium: "cpc",
           utmCampaign: "sample-campaign",
-          gclid: "gclid-rfq-123",
           landingPage: "/en/request-quote",
           capturedAt: "2026-07-04T00:00:00.000Z",
         }),
@@ -220,7 +225,6 @@ describe("/api/inquiry route", () => {
           utmSource: "google",
           utmMedium: "cpc",
           utmCampaign: "sample-campaign",
-          gclid: "gclid-rfq-123",
           landingPage: "/en/request-quote",
           capturedAt: "2026-07-04T00:00:00.000Z",
         }),
@@ -251,7 +255,7 @@ describe("/api/inquiry route", () => {
 
     it("should return 429 when rate limited", async () => {
       const rateLimit = await import("@/lib/security/distributed-rate-limit");
-      vi.mocked(rateLimit.checkDistributedRateLimit).mockResolvedValueOnce({
+      vi.mocked(rateLimit.checkInquiryRateLimit).mockResolvedValueOnce({
         allowed: false,
         remaining: 0,
         resetTime: Date.now() + 60000,
@@ -266,8 +270,44 @@ describe("/api/inquiry route", () => {
       expect(response.status).toBe(429);
       expect(data.success).toBe(false);
       expect(data.errorCode).toBe(API_ERROR_CODES.RATE_LIMIT_EXCEEDED);
+      expect(response.headers.get("X-RateLimit-Remaining")).toBe("0");
+      expect(response.headers.get("Retry-After")).toBe("60");
       // 限流是第一道闸：被挡住的请求不该消耗一次 Turnstile token，也不该产生投递。
       expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
+      expect(processValidatedInquiry).not.toHaveBeenCalled();
+    });
+
+    it("should return 503 when the rate-limit store fails", async () => {
+      vi.mocked(checkInquiryRateLimit).mockResolvedValueOnce({
+        allowed: false,
+        remaining: 0,
+        resetTime: Date.now() + 60000,
+        retryAfter: 60,
+        deniedReason: "storage_failure",
+      });
+
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData)),
+      );
+      const data = await response.json();
+
+      expect(response.status).toBe(503);
+      expect(data.errorCode).toBe(API_ERROR_CODES.SERVICE_UNAVAILABLE);
+      expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
+      expect(processValidatedInquiry).not.toHaveBeenCalled();
+    });
+
+    it("should return 503 when the private rate-limit key cannot be created", async () => {
+      mockGetIPKey.mockRejectedValueOnce(new Error("pepper missing"));
+
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData)),
+      );
+      const data = await response.json();
+
+      expect(response.status).toBe(503);
+      expect(data.errorCode).toBe(API_ERROR_CODES.SERVICE_UNAVAILABLE);
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
       expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
 
@@ -278,8 +318,12 @@ describe("/api/inquiry route", () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.errorCode).toBe(API_ERROR_CODES.INVALID_JSON_BODY);
+      expect(data).toEqual({
+        success: false,
+        errorCode: API_ERROR_CODES.INVALID_JSON_BODY,
+      });
+      expect(response.headers.get("x-request-id")).toBeNull();
+      expect(response.headers.get("x-observability-surface")).toBeNull();
       expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
       expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
@@ -342,8 +386,14 @@ describe("/api/inquiry route", () => {
       const data = await response.json();
 
       expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.errorCode).toBe(API_ERROR_CODES.TURNSTILE_REQUIRED);
+      expect(data).toEqual({
+        success: false,
+        errorCode: API_ERROR_CODES.TURNSTILE_REQUIRED,
+      });
+      expect(response.headers.get("x-request-id")).toBeNull();
+      expect(response.headers.get("x-observability-surface")).toBeNull();
+      expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
+      expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
 
     it("treats a whitespace-only turnstile token as missing without verification or lead processing", async () => {
@@ -527,7 +577,6 @@ describe("/api/inquiry route", () => {
       vi.mocked(processValidatedInquiry).mockResolvedValueOnce({
         success: true,
         emailSent: false,
-        ownerNotified: false,
         recordCreated: true,
         referenceId: "ref-record-123",
       });
@@ -552,7 +601,6 @@ describe("/api/inquiry route", () => {
       vi.mocked(processValidatedInquiry).mockResolvedValueOnce({
         success: false,
         emailSent: false,
-        ownerNotified: false,
         recordCreated: false,
         error: "PROCESSING_FAILED",
       });
@@ -563,22 +611,22 @@ describe("/api/inquiry route", () => {
       const data = await response.json();
 
       expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
-      expect(data.errorCode).toBe(API_ERROR_CODES.INQUIRY_PROCESSING_ERROR);
-      expect(data.data).toBeUndefined();
+      expect(data).toEqual({
+        success: false,
+        errorCode: API_ERROR_CODES.INQUIRY_PROCESSING_ERROR,
+      });
+      expect(response.headers.get("x-request-id")).toBeNull();
+      expect(response.headers.get("x-observability-surface")).toBeNull();
     });
 
-    it("uses the inquiry distributed rate-limit preset", async () => {
+    it("checks the inquiry rate limit exactly once", async () => {
       const request = createInquiryRequest(JSON.stringify(validInquiryData));
 
       await POST(request);
 
-      expect(checkDistributedRateLimit).toHaveBeenCalledWith(
-        expect.any(String),
-        "inquiry",
-      );
+      expect(checkInquiryRateLimit).toHaveBeenCalledWith(expect.any(String));
       // 一次提交只能扣一次额度。多查一次不会报错，只会让买家的配额悄悄减半。
-      expect(checkDistributedRateLimit).toHaveBeenCalledTimes(1);
+      expect(checkInquiryRateLimit).toHaveBeenCalledTimes(1);
     });
 
     it("returns a success-shaped reference for a filled website honeypot", async () => {
@@ -680,9 +728,6 @@ describe("/api/inquiry route", () => {
       utmCampaign: "sample-2026",
       utmTerm: "sample offering",
       utmContent: "hero-cta",
-      gclid: "gclid-sample",
-      fbclid: "fbclid-sample",
-      msclkid: "msclkid-sample",
       landingPage: "/products",
       capturedAt: "2026-07-27T00:00:00.000Z",
     };

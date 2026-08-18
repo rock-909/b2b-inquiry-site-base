@@ -86,9 +86,7 @@ describe("i18n Routing Configuration", () => {
 
     expect(config.pathnames).toEqual(PATHNAMES);
 
-    const expectedPaths = [
-      ...Object.values(PATHS_CONFIG).map((paths) => paths.en),
-    ].sort();
+    const expectedPaths = [...Object.values(PATHS_CONFIG)].sort();
 
     expect(Object.keys(config.pathnames).sort()).toEqual(expectedPaths);
   });

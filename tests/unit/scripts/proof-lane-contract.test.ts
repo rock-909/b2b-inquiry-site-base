@@ -2,12 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  RELEASE_PROOF_MANIFEST,
-  getReleaseProofSequence,
-} from "../../../scripts/quality/release-proof-manifest.js";
+  MANUAL_PROOF_LANES,
+  RELEASE_VERIFY_COMMANDS,
+} from "../../../scripts/quality/checks/release-verify.js";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
-const RELEASE_PROOF_SEQUENCE = getReleaseProofSequence();
 const VALID_RELEASE_LANES = new Set([
   "local/test-mode",
   "deployed-smoke",
@@ -27,34 +26,36 @@ function repoPathExists(relativePath: string): boolean {
   return fs.existsSync(path.join(REPO_ROOT, relativePath));
 }
 
-function extractDirectPnpmScript(command: string): string | null {
-  const parts = command.split(/\s+/u);
-  if (parts[0] !== "pnpm") return null;
-  if (parts[1] === "exec") return null;
-  return parts[1] ?? null;
-}
+describe("release proof runner contract", () => {
+  it("keeps runner steps uniquely identified and manual proof lanes known", () => {
+    const stepIds = RELEASE_VERIFY_COMMANDS.map((step) => step.id);
 
-describe("release proof manifest contract", () => {
-  it("keeps manifest steps uniquely identified and on known proof lanes", () => {
-    const stepIds = RELEASE_PROOF_MANIFEST.steps.map(
-      (step: { id: string }) => step.id,
-    );
-
-    expect(RELEASE_PROOF_MANIFEST.version).toBe(1);
-    expect(RELEASE_PROOF_MANIFEST.steps.length).toBeGreaterThan(0);
+    expect(RELEASE_VERIFY_COMMANDS.length).toBeGreaterThan(0);
     expect(new Set(stepIds).size).toBe(stepIds.length);
 
-    for (const step of RELEASE_PROOF_MANIFEST.steps) {
+    for (const step of RELEASE_VERIFY_COMMANDS) {
       expect(step.id).toMatch(/^[a-z0-9-]+$/u);
-      expect(VALID_RELEASE_LANES.has(step.lane), step.id).toBe(true);
       expect(step.command, step.id).toMatch(/^(node|pnpm)$/u);
       expect(step.args.length, step.id).toBeGreaterThan(0);
     }
 
-    for (const lane of RELEASE_PROOF_MANIFEST.manualProofLanes) {
+    for (const lane of MANUAL_PROOF_LANES) {
       expect(VALID_RELEASE_LANES.has(lane.lane), lane.label).toBe(true);
       expect(lane.command.length, lane.label).toBeGreaterThan(0);
     }
+  });
+
+  it("runs the full Vitest suite once without a test-file registry", () => {
+    const testSteps = RELEASE_VERIFY_COMMANDS.filter(
+      (step) => step.command === "pnpm" && step.args[0] === "test",
+    );
+
+    expect(testSteps.map((step) => step.id)).toEqual(["tests"]);
+    expect(
+      RELEASE_VERIFY_COMMANDS.flatMap((step) => step.args).filter((argument) =>
+        /\.test\.[jt]sx?$/u.test(argument),
+      ),
+    ).toEqual([]);
   });
 });
 
@@ -111,16 +112,6 @@ describe("package proof command surface", () => {
     }
   });
 
-  it("keeps direct pnpm commands in the release sequence backed by package scripts", () => {
-    const scripts = readPackageScripts();
-
-    for (const command of RELEASE_PROOF_SEQUENCE) {
-      const scriptName = extractDirectPnpmScript(command);
-      if (scriptName === null) continue;
-      expect(scripts, command).toHaveProperty(scriptName);
-    }
-  });
-
   it("keeps Cloudflare build scripts on the canonical platform mode", () => {
     const scripts = readPackageScripts();
 
@@ -131,34 +122,6 @@ describe("package proof command surface", () => {
       expect(scripts[scriptName], scriptName).toMatch(
         /\bNEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare\b/u,
       );
-    }
-  });
-
-  // 发布序列引用的 Node 脚本必须真实存在。
-  it("keeps every release sequence node script pointing at a real file", () => {
-    const nodeScripts = RELEASE_PROOF_SEQUENCE.flatMap(
-      (command: string) => command.match(/\bnode\s+([\w./-]+)/u)?.[1] ?? [],
-    );
-
-    expect(nodeScripts.length).toBeGreaterThan(0);
-    for (const scriptPath of nodeScripts) {
-      expect(repoPathExists(scriptPath), scriptPath).toBe(true);
-    }
-  });
-
-  // Vitest 会把不存在的路径当过滤器，因此显式确认发布序列中的测试仍存在。
-  it("keeps every release sequence vitest path pointing at a real file", () => {
-    const testPaths = RELEASE_PROOF_SEQUENCE.flatMap((command: string) =>
-      command.includes("vitest run")
-        ? command
-            .split(/\s+/u)
-            .filter((token: string) => /\.test\.[jt]sx?$/u.test(token))
-        : [],
-    );
-
-    expect(testPaths.length).toBeGreaterThan(0);
-    for (const testPath of testPaths) {
-      expect(repoPathExists(testPath), testPath).toBe(true);
     }
   });
 });

@@ -16,8 +16,8 @@ const { mockGenerateMetadataForPath, mockJsonLdGraphScript, capturedInquiry } =
   }));
 
 vi.mock("next-intl/server", async () => {
-  const { getComposedMessages } = await import("@/lib/i18n/composed-messages");
-  const enMessages = getComposedMessages("en") as Record<string, unknown>;
+  const { getSourceMessages } = await import("@/lib/i18n/load-messages");
+  const enMessages = getSourceMessages("en") as Record<string, unknown>;
   const requestQuote = enMessages.requestQuote as Record<string, unknown>;
   const inquiryForm = enMessages.inquiry as { form: Record<string, unknown> };
 

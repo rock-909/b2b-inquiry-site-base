@@ -5,17 +5,17 @@ import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+import { ThemeProvider } from "next-themes";
 import { getFontClassNames } from "@/app/[locale]/layout-fonts";
 import { AttributionBootstrap } from "@/components/attribution-bootstrap";
-import { LazyCookieConsentIsland } from "@/components/cookie/lazy-cookie-consent-island";
+import { CookieConsentIsland } from "@/components/cookie/cookie-consent-island";
 import { Footer } from "@/components/footer/footer";
 import { Header } from "@/components/layout/header";
 import { NavigationProgressBar } from "@/components/navigation/navigation-progress-bar";
-import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { coerceLocale, isLocale } from "@/i18n/locale-utils";
 import { loadClientMessages } from "@/lib/i18n/client-messages";
-import { mainNavigation } from "@/lib/navigation";
+import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 
 // Client analytics are rendered as an island to avoid impacting LCP
 
@@ -54,7 +54,7 @@ async function AsyncLocaleLayoutContent({
   const closeMenuLabel = tAccessibility("closeMenu");
   const skipToContentLabel = tAccessibility("skipToContent");
   const mainNavigationLabel = tAccessibility("mainNavigation");
-  const mainNavItems = mainNavigation.map((item) => ({
+  const mainNavItems = SINGLE_SITE_NAVIGATION.map((item) => ({
     key: item.key,
     href: item.href,
     label: tNavigation(item.messageKey),
@@ -94,8 +94,7 @@ async function AsyncLocaleLayoutContent({
             }
           />
 
-          {/* Consent UI and analytics are deferred until the main thread is idle. */}
-          <LazyCookieConsentIsland />
+          <CookieConsentIsland />
         </ThemeProvider>
       </NextIntlClientProvider>
     </>

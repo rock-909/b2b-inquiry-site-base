@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { load } from "js-yaml";
 
 interface WorkflowStep {
-  readonly name?: string;
   readonly uses?: string;
   readonly run?: string;
   readonly env?: Record<string, string>;
@@ -55,8 +54,6 @@ function expectPreviewStepEnv(
 }
 
 describe("CI preview environment contract", () => {
-  // 原来这条只点名了一个 spec 文件。点名式断言只能证明那一个在跑，反而让另外
-  // 几个文件哪个 workflow 都没跑还一路绿灯。改成守"这一步不按文件过滤"。
   it("runs the whole browser lane on PRs instead of a named subset", () => {
     const workflow = readCiWorkflow();
     const browserSteps = workflow.jobs?.e2e?.steps;
@@ -80,11 +77,10 @@ describe("CI preview environment contract", () => {
         "node scripts/quality/checks/client-boundary.js --build-artifacts",
     );
     const cloudflareBuildStepIndex = cloudflareBuildSteps.findIndex(
-      (candidate) => candidate.name === "Cloudflare/OpenNext 构建",
+      (candidate) => candidate.run === "pnpm website:build:cf",
     );
     const analysisStep = cloudflareBuildSteps[analysisStepIndex];
 
-    expect(analysisStep?.name).toContain("分析构建");
     expect(analysisStep?.env?.DEPLOYMENT_PLATFORM).toBeUndefined();
     expect(clientBoundaryStepIndex).toBe(analysisStepIndex + 1);
     expect(clientBoundaryStepIndex).toBeLessThan(cloudflareBuildStepIndex);
@@ -94,15 +90,15 @@ describe("CI preview environment contract", () => {
     const workflow = readCiWorkflow();
     const cloudflareBuildSteps = workflow.jobs?.["cloudflare-build"]?.steps;
 
-    for (const stepName of [
-      "Cloudflare/OpenNext 构建",
-      "Cloudflare/Wrangler dry-run",
-    ]) {
+    for (const [label, command] of [
+      ["OpenNext build", "pnpm website:build:cf"],
+      ["Wrangler dry-run", "pnpm exec wrangler deploy --dry-run --env preview"],
+    ] as const) {
       const step = cloudflareBuildSteps?.find(
-        (candidate) => candidate.name === stepName,
+        (candidate) => candidate.run === command,
       );
 
-      expectPreviewStepEnv(step, stepName);
+      expectPreviewStepEnv(step, label);
       expect(step?.env).toMatchObject({
         DEPLOYMENT_PLATFORM: "cloudflare",
         NEXT_PUBLIC_DEPLOYMENT_PLATFORM: "cloudflare",
@@ -115,10 +111,12 @@ describe("CI preview environment contract", () => {
     const cloudflareBuildSteps =
       workflow.jobs?.["cloudflare-build"]?.steps ?? [];
     const cloudflareBuildStepIndex = cloudflareBuildSteps.findIndex(
-      (candidate) => candidate.name === "Cloudflare/OpenNext 构建",
+      (candidate) => candidate.run === "pnpm website:build:cf",
     );
     const artifactProofStepIndex = cloudflareBuildSteps.findIndex(
-      (candidate) => candidate.name === "验证 Cloudflare artifact config",
+      (candidate) =>
+        candidate.run ===
+        "node scripts/quality/checks/cloudflare-artifact-config.js",
     );
     const artifactProof = cloudflareBuildSteps[artifactProofStepIndex]?.run;
 

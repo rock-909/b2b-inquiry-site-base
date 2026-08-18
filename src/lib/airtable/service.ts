@@ -18,13 +18,6 @@ function readAirtableEnv(key: AirtableEnvKey): string | undefined {
 }
 
 export class AirtableService {
-  public isReady(): boolean {
-    return Boolean(
-      readAirtableEnv("AIRTABLE_API_KEY") &&
-      readAirtableEnv("AIRTABLE_BASE_ID"),
-    );
-  }
-
   public createLead(data: InquiryLeadData): Promise<CreatedAirtableRecord> {
     const apiKey = readAirtableEnv("AIRTABLE_API_KEY");
     const baseId = readAirtableEnv("AIRTABLE_BASE_ID");

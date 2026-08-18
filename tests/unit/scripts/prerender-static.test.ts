@@ -2,25 +2,11 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import { collectPrerenderStaticFindings } from "../../../scripts/quality/checks/prerender-static.js";
 
 const tempDirs: string[] = [];
-const TEMP_TRASH_ROOT = path.join(
-  os.tmpdir(),
-  "b2b-inquiry-prerender-static-test-trash",
-);
-
-function moveTempDirToTrash(dir: string): void {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- cleanup only inspects a test-owned temp directory
-  if (!fs.existsSync(dir)) return;
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- cleanup moves fixtures to a recoverable temp trash directory
-  fs.mkdirSync(TEMP_TRASH_ROOT, { recursive: true });
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- cleanup moves fixtures to a recoverable temp trash directory
-  fs.renameSync(
-    dir,
-    path.join(TEMP_TRASH_ROOT, `${path.basename(dir)}-${Date.now()}`),
-  );
-}
+const FIXTURE_PREFIX = "prerender-static-";
 
 function writeJson(rootDir: string, relativePath: string, value: unknown) {
   const filePath = path.join(rootDir, relativePath);
@@ -38,7 +24,7 @@ function createBuildFixture({
   includeAboutRoute = true,
   includeAboutTemplateMeta = true,
 } = {}) {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "prerender-static-"));
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   tempDirs.push(rootDir);
   writeJson(rootDir, ".next/server/app-paths-manifest.json", {
     "/[locale]/about/page": "app/[locale]/about/page.js",
@@ -85,7 +71,7 @@ function createBuildFixture({
 }
 
 function createRequestQuotePostponedFixture(locales: string[]) {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "prerender-static-"));
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   tempDirs.push(rootDir);
   writeJson(rootDir, ".next/server/app-paths-manifest.json", {
     "/[locale]/about/page": "app/[locale]/about/page.js",
@@ -125,7 +111,7 @@ function createRequestQuotePostponedFixture(locales: string[]) {
 function createStaticBuildWithoutTemplateShellsFixture({
   includeAboutRoute = true,
 } = {}) {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), "prerender-static-"));
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   tempDirs.push(rootDir);
   writeJson(rootDir, ".next/server/app-paths-manifest.json", {
     "/[locale]/about/page": "app/[locale]/about/page.js",
@@ -153,7 +139,7 @@ function createStaticBuildWithoutTemplateShellsFixture({
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
-    moveTempDirToTrash(tempDir);
+    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
   }
 });
 

@@ -3,12 +3,10 @@
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
-import { useCookieConsentOptional } from "@/lib/cookie-consent";
 import {
   getPublicRuntimeEnvString,
   isPublicRuntimeProduction,
 } from "@/lib/public-runtime-env";
-import { resolveAnalyticsAllowed } from "@/components/monitoring/analytics-consent";
 
 function ensureGa4QueueInitialized(measurementId: string): void {
   if (!Array.isArray(window.dataLayer)) {
@@ -26,20 +24,21 @@ function ensureGa4QueueInitialized(measurementId: string): void {
   });
 }
 
-export function EnterpriseAnalyticsIsland() {
+export function EnterpriseAnalyticsIsland({
+  analyticsAllowed,
+}: {
+  analyticsAllowed: boolean;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isProd = isPublicRuntimeProduction();
   const gaMeasurementId = getPublicRuntimeEnvString(
     "NEXT_PUBLIC_GA_MEASUREMENT_ID",
   );
-  const cookieConsent = useCookieConsentOptional();
-
-  const analyticsAllowed = resolveAnalyticsAllowed(cookieConsent);
-
   const gaEnabled = Boolean(gaMeasurementId) && analyticsAllowed && isProd;
   const gaInitRef = useRef(false);
 
+  /* eslint-disable react-you-might-not-need-an-effect/no-event-handler -- these effects synchronize the external GA runtime after consent and navigation. */
   useEffect(() => {
     if (!gaEnabled || gaInitRef.current) return;
     ensureGa4QueueInitialized(gaMeasurementId!);
@@ -56,6 +55,7 @@ export function EnterpriseAnalyticsIsland() {
       page_location: window.location.href,
     });
   }, [pathname, searchParams, gaEnabled, gaMeasurementId]);
+  /* eslint-enable react-you-might-not-need-an-effect/no-event-handler -- the exception ends after the GA synchronization effects. */
 
   if (!analyticsAllowed) return null;
 

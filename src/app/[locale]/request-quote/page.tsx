@@ -14,7 +14,7 @@ import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { getLocalizedPath } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
 import { resolveInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
@@ -38,7 +38,7 @@ export async function generateMetadata({
   params,
 }: RequestQuotePageParams): Promise<Metadata> {
   const locale = resolveLocaleParam(await params);
-  const messages = getComposedMessages(locale);
+  const messages = getSourceMessages(locale);
 
   return generateMetadataForPath({
     locale,

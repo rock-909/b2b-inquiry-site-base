@@ -42,10 +42,6 @@ export const serverEnvSchema = {
   RATE_LIMIT_PEPPER: z.string().min(1).optional(),
   UPSTASH_REDIS_REST_URL: z.url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
-  ALLOW_MEMORY_RATE_LIMIT: z
-    .string()
-    .optional()
-    .transform((val) => val === "true"),
 
   // Node Environment
   NODE_ENV: z
@@ -130,7 +126,6 @@ export const runtimeEnv = {
   RATE_LIMIT_PEPPER: process.env.RATE_LIMIT_PEPPER,
   UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
-  ALLOW_MEMORY_RATE_LIMIT: process.env.ALLOW_MEMORY_RATE_LIMIT,
   NODE_ENV: process.env.NODE_ENV,
   APP_ENV: process.env.APP_ENV,
   NEXT_PHASE: process.env.NEXT_PHASE,

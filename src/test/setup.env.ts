@@ -69,7 +69,6 @@ vi.mock("@/lib/env", () => {
     EMAIL_FROM: "test@example.com",
     EMAIL_REPLY_TO: "reply@example.com",
     ADMIN_API_TOKEN: "test-admin-token",
-    ALLOW_MEMORY_RATE_LIMIT: false,
     CLOUDFLARE_ACCOUNT_ID: "test-account-id",
     NEXT_PUBLIC_BASE_URL: "https://example.com",
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: "test-site-key-12345",

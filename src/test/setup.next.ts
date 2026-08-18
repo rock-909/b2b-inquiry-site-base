@@ -54,23 +54,7 @@ vi.mock("next/cache", () => ({
   unstable_expirePath: vi.fn(() => undefined),
 }));
 
-// Suppress jsdom navigation errors during unit tests
 Object.defineProperty(window, "open", { value: vi.fn(), configurable: true });
-try {
-  const locDesc = Object.getOwnPropertyDescriptor(window, "location");
-  if (!locDesc || locDesc.configurable) {
-    Object.defineProperty(window, "location", {
-      value: {
-        ...window.location,
-        assign: vi.fn(),
-        replace: vi.fn(),
-      },
-      configurable: true,
-    });
-  }
-} catch {
-  // In Browser Mode, window.location is not configurable; skip overriding
-}
 
 // Anchor click: dispatch click event without performing navigation
 vi.spyOn(HTMLAnchorElement.prototype as any, "click").mockImplementation(

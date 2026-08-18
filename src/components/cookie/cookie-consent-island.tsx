@@ -1,40 +1,53 @@
 "use client";
 
-import { lazy, Suspense } from "react";
-import { CookieConsentProvider } from "@/lib/cookie-consent";
-import { isPublicRuntimeProduction } from "@/lib/public-runtime-env";
+import { useEffect, useState } from "react";
 import { CookieBanner } from "@/components/cookie/cookie-banner";
-import { LazyIslandErrorBoundary } from "@/components/ui/lazy-island-error-boundary";
+import { EnterpriseAnalyticsIsland } from "@/components/monitoring/enterprise-analytics-island";
+import {
+  createAcceptAllConsent,
+  createRejectAllConsent,
+  loadConsent,
+  saveConsent,
+} from "@/lib/cookie-consent/storage";
+import type { CookieConsent } from "@/lib/cookie-consent/types";
+import { getPublicRuntimeEnvString } from "@/lib/public-runtime-env";
 
-const EnterpriseAnalyticsIsland = lazy(() =>
-  import("@/components/monitoring/enterprise-analytics-island").then((mod) => ({
-    default: mod.EnterpriseAnalyticsIsland,
-  })),
-);
-
-/**
- * Cookie Consent Island
- *
- * Wraps only the components that consume CookieConsentContext, avoiding
- * unnecessary context propagation through the entire tree.
- *
- * Consumers:
- * - CookieBanner: displays consent UI
- * - EnterpriseAnalyticsIsland: conditionally loads analytics based on consent
- */
 export function CookieConsentIsland() {
-  const isProd = isPublicRuntimeProduction();
+  const analyticsConfigured = Boolean(
+    getPublicRuntimeEnvString("NEXT_PUBLIC_GA_MEASUREMENT_ID"),
+  );
+  const [consent, setConsent] = useState<CookieConsent | null | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    if (!analyticsConfigured) return undefined;
+
+    const hydrateConsent = () => setConsent(loadConsent()?.consent ?? null);
+    queueMicrotask(hydrateConsent);
+    return () => undefined;
+  }, [analyticsConfigured]);
+
+  if (!analyticsConfigured || consent === undefined) {
+    return null;
+  }
+
+  const choose = (nextConsent: CookieConsent) => {
+    saveConsent(nextConsent);
+    setConsent(nextConsent);
+  };
 
   return (
-    <CookieConsentProvider>
-      <CookieBanner />
-      {isProd ? (
-        <LazyIslandErrorBoundary fallback={null}>
-          <Suspense fallback={null}>
-            <EnterpriseAnalyticsIsland />
-          </Suspense>
-        </LazyIslandErrorBoundary>
+    <>
+      {consent === null ? (
+        <CookieBanner
+          onAccept={() => choose(createAcceptAllConsent())}
+          onReject={() => choose(createRejectAllConsent())}
+        />
       ) : null}
-    </CookieConsentProvider>
+      <EnterpriseAnalyticsIsland
+        analyticsAllowed={consent?.analytics === true}
+      />
+    </>
   );
 }

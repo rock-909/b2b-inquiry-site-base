@@ -1,10 +1,9 @@
 import {
-  PUBLIC_STATIC_PAGE_DEFINITIONS,
   getPublicStaticPageDefinition,
   toNavigationNamespaceKey,
   type NavigationMessageKey,
 } from "@/config/pages.config";
-import { SINGLE_SITE_ROUTE_HREFS } from "@/config/single-site-links";
+import { PATHS_CONFIG } from "@/config/paths/paths-config";
 
 export type { SiteNavigationItem } from "@/config/site-types";
 
@@ -25,23 +24,10 @@ function requireNavigationKey(
   return definition.navigationKey;
 }
 
-export function getSingleSiteNavigation() {
-  const active = new Set(
-    PUBLIC_STATIC_PAGE_DEFINITIONS.map((item) => item.pageType),
-  );
-  return MAIN_NAVIGATION_PAGE_TYPES.flatMap((pageType) =>
-    active.has(pageType)
-      ? [
-          {
-            key: pageType,
-            href: SINGLE_SITE_ROUTE_HREFS[pageType],
-            messageKey: toNavigationNamespaceKey(
-              requireNavigationKey(pageType),
-            ),
-          },
-        ]
-      : [],
-  );
-}
-
-export const SINGLE_SITE_NAVIGATION = getSingleSiteNavigation();
+export const SINGLE_SITE_NAVIGATION = MAIN_NAVIGATION_PAGE_TYPES.map(
+  (pageType) => ({
+    key: pageType,
+    href: PATHS_CONFIG[pageType],
+    messageKey: toNavigationNamespaceKey(requireNavigationKey(pageType)),
+  }),
+);

@@ -86,7 +86,7 @@ vi.mock("@/components/forms/inquiry-form", () => ({
 
 vi.mock("@/lib/content/render-static-markdown-content", () => ({
   createStaticMarkdownContent: (content: string) => (
-    <div data-testid="mdx-body">{content}</div>
+    <div data-testid="content-body">{content}</div>
   ),
 }));
 
@@ -94,7 +94,7 @@ vi.mock("@/lib/contact/getContactCopy", () => ({
   getContactCopyFromMessages: mockGetContactCopyFromMessages,
 }));
 
-describe("ContactPage MDX migration", () => {
+describe("ContactPage static content", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
   });
@@ -104,7 +104,7 @@ describe("ContactPage MDX migration", () => {
     mockGetContactCopyFromMessages.mockReturnValue(contactCopy);
   });
 
-  it("renders hero and body from MDX while keeping the form", async () => {
+  it("renders hero and body from static content while keeping the form", async () => {
     const page = await ContactPage({
       params: Promise.resolve({ locale: "en" }),
     });
@@ -116,7 +116,7 @@ describe("ContactPage MDX migration", () => {
     expect(
       within(content).getByRole("heading", { level: 1 }),
     ).toHaveTextContent("Contact");
-    expect(screen.getByTestId("mdx-body")).toBeInTheDocument();
+    expect(screen.getByTestId("content-body")).toBeInTheDocument();
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
     expect(screen.getByTestId("inquiry-form")).toHaveAttribute(
       "data-source",
@@ -206,7 +206,7 @@ describe("ContactPage MDX migration", () => {
     expect(screen.queryByText(/WhatsApp/i)).not.toBeInTheDocument();
   });
 
-  it("does not render starter FAQ from MDX frontmatter", async () => {
+  it("does not render starter FAQ from page metadata", async () => {
     const page = await ContactPage({
       params: Promise.resolve({ locale: "en" }),
     });

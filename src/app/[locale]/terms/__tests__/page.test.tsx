@@ -72,7 +72,7 @@ describe("TermsPage", () => {
   });
 
   describe("generateMetadata", () => {
-    it("should return metadata from MDX frontmatter", async () => {
+    it("should return metadata from static page content", async () => {
       const metadata = await generateMetadata({
         params: Promise.resolve(mockParams),
       });

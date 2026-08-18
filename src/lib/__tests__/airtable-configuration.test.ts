@@ -79,8 +79,6 @@ describe("Airtable Service configuration", () => {
     const service = await createService();
     const { AIRTABLE_REQUEST_TIMEOUT_MS } = await import("../airtable/service");
 
-    expect(service.isReady()).toBe(true);
-
     await expect(service.createLead(validLeadData)).resolves.toEqual({
       id: "rec-config",
     });
@@ -139,12 +137,10 @@ describe("Airtable Service configuration", () => {
     Object.assign(mocks.envValues, missingConfig);
     const service = await createService();
 
-    expect(service.isReady()).toBe(false);
     await expect(service.createLead(validLeadData)).rejects.toThrow(
       "Airtable service is not configured",
     );
     expect(mocks.fetch).not.toHaveBeenCalled();
-    expect(service.isReady()).toBe(false);
   });
 
   it("surfaces native fetch failures from createLead", async () => {
@@ -154,7 +150,6 @@ describe("Airtable Service configuration", () => {
     await expect(service.createLead(validLeadData)).rejects.toThrow(
       "Failed to create lead record",
     );
-    expect(service.isReady()).toBe(true);
   });
 
   it("reads Cloudflare runtime env populated after construction", async () => {

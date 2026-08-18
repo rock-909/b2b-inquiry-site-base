@@ -3,9 +3,9 @@ import {
   type LocaleParam,
 } from "@/app/[locale]/generate-static-params";
 import {
-  generateStaticMdxPageMetadata,
-  StaticMdxPage,
-} from "@/app/[locale]/static-mdx-page";
+  generateStaticContentPageMetadata,
+  StaticContentPage,
+} from "@/app/[locale]/static-content-page";
 
 const pageConfig = {
   pageType: "about",
@@ -21,9 +21,9 @@ export function generateStaticParams() {
 }
 
 export function generateMetadata(props: AboutPageProps) {
-  return generateStaticMdxPageMetadata(props, pageConfig);
+  return generateStaticContentPageMetadata(props, pageConfig);
 }
 
 export default function AboutPage({ params }: AboutPageProps) {
-  return <StaticMdxPage params={params} config={pageConfig} />;
+  return <StaticContentPage params={params} config={pageConfig} />;
 }

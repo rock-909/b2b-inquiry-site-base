@@ -23,9 +23,6 @@ const AIRTABLE_ATTRIBUTION_FIELD_NAMES = {
   utmCampaign: "UTM Campaign",
   utmTerm: "UTM Term",
   utmContent: "UTM Content",
-  gclid: "GCLID",
-  fbclid: "FBCLID",
-  msclkid: "MSCLKID",
   landingPage: "Landing Page",
   capturedAt: "Captured At",
 } satisfies Record<AttributionFieldName, string>;

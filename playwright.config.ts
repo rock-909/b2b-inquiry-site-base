@@ -10,8 +10,12 @@ if (existsSync(".env.test")) {
  * @see https://playwright.dev/docs/test-configuration
  */
 const isCI = Boolean(process.env.CI);
-const isDaily = process.env.CI_DAILY === "true";
+const isFullCoverage = process.env.CI_FULL_COVERAGE === "true";
 const shouldRebuildServer = process.env.PLAYWRIGHT_REBUILD_SERVER === "true";
+const isAirtableCanary = process.env.POST_DEPLOY_TEST === "1";
+const hasExternalBaseUrl = Boolean(
+  process.env.STAGING_URL || process.env.PLAYWRIGHT_BASE_URL,
+);
 const PLAYWRIGHT_PROFILE_LANE_IDS = new Set(["default", "optional", "all"]);
 
 function normalizePlaywrightProfileLane(rawValue: string | undefined) {
@@ -28,7 +32,7 @@ const profileLane = normalizePlaywrightProfileLane(
   process.env.PLAYWRIGHT_PROFILE_LANE,
 );
 const defaultGrepInvertPatterns = [
-  ...(isCI && !isDaily ? [/debug|diagnosis/i] : []),
+  ...(isCI && !isFullCoverage ? [/debug|diagnosis/i] : []),
   ...(profileLane === "default" ? [/@profile:/i] : []),
 ];
 const resolvedBaseUrl =
@@ -44,7 +48,7 @@ const isInteractiveTerminal = Boolean(
 const htmlReportOpen: "always" | "never" | "on-failure" =
   isCI || !isInteractiveTerminal ? "never" : "on-failure";
 
-// 基于是否为每日全量任务，动态裁剪浏览器矩阵，加速常规CI
+// 全量覆盖任务才打开扩展浏览器矩阵，常规 CI 只跑 Chromium。
 const baseProjects = [
   {
     name: "chromium",
@@ -75,6 +79,7 @@ export default defineConfig({
   // 不写 testMatch：testDir 下所有 *.spec.ts 一律跑。之前是一份 5 条的白名单，
   // 结果 14 个用例文件里有 9 个从来没被执行过——新写的 e2e 不加进白名单就等于没写。
   testDir: "./tests/e2e",
+  ...(isAirtableCanary ? {} : { testIgnore: /post-deploy-form\.spec\.ts$/u }),
   /* Run tests in files in parallel */
   fullyParallel: true,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -93,7 +98,7 @@ export default defineConfig({
     ["json", { outputFile: "reports/playwright-results.json" }],
     ["junit", { outputFile: "reports/playwright-results.xml" }],
   ],
-  // 非每日任务时，排除调试/诊断类用例，进一步收敛耗时
+  // 非全量覆盖任务排除调试/诊断类用例，进一步收敛耗时。
   ...(defaultGrepInvertPatterns.length > 0
     ? { grepInvert: defaultGrepInvertPatterns }
     : {}),
@@ -118,11 +123,13 @@ export default defineConfig({
   },
 
   /* Configure projects for major browsers */
-  projects: isDaily ? [...baseProjects, ...extendedProjects] : baseProjects,
+  projects: isFullCoverage
+    ? [...baseProjects, ...extendedProjects]
+    : baseProjects,
 
   /* Run your local dev server before starting the tests */
-  // 如果设置了 STAGING_URL，跳过本地服务器
-  ...(process.env.STAGING_URL
+  // 外部 URL 由调用方负责，不启动本地服务器。
+  ...(hasExternalBaseUrl
     ? {}
     : {
         webServer: {

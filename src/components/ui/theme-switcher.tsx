@@ -29,9 +29,7 @@ const subscribeHydration = () => unsubscribeHydration;
 const getClientHydrationSnapshot = () => true;
 const getServerHydrationSnapshot = () => false;
 
-export type ThemeSwitcherProps = React.HTMLAttributes<HTMLDivElement> & {
-  className?: string;
-};
+export type ThemeSwitcherProps = React.HTMLAttributes<HTMLDivElement>;
 
 export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
   const tTheme = useTranslations("theme");
@@ -43,39 +41,6 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
     getServerHydrationSnapshot,
   );
   const activeTheme = theme ?? resolvedTheme;
-  const dataTestId = (rest as Record<string, unknown>)["data-testid"] as
-    string | undefined;
-
-  const handleThemeClick = (themeKey: "light" | "dark" | "system") => {
-    setTheme(themeKey);
-  };
-
-  if (!isHydrated) {
-    return (
-      <div
-        aria-label={tAccessibility("themeSelector")}
-        className={cn(
-          "relative isolate flex h-8 rounded-full bg-background p-1 ring-1 ring-border",
-          className,
-        )}
-        role="group"
-        {...rest}
-        data-testid={dataTestId ?? "theme-toggle"}
-      >
-        {themes.map(({ key, icon: Icon, labelKey }) => (
-          <button
-            aria-label={tTheme(labelKey)}
-            className="relative size-6 rounded-full"
-            key={key}
-            type="button"
-            disabled
-          >
-            <Icon className="relative z-10 m-auto size-4 text-muted-foreground" />
-          </button>
-        ))}
-      </div>
-    );
-  }
 
   return (
     <div
@@ -86,7 +51,6 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
       )}
       role="group"
       {...rest}
-      data-testid={dataTestId ?? "theme-toggle"}
     >
       {themes.map(({ key, icon: Icon, labelKey }) => {
         const isActive = activeTheme === key;
@@ -94,13 +58,14 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
         return (
           <button
             aria-label={tTheme(labelKey)}
-            aria-pressed={isActive}
+            aria-pressed={isHydrated ? isActive : undefined}
             className="relative size-6 rounded-full"
+            disabled={!isHydrated}
             key={key}
-            onClick={() => handleThemeClick(key as "light" | "dark" | "system")}
+            onClick={() => setTheme(key)}
             type="button"
           >
-            {isActive ? (
+            {isHydrated && isActive ? (
               <div
                 className="absolute inset-0 rounded-full bg-muted transition-colors duration-150"
                 data-testid="theme-switcher-highlight"
@@ -112,7 +77,9 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
             <Icon
               className={cn(
                 "relative z-10 m-auto size-4",
-                isActive ? "text-foreground" : "text-muted-foreground",
+                isHydrated && isActive
+                  ? "text-foreground"
+                  : "text-muted-foreground",
               )}
             />
           </button>

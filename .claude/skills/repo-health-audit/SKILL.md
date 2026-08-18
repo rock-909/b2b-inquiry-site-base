@@ -7,8 +7,8 @@ description: Local Claude entry for whole-repo health audits, launch-readiness a
 
 This is the Claude-local entrypoint for site audits. It is intentionally
 thin: use the global Codex `repo-health-audit` method when that surface is
-available, but always read this repo's profile first and ignore any global
-`ai-smell-audit` starter/showcase repo profile.
+available, but always read this repo's profile first and ignore unrelated
+starter profiles.
 
 Before auditing, read:
 

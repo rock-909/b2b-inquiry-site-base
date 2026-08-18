@@ -1,24 +1,16 @@
 /* eslint-disable security/detect-non-literal-fs-filename -- test-owned temp fixtures under os.tmpdir(); paths are created by this test and moved to test Trash */
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  renameSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
   collectCloudflareStaticAssetHeaderFailures,
   runCloudflareStaticAssetHeaderCli,
 } from "../../../scripts/quality/checks/cloudflare-static-asset-headers.js";
 
 const tempDirs: string[] = [];
-const TEMP_TRASH_ROOT = path.join(
-  os.tmpdir(),
-  "b2b-static-asset-headers-test-trash",
-);
+const FIXTURE_PREFIX = "b2b-static-headers-";
 const GOOD_HEADERS = `/_next/static/*
   Cache-Control: public,max-age=31536000,immutable
 
@@ -27,7 +19,7 @@ const GOOD_HEADERS = `/_next/static/*
 `;
 
 function createFixture(headers = GOOD_HEADERS): string {
-  const rootDir = mkdtempSync(path.join(os.tmpdir(), "b2b-static-headers-"));
+  const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   tempDirs.push(rootDir);
 
   for (const repoPath of ["public/_headers", ".open-next/assets/_headers"]) {
@@ -41,12 +33,7 @@ function createFixture(headers = GOOD_HEADERS): string {
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
-    if (!existsSync(tempDir)) continue;
-    mkdirSync(TEMP_TRASH_ROOT, { recursive: true });
-    renameSync(
-      tempDir,
-      path.join(TEMP_TRASH_ROOT, `${path.basename(tempDir)}-${Date.now()}`),
-    );
+    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
   }
 });
 

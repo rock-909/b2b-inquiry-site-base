@@ -1,7 +1,8 @@
 import type { ComponentProps } from "react";
 import { useTranslations } from "next-intl";
 import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
-import { isActivePath, mobileNavigation } from "@/lib/navigation";
+import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
+import { isActivePath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/routing";
 
@@ -35,7 +36,7 @@ export function MobileNavigationLinks({
       {...props}
     >
       <ul className="space-y-1">
-        {mobileNavigation.map((item) => {
+        {SINGLE_SITE_NAVIGATION.map((item) => {
           const isActive =
             typeof currentPathname === "string" &&
             isActivePath(currentPathname, item.href);

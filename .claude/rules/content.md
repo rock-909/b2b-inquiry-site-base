@@ -1,7 +1,7 @@
 ---
 paths:
-  - "content/**/*"
   - "messages/**/*.json"
+  - "src/content/**/*"
   - "src/config/single-site*.ts"
   - "src/config/offerings.ts"
   - "src/lib/content/**"
@@ -11,7 +11,7 @@ paths:
 
 # Content Rules
 
-Use this file when editing MDX content, page frontmatter, SEO metadata, FAQ
+Use this file when editing static page content, SEO metadata, FAQ
 content, shared UI text, or single-site identity/config.
 
 ## Authoring sources
@@ -20,17 +20,17 @@ Every content field has one authoring source.
 
 | If changing | Edit | Do not edit |
 | --- | --- | --- |
-| Company-wide facts | `src/config/single-site.ts` | MDX prose |
-| Page prose, FAQ, page SEO | `content/pages/{locale}/*.mdx` | Translation JSON |
-| Page route and namespace ownership | `src/config/pages.config.ts` | MDX body copy |
+| Company-wide facts | `src/config/single-site.ts` | Page prose |
+| Page prose, FAQ, page SEO | `src/content/pages/{locale}/*.ts` | Translation JSON |
+| Page route and content slug ownership | `src/config/pages.config.ts` | Page modules |
 | Crawl/indexing policy | `src/config/single-site-seo.ts` | Page components |
-| Shared labels/nav/buttons/form chrome | `messages/base/**`, `messages/profiles/b2b-lead/**` | MDX frontmatter |
+| Shared labels/nav/buttons/form chrome | `messages/base/{locale}/messages.json` | Page metadata |
 | Offering names and reviewed offering copy | `src/config/offerings.ts` and active content | Component literals or translation JSON |
 
 ## Page content
 
-- Page titles, descriptions, FAQ items, and legal/About prose live in MDX
-  frontmatter/body.
+- Page titles, descriptions, FAQ items, and legal/About prose live in the
+  locale's static page module.
 - FAQ belongs to the page that renders it. Do not create a shared FAQ pool.
 - Home is a structured campaign landing exception: current section order and
   reusable section copy can stay in config/i18n.

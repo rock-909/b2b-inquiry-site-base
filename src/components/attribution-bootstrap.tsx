@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import {
   loadAttributionModule,
-  registerAttributionFlushListeners,
   shouldLoadAttribution,
   type AttributionModuleLoader,
 } from "@/components/attribution-bootstrap-utils";
@@ -21,22 +20,16 @@ export function AttributionBootstrap({
     }
 
     let cancelled = false;
-    let removeFlushListeners: (() => void) | undefined;
-
     loadModule()
-      .then(({ flushPendingAttribution, storeAttributionData }) => {
+      .then(({ storeAttributionData }) => {
         if (!cancelled) {
           storeAttributionData();
-          removeFlushListeners = registerAttributionFlushListeners(
-            flushPendingAttribution,
-          );
         }
       })
       .catch(() => undefined);
 
     return () => {
       cancelled = true;
-      removeFlushListeners?.();
     };
   }, [loadModule]);
 

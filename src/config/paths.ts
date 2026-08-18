@@ -4,7 +4,7 @@
  */
 
 // 重新导出类型定义
-export type { Locale, LocalizedPath, PageType } from "@/config/paths/types";
+export type { Locale, PageType } from "@/config/paths/types";
 
 // 重新导出配置
 export { PATHS_CONFIG } from "@/config/paths/paths-config";

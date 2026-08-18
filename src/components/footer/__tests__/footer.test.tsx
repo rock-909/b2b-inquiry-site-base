@@ -7,9 +7,12 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Footer } from "@/components/footer/footer";
-import { FOOTER_COLUMNS } from "@/config/footer-links";
-import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import {
+  SINGLE_SITE_CONFIG,
+  SINGLE_SITE_FACTS,
+  SINGLE_SITE_FOOTER_COLUMNS,
+} from "@/config/single-site";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import {
   getSiteMessageValues,
   type SiteMessageValues,
@@ -54,11 +57,11 @@ function createNextIntlLikeTranslator(messages: Record<string, unknown>) {
   return translate;
 }
 
-const composedMessages = getComposedMessages("en");
+const sourceMessages = getSourceMessages("en");
 
 const { mockUseTranslations } = vi.hoisted(() => ({
   mockUseTranslations: vi.fn(() =>
-    createNextIntlLikeTranslator(composedMessages),
+    createNextIntlLikeTranslator(sourceMessages),
   ),
 }));
 
@@ -70,7 +73,7 @@ describe("Footer Component", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseTranslations.mockImplementation(() =>
-      createNextIntlLikeTranslator(composedMessages),
+      createNextIntlLikeTranslator(sourceMessages),
     );
   });
 
@@ -121,7 +124,7 @@ describe("Footer Component", () => {
   });
 
   it("throws with the full message path when footer.copyright is missing", () => {
-    const incompleteMessages = structuredClone(composedMessages);
+    const incompleteMessages = structuredClone(sourceMessages);
     delete (incompleteMessages.footer as Record<string, unknown>).copyright;
 
     mockUseTranslations.mockImplementation(() =>
@@ -134,7 +137,7 @@ describe("Footer Component", () => {
   });
 
   it("throws with the full message path when a footer config translation key is missing", () => {
-    const incompleteMessages = structuredClone(composedMessages);
+    const incompleteMessages = structuredClone(sourceMessages);
     const footerMessages = incompleteMessages.footer;
     if (
       typeof footerMessages !== "object" ||
@@ -231,7 +234,7 @@ describe("Footer Component", () => {
   it("uses the formal footer column configuration", () => {
     render(<Footer />);
 
-    expect(FOOTER_COLUMNS.map((column) => column.key)).toEqual([
+    expect(SINGLE_SITE_FOOTER_COLUMNS.map((column) => column.key)).toEqual([
       "navigation",
       "support",
     ]);

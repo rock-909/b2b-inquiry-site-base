@@ -4,9 +4,6 @@ export const ATTRIBUTION_FIELD_NAMES = [
   "utmCampaign",
   "utmTerm",
   "utmContent",
-  "gclid",
-  "fbclid",
-  "msclkid",
   "landingPage",
   "capturedAt",
 ] as const;
@@ -19,9 +16,6 @@ export interface MarketingAttributionFields {
   utmCampaign?: string | undefined;
   utmTerm?: string | undefined;
   utmContent?: string | undefined;
-  gclid?: string | undefined;
-  fbclid?: string | undefined;
-  msclkid?: string | undefined;
   landingPage?: string | undefined;
   capturedAt?: string | undefined;
 }

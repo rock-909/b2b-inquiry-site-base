@@ -1,22 +1,93 @@
 const { spawnSync } = require("node:child_process");
 const net = require("node:net");
-const {
-  RELEASE_PROOF_MANIFEST,
-  formatReleaseProofCommand,
-  getManualProofLaneSummaryLines,
-  getReleaseProofSequence,
-  getReleaseVerifyCommands,
-} = require("../release-proof-manifest");
 
 const LOCAL_E2E_HOSTS = ["127.0.0.1", "::1"];
+/** @type {Array<{
+ * id: string,
+ * command: string,
+ * args: string[],
+ * env?: Record<string, string>,
+ * requiresFreePort?: number,
+ * artifactBudget?: {
+ *   metric: string,
+ *   limitKiB: number,
+ *   preferredKiB: number,
+ *   measuredArtifact: string,
+ *   source: string,
+ * },
+ * }>} */
+const RELEASE_VERIFY_COMMANDS = [
+  {
+    id: "cloudflare-config-check",
+    command: "node",
+    args: ["scripts/quality/checks/cloudflare-config-check.js"],
+  },
+  { id: "type-check", command: "pnpm", args: ["type-check"] },
+  { id: "lint-check", command: "pnpm", args: ["lint:check"] },
+  { id: "tests", command: "pnpm", args: ["test"] },
+  {
+    id: "translations",
+    command: "node",
+    args: ["scripts/quality/checks/translations.js"],
+  },
+  {
+    id: "local-playwright-smoke",
+    command: "pnpm",
+    args: ["exec", "playwright", "test", "--project=chromium"],
+    env: { CI: "1", PLAYWRIGHT_REBUILD_SERVER: "true" },
+    requiresFreePort: 3000,
+  },
+  { id: "next-build", command: "pnpm", args: ["build"] },
+  { id: "cloudflare-build", command: "pnpm", args: ["website:build:cf"] },
+  {
+    id: "cloudflare-artifact-config",
+    command: "node",
+    args: ["scripts/quality/checks/cloudflare-artifact-config.js"],
+  },
+  {
+    id: "cloudflare-static-asset-headers",
+    command: "node",
+    args: ["scripts/quality/checks/cloudflare-static-asset-headers.js"],
+  },
+  {
+    id: "wrangler-preview-dry-run",
+    command: "pnpm",
+    args: ["exec", "wrangler", "deploy", "--dry-run", "--env", "preview"],
+    artifactBudget: {
+      metric: "gzip KiB",
+      limitKiB: 3000,
+      preferredKiB: 2700,
+      measuredArtifact: "source-checkout",
+      source:
+        "Project self-budget (3000 KiB), ~72 KiB margin below the Cloudflare Workers Free gzip upload limit of 3072 KiB (3 MiB)",
+    },
+  },
+];
 
-const RELEASE_PROOF_SEQUENCE = getReleaseProofSequence();
-const RELEASE_VERIFY_COMMANDS = getReleaseVerifyCommands();
-
-function isReleaseVerifyBlockedEnv(name) {
-  const value = process.env[name] ?? "";
-  return value === "true" || value === "1";
-}
+const MANUAL_PROOF_LANES = [
+  {
+    lane: "local/test-mode",
+    label: "Local stock preview",
+    command: "node scripts/quality/checks/cloudflare-smoke.js cf-preview-smoke",
+  },
+  {
+    lane: "deployed-smoke",
+    label: "Real preview publish path",
+    command:
+      "node scripts/quality/checks/cloudflare-smoke.js cf-preview-deployed",
+  },
+  {
+    lane: "deployed-smoke",
+    label: "Deployed GET smoke",
+    command:
+      'node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url "$DEPLOYED_BASE_URL"',
+  },
+  {
+    lane: "airtable-write-canary",
+    label: "Deployed Airtable write canary manual launch gate",
+    command: 'PLAYWRIGHT_BASE_URL="$DEPLOYED_BASE_URL" pnpm canary:airtable',
+  },
+];
 
 function runReleaseVerifyCommand(step, rootDir) {
   const result = spawnSync(step.command, step.args, {
@@ -118,20 +189,6 @@ async function runReleaseVerify({
   runCommand = runReleaseVerifyCommand,
   portInUse = isLocalPortInUse,
 } = {}) {
-  if (isReleaseVerifyBlockedEnv("VALIDATE_CONFIG_SKIP_RUNTIME")) {
-    console.error(
-      "release-proof must not run with VALIDATE_CONFIG_SKIP_RUNTIME enabled",
-    );
-    return 1;
-  }
-
-  if (isReleaseVerifyBlockedEnv("ALLOW_MEMORY_RATE_LIMIT")) {
-    console.error(
-      "release-proof must not run with ALLOW_MEMORY_RATE_LIMIT enabled",
-    );
-    return 1;
-  }
-
   console.log("== Release verification flow ==");
   for (const step of RELEASE_VERIFY_COMMANDS) {
     if (step.requiresFreePort) {
@@ -161,17 +218,17 @@ async function runReleaseVerify({
   }
 
   console.log("Cloudflare proof split:");
-  for (const line of getManualProofLaneSummaryLines()) {
-    console.log(line);
+  for (const entry of MANUAL_PROOF_LANES) {
+    console.log(`  - [${entry.lane}] ${entry.label}: ${entry.command}`);
   }
   console.log(
-    "  - The Airtable write canary requires deployed Airtable and Turnstile credentials; it does not prove Resend delivery or owner receipt.",
+    "  - The Airtable write canary requires a deployed Turnstile flow and Airtable credentials; it does not prove Resend delivery or owner receipt.",
   );
   console.log(
     "Local release proof completed. This is NOT public launch proof.",
   );
   console.log(
-    "Public launch still requires strict config, deployed smoke, the Airtable write canary, separate owner receipt, and owner signoff.",
+    "Still separate: deployment and Worker URL smoke; Airtable canary; Resend provider status and owner inbox receipt; production domain, DNS, TLS, legal, contact, and owner approval.",
   );
   return 0;
 }
@@ -190,11 +247,9 @@ if (require.main === module) {
 
 module.exports = {
   LOCAL_E2E_HOSTS,
-  RELEASE_PROOF_MANIFEST,
-  RELEASE_PROOF_SEQUENCE,
+  MANUAL_PROOF_LANES,
   RELEASE_VERIFY_COMMANDS,
   isLocalPortInUse,
-  isReleaseVerifyBlockedEnv,
   parseWranglerDryRunGzipKiB,
   runReleaseVerify,
   runReleaseVerifyCommand,

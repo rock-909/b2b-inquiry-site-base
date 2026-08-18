@@ -2,12 +2,12 @@
 paths:
   - "src/lib/structured-data*.ts"
   - "src/lib/page-structured-data.ts"
-  - "src/lib/content/mdx-faq.ts"
+  - "src/lib/content/faq.ts"
   - "src/components/seo/**"
   - "src/app/**/page.tsx"
   - "src/app/**/*jsonld.ts"
   - "src/app/**/*page-data.ts"
-  - "content/pages/**/*.mdx"
+  - "src/content/pages/**/*.ts"
 ---
 
 # Structured Data / JSON-LD Rules
@@ -36,10 +36,9 @@ escaping behavior covered by tests.
 
 ## FAQ schema
 
-FAQ content comes from page-owned MDX frontmatter whenever the page has an MDX
-source.
+FAQ content comes from the page-owned static content module.
 
-Use `generateFaqSchemaFromItems()` from `src/lib/content/mdx-faq.ts`.
+Use `generateFaqSchemaFromItems()` from `src/lib/content/faq.ts`.
 
 Do not add another FAQ helper for the same item shape.
 

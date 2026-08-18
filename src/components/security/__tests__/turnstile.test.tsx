@@ -7,32 +7,24 @@ import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
 
 const defaultTestLabels = createTestInquiryFormCopy().turnstile;
 
-/**
- * 降级文案（不可用、加载失败、加载慢）与那条邮件救援出路都归 `LazyTurnstile`
- * 管，证明在 `src/components/forms/__tests__/lazy-turnstile*.test.tsx`。
- * 这个控件只剩两条自己渲染的标签。
- */
 const sentinelTurnstileLabels = {
+  ...defaultTestLabels,
+  unavailable: "安全验证暂时不可用。",
+  loadFailed: "安全验证加载失败。",
   devBypass: "开发模式：Turnstile 验证已跳过",
   testMode: "测试模式下已关闭机器人防护",
+  rescueBeforeEmail: "请改发邮件 —",
+  rescueAfterEmail: "12 小时内回复。",
+  rescueEmail: "rescue@fieldaxis.test",
+  rescueSubject: "报价咨询",
 };
-
-function toTurnstileWidgetLabels(
-  labels: typeof defaultTestLabels,
-): React.ComponentProps<typeof TurnstileWidget>["labels"] {
-  return {
-    devBypass: labels.devBypass,
-    testMode: labels.testMode,
-  };
-}
 
 function renderTurnstileWidget(
   props: Omit<React.ComponentProps<typeof TurnstileWidget>, "labels"> & {
     labels?: React.ComponentProps<typeof TurnstileWidget>["labels"];
   } = {},
 ) {
-  const { labels = toTurnstileWidgetLabels(defaultTestLabels), ...rest } =
-    props;
+  const { labels = defaultTestLabels, ...rest } = props;
   return render(
     <TurnstileWidget onSuccess={vi.fn()} labels={labels} {...rest} />,
   );
@@ -249,42 +241,73 @@ describe("TurnstileWidget", () => {
   describe("错误处理", () => {
     it("应该处理空的onSuccess回调", () => {
       expect(() => {
-        render(
-          <TurnstileWidget
-            labels={toTurnstileWidgetLabels(defaultTestLabels)}
-          />,
-        );
+        render(<TurnstileWidget labels={defaultTestLabels} />);
       }).not.toThrow();
     });
   });
 
-  describe("降级状态只上报、不自己渲染救援提示", () => {
-    it("reports the failed state and leaves the rescue prompt to the parent", () => {
+  describe("降级后的邮件救援", () => {
+    it("shows one rescue path when the widget reports an error", () => {
       const consoleError = captureExpectedConsoleErrors("Turnstile error:");
-      const onDegraded = vi.fn();
-      renderTurnstileWidget({ onDegraded });
+      renderTurnstileWidget({ labels: sentinelTurnstileLabels });
 
       act(() => mockTurnstile.mock.calls.at(-1)?.[0]?.onError?.("network"));
 
-      expect(onDegraded).toHaveBeenCalledWith("failed");
-      // 救援行只能有一个 owner，在 LazyTurnstile 那一层。这里多一条就是重复。
-      expect(screen.queryByRole("link", { name: /sales@/u })).toBeNull();
+      expect(screen.getByRole("status")).toHaveTextContent(
+        sentinelTurnstileLabels.loadFailed,
+      );
+      expect(
+        screen.getAllByRole("link", {
+          name: sentinelTurnstileLabels.rescueEmail,
+        }),
+      ).toHaveLength(1);
       expect(consoleError).toHaveBeenCalledWith("Turnstile error:", "network");
     });
 
-    it("reports the unavailable state and renders nothing when the site key is missing", () => {
+    it("keeps the widget available for retry and hides rescue after success", () => {
+      const consoleError = captureExpectedConsoleErrors("Turnstile error:");
+      const onSuccess = vi.fn();
+      renderTurnstileWidget({
+        labels: sentinelTurnstileLabels,
+        onSuccess,
+      });
+
+      const handlers = mockTurnstile.mock.calls.at(-1)?.[0];
+      act(() => handlers?.onError?.("network"));
+      expect(
+        screen.getByRole("link", {
+          name: sentinelTurnstileLabels.rescueEmail,
+        }),
+      ).toBeVisible();
+
+      act(() => handlers?.onSuccess?.("fresh-token"));
+
+      expect(screen.getByTestId("turnstile-widget")).toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", {
+          name: sentinelTurnstileLabels.rescueEmail,
+        }),
+      ).toBeNull();
+      expect(onSuccess).toHaveBeenCalledWith("fresh-token");
+      expect(consoleError).toHaveBeenCalledWith("Turnstile error:", "network");
+    });
+
+    it("shows the unavailable message and email when the site key is missing", () => {
       vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "");
-      const onDegraded = vi.fn();
 
-      const { container } = render(
-        <TurnstileWidget
-          labels={sentinelTurnstileLabels}
-          onDegraded={onDegraded}
-        />,
+      render(<TurnstileWidget labels={sentinelTurnstileLabels} />);
+
+      expect(screen.getByRole("status")).toHaveTextContent(
+        sentinelTurnstileLabels.unavailable,
       );
-
-      expect(onDegraded).toHaveBeenCalledWith("unavailable");
-      expect(container).toBeEmptyDOMElement();
+      expect(
+        screen.getByRole("link", {
+          name: sentinelTurnstileLabels.rescueEmail,
+        }),
+      ).toHaveAttribute(
+        "href",
+        `mailto:${sentinelTurnstileLabels.rescueEmail}?subject=${encodeURIComponent(sentinelTurnstileLabels.rescueSubject)}`,
+      );
     });
   });
 

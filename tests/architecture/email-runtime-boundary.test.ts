@@ -4,7 +4,6 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const EMAIL_RUNTIME_ENTRYPOINTS = [
-  "src/lib/resend-instance.ts",
   "src/lib/resend-core.tsx",
   "src/lib/email/runtime-email-content.ts",
   "src/lib/email/resend-http-client.ts",

@@ -9,11 +9,15 @@ const { mockCreateLead, mockSendProductInquiryEmail } = vi.hoisted(() => ({
   mockSendProductInquiryEmail: vi.fn(),
 }));
 
-vi.mock("@/lib/airtable/instance", () => ({
-  airtableService: { createLead: mockCreateLead },
+vi.mock("@/lib/airtable/service", () => ({
+  AirtableService: class {
+    public readonly createLead = mockCreateLead;
+  },
 }));
-vi.mock("@/lib/resend-instance", () => ({
-  resendService: { sendInquiryEmail: mockSendProductInquiryEmail },
+vi.mock("@/lib/resend-core", () => ({
+  ResendService: class {
+    public readonly sendInquiryEmail = mockSendProductInquiryEmail;
+  },
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
 vi.mock("@/config/offerings", async () => import("@/test/offerings"));
@@ -40,7 +44,6 @@ describe("processValidatedInquiry", () => {
     expect(result).toMatchObject({
       success: true,
       emailSent: true,
-      ownerNotified: true,
       recordCreated: true,
     });
     expect(result.referenceId).toMatch(/^INQ-/);
@@ -96,7 +99,7 @@ describe("processValidatedInquiry", () => {
       expect.objectContaining({ referenceId }),
     );
     expect(logger.error).toHaveBeenCalledWith(
-      "Inquiry Airtable createLead failed (non-blocking)",
+      "Inquiry Airtable backup failed",
       expect.objectContaining({ referenceId }),
     );
   });
@@ -125,7 +128,6 @@ describe("processValidatedInquiry", () => {
     await expect(processValidatedInquiry(VALID_LEAD)).resolves.toMatchObject({
       success: false,
       emailSent: false,
-      ownerNotified: false,
       recordCreated: false,
       referenceId: expect.stringMatching(/^INQ-/),
       error: "PROCESSING_FAILED",
@@ -137,14 +139,12 @@ describe("processValidatedInquiry", () => {
       ...VALID_LEAD,
       utmSource: "google",
       utmMedium: "cpc",
-      gclid: "gclid-123",
     });
 
     expect(mockCreateLead).toHaveBeenCalledWith(
       expect.objectContaining({
         utmSource: "google",
         utmMedium: "cpc",
-        gclid: "gclid-123",
       }),
     );
   });
