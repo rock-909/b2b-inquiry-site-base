@@ -1,14 +1,14 @@
-import { z } from "zod";
+import { email, object, type output as ZodOutput, string } from "zod";
 
-export const inquiryEmailDataSchema = z.object({
-  referenceId: z.string().trim().min(1),
-  firstName: z.string(),
-  lastName: z.string(),
-  email: z.email(),
-  interest: z.string().optional(),
-  offeringId: z.string().optional(),
-  offeringName: z.string().optional(),
-  requirements: z.string().optional(),
+export const inquiryEmailDataSchema = object({
+  referenceId: string().trim().min(1),
+  firstName: string(),
+  lastName: string(),
+  email: email(),
+  interest: string().optional(),
+  offeringId: string().optional(),
+  offeringName: string().optional(),
+  requirements: string().optional(),
 });
 
-export type InquiryEmailData = z.infer<typeof inquiryEmailDataSchema>;
+export type InquiryEmailData = ZodOutput<typeof inquiryEmailDataSchema>;
