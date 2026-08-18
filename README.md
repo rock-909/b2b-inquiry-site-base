@@ -23,7 +23,7 @@ cp .dev.vars.example .dev.vars    # Cloudflare 本地预览环境变量
 pnpm dev
 ```
 
-询盘、联系表单和 RFQ 页面需要在 `.env.local` 里填入真实服务配置。服务端密钥包括 `AIRTABLE_API_KEY`、`RESEND_API_KEY` 和 `TURNSTILE_SECRET_KEY`；`NEXT_PUBLIC_TURNSTILE_SITE_KEY` 是浏览器侧公开站点 key。`AIRTABLE_BASE_ID` 等完整键位以 `.env.example` 为准；获取与配置方式见 `docs/开发与维护.md`。
+询盘、联系表单和 RFQ 页面需要在 `.env.local` 里填入真实服务配置。服务端密钥包括 `AIRTABLE_API_KEY`、`RESEND_API_KEY` 和 `TURNSTILE_SECRET_KEY`；`NEXT_PUBLIC_TURNSTILE_SITE_KEY` 是浏览器侧公开站点 key。完整键位以 `.env.example` 为准，派生和上线见 `docs/派生项目交接.md`。
 
 ## 常用命令
 
@@ -40,12 +40,11 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 
 ## 主要维护入口
 
-1. `docs/README.md`
-2. `docs/项目.md`
-3. `docs/架构与行为.md`
-4. `docs/开发与维护.md`
-5. `docs/正式上线标准.md`
-6. `docs/派生项目交接.md`
+1. `docs/项目.md`
+2. `docs/架构与行为.md`
+3. `docs/派生项目交接.md`
+4. `docs/技术栈.md`
+5. `docs/design/设计真相.md`
 
 派生站整体换肤从 `src/app/theme.css` 开始；组件结构和 variant 看 `docs/design/组件治理.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
 
@@ -70,6 +69,5 @@ message graph 固定为 `base -> b2b-lead`。修改 physical packs 后运行 `pn
 
 - Codex：`AGENTS.md`
 - Claude：`CLAUDE.md`
-- 派生站工作流：`.claude/skills/derive-site/SKILL.md`
 
-长期规则写入 docs 或规则文件；不要只留在聊天、handoff 或旧 plan。
+项目事实写入 docs 或规则文件；通用工作方法使用全局 skills。

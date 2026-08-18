@@ -26,15 +26,8 @@
 
 ## 验证
 
-- 上线工作按 `docs/正式上线标准.md` 分层验证；`pnpm release:verify`
+- 派生和上线工作按 `docs/派生项目交接.md` 分层验证；`pnpm release:verify`
   只证明 release lane，不等于正式部署或业务上线。
-
-## 派生项目
-
-- 创建或接手派生站时先读 `docs/派生项目交接.md`。已跟踪的 docs、
-  rules 和项目 skills 会随仓库跟随，但其中的业务事实、路径、命令和
-  上线证据必须按派生站重新核对。
-- 环境变量、真实 provider 资源、DNS 和 GitHub 外部设置不属于可继承证据。
 
 ## 依赖文档
 
