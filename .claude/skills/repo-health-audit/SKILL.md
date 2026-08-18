@@ -15,7 +15,6 @@ Before auditing, read:
 1. `.claude/skills/repo-health-audit/references/site-audit-profile.md`
 2. `AGENTS.md` or `CLAUDE.md`
 3. the `.claude/rules/*.md` files for touched paths
-4. `docs/派生项目交接.md` when judging template or derived-site readiness
 
 Default posture is read-only. Pin the exact audited SHA, separate local proof
 from deployed proof, and report blocked external checks instead of guessing.
@@ -29,7 +28,3 @@ Minimum audit shape:
 4. Normalize findings with severity, evidence, impact, root cause, fix, and
    verification needed.
 5. Close with what was checked, not checked, blocked, and owner-deferred.
-
-For a derived site, also confirm that inherited docs, rules, and project skills
-describe the current repository rather than the source template. External
-provider, domain, inbox, and Owner proof never transfers from the source site.

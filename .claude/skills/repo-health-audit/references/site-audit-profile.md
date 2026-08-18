@@ -26,8 +26,6 @@ legacy starter profiles that do not describe this repository.
   - `.claude/rules/i18n.md`
 - Launch/release proof:
   - `docs/派生项目交接.md`
-  - `docs/正式上线标准.md`
-  - `docs/开发与维护.md`
   - `docs/架构与行为.md`
 - Canonical offering and route truth:
   - `src/config/pages.config.ts`
@@ -48,10 +46,3 @@ legacy starter profiles that do not describe this repository.
 - `pnpm website:build:cf` is Cloudflare/OpenNext build proof.
 - `pnpm release:verify` is local release proof, not public launch proof.
 - deployed smoke and real lead canary are separate proof levels.
-
-## Derived-site readiness
-
-When this repository has been copied or forked, verify that business config,
-content, docs, `AGENTS.md` / `CLAUDE.md`, `.claude/rules/**`, and project-local
-skills match the derived runtime. Treat credentials, provider resources, DNS,
-GitHub rulesets, deployment records, and Owner approval as new external state.

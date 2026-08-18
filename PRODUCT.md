@@ -109,13 +109,10 @@ buyer's decision.
 当前站点入口：
 
 - `README.md`
-- `docs/README.md`
 - `docs/项目.md`
 - `docs/技术栈.md`
 - `docs/架构与行为.md`
-- `docs/开发与维护.md`
-- `docs/正式上线标准.md`
-- `docs/技术问题与决策.md`
+- `docs/派生项目交接.md`
 
 设计与组件治理：
 
@@ -123,4 +120,4 @@ buyer's decision.
 - `docs/design/设计真相.md`
 - `docs/design/组件治理.md`
 
-继承 starter/profile 边界已退出当前文档入口；当前维护从 `docs/README.md`、`docs/项目.md`、`docs/开发与维护.md` 和 `docs/正式上线标准.md` 进入。
+派生、验证和上线统一从 `docs/派生项目交接.md` 进入。
