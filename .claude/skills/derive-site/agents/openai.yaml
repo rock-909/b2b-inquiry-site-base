@@ -1,0 +1,4 @@
+interface:
+  display_name: "Derive Site"
+  short_description: "Prepare or verify a site derived from this B2B inquiry template"
+  default_prompt: "Use $derive-site to prepare or verify this derived B2B inquiry site. Follow docs/派生项目交接.md, update inherited docs/rules/skills to the real project, and keep local, deployment, provider, and Owner proof separate."
