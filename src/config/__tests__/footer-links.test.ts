@@ -1,12 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { FOOTER_COLUMNS } from "@/config/footer-links";
-import { getSingleSiteFooterColumns } from "@/config/single-site";
+import { SINGLE_SITE_FOOTER_COLUMNS } from "@/config/single-site";
 
 describe("footer links", () => {
   it("contains only core navigation and support links", () => {
-    expect(FOOTER_COLUMNS).toEqual(getSingleSiteFooterColumns());
     expect(
-      FOOTER_COLUMNS.map((column) => ({
+      SINGLE_SITE_FOOTER_COLUMNS.map((column) => ({
         key: column.key,
         links: column.links.map((link) => [link.key, link.href]),
       })),

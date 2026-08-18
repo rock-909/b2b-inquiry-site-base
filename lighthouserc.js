@@ -25,9 +25,9 @@
  * 更新时间：2026-05-24 (Wave 3 budget governance)
  */
 
-// 关键 URL 优先策略：CI_DAILY=true 时运行全部 URL，否则仅运行首页。
+// 关键 URL 优先策略：全量覆盖任务运行全部 URL，否则仅运行首页。
 // Lighthouse 是手动性能证明，不接入默认 CI 或 git hook。
-const isDaily = process.env.CI_DAILY === "true";
+const isFullCoverage = process.env.CI_FULL_COVERAGE === "true";
 
 // 本站 localePrefix 为 'never'（src/config/paths/locales-config.ts），正式 URL
 // 不带 locale 段：`/en/x` 会 302 到 `/x`。直接请求无前缀地址，才不会把每一页都
@@ -119,7 +119,7 @@ const indexablePageAssertions = {
 module.exports = {
   ci: {
     collect: {
-      url: isDaily ? allUrls : criticalUrls,
+      url: isFullCoverage ? allUrls : criticalUrls,
       // APP_ENV=production is required, not cosmetic: without it every SEO
       // assertion fails on measurement setup rather than on real page quality.
       // It has to be set on BOTH the build and the server, and the build is the

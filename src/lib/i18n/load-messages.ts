@@ -1,19 +1,20 @@
 /**
  * Translation Message Loader
  *
- * Runtime canonical source is physical message packs under
- * `messages/base/**` and `messages/profiles/**`.
+ * Runtime canonical source is the locale file under `messages/base/**`.
  */
 
 import { type Locale } from "@/i18n/routing-config";
 import { coerceLocale } from "@/i18n/locale-utils";
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import enMessages from "@messages/base/en/messages.json";
 import {
   getSiteMessageValues,
   type SiteMessageValues,
 } from "@/lib/i18n/site-message-values";
 
 type Messages = Record<string, unknown>;
+
+const SOURCE_MESSAGES: Record<Locale, Messages> = { en: enMessages };
 
 function interpolateSiteMessageString(
   value: string,
@@ -57,10 +58,14 @@ function interpolateSiteMessageValues(
 
 async function loadMessageSource(locale: Locale): Promise<Messages> {
   const safeLocale = coerceLocale(locale);
-  const loadedMessages = getComposedMessages(safeLocale);
+  const loadedMessages = getSourceMessages(safeLocale);
   const siteValues = await getSiteMessageValues();
 
   return interpolateSiteMessageValues(loadedMessages, siteValues) as Messages;
+}
+
+export function getSourceMessages(locale: Locale): Messages {
+  return SOURCE_MESSAGES[coerceLocale(locale)];
 }
 
 export function loadCompleteMessages(locale: string): Promise<Messages> {

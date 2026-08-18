@@ -1,15 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
+import type { SiteNavigationItem } from "@/config/site-types";
 import { TEST_COUNT_CONSTANTS } from "@/test/constants/test-constants";
-import {
-  isActivePath,
-  mainNavigation,
-  mobileNavigation,
-  type NavigationItem,
-} from "../navigation";
-import {
-  getSingleSiteNavigation,
-  SINGLE_SITE_NAVIGATION,
-} from "@/config/single-site-navigation";
+import { isActivePath } from "../navigation";
 
 // Use vi.hoisted to ensure proper mock setup
 const { mockLocalesConfig } = vi.hoisted(() => ({
@@ -28,7 +21,7 @@ vi.mock("@/config/paths/locales-config", () => ({
 describe("navigation", () => {
   describe("NavigationItem interface", () => {
     it("should have valid NavigationItem structure", () => {
-      const item: NavigationItem = {
+      const item: SiteNavigationItem = {
         key: "test",
         href: "/test",
         messageKey: "home",
@@ -46,23 +39,9 @@ describe("navigation", () => {
     });
   });
 
-  describe("mainNavigation", () => {
-    it("should forward the canonical single-site navigation source", () => {
-      expect(mainNavigation).toBe(SINGLE_SITE_NAVIGATION);
-    });
-
-    it("should use the neutral site navigation as the singleton source", () => {
-      expect(SINGLE_SITE_NAVIGATION).toEqual(getSingleSiteNavigation());
-      expect(mainNavigation).toEqual([
-        { key: "home", href: "/", messageKey: "home" },
-        { key: "products", href: "/products", messageKey: "products" },
-        { key: "about", href: "/about", messageKey: "about" },
-        { key: "contact", href: "/contact", messageKey: "contactSales" },
-      ]);
-    });
-
-    it("can derive the default materialized navigation explicitly", () => {
-      expect(getSingleSiteNavigation()).toEqual([
+  describe("main navigation", () => {
+    it("uses the configured public navigation", () => {
+      expect(SINGLE_SITE_NAVIGATION).toEqual([
         { key: "home", href: "/", messageKey: "home" },
         { key: "products", href: "/products", messageKey: "products" },
         { key: "about", href: "/about", messageKey: "about" },
@@ -71,7 +50,7 @@ describe("navigation", () => {
     });
 
     it("should keep optional demo pages and support pages out of the default main navigation", () => {
-      const actualKeys = mainNavigation.map((item) => item.key);
+      const actualKeys = SINGLE_SITE_NAVIGATION.map((item) => item.key);
       expect(actualKeys).not.toContain("capabilities");
       expect(actualKeys).not.toContain("howItWorks");
       expect(actualKeys).not.toContain("customProject");
@@ -79,7 +58,7 @@ describe("navigation", () => {
     });
 
     it("should have valid structure for all items", () => {
-      mainNavigation.forEach((item) => {
+      SINGLE_SITE_NAVIGATION.forEach((item) => {
         expect(item.key).toBeTruthy();
         expect(item.href).toBeTruthy();
         expect(item.messageKey).toBeTruthy();
@@ -88,27 +67,23 @@ describe("navigation", () => {
     });
 
     it("should have home item pointing to root", () => {
-      const homeItem = mainNavigation.find((item) => item.key === "home");
+      const homeItem = SINGLE_SITE_NAVIGATION.find(
+        (item) => item.key === "home",
+      );
       expect(homeItem).toBeDefined();
       expect(homeItem!.href).toBe("/");
     });
 
     it("should have unique keys", () => {
-      const keys = mainNavigation.map((item) => item.key);
+      const keys = SINGLE_SITE_NAVIGATION.map((item) => item.key);
       const uniqueKeys = new Set(keys);
       expect(keys.length).toBe(uniqueKeys.size);
     });
 
     it("should have unique hrefs", () => {
-      const hrefs = mainNavigation.map((item) => item.href);
+      const hrefs = SINGLE_SITE_NAVIGATION.map((item) => item.href);
       const uniqueHrefs = new Set(hrefs);
       expect(hrefs.length).toBe(uniqueHrefs.size);
-    });
-  });
-
-  describe("mobileNavigation", () => {
-    it("should be the same as mainNavigation", () => {
-      expect(mobileNavigation).toBe(mainNavigation);
     });
   });
 
@@ -169,7 +144,9 @@ describe("navigation", () => {
 
   describe("integration tests", () => {
     it("should work with real navigation items", () => {
-      const aboutItem = mainNavigation.find((item) => item.key === "about");
+      const aboutItem = SINGLE_SITE_NAVIGATION.find(
+        (item) => item.key === "about",
+      );
       expect(aboutItem).toBeDefined();
 
       const isActive = isActivePath("/about", aboutItem!.href);
@@ -177,9 +154,11 @@ describe("navigation", () => {
     });
 
     it("should handle all navigation items correctly", () => {
-      expect(mainNavigation.length).toBeGreaterThan(TEST_COUNT_CONSTANTS.SMALL);
+      expect(SINGLE_SITE_NAVIGATION.length).toBeGreaterThan(
+        TEST_COUNT_CONSTANTS.SMALL,
+      );
 
-      mainNavigation.forEach((item) => {
+      SINGLE_SITE_NAVIGATION.forEach((item) => {
         // Test active path detection for each navigation target.
         const isActive = isActivePath(item.href, item.href);
         expect(isActive).toBe(true);

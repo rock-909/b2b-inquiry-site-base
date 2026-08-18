@@ -1,7 +1,7 @@
 /**
  * Content Management System Types
  *
- * This file defines TypeScript interfaces for the MDX content management system,
+ * This file defines TypeScript interfaces for static page content,
  * ensuring type safety across the application.
  */
 

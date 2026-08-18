@@ -14,10 +14,9 @@ import {
 } from "@/constants/validation-limits";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
-import { saveConsent } from "@/lib/cookie-consent/storage";
 import { resolveInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
-import { lazyTurnstileLabelsSpy } from "@/test/inquiry-turnstile-mock";
+import { turnstileLabelsSpy } from "@/test/inquiry-turnstile-mock";
 import {
   GENERAL_CONTEXT,
   getFormControls,
@@ -25,7 +24,7 @@ import {
 } from "@/test/inquiry-form-harness";
 
 vi.mock(
-  "@/components/forms/lazy-turnstile",
+  "@/components/security/turnstile",
   async () => await import("@/test/inquiry-turnstile-mock"),
 );
 
@@ -88,7 +87,7 @@ function getFetchBody(): Record<string, unknown> {
 describe("InquiryForm contract", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    lazyTurnstileLabelsSpy.mockClear();
+    turnstileLabelsSpy.mockClear();
     window.localStorage.clear();
     window.sessionStorage.clear();
     delete (window as unknown as Record<string, unknown>).gtag;
@@ -112,10 +111,10 @@ describe("InquiryForm contract", () => {
     },
   );
 
-  it("passes inquiry turnstile copy to LazyTurnstile", () => {
+  it("passes inquiry copy to TurnstileWidget", () => {
     const { copy } = renderInquiryForm("contact");
 
-    expect(lazyTurnstileLabelsSpy).toHaveBeenCalledWith(copy.turnstile);
+    expect(turnstileLabelsSpy).toHaveBeenCalledWith(copy.turnstile);
   });
 
   it("serializes a filled website honeypot into the inquiry payload", async () => {
@@ -702,12 +701,10 @@ describe("InquiryForm validated context", () => {
   });
 
   it("keeps attribution, honeypot, and Turnstile fields in offering submissions", async () => {
-    saveConsent({ necessary: true, analytics: false, marketing: true });
     window.sessionStorage.setItem(
-      "marketing_attribution",
+      "inquiry_attribution",
       JSON.stringify({
         utmSource: "google",
-        gclid: "gclid-rfq-123",
         landingPage: "/en/request-quote",
       }),
     );
@@ -738,36 +735,8 @@ describe("InquiryForm validated context", () => {
       website: "https://spam.example",
       turnstileToken: "mock-inquiry-turnstile-token",
       utmSource: "google",
-      gclid: "gclid-rfq-123",
       landingPage: "/en/request-quote",
     });
-  });
-
-  it("omits attribution from submissions when marketing consent is rejected", async () => {
-    saveConsent({ necessary: true, analytics: false, marketing: false });
-    window.sessionStorage.setItem(
-      "marketing_attribution",
-      JSON.stringify({
-        utmSource: "google",
-        gclid: "rejected-click",
-        landingPage: "/en/contact",
-      }),
-    );
-    const { container } = renderInquiryForm("contact");
-    const { fullName, email, form } = getFormControls(container);
-
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "Ada Buyer" } });
-    fireEvent.change(email, { target: { value: "ada@example.com" } });
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
-    expect(getFetchBody()).not.toHaveProperty("utmSource");
-    expect(getFetchBody()).not.toHaveProperty("gclid");
-    expect(getFetchBody()).not.toHaveProperty("landingPage");
   });
 
   it("ignores request-quote context when contact uses general-context", () => {

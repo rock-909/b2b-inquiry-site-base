@@ -95,7 +95,7 @@ describe("email copy boundary", () => {
     }
   });
 
-  it("keeps transactional email message-pack keys present in the en-only runtime pack", () => {
+  it("keeps transactional email keys present in the canonical locale file", () => {
     const english = readJsonFile("messages/base/en/messages.json") as {
       emailTemplates?: unknown;
     };

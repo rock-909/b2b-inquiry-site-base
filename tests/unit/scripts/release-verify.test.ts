@@ -7,10 +7,6 @@ import {
   runReleaseVerify,
   validateArtifactBudget,
 } from "../../../scripts/quality/checks/release-verify.js";
-import {
-  formatReleaseProofCommand,
-  getReleaseVerifyCommands,
-} from "../../../scripts/quality/release-proof-manifest.js";
 import { captureExpectedConsoleErrors } from "@/test/console";
 
 const openServers: net.Server[] = [];
@@ -47,10 +43,6 @@ afterEach(async () => {
 });
 
 describe("release verify runner", () => {
-  it("takes its command list directly from the release manifest", () => {
-    expect(RELEASE_VERIFY_COMMANDS).toEqual(getReleaseVerifyCommands());
-  });
-
   it("detects an occupied local port", async () => {
     const { port } = await listenOnLoopback();
 
@@ -76,7 +68,7 @@ describe("release verify runner", () => {
     const status = await runReleaseVerify({
       rootDir: "/repo",
       runCommand: (step) => {
-        executedCommands.push(formatReleaseProofCommand(step));
+        executedCommands.push(step.id);
         return 0;
       },
       portInUse: async (port) => {
@@ -93,9 +85,7 @@ describe("release verify runner", () => {
     expect(playwrightCommand).toBeDefined();
     expect(playwrightCommand?.requiresFreePort).toBe(3000);
     expect(checkedPorts).toEqual([playwrightCommand?.requiresFreePort]);
-    expect(executedCommands).not.toContain(
-      playwrightCommand ? formatReleaseProofCommand(playwrightCommand) : "",
-    );
+    expect(executedCommands).not.toContain(playwrightCommand?.id);
     expect(errorSpy).toHaveBeenCalledWith(
       "release-proof cannot start local-playwright-smoke because localhost:3000 is already in use.",
     );

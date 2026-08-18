@@ -16,7 +16,7 @@ describe("base identity", () => {
     expect(packageJson.name).toBe("b2b-inquiry-site-base");
   });
 
-  it("keeps site identity out of env defaults and MDX copy", () => {
+  it("keeps site identity out of env defaults and static page copy", () => {
     const envSources = [
       readFileSync(path.join(process.cwd(), "src/lib/env.ts"), "utf8"),
       readFileSync(
@@ -28,7 +28,7 @@ describe("base identity", () => {
       readFileSync(path.join(process.cwd(), ".dev.vars.example"), "utf8"),
     ];
     const contactSource = readFileSync(
-      path.join(process.cwd(), "content/pages/en/contact.mdx"),
+      path.join(process.cwd(), "src/content/pages/en/contact.ts"),
       "utf8",
     );
 

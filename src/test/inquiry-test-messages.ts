@@ -1,4 +1,4 @@
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import {
   createInquiryFormCopy,
   type InquiryFormCopy,
@@ -6,7 +6,7 @@ import {
 
 type JsonObject = Record<string, unknown>;
 
-const enMessages = getComposedMessages("en");
+const enMessages = getSourceMessages("en");
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -43,8 +43,4 @@ export function getInquiryFormMessage(keyPath: string): string {
 
 export function createTestInquiryFormCopy(): InquiryFormCopy {
   return createInquiryFormCopy(getInquiryFormMessage, "sales@example.invalid");
-}
-
-export function createTestTurnstileLabels(): InquiryFormCopy["turnstile"] {
-  return createTestInquiryFormCopy().turnstile;
 }

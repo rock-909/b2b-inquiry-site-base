@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import {
   INQUIRY_TURNSTILE_ACTION,
@@ -18,12 +18,7 @@ import {
  * 使用全局 logger（开发环境输出，生产环境静默）
  */
 
-/**
- * 控件报告给上层的降级状态。救援提示（那条「改发邮件」）由 `LazyTurnstile`
- * 统一渲染——它是唯一能覆盖「懒加载 chunk 一直挂起、控件根本没挂载」的那一层。
- * 这里只报状态，不选文案。
- */
-export type TurnstileDegradedKind = "unavailable" | "failed";
+type TurnstileDegradedKind = "unavailable" | "failed";
 
 /**
  * 开发环境 bypass 模式的占位令牌：只为让提交按钮解锁，服务端不认这个值。
@@ -36,16 +31,20 @@ export type TurnstileDegradedKind = "unavailable" | "failed";
 const TURNSTILE_BYPASS_TOKEN = "TURNSTILE_BYPASS_TOKEN";
 
 interface TurnstileLabels {
+  unavailable: string;
+  loadFailed: string;
   devBypass: string;
   testMode: string;
+  rescueBeforeEmail: string;
+  rescueAfterEmail: string;
+  rescueEmail: string;
+  rescueSubject: string;
 }
 
 interface TurnstileProps {
   onSuccess?: (_token: string) => void;
   onError?: (_error: string) => void;
   onExpire?: () => void;
-  /** 控件进入降级状态时通知上层，由上层决定展示哪句文案与救援出路。 */
-  onDegraded?: (_kind: TurnstileDegradedKind) => void;
   /**
    * Receives a widget `reset()` binder. May return an unregister/cleanup
    * function invoked when the widget unmounts or the binder changes.
@@ -90,11 +89,36 @@ function TurnstileMockStatus({ className, label }: TurnstileStatusProps) {
   );
 }
 
+function TurnstileRescueStatus({
+  kind,
+  labels,
+}: {
+  kind: TurnstileDegradedKind;
+  labels: TurnstileLabels;
+}) {
+  return (
+    <output className="turnstile-rescue" aria-live="polite">
+      <div className="text-sm text-[var(--error-foreground)]">
+        {kind === "unavailable" ? labels.unavailable : labels.loadFailed}
+      </div>
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+        {labels.rescueBeforeEmail}{" "}
+        <a
+          className="font-medium text-[var(--primary-text)] underline underline-offset-4 hover:no-underline"
+          href={`mailto:${labels.rescueEmail}?subject=${encodeURIComponent(labels.rescueSubject)}`}
+        >
+          {labels.rescueEmail}
+        </a>
+        . {labels.rescueAfterEmail}
+      </p>
+    </output>
+  );
+}
+
 export function TurnstileWidget({
   onSuccess,
   onError,
   onExpire,
-  onDegraded,
   onReadyRef,
   className,
   theme = "auto",
@@ -113,8 +137,11 @@ export function TurnstileWidget({
       appEnv !== "production" &&
       (!isPublicRuntimeProduction() || appEnv === "preview") &&
       getPublicRuntimeEnvBoolean("NEXT_PUBLIC_TEST_MODE") === true;
+  const isUnavailable = !siteKey && !isBypassMode && !isTestMode;
   const autoResolveTriggeredRef = useRef(false);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const [degradedKind, setDegradedKind] =
+    useState<TurnstileDegradedKind | null>(null);
 
   /**
    * reset 意味着上一个令牌已作废，控件要重新出题。
@@ -161,15 +188,13 @@ export function TurnstileWidget({
   }, [isBypassMode, isTestMode, onSuccess]);
 
   useEffect(() => {
-    if (!siteKey && !isBypassMode && !isTestMode) {
+    if (isUnavailable) {
       logger.warn(
         "Turnstile site key not configured. Bot protection is disabled.",
       );
-      // 缺 site key 是外部配置状态，不是用户动作，只能在 effect 里同步给上层。
-      onDegraded?.("unavailable");
       onError?.("Turnstile site key not configured");
     }
-  }, [siteKey, isBypassMode, isTestMode, onDegraded, onError]);
+  }, [isUnavailable, onError]);
 
   if (isBypassMode) {
     return (
@@ -183,17 +208,20 @@ export function TurnstileWidget({
     );
   }
 
-  // 缺 site key 时这里不渲染任何提示：状态已经通过 onDegraded 报给上层，
-  // 由上层统一出「一句状态 + 一条邮件出路」，避免出现第二处救援提示。
   if (!siteKey) {
-    return null;
+    return isUnavailable ? (
+      <TurnstileRescueStatus kind="unavailable" labels={labels} />
+    ) : null;
   }
 
   const widgetHandlers = {
-    onSuccess: (token: string) => onSuccess?.(token),
+    onSuccess: (token: string) => {
+      setDegradedKind(null);
+      onSuccess?.(token);
+    },
     onError: (error: string) => {
       logger.error("Turnstile error:", error);
-      onDegraded?.("failed");
+      setDegradedKind("failed");
       onError?.(error);
     },
     onExpire: () => {
@@ -203,20 +231,25 @@ export function TurnstileWidget({
   };
 
   return (
-    <div className={`turnstile-container ${className || ""}`}>
-      <Turnstile
-        ref={turnstileRef}
-        siteKey={siteKey}
-        {...widgetHandlers}
-        options={{
-          theme,
-          size,
-          tabIndex,
-          action: INQUIRY_TURNSTILE_ACTION,
-          cData,
-        }}
-        id={id}
-      />
-    </div>
+    <>
+      <div className={`turnstile-container ${className || ""}`}>
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={siteKey}
+          {...widgetHandlers}
+          options={{
+            theme,
+            size,
+            tabIndex,
+            action: INQUIRY_TURNSTILE_ACTION,
+            cData,
+          }}
+          id={id}
+        />
+      </div>
+      {degradedKind ? (
+        <TurnstileRescueStatus kind={degradedKind} labels={labels} />
+      ) : null}
+    </>
   );
 }

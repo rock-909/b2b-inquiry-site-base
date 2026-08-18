@@ -18,12 +18,13 @@
     "knip:check": "knip",
     "react:doctor": "npx --loglevel=error -y react-doctor@0.9.11 --verbose --scope changed --blocking warning",
     "react:doctor:report": "npx --loglevel=error -y react-doctor@0.9.11 --json --no-score --blocking none",
+    "canary:airtable": "node scripts/quality/checks/airtable-canary.js",
     "release:verify": "node scripts/quality/checks/release-verify.js",
     "website:check": "pnpm type-check && pnpm type-check:tests && pnpm lint:check && pnpm test && pnpm build",
     "website:build:cf": "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
     "website:build:cf:debug": "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
     "website:lighthouse": "node scripts/lighthouse-preflight.js && NEXT_DIST_DIR=.next-lighthouse APP_ENV=production pnpm build && lhci autorun --config=./lighthouserc.js",
-    "content:check": "node scripts/quality/checks/content-manifest.js --check && node scripts/quality/checks/content-slugs.js --strict-frontmatter && node scripts/quality/checks/translations.js"
+    "content:check": "node scripts/quality/checks/translations.js"
   },
   "dependencies": {
     "@base-ui/react": "1.7.0",
@@ -31,7 +32,6 @@
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tailwindcss/typography": "^0.5.20",
     "clsx": "^2.1.1",
-    "gray-matter": "^4.0.3",
     "lucide-react": "^1.28.0",
     "next": "16.3.0",
     "next-intl": "^4.13.4",

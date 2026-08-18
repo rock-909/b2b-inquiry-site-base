@@ -32,6 +32,15 @@ interface CiWorkflow {
   readonly jobs?: Record<string, CiJob | undefined>;
 }
 
+interface LefthookConfig {
+  readonly "pre-commit"?: {
+    readonly commands?: Record<string, { readonly run?: string }>;
+  };
+  readonly "pre-push"?: {
+    readonly commands?: Record<string, { readonly run?: string }>;
+  };
+}
+
 interface SemgrepConfig {
   readonly rules?: readonly SemgrepRule[];
 }
@@ -51,6 +60,10 @@ function readSemgrepConfig(): SemgrepConfig {
 
 function readCiWorkflowConfig(): CiWorkflow {
   return load(readCiWorkflow()) as CiWorkflow;
+}
+
+function readLefthookConfig(): LefthookConfig {
+  return load(readRepoFile(LEFTHOOK_CONFIG_PATH)) as LefthookConfig;
 }
 
 /** Every `run:` command a parsed workflow/hook config would actually execute. */
@@ -154,6 +167,26 @@ describe("CI workflow contract", () => {
     expect(
       automated.filter((command) => /lighthouse|lhci/iu.test(command)),
     ).toEqual([]);
+  });
+
+  it("keeps local Git hooks narrow and leaves broad scans to CI or release", () => {
+    const config = readLefthookConfig();
+    const preCommit = config["pre-commit"]?.commands ?? {};
+    const prePush = config["pre-push"]?.commands ?? {};
+    const hookCommands = collectRunCommands(config).join("\n");
+
+    expect(Object.keys(preCommit)).toEqual(["format-check", "i18n-sync"]);
+    expect(Object.keys(prePush)).toEqual([
+      "type-check",
+      "tests",
+      "build-check",
+    ]);
+    expect(prePush["type-check"]?.run).toContain("pnpm type-check:tests");
+    expect(prePush.tests?.run).toBe("pnpm test");
+    expect(prePush["build-check"]?.run).toContain("pnpm build");
+    expect(hookCommands).not.toMatch(
+      /RUN_FAST_PUSH|dependency-cruiser|pnpm audit|knip:check|semgrep|website:build:cf|playwright/iu,
+    );
   });
 
   it("declares the Tailwind Prettier plugin explicitly", () => {

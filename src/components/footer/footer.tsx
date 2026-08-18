@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { FOOTER_COLUMNS } from "@/config/footer-links";
-import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
+import {
+  SINGLE_SITE_CONFIG,
+  SINGLE_SITE_FACTS,
+  SINGLE_SITE_FOOTER_COLUMNS,
+} from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 
 /**
@@ -11,7 +14,7 @@ import { Link } from "@/i18n/routing";
  * wordmark's "=" mark. Design rule: docs/design/设计真相.md.
  */
 
-type FooterColumnConfig = (typeof FOOTER_COLUMNS)[number];
+type FooterColumnConfig = (typeof SINGLE_SITE_FOOTER_COLUMNS)[number];
 type FooterConfigMessageKey =
   | FooterColumnConfig["translationKey"]
   | FooterColumnConfig["links"][number]["translationKey"];
@@ -131,7 +134,7 @@ export function Footer({ themeToggleSlot, className, dataTheme }: FooterProps) {
             aria-label={footerNavigationLabel}
             className="grid grid-cols-2 gap-x-8 gap-y-10"
           >
-            {FOOTER_COLUMNS.map((section) => (
+            {SINGLE_SITE_FOOTER_COLUMNS.map((section) => (
               <FooterSection key={section.key} section={section} t={t} />
             ))}
           </nav>

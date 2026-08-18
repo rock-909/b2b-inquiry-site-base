@@ -63,9 +63,6 @@ jobs:
       - name: preview config smoke
         run: APP_ENV=preview node scripts/quality/checks/production-config.js
 
-      - name: Client boundary 检查
-        run: node scripts/quality/checks/client-boundary.js
-
       - name: Dependency cruiser architecture check
         run: pnpm exec dependency-cruiser src --config .dependency-cruiser.js -T err
 
@@ -145,7 +142,7 @@ jobs:
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
           TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"
 
-      # 不点名文件：点名过的三份清单（这里、daily-e2e、playwright.config）各不相同，
+      # 不点名文件：点名过的多份清单各不相同，
       # 结果有 3 个用例文件哪个 workflow 都没跑到。改成让 testDir 说了算。
       - name: 运行 E2E
         run: pnpm exec playwright test

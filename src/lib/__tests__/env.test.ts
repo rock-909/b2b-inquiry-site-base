@@ -48,10 +48,6 @@ describe("env type safety", () => {
     expect("RESEND_API_KEY" in env).toBe(true);
   });
 
-  it("exposes the production rate-limit contract vars through the central env object", () => {
-    expect("ALLOW_MEMORY_RATE_LIMIT" in env).toBe(true);
-  });
-
   it("exposes Cloudflare deployment account vars through the central env object", () => {
     expect("CLOUDFLARE_ACCOUNT_ID" in env).toBe(true);
   });

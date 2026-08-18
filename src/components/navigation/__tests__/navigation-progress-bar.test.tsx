@@ -14,14 +14,7 @@ function createAnchor(href: string): HTMLAnchorElement {
 }
 
 function setTestLocation(pathname: string, search = "") {
-  Object.defineProperties(window.location, {
-    href: {
-      configurable: true,
-      value: `http://localhost${pathname}${search}`,
-    },
-    pathname: { configurable: true, value: pathname },
-    search: { configurable: true, value: search },
-  });
+  window.history.replaceState({}, "", `${pathname}${search}`);
 }
 
 const plainLeftClick = {

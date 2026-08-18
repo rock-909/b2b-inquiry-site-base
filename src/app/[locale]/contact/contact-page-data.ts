@@ -5,11 +5,11 @@ import {
   extractFaqFromMetadata,
   generateFaqSchemaFromItems,
   interpolateFaqAnswer,
-} from "@/lib/content/mdx-faq";
+} from "@/lib/content/faq";
 import { getContactCopyFromMessages } from "@/lib/contact/getContactCopy";
-import { CONTENT_MANIFEST } from "@/lib/content-manifest.generated";
 import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
+import { getStaticPage } from "@/lib/content/static-pages";
 import type {
   FaqItem,
   Locale,
@@ -51,27 +51,15 @@ function assertContactPageMetadata(
 }
 
 export function getStaticContactPage(locale: Locale): Page {
-  const entry = CONTENT_MANIFEST.byKey[`pages/${locale}/contact`];
-
-  if (entry === undefined) {
-    throw new Error(`Static contact page not found for locale: ${locale}`);
-  }
-
-  assertContactPageMetadata(entry.metadata, locale);
-
-  const page: Page = {
-    slug: entry.slug,
-    filePath: entry.filePath,
-    metadata: entry.metadata,
-    content: entry.content,
-  };
+  const page = getStaticPage("contact", locale);
+  assertContactPageMetadata(page.metadata, locale);
 
   return page;
 }
 
 export function getContactPageData(locale: Locale): ContactPageData {
   const page = getStaticContactPage(locale);
-  const messages = getComposedMessages(locale);
+  const messages = getSourceMessages(locale);
   const copy = getContactCopyFromMessages(messages);
   const faqItems: FaqItem[] = extractFaqFromMetadata(page.metadata).map(
     (item) => ({

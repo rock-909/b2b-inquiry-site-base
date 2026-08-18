@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getOfferingById } from "@/config/offerings";
-import { airtableService } from "@/lib/airtable/instance";
+import { AirtableService } from "@/lib/airtable/service";
 import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 import {
   INQUIRY_LEAD_TYPE,
@@ -15,18 +15,19 @@ import {
 } from "@/lib/lead-pipeline/utils";
 import { logger, sanitizeEmail } from "@/lib/logger";
 import { pickAttributionFields } from "@/lib/marketing/attribution-fields";
-import { resendService } from "@/lib/resend-instance";
+import { ResendService } from "@/lib/resend-core";
 
 export interface LeadResult {
   success: boolean;
   emailSent: boolean;
-  ownerNotified: boolean;
   recordCreated: boolean;
   referenceId?: string | undefined;
   error?: "PROCESSING_FAILED";
 }
 
-const LEAD_DELIVERY_POLICY = "email-first-storage-optional" as const;
+const LEAD_DELIVERY_POLICY = "email-primary-airtable-backup" as const;
+const airtableService = new AirtableService();
+const resendService = new ResendService();
 
 // 业主后台的数据，不是网站访客可见文案，不走 i18n 翻译键。
 const OWNER_EMAIL_FAILED_NOTICE =
@@ -41,7 +42,6 @@ function createProcessingFailureResult(referenceId?: string): LeadResult {
   return {
     success: false,
     emailSent: false,
-    ownerNotified: false,
     recordCreated: false,
     ...(referenceId ? { referenceId } : {}),
     error: "PROCESSING_FAILED",
@@ -129,7 +129,7 @@ async function createInquiryLeadRecord(
     });
     return true;
   } catch (error) {
-    logger.error("Inquiry Airtable createLead failed (non-blocking)", {
+    logger.error("Inquiry Airtable backup failed", {
       error: normalizeErrorMessage(error),
       email: sanitizeEmail(lead.email),
       leadDeliveryPolicy: LEAD_DELIVERY_POLICY,
@@ -167,7 +167,6 @@ export async function processValidatedInquiry(
     return {
       success: true,
       emailSent,
-      ownerNotified: emailSent,
       recordCreated,
       referenceId,
     };

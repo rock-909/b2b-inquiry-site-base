@@ -89,7 +89,7 @@ describe("createJsonLdGraphData", () => {
         "@context": "https://schema.org",
         "@graph": [
           { "@type": "BreadcrumbList", itemListElement: [] },
-          { "@type": "ProductGroup", name: "showcase catalog examples" },
+          { "@type": "ProductGroup", name: "reference catalog examples" },
         ],
       },
       {

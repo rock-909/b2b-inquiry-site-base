@@ -1,14 +1,13 @@
-import baseEnMessages from "../../messages/base/en/messages.json";
-import b2bLeadMessages from "../../messages/profiles/b2b-lead/en/messages.json";
+import enMessagesSource from "../../messages/base/en/messages.json";
 import { describe, expect, it } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { createInquiryFormCopyFromMessages } from "@/components/forms/inquiry-form-copy";
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { INQUIRY_VALIDATION_DETAIL_KEYS } from "@/lib/api/inquiry-validation-details";
 
 type JsonObject = Record<string, unknown>;
 
-const enMessages = getComposedMessages("en") as JsonObject & {
+const enMessages = getSourceMessages("en") as JsonObject & {
   apiErrors: Record<string, unknown>;
   requestQuote?: unknown;
   inquiry?: JsonObject;
@@ -100,14 +99,14 @@ describe("real i18n runtime message contract", () => {
     ).toEqual(expect.any(String));
   });
 
-  it("keeps RFQ copy owned by the B2B lead pack", () => {
-    expect(b2bLeadMessages).toHaveProperty("requestQuote");
+  it("keeps RFQ copy in the canonical locale source", () => {
+    expect(enMessagesSource).toHaveProperty("requestQuote");
     expect(enMessages).toHaveProperty("requestQuote");
   });
 
   it("keeps API error messages aligned with live error codes", () => {
     const liveErrorCodes = Object.values(API_ERROR_CODES).sort();
-    const authoringErrorKeys = Object.keys(baseEnMessages.apiErrors).sort();
+    const authoringErrorKeys = Object.keys(enMessagesSource.apiErrors).sort();
 
     expect(authoringErrorKeys).toEqual(liveErrorCodes);
     expect(Object.keys(enMessages.apiErrors).sort()).toEqual(liveErrorCodes);

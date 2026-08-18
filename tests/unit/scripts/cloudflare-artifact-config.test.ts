@@ -5,16 +5,14 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { afterEach, describe, expect, it } from "vitest";
+import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const SCRIPT_PATH = path.join(
   REPO_ROOT,
   "scripts/quality/checks/cloudflare-artifact-config.js",
 );
-const TEST_TRASH_DIR = path.join(
-  os.tmpdir(),
-  "b2b-inquiry-cloudflare-artifact-config-test-trash",
-);
+const FIXTURE_PREFIX = "b2b-inquiry-cloudflare-artifact-config-";
 const requireModule = createRequire(path.join(REPO_ROOT, "package.json"));
 const tempDirs: string[] = [];
 
@@ -28,9 +26,7 @@ function loadChecker(): CloudflareArtifactConfigModule {
 }
 
 function createFixture(): string {
-  const rootDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "b2b-inquiry-cloudflare-artifact-config-"),
-  );
+  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   tempDirs.push(rootDir);
   return rootDir;
 }
@@ -61,16 +57,9 @@ function writeValidArtifacts(rootDir: string): void {
   );
 }
 
-function moveFixtureToTrash(rootDir: string): void {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- creates the test-owned temp trash root
-  fs.mkdirSync(TEST_TRASH_DIR, { recursive: true });
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- cleanup moves a test-owned fixture to recoverable temp trash
-  fs.renameSync(rootDir, path.join(TEST_TRASH_DIR, path.basename(rootDir)));
-}
-
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
-    moveFixtureToTrash(tempDir);
+    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
   }
 });
 

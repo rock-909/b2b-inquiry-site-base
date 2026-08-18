@@ -50,6 +50,15 @@ describe("inquiryLeadSchema", () => {
     expect(result.interest).toBe("OEM branding");
   });
 
+  it("trims and caps buyer interest", () => {
+    const result = inquiryLeadSchema.parse({
+      ...GENERAL_INQUIRY,
+      interest: `  ${"x".repeat(220)}  `,
+    });
+
+    expect(result.interest).toBe("x".repeat(200));
+  });
+
   it("rejects invalid offering identity", () => {
     expect(
       inquiryLeadSchema.safeParse({

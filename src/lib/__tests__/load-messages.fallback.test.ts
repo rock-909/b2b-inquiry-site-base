@@ -9,7 +9,7 @@ describe("load-messages canonical runtime source", () => {
     expect(invalidLocaleMessages).toEqual(defaultLocaleMessages);
   });
 
-  it("returns merged complete messages from physical packs", async () => {
+  it("returns complete messages from the canonical locale file", async () => {
     const messages = await loadCompleteMessages("en");
 
     expect(messages).toHaveProperty("apiErrors");
@@ -25,7 +25,7 @@ describe("load-messages canonical runtime source", () => {
     expect(messages).toHaveProperty("products");
   });
 
-  it("uses the shared composed packs without site-specific overlay drift", async () => {
+  it("uses the canonical source without site-specific overlay drift", async () => {
     vi.resetModules();
 
     const messages = (await loadCompleteMessages("en")) as {

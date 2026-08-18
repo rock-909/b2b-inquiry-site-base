@@ -10,7 +10,6 @@
 
 const SIX_HUNDRED_MS = 600;
 const TWELVE_HUNDRED_MS = 1200;
-const FIFTEEN_HUNDRED_MS = 1500;
 export const FIVE_SECONDS_MS = 5000;
 export const MINUTE_MS = 60000;
 
@@ -22,5 +21,3 @@ export const MINUTE_MS = 60000;
 export const IDLE_CALLBACK_FALLBACK_DELAY = SIX_HUNDRED_MS;
 /** requestIdleCallback超时时间（用于确保回调最终执行） */
 export const IDLE_CALLBACK_TIMEOUT = TWELVE_HUNDRED_MS;
-/** requestIdleCallback超时时间（较长版本，用于非关键任务） */
-export const IDLE_CALLBACK_TIMEOUT_LONG = FIFTEEN_HUNDRED_MS;

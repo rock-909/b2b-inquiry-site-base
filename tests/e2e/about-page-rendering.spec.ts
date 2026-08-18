@@ -9,7 +9,7 @@ const frontmatterTokens = [
   "faq:",
 ] as const;
 
-test("About renders buyer content without exposing MDX frontmatter", async ({
+test("About renders buyer content without exposing page metadata", async ({
   page,
 }) => {
   const response = await page.goto("/about", { waitUntil: "domcontentloaded" });

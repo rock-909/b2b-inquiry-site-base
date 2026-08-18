@@ -1,16 +1,12 @@
 import { spawn } from "node:child_process";
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  renameSync,
-} from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync } from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { OFFERINGS, getOfferingPath } from "@/config/offerings";
 import { captureExpectedConsoleErrors } from "@/test/console";
+import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
   runCloudflarePreviewSmoke,
   runDeployedSmoke,
@@ -19,13 +15,14 @@ import {
 
 const openServers: http.Server[] = [];
 const tempDirs: string[] = [];
-const TEMP_TRASH_ROOT = path.join(
-  os.tmpdir(),
-  "b2b-cloudflare-smoke-test-trash",
-);
+const FIXTURE_PREFIX = "b2b-minimal-cloudflare-smoke-";
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
+const OFFERING_PATH = getOfferingPath(OFFERINGS[0].id);
+const MISSING_OFFERING_PATH = getOfferingPath("__smoke-missing-offering__");
 const CORE_PUBLIC_PAGE_PATHS = [
   "/",
+  "/products",
+  OFFERING_PATH,
   "/about",
   "/contact",
   "/request-quote",
@@ -83,7 +80,7 @@ function createPreviewFetchMock() {
         });
       }
 
-      if (pathname === "/invalid/contact") {
+      if (pathname === MISSING_OFFERING_PATH) {
         return response(404, HEALTHY_HTML, {
           "content-type": "text/html; charset=utf-8",
         });
@@ -132,7 +129,7 @@ function createDeployedFetchMock() {
         return response(200, "healthy deployed page");
       }
 
-      if (["/invalid/contact", "/security-policy.txt"].includes(pathname)) {
+      if ([MISSING_OFFERING_PATH, "/security-policy.txt"].includes(pathname)) {
         return response(404, "not found");
       }
 
@@ -205,7 +202,7 @@ function listenForDeployedSmoke(): Promise<{
         return;
       }
 
-      if (["/invalid/contact", "/security-policy.txt"].includes(pathname)) {
+      if ([MISSING_OFFERING_PATH, "/security-policy.txt"].includes(pathname)) {
         serverResponse.writeHead(404, { "content-type": "text/plain" });
         serverResponse.end("not found");
         return;
@@ -234,15 +231,20 @@ function listenForDeployedSmoke(): Promise<{
 }
 
 function createMinimalCloudflareSmokeFixture(): string {
-  const rootDir = mkdtempSync(
-    path.join(os.tmpdir(), "b2b-minimal-cloudflare-smoke-"),
-  );
+  const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   const focusedChecksDir = path.join(rootDir, "scripts", "quality", "checks");
+  const configDir = path.join(rootDir, "src", "config");
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
   mkdirSync(focusedChecksDir, { recursive: true });
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
+  mkdirSync(configDir, { recursive: true });
   copyFileSync(
     path.resolve("scripts/quality/checks/cloudflare-smoke.js"),
     path.join(focusedChecksDir, "cloudflare-smoke.js"),
+  );
+  copyFileSync(
+    path.resolve("src/config/offerings.ts"),
+    path.join(configDir, "offerings.ts"),
   );
   tempDirs.push(rootDir);
   return rootDir;
@@ -293,15 +295,7 @@ afterEach(async () => {
   );
 
   for (const tempDir of tempDirs.splice(0)) {
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- tracked test-owned temp path
-    if (!existsSync(tempDir)) continue;
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- fixed test Trash root under os.tmpdir()
-    mkdirSync(TEMP_TRASH_ROOT, { recursive: true });
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- moves only tracked test-owned temp paths
-    renameSync(
-      tempDir,
-      path.join(TEMP_TRASH_ROOT, `${path.basename(tempDir)}-${Date.now()}`),
-    );
+    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
   }
 });
 
@@ -316,14 +310,7 @@ describe("external URL smoke", () => {
 
     expect(
       fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
-    ).toEqual([
-      "/",
-      "/about",
-      "/contact",
-      "/request-quote",
-      "/privacy",
-      "/terms",
-    ]);
+    ).toEqual([...CORE_PUBLIC_PAGE_PATHS]);
   });
 
   it("runs external-url-smoke through the direct CLI", async () => {
@@ -337,14 +324,7 @@ describe("external URL smoke", () => {
     ]);
 
     expect(result.status).toBe(0);
-    expect(paths).toEqual([
-      "/",
-      "/about",
-      "/contact",
-      "/request-quote",
-      "/privacy",
-      "/terms",
-    ]);
+    expect(paths).toEqual([...CORE_PUBLIC_PAGE_PATHS]);
     expect(result.stdout).toContain("[external-url-smoke] All checks passed");
   });
 });
@@ -458,6 +438,11 @@ describe("cloudflare preview smoke", () => {
 
   it("runs every preview route for each requested round", async () => {
     const fetchMock = createPreviewFetchMock();
+    const expectedRound = [
+      ...CORE_PUBLIC_PAGE_PATHS,
+      MISSING_OFFERING_PATH,
+      "/api/health",
+    ];
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
@@ -472,24 +457,7 @@ describe("cloudflare preview smoke", () => {
 
     expect(
       fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
-    ).toEqual([
-      "/",
-      "/invalid/contact",
-      "/about",
-      "/contact",
-      "/request-quote",
-      "/privacy",
-      "/terms",
-      "/api/health",
-      "/",
-      "/invalid/contact",
-      "/about",
-      "/contact",
-      "/request-quote",
-      "/privacy",
-      "/terms",
-      "/api/health",
-    ]);
+    ).toEqual([...expectedRound, ...expectedRound]);
   });
 
   it("proves preview pages and optional api-health probes", async () => {
@@ -507,13 +475,8 @@ describe("cloudflare preview smoke", () => {
     expect(
       fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
     ).toEqual([
-      "/",
-      "/invalid/contact",
-      "/about",
-      "/contact",
-      "/request-quote",
-      "/privacy",
-      "/terms",
+      ...CORE_PUBLIC_PAGE_PATHS,
+      MISSING_OFFERING_PATH,
       "/api/health",
     ]);
   });
@@ -579,13 +542,8 @@ describe("deployed smoke", () => {
     expect(
       fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
     ).toEqual([
-      "/",
-      "/invalid/contact",
-      "/about",
-      "/contact",
-      "/request-quote",
-      "/privacy",
-      "/terms",
+      ...CORE_PUBLIC_PAGE_PATHS,
+      MISSING_OFFERING_PATH,
       "/api/health",
       "/.well-known/security.txt",
       "/security-policy.txt",
@@ -660,19 +618,17 @@ describe("deployed smoke", () => {
     // Concurrent probing makes arrival order non-deterministic; assert the set.
     expect([...paths].sort()).toEqual(
       [
-        "/",
-        "/invalid/contact",
-        "/about",
-        "/contact",
-        "/request-quote",
-        "/privacy",
-        "/terms",
+        ...CORE_PUBLIC_PAGE_PATHS,
+        MISSING_OFFERING_PATH,
         "/api/health",
         "/.well-known/security.txt",
         "/security-policy.txt",
       ].sort(),
     );
     expect(result.stdout).toContain("[post-deploy-smoke] All checks passed");
+    expect(result.stdout).toContain(
+      "DNS, TLS, and custom-domain confirmation stay manual",
+    );
   });
 
   it("rejects incomplete proof header configuration", async () => {

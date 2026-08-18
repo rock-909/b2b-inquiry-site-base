@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getComposedMessages } from "@/lib/i18n/composed-messages";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { getFlatMessages, lookupMessage } from "@/test/i18n-messages";
 import { createMockTranslations } from "@/test/utils";
 
@@ -12,7 +12,7 @@ import { createMockTranslations } from "@/test/utils";
 describe("createMockTranslations 的取值语义", () => {
   it("真实 key 返回真实文案", () => {
     const t = createMockTranslations();
-    const real = getComposedMessages("en") as { navigation: { home: string } };
+    const real = getSourceMessages("en") as { navigation: { home: string } };
 
     expect(t("navigation.home")).toBe(real.navigation.home);
     expect(t("navigation.home")).not.toBe("navigation.home");

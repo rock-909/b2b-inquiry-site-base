@@ -84,7 +84,7 @@ describe("Privacy Page", () => {
     });
   });
 
-  it("应该用 MDX frontmatter 生成 metadata", async () => {
+  it("应该用静态页面 metadata 生成 metadata", async () => {
     const metadata = await generateMetadata({
       params: Promise.resolve(createParams("en")),
     });

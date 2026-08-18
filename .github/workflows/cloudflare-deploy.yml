@@ -153,12 +153,6 @@ jobs:
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
           GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION || secrets.GOOGLE_SITE_VERIFICATION }}
 
-      - name: 阻断：production 严格内容就绪（launch 门禁）
-        if: ${{ inputs.environment == 'production' }}
-        run: |
-          set -euo pipefail
-          node scripts/quality/checks/content-readiness.js --strict-client-launch
-
       - name: 外部 URL smoke（preview 输入）
         if: ${{ inputs.environment == 'preview' }}
         run: |
@@ -228,7 +222,7 @@ jobs:
             echo "❌ 未从部署输出中提取到 workers.dev URL"
             exit 1
           fi
-          echo "production-url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
+          echo "worker-url=${DEPLOY_URL}" >> "$GITHUB_OUTPUT"
           echo "✅ 部署成功"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -245,16 +239,16 @@ jobs:
               exit 1
             fi
           else
-            if [ -z "$PRODUCTION_URL" ]; then
-              echo "❌ production 部署没有输出 deployment URL" >&2
+            if [ -z "$WORKER_URL" ]; then
+              echo "❌ production 部署没有输出 workers.dev 诊断 URL" >&2
               exit 1
             fi
-            echo "deployment-url=${PRODUCTION_URL}" >> "$GITHUB_OUTPUT"
+            echo "deployment-url=${WORKER_URL}" >> "$GITHUB_OUTPUT"
           fi
         env:
           DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
           PREVIEW_URL: ${{ inputs.preview_url }}
-          PRODUCTION_URL: ${{ steps.deploy_production.outputs.production-url }}
+          WORKER_URL: ${{ steps.deploy_production.outputs.worker-url }}
 
       - name: 部署总结
         run: |
@@ -272,7 +266,8 @@ jobs:
             echo "- **外部检查 URL**: ${PREVIEW_URL}" >> $GITHUB_STEP_SUMMARY
             echo "- **说明**: preview 分支只检查传入 URL 可访问性，不证明当前 SHA 已部署" >> $GITHUB_STEP_SUMMARY
           elif [ -n "$DEPLOYMENT_URL" ]; then
-            echo "- **部署 URL**: ${DEPLOYMENT_URL}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Worker 诊断 URL**: ${DEPLOYMENT_URL}" >> $GITHUB_STEP_SUMMARY
+            echo "- **说明**: 自动 smoke 只检查本次 workers.dev 部署；正式域名、DNS、TLS 和 custom domain 由上线负责人确认" >> $GITHUB_STEP_SUMMARY
           fi
         env:
           DEPLOY_ENVIRONMENT: ${{ inputs.environment }}

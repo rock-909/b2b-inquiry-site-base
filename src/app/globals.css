@@ -8,7 +8,7 @@
 
 /* Tailwind v4 Plugins (order: animate before typography)
    - tailwindcss-animate: UI animation keyframes (animate-in, fade-in, slide-in-*)
-   - @tailwindcss/typography: prose styles for MDX/rich content */
+   - @tailwindcss/typography: prose styles for rich content */
 @plugin "tailwindcss-animate";
 @plugin "@tailwindcss/typography";
 

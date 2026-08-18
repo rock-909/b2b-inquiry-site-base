@@ -12,7 +12,6 @@ import { loadConsent } from "../storage";
 const CONSENT = {
   necessary: true,
   analytics: true,
-  marketing: false,
 } as const;
 
 describe("cookie consent storage", () => {

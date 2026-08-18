@@ -16,24 +16,31 @@ import { isDeployedCanaryUrl } from "./post-deploy-canary-url";
  * Airtable record. Resend delivery and owner receipt remain separate proofs.
  *
  * Environment variables required:
- * - POST_DEPLOY_TEST=1: explicit opt-in for the real deployed canary
+ * - Run through `pnpm canary:airtable`
  * - STAGING_URL or PLAYWRIGHT_BASE_URL: deployed site URL
  * - AIRTABLE_API_KEY: PAT with read/write access
  * - AIRTABLE_BASE_ID: target base
  * - AIRTABLE_TABLE_NAME: target table (default: "Contacts")
  *
- * Skip policy:
- * - Owner: release proof / launch owner.
- * - Tracking: docs/正式上线标准.md airtable-write-canary lane.
- * - Expiry: none. This is a permanent manual launch gate, not a temporary skip.
  */
 
 const canaryTargetUrl =
   process.env.STAGING_URL || process.env.PLAYWRIGHT_BASE_URL;
+const baseId = process.env.AIRTABLE_BASE_ID;
+const apiKey = process.env.AIRTABLE_API_KEY;
+const tableName = process.env.AIRTABLE_TABLE_NAME || "Contacts";
 
-// Skip this test unless an explicit deployed target is provided.
-const isPostDeploy =
-  process.env.POST_DEPLOY_TEST === "1" && isDeployedCanaryUrl(canaryTargetUrl);
+assert.equal(
+  process.env.POST_DEPLOY_TEST,
+  "1",
+  "Run the real provider proof with pnpm canary:airtable",
+);
+assert(
+  isDeployedCanaryUrl(canaryTargetUrl),
+  "Airtable canary requires a deployed HTTPS STAGING_URL or PLAYWRIGHT_BASE_URL",
+);
+assert(baseId, "Airtable canary requires AIRTABLE_BASE_ID");
+assert(apiKey, "Airtable canary requires AIRTABLE_API_KEY");
 
 interface AirtableInquiryRecordFields {
   "First Name"?: unknown;
@@ -53,6 +60,11 @@ interface AirtableInquiryRecord {
 
 interface AirtableInquiryListResponse {
   records?: AirtableInquiryRecord[];
+}
+
+interface InquirySuccessResponse {
+  success?: unknown;
+  data?: { referenceId?: unknown };
 }
 
 const AIRTABLE_BASE_URL = "https://api.airtable.com/v0";
@@ -79,8 +91,10 @@ async function submitInquiryForm(page: Page, email: string, message: string) {
   await page.fill('textarea[name="message"]', message);
   await page.waitForTimeout(3000);
 
-  const inquiryRequestPromise = page.waitForRequest(
-    (req) => req.url().includes("/api/inquiry") && req.method() === "POST",
+  const inquiryResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/inquiry") &&
+      response.request().method() === "POST",
     { timeout: 20000 },
   );
   const selectors = buildCanarySelectors();
@@ -96,7 +110,7 @@ async function submitInquiryForm(page: Page, email: string, message: string) {
   await submitButton.click();
 
   return {
-    inquiryRequest: await inquiryRequestPromise,
+    inquiryResponse: await inquiryResponsePromise,
     selectors,
   };
 }
@@ -149,11 +163,6 @@ async function fetchAirtableRecord(
 }
 
 test.describe("Post-Deploy: Airtable Write Canary", () => {
-  test.skip(
-    !isPostDeploy,
-    "Only runs in post-deploy mode (set POST_DEPLOY_TEST=1)",
-  );
-
   const CANARY_EMAIL = `smoke-test+${Date.now()}@example.com`;
   const CANARY_MESSAGE = "Automated post-deploy verification — please ignore";
 
@@ -161,25 +170,14 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
     page,
     request,
   }) => {
-    const baseId = process.env.AIRTABLE_BASE_ID;
-    const apiKey = process.env.AIRTABLE_API_KEY;
-    const tableName = process.env.AIRTABLE_TABLE_NAME || "Contacts";
-
-    test.skip(
-      !baseId || !apiKey,
-      "Missing AIRTABLE_BASE_ID or AIRTABLE_API_KEY",
-    );
-    assert(baseId);
-    assert(apiKey);
-
     await waitForEditableInquiryForm(page);
-    const { inquiryRequest, selectors } = await submitInquiryForm(
+    const { inquiryResponse, selectors } = await submitInquiryForm(
       page,
       CANARY_EMAIL,
       CANARY_MESSAGE,
     );
 
-    const inquiryBody = inquiryRequest.postDataJSON() as Record<
+    const inquiryBody = inquiryResponse.request().postDataJSON() as Record<
       string,
       unknown
     >;
@@ -187,28 +185,50 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
     expect(inquiryBody.fullName).toBe("Smoke Test");
     expect(inquiryBody.message).toBe(CANARY_MESSAGE);
 
+    expect(
+      inquiryResponse.ok(),
+      `Inquiry API failed with HTTP ${inquiryResponse.status()}`,
+    ).toBe(true);
+    const inquiryResult =
+      (await inquiryResponse.json()) as InquirySuccessResponse;
+    expect(inquiryResult).toMatchObject({
+      success: true,
+      data: { referenceId: expect.any(String) },
+    });
+    const referenceId = inquiryResult.data?.referenceId;
+
     await expectDeployedSuccess(page, selectors.successPrefix);
 
-    const record = await fetchAirtableRecord(request, {
-      baseId,
-      apiKey,
-      email: CANARY_EMAIL,
-      tableName,
-    });
+    let recordId = "";
+    try {
+      const record = await fetchAirtableRecord(request, {
+        baseId,
+        apiKey,
+        email: CANARY_EMAIL,
+        tableName,
+      });
 
-    expect(record?.fields?.["First Name"]).toBe("Smoke");
-    expect(record?.fields?.["Last Name"]).toBe("Test");
-    expect(record?.fields?.Email).toBe(CANARY_EMAIL);
-    expect(record?.fields?.Requirements).toBe(CANARY_MESSAGE);
-    expect(typeof record?.fields?.["Reference ID"]).toBe("string");
-    expect(record?.fields?.Company ?? "").toBe("");
-
-    const recordId = record?.id;
-    if (recordId) {
-      await request.delete(
-        `${AIRTABLE_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`,
-        { headers: { Authorization: `Bearer ${apiKey}` } },
+      recordId = typeof record?.id === "string" ? record.id : "";
+      expect(recordId, "Airtable canary record did not include an id").not.toBe(
+        "",
       );
+      expect(record?.fields?.["First Name"]).toBe("Smoke");
+      expect(record?.fields?.["Last Name"]).toBe("Test");
+      expect(record?.fields?.Email).toBe(CANARY_EMAIL);
+      expect(record?.fields?.Requirements).toBe(CANARY_MESSAGE);
+      expect(record?.fields?.["Reference ID"]).toBe(referenceId);
+      expect(record?.fields?.Company ?? "").toBe("");
+    } finally {
+      if (recordId) {
+        const cleanupResponse = await request.delete(
+          `${AIRTABLE_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`,
+          { headers: { Authorization: `Bearer ${apiKey}` } },
+        );
+        expect(
+          cleanupResponse.ok(),
+          `Airtable canary cleanup failed with HTTP ${cleanupResponse.status()}`,
+        ).toBe(true);
+      }
     }
   });
 });

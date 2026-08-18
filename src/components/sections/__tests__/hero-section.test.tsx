@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import messages from "../../../../messages/profiles/b2b-lead/en/messages.json";
+import messages from "../../../../messages/base/en/messages.json";
 import { HeroSection } from "@/components/sections/hero-section";
 
 async function renderHero() {

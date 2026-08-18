@@ -9,7 +9,7 @@
       },
       {
         "files": [
-          "src/app/[locale]/static-mdx-page.tsx",
+          "src/app/[locale]/static-content-page.tsx",
           "src/components/content/legal-page-shell.tsx"
         ],
         "rules": ["react-doctor/only-export-components"]
@@ -41,8 +41,7 @@
           "src/i18n/routing.ts",
           "src/lib/env.ts",
           "src/components/ui/button.tsx",
-          "src/lib/structured-data.ts",
-          "src/lib/cookie-consent/index.ts"
+          "src/lib/structured-data.ts"
         ],
         "rules": ["knip/exports"]
       },
@@ -52,7 +51,6 @@
           "src/config/paths.ts",
           "src/config/site-types.ts",
           "src/lib/cookie-consent/types.ts",
-          "src/lib/cookie-consent/index.ts",
           "src/types/content.types.ts"
         ],
         "rules": ["knip/types"]
@@ -94,7 +92,6 @@
         "files": [
           "src/components/seo/__tests__/json-ld-script.test.ts",
           "src/config/__tests__/standards-consistency.test.ts",
-          "tests/unit/content-page-placeholders.test.ts",
           "tests/unit/scripts/proof-lane-contract.test.ts"
         ],
         "rules": ["react-doctor/js-combine-iterations"]
@@ -166,10 +163,7 @@
         "rules": ["react-doctor/rendering-usetransition-loading"]
       },
       {
-        "files": [
-          "src/components/cookie/lazy-cookie-consent-island.tsx",
-          "src/components/layout/header-client.tsx"
-        ],
+        "files": ["src/components/layout/header-client.tsx"],
         "rules": ["react-doctor/rerender-state-only-in-handlers"]
       },
       {
@@ -182,7 +176,6 @@
           "src/lib/__tests__/security-crypto.test.ts",
           "src/lib/security/__tests__/distributed-rate-limit.test.ts",
           "src/lib/security/__tests__/rate-limit-key-strategies.test.ts",
-          "tests/integration/api/lead-family-protection.test.ts",
           "tests/unit/proxy.test.ts"
         ],
         "rules": ["react-doctor/server-sequential-independent-await"]

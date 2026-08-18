@@ -53,9 +53,9 @@ browser form -> route handler -> Zod -> Turnstile -> process lead -> owner email
   parallel: the record and the fact that its
   notification failed have to be born together, or a saved lead sits in the CRM
   looking identical to one the owner was actually told about.
-- Either channel succeeding is still the user-facing success condition
-  (email-best-effort policy: a lead must never be rejected while at least one
-  delivery channel works).
+- Resend is the daily primary channel; Airtable is the structured backup.
+- Either channel succeeding is still the user-facing success condition: a lead
+  must never be rejected while at least one delivery channel works.
 - When Airtable fails but email succeeds, the route returns success and the
   failure is logged as an error for manual CRM backfill.
 - Both channels failing returns failure with a stable error code.
@@ -102,7 +102,7 @@ empty-body, and top-level-array policy stay consistent.
 The shared `InquiryForm` owns a visually hidden, keyboard-inert `website`
 honeypot field. Real browsers leave it empty; a filled value returns the same
 public `200` success envelope as a real submission, including a normal
-product-shaped `PRO-` reference id, and skips Turnstile plus delivery. Honeypot
+inquiry-shaped `INQ-` reference id, and skips Turnstile plus delivery. Honeypot
 hits are identified only by the server-side `Inquiry honeypot triggered` log
 event (with the same reference id). Do not expose honeypot-specific validation
 errors or markers in the public JSON.
@@ -111,9 +111,8 @@ errors or markers in the public JSON.
 
 - Security header behavior lives in `src/config/security.ts` and Next.js
   native `headers()` in `next.config.ts`.
-- Middleware owns retired-locale fast-404 plus next-intl routing delegation. It
-  does not own CSP, generic security headers, locale-cookie setup, or leaked
-  cookie cleanup.
+- The Next.js proxy delegates locale routing to next-intl. It does not own CSP,
+  generic security headers, locale-cookie setup, or leaked cookie cleanup.
 - Do not use `NextResponse.next({ headers })` to push broad response headers
   from middleware/proxy. It can break framework-owned responses such as Server
   Actions and streaming.

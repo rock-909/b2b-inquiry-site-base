@@ -25,9 +25,6 @@ export const leadAttributionFields = {
   utmCampaign: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   utmTerm: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   utmContent: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
-  gclid: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
-  fbclid: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
-  msclkid: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   landingPage: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   capturedAt: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
 } satisfies Record<AttributionFieldName, z.ZodOptional<z.ZodString>>;

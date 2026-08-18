@@ -9,12 +9,19 @@ import {
   createApiErrorResponse,
   createApiSuccessResponse,
 } from "@/lib/api/api-response";
+import {
+  applyCorsHeaders,
+  createCorsPreflightResponse,
+} from "@/lib/api/cors-utils";
 import { mapInquiryValidationDetails } from "@/lib/api/inquiry-validation-details";
-import { createCorsRateLimitedRoute } from "@/lib/api/cors-rate-limited-route";
 import { safeParseJson } from "@/lib/api/safe-parse-json";
 import { isRuntimeProduction } from "@/lib/env";
-import { type RateLimitContext } from "@/lib/api/with-rate-limit";
-import { HTTP_BAD_REQUEST, HTTP_INTERNAL_ERROR } from "@/constants";
+import {
+  HTTP_BAD_REQUEST,
+  HTTP_INTERNAL_ERROR,
+  HTTP_SERVICE_UNAVAILABLE,
+  HTTP_TOO_MANY_REQUESTS,
+} from "@/constants";
 import {
   processValidatedInquiry,
   type LeadResult,
@@ -32,10 +39,13 @@ import {
 } from "@/lib/lead-pipeline/lead-schema";
 import { logger, sanitizeIP } from "@/lib/logger";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
+import { getClientIP } from "@/lib/security/client-ip";
+import { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
 import {
   mapLeadTurnstileResultToResponse,
   verifyLeadTurnstile,
 } from "@/lib/security/lead-turnstile";
+import { getIPKey } from "@/lib/security/rate-limit-key-strategies";
 
 interface InquiryLeadValidationSuccess {
   success: true;
@@ -166,10 +176,7 @@ function createInquiryHoneypotSuccessResponse(
  * POST /api/inquiry
  * Handle inquiry form submission.
  */
-async function handleInquiryPost(
-  request: NextRequest,
-  { clientIP }: RateLimitContext,
-) {
+async function handleInquiryPost(request: NextRequest, clientIP: string) {
   const parsedBody = await safeParseJson<{
     turnstileToken?: string;
     website?: string;
@@ -226,7 +233,52 @@ async function handleInquiryPost(
   }
 }
 
-export const { POST, OPTIONS } = createCorsRateLimitedRoute(
-  "inquiry",
-  handleInquiryPost,
-);
+async function handleRateLimitedInquiryPost(request: NextRequest) {
+  try {
+    const clientIP = getClientIP(request);
+    const rateLimitKey = await getIPKey(request);
+    const result = await checkInquiryRateLimit(rateLimitKey);
+
+    if (result.allowed) {
+      return handleInquiryPost(request, clientIP);
+    }
+
+    logger.warn("Rate limit exceeded", {
+      keyPrefix: rateLimitKey.slice(0, 8),
+      retryAfter: result.retryAfter,
+      deniedReason: result.deniedReason,
+    });
+
+    const response = createApiErrorResponse(
+      result.deniedReason === "storage_failure"
+        ? API_ERROR_CODES.SERVICE_UNAVAILABLE
+        : API_ERROR_CODES.RATE_LIMIT_EXCEEDED,
+      result.deniedReason === "storage_failure"
+        ? HTTP_SERVICE_UNAVAILABLE
+        : HTTP_TOO_MANY_REQUESTS,
+    );
+    response.headers.set("X-RateLimit-Remaining", String(result.remaining));
+    response.headers.set("X-RateLimit-Reset", String(result.resetTime));
+    if (result.retryAfter !== null) {
+      response.headers.set("Retry-After", String(result.retryAfter));
+    }
+    return response;
+  } catch (error) {
+    logger.error("Unexpected rate limit infrastructure failure", { error });
+    return createApiErrorResponse(
+      API_ERROR_CODES.SERVICE_UNAVAILABLE,
+      HTTP_SERVICE_UNAVAILABLE,
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  return applyCorsHeaders({
+    request,
+    response: await handleRateLimitedInquiryPost(request),
+  });
+}
+
+export function OPTIONS(request: NextRequest) {
+  return createCorsPreflightResponse(request);
+}

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import {
-  getMdxPageLastModified,
-  isMdxDrivenPage,
+  getStaticContentPageLastModified,
+  isStaticContentPage,
 } from "@/lib/content/page-dates";
 import { LOCALES_CONFIG } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
@@ -88,11 +88,11 @@ function createProductEntries(
 // Generate static page entries for all locales
 async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
   const publicStaticPages = getSingleSitePublicStaticPages();
-  const mdxPages = publicStaticPages.filter(isMdxDrivenPage);
-  const mdxDates = new Map<string, Date>();
+  const contentPages = publicStaticPages.filter(isStaticContentPage);
+  const contentDates = new Map<string, Date>();
   await Promise.all(
-    mdxPages.map(async (page) => {
-      mdxDates.set(page, await getMdxPageLastModified(page));
+    contentPages.map(async (page) => {
+      contentDates.set(page, await getStaticContentPageLastModified(page));
     }),
   );
 
@@ -103,7 +103,7 @@ async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
       const config = getPageConfig(page);
       const url = buildAbsoluteUrl(locale, page);
       const alternates = buildAlternateLanguages(page);
-      const lastModified = mdxDates.get(page);
+      const lastModified = contentDates.get(page);
 
       entries.push(
         createSitemapEntry({ url, lastModified, config, alternates }),

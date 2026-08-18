@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import messages from "../../../../../messages/profiles/b2b-lead/en/messages.json";
+import messages from "../../../../../messages/base/en/messages.json";
 import ProductsPage, { generateMetadata } from "../page";
 
 const { mockGenerateMetadataForPath, mockJsonLdGraphScript } = vi.hoisted(

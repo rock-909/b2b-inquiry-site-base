@@ -39,11 +39,13 @@ test.describe("Preserved navigation state", () => {
 
       for (let index = 0; index < 8; index += 1) {
         await page.keyboard.press("Tab");
-        expect(
-          await dialog.evaluate((element) =>
-            element.contains(document.activeElement),
-          ),
-        ).toBe(true);
+        await expect
+          .poll(() =>
+            dialog.evaluate((element) =>
+              element.contains(document.activeElement),
+            ),
+          )
+          .toBe(true);
       }
 
       await page.mouse.wheel(0, 1200);

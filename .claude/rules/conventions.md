@@ -59,7 +59,7 @@ Use route-level `error.tsx` for buyer-facing flows that depend on dynamic data,
 form/runtime services, or route parameters. Current examples: `contact` and
 `products`.
 
-Static MDX/legal/about pages can rely on layout/global fallback until they gain
+Static content/legal/about pages can rely on layout/global fallback until they gain
 external fetches, user actions, or dynamic route params.
 
 ## Cache

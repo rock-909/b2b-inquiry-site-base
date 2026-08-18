@@ -1,24 +1,24 @@
-import { getMdxPageSlugByStaticPath } from "@/config/pages.config";
+import { getStaticContentPageSlugByPath } from "@/config/pages.config";
 import { routing } from "@/i18n/routing";
-import { resolveOptionalContentEntry } from "@/lib/content-manifest";
+import { getOptionalStaticPage } from "@/lib/content/static-pages";
 import { logger } from "@/lib/logger";
 
-const MDX_PAGE_SLUGS: Record<string, string> = getMdxPageSlugByStaticPath();
+const STATIC_CONTENT_PAGE_SLUGS = getStaticContentPageSlugByPath();
 
-export function isMdxDrivenPage(path: string): boolean {
-  return path in MDX_PAGE_SLUGS;
+export function isStaticContentPage(path: string): boolean {
+  return path in STATIC_CONTENT_PAGE_SLUGS;
 }
 
-export function getMdxPageLastModified(path: string): Promise<Date> {
+export function getStaticContentPageLastModified(path: string): Promise<Date> {
   return Promise.resolve().then(() => {
-    const slug = MDX_PAGE_SLUGS[path];
+    const slug = STATIC_CONTENT_PAGE_SLUGS[path];
     if (slug === undefined) {
-      throw new Error(`No MDX slug mapping for path: ${path}`);
+      throw new Error(`No static content slug mapping for path: ${path}`);
     }
 
     const results = routing.locales.map((locale) => {
       try {
-        const entry = resolveOptionalContentEntry(locale, slug);
+        const entry = getOptionalStaticPage(slug, locale);
         if (entry === undefined) {
           throw new Error(`Content not found: ${slug}`);
         }
@@ -32,7 +32,11 @@ export function getMdxPageLastModified(path: string): Promise<Date> {
         }
         return new Date(dateStr);
       } catch (error) {
-        logger.warn("MDX page missing for locale", { slug, locale, error });
+        logger.warn("Static content page missing for locale", {
+          slug,
+          locale,
+          error,
+        });
         return new Date(0);
       }
     });

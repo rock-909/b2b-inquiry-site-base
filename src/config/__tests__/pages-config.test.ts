@@ -1,9 +1,7 @@
-import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  PUBLIC_STATIC_PAGE_DEFINITIONS,
   PUBLIC_STATIC_PAGE_TYPES,
-  getMdxPageSlugByStaticPath,
+  getStaticContentPageSlugByPath,
   getStaticSitemapPages,
 } from "@/config/pages.config";
 
@@ -31,17 +29,8 @@ describe("pages.config", () => {
     ]);
   });
 
-  it("keeps every route owner backed by a real page", () => {
-    for (const definition of PUBLIC_STATIC_PAGE_DEFINITIONS) {
-      // eslint-disable-next-line security/detect-non-literal-fs-filename -- route owners come from the fixed public page registry under test
-      expect(existsSync(definition.routeOwner), definition.routeOwner).toBe(
-        true,
-      );
-    }
-  });
-
-  it("keeps MDX ownership explicit", () => {
-    expect(getMdxPageSlugByStaticPath()).toEqual({
+  it("keeps static content ownership explicit", () => {
+    expect(getStaticContentPageSlugByPath()).toEqual({
       "/about": "about",
       "/contact": "contact",
       "/privacy": "privacy",

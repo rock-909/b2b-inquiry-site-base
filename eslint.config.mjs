@@ -758,11 +758,7 @@ const eslintConfig = [
   // 对当前较大的质量脚本使用文件级结构阈值。
   {
     name: "script-structural-baselines",
-    files: [
-      "scripts/quality/checks/content-readiness.js",
-      "scripts/quality/checks/content-slugs.js",
-      "scripts/quality/checks/release-verify.js",
-    ],
+    files: ["scripts/quality/checks/release-verify.js"],
     rules: {
       complexity: ["warn", 30],
       "max-lines": [

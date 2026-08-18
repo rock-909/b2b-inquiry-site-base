@@ -1,9 +1,8 @@
 "use client";
 
-import { loadConsent } from "@/lib/cookie-consent/storage";
 import { ATTRIBUTION_FIELD_NAMES } from "@/lib/marketing/attribution-fields";
 
-const UTM_STORAGE_KEY = "marketing_attribution";
+const UTM_STORAGE_KEY = "inquiry_attribution";
 
 export interface UtmParams {
   utmSource?: string;
@@ -13,18 +12,10 @@ export interface UtmParams {
   utmContent?: string;
 }
 
-export interface ClickIds {
-  gclid?: string;
-  fbclid?: string;
-  msclkid?: string;
-}
-
-export interface AttributionData extends UtmParams, ClickIds {
+export interface AttributionData extends UtmParams {
   landingPage?: string;
   capturedAt?: string;
 }
-
-let pendingAttribution: AttributionData | null = null;
 
 function sanitizeParam(value: string | null): string | undefined {
   if (!value) return undefined;
@@ -34,10 +25,6 @@ function sanitizeParam(value: string | null): string | undefined {
   return /^[\x20-\x7E]+$/.test(trimmed) && !/[<>"'`\\]/.test(trimmed)
     ? trimmed
     : undefined;
-}
-
-function hasMarketingConsent(): boolean {
-  return loadConsent()?.consent.marketing === true;
 }
 
 export function captureUtmParams(): UtmParams {
@@ -62,24 +49,6 @@ export function captureUtmParams(): UtmParams {
   return params;
 }
 
-export function captureClickIds(): ClickIds {
-  if (typeof window === "undefined") return {};
-
-  const searchParams = new URLSearchParams(window.location.search);
-  const ids: ClickIds = {};
-
-  // Use explicit property assignment to avoid object injection
-  const gclid = sanitizeParam(searchParams.get("gclid"));
-  const fbclid = sanitizeParam(searchParams.get("fbclid"));
-  const msclkid = sanitizeParam(searchParams.get("msclkid"));
-
-  if (gclid) ids.gclid = gclid;
-  if (fbclid) ids.fbclid = fbclid;
-  if (msclkid) ids.msclkid = msclkid;
-
-  return ids;
-}
-
 export function storeAttributionData(): void {
   if (typeof window === "undefined") return;
 
@@ -88,51 +57,22 @@ export function storeAttributionData(): void {
   if (existing) return;
 
   const utmParams = captureUtmParams();
-  const clickIds = captureClickIds();
 
   // Only store if we have any attribution data
-  const hasData =
-    Object.values(utmParams).some(Boolean) ||
-    Object.values(clickIds).some(Boolean);
+  if (!Object.values(utmParams).some(Boolean)) return;
 
-  if (!hasData) return;
-
-  // Safe: utmParams and clickIds are derived from sanitizeParam(), which blocks control chars and dangerous HTML delimiters.
+  // Safe: UTM values are derived from sanitizeParam(), which blocks control chars and dangerous HTML delimiters.
   const data: AttributionData = {
     ...utmParams,
-    ...clickIds,
     landingPage: window.location.pathname,
     capturedAt: new Date().toISOString(),
   };
 
-  if (hasMarketingConsent()) {
-    sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(data));
-  } else {
-    pendingAttribution = data;
-  }
-}
-
-export function flushPendingAttribution(): void {
-  if (typeof window === "undefined" || !pendingAttribution) return;
-  if (!hasMarketingConsent()) return;
-
-  const existing = sessionStorage.getItem(UTM_STORAGE_KEY);
-  if (existing) {
-    pendingAttribution = null;
-    return;
-  }
-
-  sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(pendingAttribution));
-  pendingAttribution = null;
+  sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(data));
 }
 
 export function getAttributionSnapshot(): AttributionData {
   if (typeof window === "undefined") return {};
-  if (!hasMarketingConsent()) {
-    pendingAttribution = null;
-    sessionStorage.removeItem(UTM_STORAGE_KEY);
-    return {};
-  }
 
   try {
     const stored = sessionStorage.getItem(UTM_STORAGE_KEY);
@@ -143,14 +83,8 @@ export function getAttributionSnapshot(): AttributionData {
     // Ignore parse errors
   }
 
-  if (pendingAttribution) return pendingAttribution;
-
   // Fallback to current URL params if no stored data
-  // Safe: captureUtmParams/captureClickIds return sanitized objects with printable ASCII values minus dangerous HTML delimiters.
-  return {
-    ...captureUtmParams(),
-    ...captureClickIds(),
-  };
+  return captureUtmParams();
 }
 
 export function getAttributionAsObject(): Record<string, string> {

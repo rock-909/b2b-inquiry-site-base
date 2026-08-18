@@ -24,7 +24,7 @@ import {
   decodeInquirySubmitState,
   type InquirySubmitState,
 } from "@/components/forms/inquiry-response";
-import { LazyTurnstile } from "@/components/forms/lazy-turnstile";
+import { TurnstileWidget } from "@/components/security/turnstile";
 import { trackGenerateLead } from "@/lib/marketing/lead-event";
 import { appendAttributionToFormData } from "@/lib/marketing/utm";
 import type { ValidatedInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
@@ -50,8 +50,8 @@ const JSON_HEADERS = { "Content-Type": "application/json" } as const;
 /**
  * 一次提交的请求预算。
  *
- * 服务端串行执行，已知最坏耗时加总为 23 秒：
- * 限流查询 5 秒（`src/lib/security/stores/rate-limit-store.ts` 的
+ * 服务端串行执行，已知最坏耗时加总为 20 秒：
+ * 限流查询 2 秒（`src/lib/security/stores/rate-limit-store.ts` 的
  * `UPSTASH_OPERATION_TIMEOUT_MS`，串在整条链路最前面）
  * + Turnstile 校验 5 秒（`src/lib/security/turnstile.ts` 的
  * `TURNSTILE_VERIFY_TIMEOUT_MS`）
@@ -60,7 +60,7 @@ const JSON_HEADERS = { "Content-Type": "application/json" } as const;
  * + Airtable 8 秒（`src/lib/airtable/service.ts` 的
  * `AIRTABLE_REQUEST_TIMEOUT_MS`）。
  *
- * 30 秒把这 23 秒整个包住，另留 7 秒给 Worker 冷启动和网络往返。不设上限则更糟：
+ * 30 秒把这 20 秒整个包住，另留约 10 秒给 Worker 冷启动和网络往返。不设上限则更糟：
  * 连接被中间盒吞掉时 fetch 既不 resolve 也不 reject，表单会永远停在「提交中」。
  *
  * 超时只意味着「浏览器不再等了」，不意味着服务端停下了。这里不传幂等键，邮件和
@@ -251,12 +251,15 @@ function InquiryFormLive({
           {...(initialMessage ? { initialMessage } : {})}
         />
 
-        <LazyTurnstile
+        <TurnstileWidget
+          className="w-full"
           labels={copy.turnstile}
           onError={clearTurnstileToken}
           onExpire={clearTurnstileToken}
           onSuccess={setTurnstileToken}
           onReadyRef={registerTurnstileReset}
+          size="normal"
+          theme="auto"
         />
 
         <InquiryFormStatus

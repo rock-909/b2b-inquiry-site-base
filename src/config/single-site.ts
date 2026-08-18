@@ -1,7 +1,6 @@
 import { env, isRuntimeProduction, runtimeEnv } from "@/lib/env";
+import { PATHS_CONFIG } from "@/config/paths/paths-config";
 import type { PageType } from "@/config/paths/types";
-import { PUBLIC_STATIC_PAGE_TYPES } from "@/config/pages.config";
-import { SINGLE_SITE_ROUTE_HREFS } from "@/config/single-site-links";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 import type {
   SiteConfig,
@@ -81,7 +80,7 @@ const FOOTER_COLUMN_TRANSLATION_KEYS = {
 } as const;
 
 function getFooterLinkItem(pageType: FooterLinkPageType) {
-  const href = SINGLE_SITE_ROUTE_HREFS[pageType];
+  const href = PATHS_CONFIG[pageType];
   const translationKey = FOOTER_TRANSLATION_KEYS[pageType];
 
   if (href === undefined || translationKey === undefined) {
@@ -98,39 +97,18 @@ function getFooterLinkItem(pageType: FooterLinkPageType) {
   } as const;
 }
 
-function filterActiveFooterPages<T extends FooterLinkPageType>(
-  orderedPageTypes: readonly T[],
-  activePageTypes: readonly PageType[],
-): T[] {
-  const active = new Set(activePageTypes);
-
-  return orderedPageTypes.filter((pageType) => active.has(pageType));
-}
-
-export function getSingleSiteFooterColumns() {
-  const activePageTypes = PUBLIC_STATIC_PAGE_TYPES;
-  const navigationLinks = filterActiveFooterPages(
-    FOOTER_NAVIGATION_PAGE_TYPES,
-    activePageTypes,
-  ).map(getFooterLinkItem);
-  const supportLinks = filterActiveFooterPages(
-    FOOTER_SUPPORT_PAGE_TYPES,
-    activePageTypes,
-  ).map(getFooterLinkItem);
-
-  return [
-    {
-      key: "navigation",
-      translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.navigation,
-      links: navigationLinks,
-    },
-    {
-      key: "support",
-      translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.support,
-      links: supportLinks,
-    },
-  ] as const;
-}
+export const SINGLE_SITE_FOOTER_COLUMNS = [
+  {
+    key: "navigation",
+    translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.navigation,
+    links: FOOTER_NAVIGATION_PAGE_TYPES.map(getFooterLinkItem),
+  },
+  {
+    key: "support",
+    translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.support,
+    links: FOOTER_SUPPORT_PAGE_TYPES.map(getFooterLinkItem),
+  },
+] as const;
 
 export const TEMPLATE_REGISTERED_ADDRESS = "Replace before launch";
 
@@ -197,9 +175,8 @@ export const SINGLE_SITE_DEFINITION = {
   navigation: {
     main: SINGLE_SITE_NAVIGATION,
   },
-  footerColumns: getSingleSiteFooterColumns(),
+  footerColumns: SINGLE_SITE_FOOTER_COLUMNS,
 } as const satisfies SiteDefinition;
 
 export const SINGLE_SITE_CONFIG: SiteConfig = SINGLE_SITE_DEFINITION.config;
 export const SINGLE_SITE_FACTS: SiteFacts = SINGLE_SITE_DEFINITION.facts;
-export const SINGLE_SITE_FOOTER_COLUMNS = getSingleSiteFooterColumns();

@@ -172,7 +172,7 @@ describe("next.config contract", () => {
   // 它绕过整条图片管线，业主看到的是产品图在生产环境随机不出来。
   //
   // 认的是「带图片扩展名的远程 URL」，不是 `src=` 这种写法。只盯 `src=` 会漏掉
-  // MDX 里的 `![](https://…)`、`srcSet`、CSS 的 background-image、
+  // 富文本里的远程图片、`srcSet`、CSS 的 background-image、
   // `openGraph.images`，以及先把完整地址存进常量再传下去。反过来，`src=` 会连
   // script 和 iframe 的 src 一起判红，那不是这条该管的事，站里现在那个 GA
   // 脚本标签就是。按扩展名认，上面几种写法一次覆盖，脚本和 iframe 不受影响。
@@ -193,11 +193,14 @@ describe("next.config contract", () => {
 
     // `messages` 也要扫：买家看到的文案在那儿，一条带图片 URL 的文案跟组件里
     // 写死一个远程图片，效果是一样的。
-    const trackedFiles = execSync("git ls-files src content messages", {
-      encoding: "utf8",
-    })
+    const trackedFiles = execSync(
+      "git ls-files --cached --others --exclude-standard src messages",
+      {
+        encoding: "utf8",
+      },
+    )
       .split("\n")
-      .filter((filePath) => /\.(?:tsx?|mdx|json|css)$/u.test(filePath))
+      .filter((filePath) => /\.(?:tsx?|json|css)$/u.test(filePath))
       // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test filters git-listed repo files that may be deleted in the current worktree
       .filter((filePath) => existsSync(filePath))
       // 测试夹具里本来就有假的远程图片地址（结构化数据、CSP 上报的样本），
@@ -209,8 +212,8 @@ describe("next.config contract", () => {
     // 光 src 顶层就四百多个，缩水了数字照样过线。
     for (const required of [
       "src/components/forms/inquiry-form.tsx",
-      "content/pages/en/contact.mdx",
-      "messages/profiles/b2b-lead/en/messages.json",
+      "src/content/pages/en/contact.ts",
+      "messages/base/en/messages.json",
     ]) {
       expect(trackedFiles, required).toContain(required);
     }

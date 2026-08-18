@@ -73,7 +73,6 @@ describe("createLeadRecord", () => {
       utmSource: "google",
       utmMedium: "cpc",
       utmCampaign: '=IMPORTXML("https://example.test")',
-      gclid: "gclid-123",
       landingPage: "/en/contact",
       capturedAt: "2026-08-03T00:00:00.000Z",
     };
@@ -113,7 +112,6 @@ describe("createLeadRecord", () => {
             "UTM Source": "google",
             "UTM Medium": "cpc",
             "UTM Campaign": `'${data.utmCampaign}`,
-            GCLID: "gclid-123",
             "Landing Page": "/en/contact",
             "Captured At": "2026-08-03T00:00:00.000Z",
           },

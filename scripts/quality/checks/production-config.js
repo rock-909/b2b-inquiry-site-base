@@ -11,86 +11,15 @@ const WRANGLER_PRODUCTION_PUBLIC_URL_KEYS = [
 
 function ensureTypeScriptRequireRuntime() {
   if (require.extensions[".ts"]) return;
-  if (process.env.VITEST === "true" || process.env.VITEST_WORKER_ID) return;
   require("tsx/cjs");
 }
 
-function isVitestRuntime() {
-  return process.env.VITEST === "true" || Boolean(process.env.VITEST_WORKER_ID);
-}
-
-function loadPublicTrustModule() {
-  if (isVitestRuntime()) {
-    const fakePhonePattern =
-      /(?:\+?1[\s.-]?)?(?:(?:\(?555\)?[\s.-]?\d{3})|(?:\(?\d{3}\)?[\s.-]?555))[\s.-]?\d{4}\b|\b123[\s.-]?456[\s.-]?7890\b/iu;
-    return {
-      getPublicContactEmail: (email) =>
-        email &&
-        !/@(?:example\.com|example\.org|example\.net|[\w.-]+\.example)$/iu.test(
-          email.trim(),
-        )
-          ? email.trim()
-          : undefined,
-      getPublicContactPhone: (phone) =>
-        phone &&
-        !/(?:^|[-\s])0{3,}(?:[-\s]|$)/u.test(phone) &&
-        !fakePhonePattern.test(phone)
-          ? phone.trim()
-          : undefined,
-      getPublicLogoPath: (logo) =>
-        logo?.status === "ready" ? logo.horizontal : undefined,
-    };
-  }
-
+function loadPublicLaunchInput() {
   ensureTypeScriptRequireRuntime();
-  return require("../../../src/config/public-trust");
-}
-
-function loadSingleSiteModule() {
-  if (isVitestRuntime()) {
-    const config = {
-      baseUrl: "https://example.com",
-      name: "Showcase Website Starter",
-      description:
-        "Public demo starter for launching a showcase website foundation",
-      seo: {
-        titleTemplate: "%s | Showcase Website Starter",
-        defaultTitle: "Showcase Website Starter - Public Demo Starter Site",
-        defaultDescription:
-          "A public demo starter site for teams that need a deployable showcase website foundation before they have a real website.",
-      },
-      social: {
-        twitter: "https://x.com/example",
-        linkedin: "https://www.linkedin.com/company/example",
-      },
-      contact: {
-        phone: "+86-518-0000-0000",
-        email: "starter-contact@example.com",
-      },
-    };
-
-    return {
-      SINGLE_SITE_DEFINITION: { config },
-      SINGLE_SITE_FACTS: {
-        company: {
-          name: "Showcase Website Starter",
-          location: {
-            city: "Replace before launch",
-            address: "Replace before launch",
-          },
-        },
-        contact: config.contact,
-        brandAssets: {
-          logo: {
-            status: "pending",
-          },
-        },
-      },
-    };
-  }
-
-  ensureTypeScriptRequireRuntime();
-  return require("../../../src/config/single-site");
+  return {
+    ...require("../../../src/config/public-trust"),
+    ...require("../../../src/config/single-site"),
+  };
 }
 
 const MIN_SECRET_LENGTH = 32;
@@ -151,8 +80,8 @@ function readWranglerConfig(rootDir = process.cwd()) {
   return parseJsoncText(filePath, fs.readFileSync(filePath, "utf8"));
 }
 
-function validateWranglerProductionPublicUrls(target) {
-  const productionVars = readWranglerProductionVars();
+function validateWranglerProductionPublicUrls(target, rootDir) {
+  const productionVars = readWranglerProductionVars(rootDir);
 
   if (!productionVars) {
     target.push(
@@ -196,8 +125,8 @@ function validateOptionalSocialProfile(target, markerPath, value) {
   );
 }
 
-function validateWranglerSentinelResources(target) {
-  const config = readWranglerConfig();
+function validateWranglerSentinelResources(target, rootDir) {
+  const config = readWranglerConfig(rootDir);
   if (!config) return;
 
   validateNoStarterMarker(
@@ -326,12 +255,6 @@ function validateProductionRuntimeContract(env) {
     "the shipped lead pipeline persists lead records in Airtable",
   );
 
-  if (isTrue(env, "ALLOW_MEMORY_RATE_LIMIT")) {
-    errors.push(
-      "Degraded in-memory rate-limit store flag (ALLOW_MEMORY_RATE_LIMIT) cannot be used in production. Configure a durable Redis-compatible store for production deployments.",
-    );
-  }
-
   if (isTrue(env, "NEXT_PUBLIC_TEST_MODE")) {
     errors.push("NEXT_PUBLIC_TEST_MODE=true is forbidden in production.");
   }
@@ -355,12 +278,9 @@ function validateProductionRuntimeContract(env) {
   return { warnings, errors };
 }
 
-function validatePublicLaunchTrustContent(env) {
+function validatePublicLaunchTrustContent(env, input) {
   const warnings = [];
   const errors = [];
-  const { getPublicContactEmail, getPublicContactPhone, getPublicLogoPath } =
-    loadPublicTrustModule();
-  const { SINGLE_SITE_DEFINITION, SINGLE_SITE_FACTS } = loadSingleSiteModule();
   const target = isTrue(env, "PUBLIC_LAUNCH_STRICT") ? errors : warnings;
   const shouldCheck =
     isTrue(env, "PUBLIC_LAUNCH_STRICT") ||
@@ -370,6 +290,15 @@ function validatePublicLaunchTrustContent(env) {
     return { warnings, errors };
   }
 
+  const {
+    getPublicContactEmail,
+    getPublicContactPhone,
+    getPublicLogoPath,
+    SINGLE_SITE_DEFINITION,
+    SINGLE_SITE_FACTS,
+  } = input?.publicLaunch ?? loadPublicLaunchInput();
+  const rootDir = input?.rootDir ?? process.cwd();
+
   for (const key of ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_BASE_URL"]) {
     const value = readEnv(env, key);
     if (value && !isPublicBaseUrlReady(value)) {
@@ -378,8 +307,8 @@ function validatePublicLaunchTrustContent(env) {
       );
     }
   }
-  validateWranglerProductionPublicUrls(target);
-  validateWranglerSentinelResources(target);
+  validateWranglerProductionPublicUrls(target, rootDir);
+  validateWranglerSentinelResources(target, rootDir);
 
   validateNoStarterMarker(
     target,
@@ -467,12 +396,12 @@ function validatePublicLaunchTrustContent(env) {
   return { warnings, errors };
 }
 
-function validateProductionConfig(env = process.env) {
+function validateProductionConfig(env = process.env, input) {
   const runtimeContractChecked = shouldValidateProductionRuntimeContract(env);
   const runtimeContract = runtimeContractChecked
     ? validateProductionRuntimeContract(env)
     : { warnings: [], errors: [] };
-  const publicLaunchTrust = validatePublicLaunchTrustContent(env);
+  const publicLaunchTrust = validatePublicLaunchTrustContent(env, input);
 
   return {
     warnings: [...runtimeContract.warnings, ...publicLaunchTrust.warnings],

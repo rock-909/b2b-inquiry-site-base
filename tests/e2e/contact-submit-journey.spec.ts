@@ -19,7 +19,7 @@ test("buyer fills contact form, clicks submit, sees success", async ({
   await page.goto("/contact");
 
   // Contact renders InquiryForm directly — scroll the form column into view so
-  // LazyTurnstile can mount before submit.
+  // Turnstile test mode can settle before submit.
   await page
     .getByTestId("contact-form-column")
     .scrollIntoViewIfNeeded({ timeout: 5_000 });
@@ -30,7 +30,7 @@ test("buyer fills contact form, clicks submit, sees success", async ({
   await fullName.fill("E2E Buyer");
   await page.locator('input[name="email"]').fill("buyer@example.com");
 
-  // LazyTurnstile mounts after idle/IO; wait for the test-mode token to settle.
+  // Wait for the test-mode token to settle.
   await expect(page.getByTestId("turnstile-mock")).toBeVisible({
     timeout: 15_000,
   });

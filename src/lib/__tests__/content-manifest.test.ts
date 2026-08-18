@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { resolveOptionalContentEntry } from "@/lib/content-manifest";
+import { getStaticPage } from "@/lib/content/static-pages";
 
-describe("content manifest source", () => {
-  it("resolves active source-checkout content", () => {
-    expect(resolveOptionalContentEntry("en", "about")?.source).toBe(
-      "active-content",
-    );
+describe("static content source", () => {
+  it("resolves imported page content", () => {
+    expect(getStaticPage("about", "en")).toMatchObject({
+      slug: "about",
+      filePath: "/src/content/pages/en/about.ts",
+    });
   });
 });

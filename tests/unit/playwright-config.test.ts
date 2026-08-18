@@ -17,11 +17,13 @@ function collectSpecFiles(dir: string): string[] {
 
 async function loadCiConfig(shouldRebuild: boolean) {
   vi.stubEnv("CI", "1");
-  vi.stubEnv("CI_DAILY", "");
+  vi.stubEnv("CI_FULL_COVERAGE", "");
   vi.stubEnv("CI_FLAKE_SAMPLING", "");
   vi.stubEnv("PLAYWRIGHT_PROFILE_LANE", "default");
   vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", shouldRebuild ? "true" : "");
   vi.stubEnv("STAGING_URL", "");
+  vi.stubEnv("PLAYWRIGHT_BASE_URL", "");
+  vi.stubEnv("POST_DEPLOY_TEST", "");
   vi.resetModules();
 
   const { default: config } = (await import("../../playwright.config")) as {
@@ -44,18 +46,16 @@ afterEach(() => {
   vi.resetModules();
 });
 
-// 之前这里的门禁反过来：它把一份 5 条的 testMatch 白名单钉死，于是 14 个 e2e
-// 用例文件里有 9 个从来没跑过，而门禁是绿的。现在守的是"配置不能把任何一个
-// spec 文件挡在外面"——写了 e2e 就一定会执行。
+// 普通 E2E 自动发现所有用例，但真实 provider canary 必须显式启动。
 describe("Playwright e2e discovery", () => {
-  it("runs every spec file under the e2e directory", async () => {
+  it("runs ordinary specs without the real Airtable canary", async () => {
     const config = await loadCiConfig(false);
     const specFiles = collectSpecFiles(E2E_DIR);
 
     expect(specFiles.length).toBeGreaterThan(0);
     expect(config.testDir).toBe(`./${E2E_DIR}`);
     expect(config.testMatch).toBeUndefined();
-    expect(config.testIgnore).toBeUndefined();
+    expect(config.testIgnore).toEqual(/post-deploy-form\.spec\.ts$/u);
   });
 });
 
@@ -78,9 +78,9 @@ describe("Playwright CI web server", () => {
     expect(config.workers).toBe(2);
   });
 
-  it("disables retries under daily flake sampling so first failures stay red", async () => {
+  it("disables retries in the full browser matrix so first failures stay red", async () => {
     vi.stubEnv("CI", "1");
-    vi.stubEnv("CI_DAILY", "true");
+    vi.stubEnv("CI_FULL_COVERAGE", "true");
     vi.stubEnv("CI_FLAKE_SAMPLING", "1");
     vi.stubEnv("PLAYWRIGHT_PROFILE_LANE", "all");
     vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", "");
@@ -92,5 +92,20 @@ describe("Playwright CI web server", () => {
     };
 
     expect(config.retries).toBe(0);
+  });
+
+  it("does not start a local server for the explicit external canary", async () => {
+    vi.stubEnv("CI", "1");
+    vi.stubEnv("STAGING_URL", "");
+    vi.stubEnv("PLAYWRIGHT_BASE_URL", "https://preview.example.com");
+    vi.stubEnv("POST_DEPLOY_TEST", "1");
+    vi.resetModules();
+
+    const { default: config } = (await import("../../playwright.config")) as {
+      default: PlaywrightTestConfig;
+    };
+
+    expect(config.webServer).toBeUndefined();
+    expect(config.testIgnore).toBeUndefined();
   });
 });

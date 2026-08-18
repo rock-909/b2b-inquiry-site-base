@@ -1,16 +1,16 @@
 import { describe, expect, it, vi } from "vitest";
 
-const mockGetPageBySlug = vi.hoisted(() => vi.fn());
+const mockGetStaticPage = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/content-query/queries", () => ({
-  getPageBySlug: mockGetPageBySlug,
+vi.mock("@/lib/content/static-pages", () => ({
+  getStaticPage: mockGetStaticPage,
 }));
 
 import { extractHeadingsFromContent, loadLegalPage } from "../legal-page";
 
 describe("loadLegalPage", () => {
   it("loads and narrows to LegalPageMetadata", async () => {
-    mockGetPageBySlug.mockResolvedValueOnce({
+    mockGetStaticPage.mockReturnValueOnce({
       metadata: {
         title: "Privacy Policy",
         slug: "privacy",
@@ -27,7 +27,7 @@ describe("loadLegalPage", () => {
       content:
         "## Introduction\n\nWe care about your privacy.\n\n## Information We Collect\n\nWe collect the following.\n\n### Personal Data\n\nName, email.",
       slug: "privacy",
-      filePath: "content/pages/en/privacy.mdx",
+      filePath: "/src/content/pages/en/privacy.ts",
     });
 
     const result = await loadLegalPage("privacy", "en");
@@ -38,7 +38,7 @@ describe("loadLegalPage", () => {
   });
 
   it("falls back to updatedAt when lastReviewed is absent", async () => {
-    mockGetPageBySlug.mockResolvedValueOnce({
+    mockGetStaticPage.mockReturnValueOnce({
       metadata: {
         title: "Terms",
         slug: "terms",
@@ -47,7 +47,7 @@ describe("loadLegalPage", () => {
       },
       content: "## Terms",
       slug: "terms",
-      filePath: "content/pages/en/terms.mdx",
+      filePath: "/src/content/pages/en/terms.ts",
     });
 
     const result = await loadLegalPage("terms", "en");
@@ -55,7 +55,7 @@ describe("loadLegalPage", () => {
   });
 
   it("falls back to publishedAt when both lastReviewed and updatedAt are absent", async () => {
-    mockGetPageBySlug.mockResolvedValueOnce({
+    mockGetStaticPage.mockReturnValueOnce({
       metadata: {
         title: "Terms",
         slug: "terms",
@@ -63,7 +63,7 @@ describe("loadLegalPage", () => {
       },
       content: "## Terms",
       slug: "terms",
-      filePath: "content/pages/en/terms.mdx",
+      filePath: "/src/content/pages/en/terms.ts",
     });
 
     const result = await loadLegalPage("terms", "en");

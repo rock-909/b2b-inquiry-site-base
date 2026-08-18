@@ -23,7 +23,7 @@ const DEPLOYMENT_CRITICAL_ENV_KEYS = [
   "DEPLOYMENT_PLATFORM",
 ] as const;
 const TOOLING_PROOF_ENV_KEYS = [
-  "CI_DAILY",
+  "CI_FULL_COVERAGE",
   "CI_FLAKE_SAMPLING",
   "CLOUDFLARE_PREVIEW_BASE_URL",
   "DEPLOY_SMOKE_BASE_URL",
@@ -292,17 +292,9 @@ describe(".env.example parity", () => {
 
   it("keeps dangerous or behavior-sensitive defaults safe", () => {
     const envExampleSource = readRepoFile(ENV_EXAMPLE_PATH);
-    const envExample = parseEnvExample(envExampleSource);
 
-    expect(envExample.get("ALLOW_MEMORY_RATE_LIMIT")).toBe("false");
     expect(envExampleSource).toContain(
       "Memory rate limiting is automatic in development/test when Upstash is not configured.",
-    );
-    expect(envExampleSource).toContain(
-      "ALLOW_MEMORY_RATE_LIMIT=true is a release/proof blocker, not the switch that enables fallback.",
-    );
-    expect(envExampleSource).not.toContain(
-      "Set ALLOW_MEMORY_RATE_LIMIT=true only for local fallback.",
     );
   });
 

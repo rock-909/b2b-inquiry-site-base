@@ -16,7 +16,7 @@ import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { useTranslations } from "next-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { mobileNavigation } from "@/lib/navigation";
+import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 import { MobileNavigationLinks } from "@/components/layout/mobile-navigation";
 import { createMockUseTranslations } from "@/test/utils";
 
@@ -138,7 +138,7 @@ describe("MobileNavigationLinks", () => {
     expect(linkTexts).toEqual([...EXPECTED_ITEM_LABELS, CTA_LABEL]);
     // The link list is exactly the nav items plus a single contact CTA.
     expect(screen.getAllByRole("link")).toHaveLength(
-      mobileNavigation.length + 1,
+      SINGLE_SITE_NAVIGATION.length + 1,
     );
     // "Contact" is only ever the CTA, never a standalone nav item.
     expect(screen.queryByRole("link", { name: "Contact" })).toBeNull();
@@ -182,7 +182,7 @@ describe("MobileNavigationLinks", () => {
       .getAllByRole("link")
       .filter((link) => link.className.includes("rounded-md px-3 py-2"));
 
-    expect(navLinks).toHaveLength(mobileNavigation.length);
+    expect(navLinks).toHaveLength(SINGLE_SITE_NAVIGATION.length);
     for (const link of navLinks) {
       expect(link).toHaveClass(
         "flex",

@@ -1,5 +1,5 @@
-import { getPageBySlug } from "@/lib/content-query/queries";
 import { parseHeadingId } from "@/lib/content/render-static-markdown-content";
+import { getStaticPage } from "@/lib/content/static-pages";
 import type { LegalPageMetadata, Locale } from "@/types/content.types";
 
 export interface HeadingItem {
@@ -34,11 +34,11 @@ interface LegalPageData {
   headings: HeadingItem[];
 }
 
-export async function loadLegalPage(
+export function loadLegalPage(
   slug: string,
   locale: Locale,
-): Promise<LegalPageData> {
-  const page = await getPageBySlug(slug, locale);
+): LegalPageData {
+  const page = getStaticPage(slug, locale);
 
   const metadata: LegalPageMetadata = {
     ...page.metadata,
