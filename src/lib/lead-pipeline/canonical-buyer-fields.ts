@@ -3,7 +3,14 @@
  * owner email and Airtable delivery.
  */
 
-import { z } from "zod";
+import {
+  email,
+  string,
+  union,
+  undefined as zUndefined,
+  unknown,
+  type ZodType,
+} from "zod";
 import {
   MAX_LEAD_EMAIL_LENGTH,
   MAX_LEAD_MESSAGE_LENGTH,
@@ -15,7 +22,7 @@ import {
   sanitizePlainText,
 } from "@/lib/security/validation";
 
-const sanitizedString = () => z.string().overwrite(sanitizePlainText);
+const sanitizedString = () => string().overwrite(sanitizePlainText);
 
 function normalizeOptionalInput(value: unknown): unknown {
   if (value === undefined) {
@@ -31,19 +38,18 @@ export const canonicalBuyerFullNameSchema = sanitizedString()
   .min(1)
   .max(MAX_LEAD_NAME_LENGTH);
 
-export const canonicalBuyerEmailSchema = z
-  .email()
+export const canonicalBuyerEmailSchema = email()
   .trim()
   .min(1)
   .max(MAX_LEAD_EMAIL_LENGTH)
   .refine((email) => !hasSpreadsheetFormulaPrefix(email));
 
-export const canonicalBuyerMessageSchema: z.ZodType<string | undefined> = z
-  .unknown()
-  .transform(normalizeOptionalInput)
-  .pipe(
-    z.union([
-      z.undefined(),
-      z.string().overwrite(sanitizeMultilineText).max(MAX_LEAD_MESSAGE_LENGTH),
-    ]),
-  );
+export const canonicalBuyerMessageSchema: ZodType<string | undefined> =
+  unknown()
+    .transform(normalizeOptionalInput)
+    .pipe(
+      union([
+        zUndefined(),
+        string().overwrite(sanitizeMultilineText).max(MAX_LEAD_MESSAGE_LENGTH),
+      ]),
+    );

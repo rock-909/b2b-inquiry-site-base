@@ -5,105 +5,105 @@
  */
 
 import { createEnv } from "@t3-oss/env-nextjs";
-import { z } from "zod";
+import { email, enum as zEnum, string, url } from "zod";
 
 export const serverEnvSchema = {
   // Email Service (Resend)
-  RESEND_API_KEY: z.string().min(1).optional(),
-  EMAIL_FROM: z.email().optional(),
-  EMAIL_REPLY_TO: z.email().optional(),
+  RESEND_API_KEY: string().min(1).optional(),
+  EMAIL_FROM: email().optional(),
+  EMAIL_REPLY_TO: email().optional(),
 
   // Data Storage (Airtable)
-  AIRTABLE_API_KEY: z.string().min(1).optional(),
-  AIRTABLE_BASE_ID: z.string().min(1).optional(),
-  AIRTABLE_TABLE_NAME: z.string().min(1).optional(),
+  AIRTABLE_API_KEY: string().min(1).optional(),
+  AIRTABLE_BASE_ID: string().min(1).optional(),
+  AIRTABLE_TABLE_NAME: string().min(1).optional(),
 
   // Bot Protection (Cloudflare Turnstile)
-  TURNSTILE_SECRET_KEY: z.string().min(1).optional(),
-  TURNSTILE_ALLOWED_HOSTS: z.string().optional(),
-  TURNSTILE_BYPASS: z
-    .string()
+  TURNSTILE_SECRET_KEY: string().min(1).optional(),
+  TURNSTILE_ALLOWED_HOSTS: string().optional(),
+  TURNSTILE_BYPASS: string()
     .optional()
     .transform((val) => val === "true"),
 
   // Cloudflare deployment account metadata
-  CLOUDFLARE_ACCOUNT_ID: z.string().min(1).optional(),
+  CLOUDFLARE_ACCOUNT_ID: string().min(1).optional(),
 
   // Runtime and platform configuration
-  LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).optional(),
-  DEPLOYMENT_PLATFORM: z
-    .enum(["cloudflare", "development", "self-hosted"])
-    .optional(),
-  CF_PAGES: z.string().optional(),
-  GOOGLE_SITE_VERIFICATION: z.string().min(1).optional(),
-  YANDEX_VERIFICATION: z.string().min(1).optional(),
+  LOG_LEVEL: zEnum(["error", "warn", "info", "debug"]).optional(),
+  DEPLOYMENT_PLATFORM: zEnum([
+    "cloudflare",
+    "development",
+    "self-hosted",
+  ]).optional(),
+  CF_PAGES: string().optional(),
+  GOOGLE_SITE_VERIFICATION: string().min(1).optional(),
+  YANDEX_VERIFICATION: string().min(1).optional(),
 
   // Distributed storage and rate limiting
-  RATE_LIMIT_PEPPER: z.string().min(1).optional(),
-  UPSTASH_REDIS_REST_URL: z.url().optional(),
-  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+  RATE_LIMIT_PEPPER: string().min(1).optional(),
+  UPSTASH_REDIS_REST_URL: url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: string().min(1).optional(),
 
   // Node Environment
-  NODE_ENV: z
-    .enum(["development", "test", "production"])
-    .default("development"),
-  APP_ENV: z
-    .enum(["local", "development", "test", "preview", "production"])
-    .optional(),
-  NEXT_PHASE: z.string().optional(),
+  NODE_ENV: zEnum(["development", "test", "production"]).default("development"),
+  APP_ENV: zEnum([
+    "local",
+    "development",
+    "test",
+    "preview",
+    "production",
+  ]).optional(),
+  NEXT_PHASE: string().optional(),
 
   // CI/CD
-  CI: z.string().optional(),
-  PLAYWRIGHT_TEST: z
-    .string()
+  CI: string().optional(),
+  PLAYWRIGHT_TEST: string()
     .optional()
     .transform((val) => val === "true"),
-  SKIP_ENV_VALIDATION: z
-    .string()
+  SKIP_ENV_VALIDATION: string()
     .optional()
     .transform((val) => val === "true"),
 
   // Security
-  SECURITY_HEADERS_ENABLED: z
-    .string()
+  SECURITY_HEADERS_ENABLED: string()
     .default("true")
     .transform((val) => val === "true"),
-  CORS_ALLOWED_ORIGINS: z.string().optional(),
+  CORS_ALLOWED_ORIGINS: string().optional(),
 };
 
 export const clientEnvSchema = {
   // Base Configuration
-  NEXT_PUBLIC_BASE_URL: z.url().default("http://localhost:3000"),
-  NEXT_PUBLIC_SITE_URL: z.url().optional(),
-  NEXT_PUBLIC_APP_VERSION: z.string().default("1.0.0"),
+  NEXT_PUBLIC_BASE_URL: url().default("http://localhost:3000"),
+  NEXT_PUBLIC_SITE_URL: url().optional(),
+  NEXT_PUBLIC_APP_VERSION: string().default("1.0.0"),
 
   // Analytics & Monitoring
-  NEXT_PUBLIC_GA_MEASUREMENT_ID: z.string().optional(),
+  NEXT_PUBLIC_GA_MEASUREMENT_ID: string().optional(),
 
   // Bot Protection (Cloudflare Turnstile Public Key)
-  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
-  NEXT_PUBLIC_TURNSTILE_BYPASS: z
-    .string()
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: string().optional(),
+  NEXT_PUBLIC_TURNSTILE_BYPASS: string()
     .default("false")
     .transform((val) => val === "true"),
 
   // Development Tools
-  NEXT_PUBLIC_TEST_MODE: z
-    .string()
+  NEXT_PUBLIC_TEST_MODE: string()
     .default("false")
     .transform((val) => val === "true"),
 
   // Internationalization
-  NEXT_PUBLIC_DEFAULT_LOCALE: z.string().default("en"),
-  NEXT_PUBLIC_SUPPORTED_LOCALES: z.string().default("en"),
+  NEXT_PUBLIC_DEFAULT_LOCALE: string().default("en"),
+  NEXT_PUBLIC_SUPPORTED_LOCALES: string().default("en"),
 
   // Security
-  NEXT_PUBLIC_SECURITY_MODE: z.enum(["strict", "relaxed"]).default("strict"),
+  NEXT_PUBLIC_SECURITY_MODE: zEnum(["strict", "relaxed"]).default("strict"),
 
   // Deployment Platform
-  NEXT_PUBLIC_DEPLOYMENT_PLATFORM: z
-    .enum(["cloudflare", "development", "self-hosted"])
-    .optional(),
+  NEXT_PUBLIC_DEPLOYMENT_PLATFORM: zEnum([
+    "cloudflare",
+    "development",
+    "self-hosted",
+  ]).optional(),
 };
 
 export const runtimeEnv = {

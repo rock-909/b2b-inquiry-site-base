@@ -3,7 +3,18 @@
  * Canonical inquiry schema for /api/inquiry.
  */
 
-import { z } from "zod";
+import {
+  literal,
+  object,
+  type output as ZodOutput,
+  string,
+  union,
+  undefined as zUndefined,
+  unknown,
+  type ZodOptional,
+  type ZodString,
+  type ZodType,
+} from "zod";
 import { getOfferingById } from "@/config/offerings";
 import {
   canonicalBuyerEmailSchema,
@@ -16,7 +27,7 @@ import { MAX_LEAD_INTEREST_LENGTH } from "@/constants";
 
 export const INQUIRY_LEAD_TYPE = "inquiry" as const;
 
-const sanitizedString = () => z.string().overwrite(sanitizePlainText);
+const sanitizedString = () => string().overwrite(sanitizePlainText);
 const MAX_ATTRIBUTION_FIELD_LENGTH = 256;
 
 export const leadAttributionFields = {
@@ -27,7 +38,7 @@ export const leadAttributionFields = {
   utmContent: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   landingPage: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   capturedAt: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
-} satisfies Record<AttributionFieldName, z.ZodOptional<z.ZodString>>;
+} satisfies Record<AttributionFieldName, ZodOptional<ZodString>>;
 
 const baseLeadFields = {
   ...leadAttributionFields,
@@ -38,19 +49,17 @@ const baseLeadFields = {
  * 路由——放在路由里就得为每个新字段补一行清洗，漏一行就是一个静默丢字段的 bug。
  * 写法照抄 canonicalBuyerMessageSchema。
  */
-function optionalBlankToUndefined<Output>(inner: z.ZodType<Output>) {
-  return z
-    .unknown()
+function optionalBlankToUndefined<Output>(inner: ZodType<Output>) {
+  return unknown()
     .transform((value) =>
       typeof value === "string" && value.trim().length === 0
         ? undefined
         : value,
     )
-    .pipe(z.union([z.undefined(), inner]));
+    .pipe(union([zUndefined(), inner]));
 }
 
-const offeringIdSchema = z
-  .string()
+const offeringIdSchema = string()
   .trim()
   .min(1)
   .refine((offeringId) => getOfferingById(offeringId) !== undefined, {
@@ -63,8 +72,8 @@ const interestSchema = sanitizedString().overwrite((value) =>
 /**
  * 单独导出对象层，让路由合同测试直接读取真实字段，而不是维护平行清单。
  */
-export const inquiryLeadObjectSchema = z.object({
-  type: z.literal(INQUIRY_LEAD_TYPE),
+export const inquiryLeadObjectSchema = object({
+  type: literal(INQUIRY_LEAD_TYPE),
   fullName: canonicalBuyerFullNameSchema,
   email: canonicalBuyerEmailSchema,
   message: canonicalBuyerMessageSchema.optional(),
@@ -75,4 +84,4 @@ export const inquiryLeadObjectSchema = z.object({
 
 export const inquiryLeadSchema = inquiryLeadObjectSchema;
 
-export type InquiryLeadInput = z.infer<typeof inquiryLeadSchema>;
+export type InquiryLeadInput = ZodOutput<typeof inquiryLeadSchema>;
