@@ -309,16 +309,9 @@
 
 状态：已完成（2026-08-18）。进度条实现和 reduced-motion/路由行为测试原样保留。layout 直接使用 `next-themes` 的 ThemeProvider，删除单调用方转发组件；ThemeSwitcher 将服务端 skeleton 与 hydration 后 UI 合并为一棵 DOM，删除 handler/data-testid 包装和 3 条源码形状/测试专用断言，保留 light/dark/system、键盘按钮语义、`aria-pressed`、resolved theme 和 SSR hydration 证明。focused 3 files / 13 tests、生产/测试类型检查、lint 和 Knip 通过。
 
-## Owner/上线阶段待办：当前不执行
+## Owner/派生站交接
 
-- [ ] 决定 Airtable 使用低频人工复核，还是配置一条邮件失败记录自动提醒；
-- [ ] 配置真实 Airtable base/table/PAT；
-- [ ] 配置真实 Resend key、发件域名和 owner 收件邮箱；
-- [ ] 真实部署后运行 Airtable canary；
-- [ ] 单独确认 Resend provider 状态和 owner 收件箱；
-- [ ] 人工确认正式域名、DNS、TLS 和 Cloudflare custom domain；
-- [ ] owner 确认联系信息、法务、品牌内容和最终上线；
-- [ ] 以后需要时再处理 main branch protection。
+状态：已从本次清理待办移出。真实 Airtable、Resend、部署、域名、Owner 上线和仓库治理清单由 `docs/派生项目交接.md` 持续维护，并在每个派生项目中重新核对；不再作为 Ponytail 技术实施待办重复跟踪。
 
 ## 每批验证顺序
 

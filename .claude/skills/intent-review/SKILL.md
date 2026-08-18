@@ -53,11 +53,10 @@ invent it.
 Gather, in this order of authority:
 
 1. What the user said in this conversation — the most current statement of intent
-2. The design spec and implementation plan, if this work went through
-   `superpowers:brainstorming` and `superpowers:writing-plans` — the owner already
-   approved that spec, so it is the requirement of record and needs no
-   reconstruction, only reading. If it has an "Acceptance Scenarios" section,
-   use those scenarios as the checkable behavior source.
+2. The owner-approved design spec or implementation plan, if one exists. It is
+   the requirement of record and needs reading rather than reconstruction. If it
+   has an "Acceptance Scenarios" section, use those scenarios as the checkable
+   behavior source.
 3. The PR description and linked issue (`gh pr view`, `gh issue view`)
 4. Commit messages on the branch
 5. The diff itself — weakest source, since it shows what was built, not what was asked
@@ -135,8 +134,8 @@ A change can satisfy the requirement and still be wrong for this codebase.
    common failure here.
 3. **This repo's red lines** — each is a high-severity finding:
    - User-facing copy hardcoded instead of going through a translation key
-   - Hand-edits to `src/lib/content-manifest.generated.ts` (regenerate it with
-     `node scripts/quality/checks/content-manifest.js`)
+   - Page prose or SEO duplicated outside `src/content/pages/{locale}/*.ts`, or
+     route/content ownership duplicated outside `src/config/pages.config.ts`
    - A gate or test asserting a point-in-time snapshot — commit hash, item count,
      push state — instead of the behavior the rule describes
    - A gate whose failure path is unreachable, or a test that cannot fail
@@ -158,7 +157,7 @@ and still be unsafe to merge.
 1. **Security and privacy.** Weakened or missing authn/authz on a touched path,
    unvalidated input crossing a trust boundary, injection surface, secrets or
    buyer PII reaching logs, error bodies, or client bundles, permissions widened
-   by default. The RFQ pipeline (`/api/inquiry` → Turnstile → Airtable → Resend)
+   by default. The RFQ pipeline (`/api/inquiry` → Turnstile → Resend → Airtable)
    is the highest-value target in this repo — treat any change there as
    trust-boundary work.
 2. **Reliability.** Races and ordering assumptions, unhandled rejection paths,
