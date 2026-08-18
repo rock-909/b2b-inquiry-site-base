@@ -1,4 +1,4 @@
-/* eslint-disable security/detect-non-literal-fs-filename -- walks fixed in-repo trees (public/, src/, content/, messages/); no external input reaches these paths */
+/* eslint-disable security/detect-non-literal-fs-filename -- walks fixed in-repo trees (public/, src/, messages/); no external input reaches these paths */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -16,7 +16,7 @@ import { describe, expect, it } from "vitest";
 const PUBLIC_DIR = "public";
 
 /** Trees that count as a live consumer. Tests and tooling do not. */
-const CONSUMER_ROOTS = ["src", "content", "messages"] as const;
+const CONSUMER_ROOTS = ["src", "messages"] as const;
 
 /**
  * Files served for reasons other than being referenced by a page: platform
