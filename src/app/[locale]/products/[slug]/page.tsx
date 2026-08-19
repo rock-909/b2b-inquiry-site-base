@@ -93,7 +93,7 @@ export default async function ProductDetailPage({
         <Link
           href="/products"
           prefetch={false}
-          className="text-sm font-medium text-primary hover:underline"
+          className="text-sm font-medium text-[var(--primary-text)] hover:underline"
         >
           {t("detail.backToProducts")}
         </Link>
