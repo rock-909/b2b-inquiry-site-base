@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
@@ -12,6 +12,7 @@ export interface MobileNavigationLinksProps extends Omit<
 > {
   contactSalesLabel?: string;
   currentPathname?: string;
+  languageSwitcher?: ReactNode;
   onNavigate?: () => void;
 }
 
@@ -19,6 +20,7 @@ export function MobileNavigationLinks({
   className,
   contactSalesLabel,
   currentPathname,
+  languageSwitcher,
   onNavigate,
   ...props
 }: MobileNavigationLinksProps) {
@@ -76,6 +78,11 @@ export function MobileNavigationLinks({
           </li>
         ) : null}
       </ul>
+      {languageSwitcher ? (
+        <div className="mt-4 border-t border-border pt-4">
+          {languageSwitcher}
+        </div>
+      ) : null}
     </nav>
   );
 }

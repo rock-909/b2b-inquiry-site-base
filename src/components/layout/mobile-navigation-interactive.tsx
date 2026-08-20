@@ -4,7 +4,7 @@
 // Content assembly (MobileNavigationHeader, drawer layout) still lives here.
 // A deeper RSC boundary refactor would move content assembly to the server shell.
 
-import { useState, type ComponentProps } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/routing";
@@ -23,6 +23,7 @@ import {
 interface MobileNavigationInteractiveProps {
   closeMenuLabel: string;
   initialOpen?: boolean;
+  languageSwitcher?: ReactNode;
   openMenuLabel: string;
 }
 
@@ -95,6 +96,7 @@ function MobileNavigationHeader({
 
 export function MobileNavigationInteractive({
   initialOpen = false,
+  languageSwitcher,
   openMenuLabel,
   closeMenuLabel,
 }: MobileNavigationInteractiveProps) {
@@ -143,6 +145,7 @@ export function MobileNavigationInteractive({
           <div className="my-4 h-px w-full shrink-0 bg-border" />
           <MobileNavigationLinks
             currentPathname={pathname}
+            languageSwitcher={languageSwitcher}
             onNavigate={() => handleOpenChange(false)}
           />
         </SheetContent>

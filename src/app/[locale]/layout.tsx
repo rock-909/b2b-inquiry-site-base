@@ -16,6 +16,7 @@ import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { coerceLocale, isLocale } from "@/i18n/locale-utils";
 import { loadClientMessages } from "@/lib/i18n/client-messages";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
+import { LOCALES_CONFIG } from "@/config/paths";
 
 // Client analytics are rendered as an island to avoid impacting LCP
 
@@ -54,6 +55,9 @@ async function AsyncLocaleLayoutContent({
   const closeMenuLabel = tAccessibility("closeMenu");
   const skipToContentLabel = tAccessibility("skipToContent");
   const mainNavigationLabel = tAccessibility("mainNavigation");
+  const languageAriaLabel = tAccessibility("language", {
+    language: LOCALES_CONFIG.displayNames[locale],
+  });
   const mainNavItems = SINGLE_SITE_NAVIGATION.map((item) => ({
     key: item.key,
     href: item.href,
@@ -79,6 +83,7 @@ async function AsyncLocaleLayoutContent({
             contactSalesLabel={contactSalesLabel}
             openMenuLabel={openMenuLabel}
             closeMenuLabel={closeMenuLabel}
+            languageAriaLabel={languageAriaLabel}
             mainNavigationLabel={mainNavigationLabel}
             mainNavItems={mainNavItems}
           />
