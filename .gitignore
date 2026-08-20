@@ -49,6 +49,7 @@ pnpm-debug.log*
 .lighthouseci/
 
 # Claude/Codex local state
+unified_inbox.json
 .grok/
 .impeccable/
 skills-lock.json

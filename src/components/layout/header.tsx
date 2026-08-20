@@ -7,16 +7,20 @@ import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
 import { Link } from "@/i18n/routing";
 import type { Locale } from "@/i18n/routing-config";
 import { cn } from "@/lib/utils";
-import { MobileNavigationIsland } from "@/components/layout/header-client";
+import {
+  LanguageToggleIsland,
+  MobileNavigationIsland,
+} from "@/components/layout/header-client";
 import { HEADER_CTA_CLASS } from "@/components/layout/header-utility-control";
 import { Logo } from "@/components/layout/logo";
+import { MobileLanguageSwitcher } from "@/components/layout/mobile-language-switcher";
 import { MobileNavigationLinks } from "@/components/layout/mobile-navigation";
 
 /**
  * Header Component
  *
  * Main navigation header with responsive design, logo, navigation menus,
- * and utility controls (language switcher, theme toggle).
+ * and utility controls.
  */
 
 // Simplified header props interface
@@ -32,6 +36,7 @@ interface HeaderProps {
   contactSalesLabel: string;
   openMenuLabel: string;
   closeMenuLabel: string;
+  languageAriaLabel: string;
   mainNavigationLabel: string;
   mainNavItems?: HeaderNavItem[];
 }
@@ -44,6 +49,7 @@ export function Header({
   contactSalesLabel,
   openMenuLabel,
   closeMenuLabel,
+  languageAriaLabel,
   mainNavigationLabel,
   mainNavItems = EMPTY_MAIN_NAV_ITEMS,
 }: HeaderProps) {
@@ -77,6 +83,7 @@ export function Header({
           <HeaderUtilityControls
             contactSalesLabel={contactSalesLabel}
             locale={locale}
+            languageAriaLabel={languageAriaLabel}
             openMenuLabel={openMenuLabel}
             closeMenuLabel={closeMenuLabel}
           />
@@ -134,11 +141,13 @@ function CenterNav({
 function HeaderUtilityControls({
   contactSalesLabel,
   locale,
+  languageAriaLabel,
   openMenuLabel,
   closeMenuLabel,
 }: {
   contactSalesLabel: string;
   locale: Locale | undefined;
+  languageAriaLabel: string;
   openMenuLabel: string;
   closeMenuLabel: string;
 }) {
@@ -179,13 +188,21 @@ function HeaderUtilityControls({
               </Link>
             </div>
           ) : null}
+          <div className="header-full-desktop-only h-10 items-center">
+            <LanguageToggleIsland
+              ariaLabel={languageAriaLabel}
+              locale={locale}
+            />
+          </div>
           <div className="header-mobile-only h-10 w-10">
             <MobileNavigationIsland
+              languageSwitcher={<MobileLanguageSwitcher locale={locale} />}
               openMenuLabel={openMenuLabel}
               closeMenuLabel={closeMenuLabel}
             >
               <MobileNavigationLinks
                 contactSalesLabel={contactSalesLabel}
+                languageSwitcher={<MobileLanguageSwitcher locale={locale} />}
                 data-testid="header-mobile-navigation-fallback-links"
               />
             </MobileNavigationIsland>

@@ -16,7 +16,7 @@
     "type-check:tests": "tsc --project tsconfig.tests.json",
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.config.mjs --cache --cache-location .eslintcache --max-warnings 0",
     "knip:check": "knip",
-    "react:doctor": "npx --loglevel=error -y react-doctor@latest --verbose --scope changed --blocking warning",
+    "react:doctor": "npx --loglevel=error -y react-doctor@latest --verbose --scope changed --include-untracked --blocking warning",
     "react:doctor:report": "npx --loglevel=error -y react-doctor@latest --json --no-score --blocking none",
     "canary:airtable": "node scripts/quality/checks/airtable-canary.js",
     "release:verify": "node scripts/quality/checks/release-verify.js",

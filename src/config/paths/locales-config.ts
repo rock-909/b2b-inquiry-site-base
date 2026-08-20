@@ -6,6 +6,12 @@ export const LOCALES_CONFIG = Object.freeze({
   locales: Object.freeze(["en"] as const),
   defaultLocale: "en" as const,
   localePrefix: "never" as const,
+  displayNames: Object.freeze({
+    en: "English",
+  }),
+  triggerLabels: Object.freeze({
+    en: "English",
+  }),
   timeZones: Object.freeze({
     en: "UTC",
   }),

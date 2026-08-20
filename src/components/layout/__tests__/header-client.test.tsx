@@ -7,7 +7,13 @@ import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { MobileNavigationIsland } from "../header-client";
+import { LanguageToggleIsland, MobileNavigationIsland } from "../header-client";
+
+const mockPathname = vi.hoisted(() => ({ current: "/" }));
+
+vi.mock("@/i18n/routing", () => ({
+  usePathname: () => mockPathname.current,
+}));
 
 vi.mock("@/components/layout/mobile-navigation-interactive", () => ({
   MobileNavigationInteractive: ({
@@ -29,6 +35,22 @@ vi.mock("@/components/layout/mobile-navigation-interactive", () => ({
     >
       {children}
     </div>
+  ),
+}));
+
+vi.mock("@/components/layout/header-language-menu", () => ({
+  HeaderLanguageMenu: ({
+    initialOpen,
+    locale,
+  }: {
+    initialOpen?: boolean;
+    locale: string;
+  }) => (
+    <div
+      data-testid="header-language-menu"
+      data-initial-open={String(initialOpen ?? false)}
+      data-locale={locale}
+    />
   ),
 }));
 
@@ -153,6 +175,43 @@ describe("MobileNavigationIsland", () => {
     expect(screen.getByTestId("header-mobile-menu-label")).toHaveAttribute(
       "translate",
       "no",
+    );
+  });
+});
+
+describe("LanguageToggleIsland", () => {
+  it("renders the localized fallback trigger before loading the menu", () => {
+    render(<LanguageToggleIsland ariaLabel="Language: English" locale="en" />);
+
+    const trigger = screen.getByRole("button", { name: "Language: English" });
+    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByTestId("language-current-label")).toHaveTextContent(
+      "English",
+    );
+    expect(
+      screen.queryByTestId("header-language-menu"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("loads the menu after user intent without claiming it opened on another route", async () => {
+    const { rerender } = render(
+      <LanguageToggleIsland ariaLabel="Language: English" locale="en" />,
+    );
+
+    fireEvent.click(screen.getByTestId("language-toggle-button"));
+    mockPathname.current = "/about";
+    rerender(
+      <LanguageToggleIsland ariaLabel="Language: English" locale="en" />,
+    );
+
+    await act(async () => {
+      await vi.dynamicImportSettled();
+    });
+
+    expect(screen.getByTestId("header-language-menu")).toHaveAttribute(
+      "data-initial-open",
+      "false",
     );
   });
 });

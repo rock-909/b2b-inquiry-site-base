@@ -34,6 +34,9 @@ vi.mock("@/components/layout/logo", () => ({
 }));
 
 vi.mock("@/components/layout/header-client", () => ({
+  LanguageToggleIsland: () => (
+    <div data-testid="language-toggle-island">Language</div>
+  ),
   MobileNavigationIsland: () => (
     <div data-testid="mobile-navigation">
       <button data-testid="header-mobile-menu-button" type="button">
@@ -52,6 +55,7 @@ const HEADER_LABELS = {
   contactSalesLabel: "Start an inquiry",
   openMenuLabel: "Open navigation menu",
   closeMenuLabel: "Close navigation menu",
+  languageAriaLabel: "Language: English",
   mainNavigationLabel: "Main navigation",
 } as const;
 
@@ -84,6 +88,7 @@ describe("Header", () => {
     expect(
       screen.getByRole("navigation", { name: "Main navigation" }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("language-toggle-island")).toBeInTheDocument();
     expect(screen.getByTestId("mobile-navigation")).toBeInTheDocument();
   });
 
