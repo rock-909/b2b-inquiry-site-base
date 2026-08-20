@@ -64,7 +64,7 @@ export function MobileLanguageSwitcher({
               <div
                 key={option.locale}
                 aria-current="true"
-                className="flex items-center justify-between rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground"
+                className="flex items-center justify-between rounded-md bg-transparent px-3 py-2 text-sm font-medium text-foreground"
                 data-locale={option.locale}
                 data-testid={`mobile-language-option-${option.locale}`}
               >

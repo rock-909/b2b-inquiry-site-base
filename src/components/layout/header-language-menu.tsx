@@ -12,9 +12,7 @@ import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuLinkItem,
   DropdownMenuPortal,
   DropdownMenuPositioner,
@@ -37,7 +35,6 @@ export function HeaderLanguageMenu({
 }: HeaderLanguageMenuProps) {
   const pathname = usePathname();
   const tAccessibility = useTranslations("accessibility");
-  const tNavigation = useTranslations("navigation");
   const currentLocale = locale;
   const currentLanguageLabel = LOCALES_CONFIG.displayNames[currentLocale];
   const [open, setOpen] = useState(initialOpen);
@@ -54,6 +51,9 @@ export function HeaderLanguageMenu({
     <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger
         type="button"
+        openOnHover
+        delay={100}
+        closeDelay={120}
         data-testid="language-toggle-button"
         aria-label={tAccessibility("language", {
           language: currentLanguageLabel,
@@ -77,59 +77,57 @@ export function HeaderLanguageMenu({
       <DropdownMenuPortal>
         <DropdownMenuPositioner sideOffset={6} align="end">
           <DropdownMenuContent data-testid="language-dropdown-content">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>{tNavigation("language")}</DropdownMenuLabel>
-              <div className="mt-1 space-y-0.5">
-                {LANGUAGE_OPTIONS.map((option) => {
-                  const isCurrent = option.locale === currentLocale;
-                  const optionContent = (
-                    <>
-                      <span lang={option.locale} translate="no">
-                        {option.label}
-                      </span>
-                      {isCurrent ? (
-                        <Check
-                          aria-hidden="true"
-                          className="ml-auto size-4 text-foreground"
-                        />
-                      ) : null}
-                    </>
-                  );
+            <div className="space-y-0.5">
+              {LANGUAGE_OPTIONS.map((option) => {
+                const isCurrent = option.locale === currentLocale;
+                const optionContent = (
+                  <>
+                    <span lang={option.locale} translate="no">
+                      {option.label}
+                    </span>
+                    {isCurrent ? (
+                      <Check
+                        aria-hidden="true"
+                        className="ml-auto size-4 text-foreground"
+                      />
+                    ) : null}
+                  </>
+                );
 
-                  if (isCurrent) {
-                    return (
-                      <DropdownMenuItem
-                        key={option.locale}
-                        aria-current="true"
-                        data-locale={option.locale}
-                        data-testid={`language-option-${option.locale}`}
-                        closeOnClick
-                      >
-                        {optionContent}
-                      </DropdownMenuItem>
-                    );
-                  }
-
+                if (isCurrent) {
                   return (
-                    <DropdownMenuLinkItem
+                    <DropdownMenuItem
                       key={option.locale}
+                      aria-current="true"
+                      className="text-foreground data-[highlighted]:bg-transparent data-[highlighted]:text-foreground"
                       data-locale={option.locale}
                       data-testid={`language-option-${option.locale}`}
-                      render={
-                        <Link
-                          href={pathname as "/"}
-                          locale={option.locale}
-                          prefetch={false}
-                          translate="no"
-                        />
-                      }
+                      closeOnClick
                     >
                       {optionContent}
-                    </DropdownMenuLinkItem>
+                    </DropdownMenuItem>
                   );
-                })}
-              </div>
-            </DropdownMenuGroup>
+                }
+
+                return (
+                  <DropdownMenuLinkItem
+                    key={option.locale}
+                    data-locale={option.locale}
+                    data-testid={`language-option-${option.locale}`}
+                    render={
+                      <Link
+                        href={pathname as "/"}
+                        locale={option.locale}
+                        prefetch={false}
+                        translate="no"
+                      />
+                    }
+                  >
+                    {optionContent}
+                  </DropdownMenuLinkItem>
+                );
+              })}
+            </div>
           </DropdownMenuContent>
         </DropdownMenuPositioner>
       </DropdownMenuPortal>

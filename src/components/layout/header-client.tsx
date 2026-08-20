@@ -123,7 +123,14 @@ export function LanguageToggleIsland({
   );
 
   return (
-    <div className="inline-flex min-w-[6.25rem] shrink-0 justify-end">
+    <div
+      className="inline-flex min-w-[6.25rem] shrink-0 justify-end"
+      onPointerEnter={(event) => {
+        if (event.pointerType !== "touch") {
+          setActivationPathname(pathname);
+        }
+      }}
+    >
       {isActivated ? (
         <Suspense fallback={fallback}>
           <HeaderLanguageMenu
