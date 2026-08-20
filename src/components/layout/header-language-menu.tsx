@@ -53,7 +53,7 @@ export function HeaderLanguageMenu({
         type="button"
         openOnHover
         delay={100}
-        closeDelay={120}
+        closeDelay={0}
         data-testid="language-toggle-button"
         aria-label={tAccessibility("language", {
           language: currentLanguageLabel,
