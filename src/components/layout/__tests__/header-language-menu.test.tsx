@@ -3,7 +3,8 @@
  */
 
 import type { ComponentProps } from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { vi, describe, expect, it } from "vitest";
 import { HeaderLanguageMenu } from "@/components/layout/header-language-menu";
 
@@ -32,6 +33,19 @@ vi.mock("@/i18n/routing", () => ({
 }));
 
 describe("HeaderLanguageMenu", () => {
+  it("opens from pointer hover", async () => {
+    const user = userEvent.setup();
+    render(<HeaderLanguageMenu locale="en" />);
+
+    const trigger = screen.getByRole("button", { name: "Language: English" });
+    await user.hover(trigger);
+
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute("aria-expanded", "true");
+    });
+    expect(screen.getByTestId("language-dropdown-content")).toBeInTheDocument();
+  });
+
   it("opens with the current language clearly marked and no fake switch link", async () => {
     render(<HeaderLanguageMenu initialOpen locale="en" />);
 
@@ -42,6 +56,8 @@ describe("HeaderLanguageMenu", () => {
     const currentOption = await screen.findByTestId("language-option-en");
     expect(currentOption).toHaveAttribute("aria-current", "true");
     expect(currentOption).toHaveTextContent("English");
+    expect(currentOption).toHaveClass("text-foreground");
+    expect(currentOption).toHaveClass("data-[highlighted]:bg-transparent");
     expect(currentOption.querySelector('[lang="en"]')).not.toBeNull();
     expect(screen.queryByRole("link", { name: "English" })).toBeNull();
   });

@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageToggleIsland, MobileNavigationIsland } from "../header-client";
 
 const mockPathname = vi.hoisted(() => ({ current: "/" }));
@@ -53,6 +53,10 @@ vi.mock("@/components/layout/header-language-menu", () => ({
     />
   ),
 }));
+
+beforeEach(() => {
+  mockPathname.current = "/";
+});
 
 describe("header client entry", () => {
   it("keeps always-present header islands free of next/dynamic runtime", () => {
@@ -212,6 +216,21 @@ describe("LanguageToggleIsland", () => {
     expect(screen.getByTestId("header-language-menu")).toHaveAttribute(
       "data-initial-open",
       "false",
+    );
+  });
+
+  it("activates the lazy menu when the command area is hovered", async () => {
+    render(<LanguageToggleIsland ariaLabel="Language: English" locale="en" />);
+
+    fireEvent.pointerEnter(screen.getByTestId("language-toggle-button"));
+
+    await act(async () => {
+      await vi.dynamicImportSettled();
+    });
+
+    expect(screen.getByTestId("header-language-menu")).toHaveAttribute(
+      "data-initial-open",
+      "true",
     );
   });
 });

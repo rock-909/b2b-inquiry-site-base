@@ -44,6 +44,7 @@ describe("MobileLanguageSwitcher", () => {
 
     const currentOption = screen.getByTestId("mobile-language-option-en");
     expect(currentOption).toHaveAttribute("aria-current", "true");
+    expect(currentOption).toHaveClass("bg-transparent", "text-foreground");
     expect(currentOption.querySelector('[lang="en"]')).not.toBeNull();
     expect(screen.queryByRole("link", { name: "English" })).toBeNull();
   });
