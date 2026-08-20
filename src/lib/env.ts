@@ -11,7 +11,7 @@ export const serverEnvSchema = {
   // Email Service (Resend)
   RESEND_API_KEY: string().min(1).optional(),
   EMAIL_FROM: email().optional(),
-  EMAIL_REPLY_TO: email().optional(),
+  INQUIRY_RECIPIENT_EMAIL: email().optional(),
 
   // Data Storage (Airtable)
   AIRTABLE_API_KEY: string().min(1).optional(),
@@ -110,7 +110,7 @@ export const runtimeEnv = {
   // Server
   RESEND_API_KEY: process.env.RESEND_API_KEY,
   EMAIL_FROM: process.env.EMAIL_FROM,
-  EMAIL_REPLY_TO: process.env.EMAIL_REPLY_TO,
+  INQUIRY_RECIPIENT_EMAIL: process.env.INQUIRY_RECIPIENT_EMAIL,
   AIRTABLE_API_KEY: process.env.AIRTABLE_API_KEY,
   AIRTABLE_BASE_ID: process.env.AIRTABLE_BASE_ID,
   AIRTABLE_TABLE_NAME: process.env.AIRTABLE_TABLE_NAME,

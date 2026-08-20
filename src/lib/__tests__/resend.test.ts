@@ -8,7 +8,7 @@ const { mockRuntimeEnv } = vi.hoisted(() => ({
   mockRuntimeEnv: {
     RESEND_API_KEY: "test-resend-key",
     EMAIL_FROM: "test@example.com",
-    EMAIL_REPLY_TO: "reply@example.com",
+    INQUIRY_RECIPIENT_EMAIL: "reply@example.com",
     NODE_ENV: "test",
   } as Record<string, string | undefined>,
 }));
@@ -53,7 +53,7 @@ const setupResendTest = async (
   Object.assign(mockRuntimeEnv, {
     RESEND_API_KEY: "test-resend-key",
     EMAIL_FROM: "test@example.com",
-    EMAIL_REPLY_TO: "reply@example.com",
+    INQUIRY_RECIPIENT_EMAIL: "reply@example.com",
     NODE_ENV: "test",
   });
   Object.assign(mockRuntimeEnv, envOverrides);
@@ -83,7 +83,7 @@ describe("resend - Service Initialization", () => {
   it("falls back to the site contact email when email env is absent", async () => {
     ResendServiceClass = await setupResendTest({
       EMAIL_FROM: undefined,
-      EMAIL_REPLY_TO: undefined,
+      INQUIRY_RECIPIENT_EMAIL: undefined,
     });
 
     const service = new ResendServiceClass();

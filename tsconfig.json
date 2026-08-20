@@ -34,8 +34,7 @@
     "erasableSyntaxOnly": true,
     "paths": {
       "@/*": ["./src/*"],
-      "@messages/*": ["./messages/*"],
-      "@content/*": ["./content/*"]
+      "@messages/*": ["./messages/*"]
     },
     "plugins": [
       {
@@ -50,7 +49,6 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "messages/**/*.json",
-    "content/**/*.mdx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     ".next-lighthouse/types/**/*.ts",

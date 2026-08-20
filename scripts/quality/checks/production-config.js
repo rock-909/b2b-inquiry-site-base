@@ -239,6 +239,18 @@ function validateProductionRuntimeContract(env) {
   validateRequiredEnv(
     errors,
     env,
+    "EMAIL_FROM",
+    "the shipped lead pipeline needs an explicitly authorized sender address",
+  );
+  validateRequiredEnv(
+    errors,
+    env,
+    "INQUIRY_RECIPIENT_EMAIL",
+    "the shipped lead pipeline needs an explicit owner inbox for inquiry notifications",
+  );
+  validateRequiredEnv(
+    errors,
+    env,
     "RESEND_API_KEY",
     "the shipped lead pipeline sends admin notification email through Resend",
   );

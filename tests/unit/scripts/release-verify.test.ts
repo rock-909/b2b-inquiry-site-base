@@ -43,6 +43,18 @@ afterEach(async () => {
 });
 
 describe("release verify runner", () => {
+  it("checks test TypeScript after production TypeScript", () => {
+    const productionTypeCheck = RELEASE_VERIFY_COMMANDS.findIndex(
+      (step) => step.id === "type-check",
+    );
+    const testTypeCheck = RELEASE_VERIFY_COMMANDS.findIndex(
+      (step) => step.id === "test-type-check",
+    );
+
+    expect(productionTypeCheck).toBeGreaterThanOrEqual(0);
+    expect(testTypeCheck).toBeGreaterThan(productionTypeCheck);
+  });
+
   it("detects an occupied local port", async () => {
     const { port } = await listenOnLoopback();
 

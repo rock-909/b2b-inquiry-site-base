@@ -145,6 +145,8 @@ jobs:
           NODE_ENV: production
           RATE_LIMIT_PEPPER: ${{ secrets.RATE_LIMIT_PEPPER }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          INQUIRY_RECIPIENT_EMAIL: ${{ secrets.INQUIRY_RECIPIENT_EMAIL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
@@ -179,6 +181,8 @@ jobs:
           APP_ENV: production
           RATE_LIMIT_PEPPER: ${{ secrets.RATE_LIMIT_PEPPER }}
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          INQUIRY_RECIPIENT_EMAIL: ${{ secrets.INQUIRY_RECIPIENT_EMAIL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}
