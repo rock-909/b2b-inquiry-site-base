@@ -51,8 +51,7 @@ const CF_PREVIEW_SMOKE_EXPECTATIONS = [
   { pathname: MISSING_OFFERING_PATH, status: 404, html: true },
 ];
 const DEPLOYED_SMOKE_EXPECTATIONS = [
-  ...EXTERNAL_URL_SMOKE_EXPECTATIONS,
-  { pathname: MISSING_OFFERING_PATH, status: 404 },
+  ...CF_PREVIEW_SMOKE_EXPECTATIONS,
   { pathname: "/api/health", status: 200 },
   { pathname: "/.well-known/security.txt", status: 200 },
   { pathname: "/security-policy.txt", status: 404 },
@@ -455,6 +454,7 @@ async function requestDeployedSmoke(baseUrl, pathname, headers, retryEvents) {
         location: response.headers.get("location"),
         leakedMiddlewareCookie: response.headers.get("x-middleware-set-cookie"),
         robotsTag: response.headers.get("x-robots-tag"),
+        contentType: response.headers.get("content-type"),
         body,
         retries,
       };
@@ -504,6 +504,9 @@ async function runDeployedSmoke(args = []) {
   for (const [index, response] of responses.entries()) {
     const expectation = DEPLOYED_SMOKE_EXPECTATIONS[index];
     pushExpectedStatus(response, expectation.status, failures);
+    if (expectation.html) {
+      pushHealthyHtmlResponse(response, failures);
+    }
     if (expectation.robotsTag) {
       pushFailureUnless(
         (response.robotsTag ?? "").includes(expectation.robotsTag),
