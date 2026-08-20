@@ -74,12 +74,6 @@ function DropdownMenuItem({
   );
 }
 
-function DropdownMenuGroup({
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.Group>) {
-  return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
-}
-
 function DropdownMenuLinkItem({
   className,
   ...props
@@ -97,22 +91,6 @@ function DropdownMenuLinkItem({
   );
 }
 
-function DropdownMenuLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof MenuPrimitive.GroupLabel>) {
-  return (
-    <MenuPrimitive.GroupLabel
-      data-slot="dropdown-menu-label"
-      className={cn(
-        "px-3 py-1.5 text-xs font-medium tracking-[0.08em] text-muted-foreground uppercase",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
 function DropdownMenuPortal({
   ...props
 }: React.ComponentProps<typeof MenuPrimitive.Portal>) {
@@ -122,9 +100,7 @@ function DropdownMenuPortal({
 export {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuLinkItem,
   DropdownMenuPortal,
   DropdownMenuPositioner,
