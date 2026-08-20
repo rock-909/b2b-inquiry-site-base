@@ -17,6 +17,8 @@ interface DeployWorkflow {
         readonly if?: string;
         readonly name?: string;
         readonly run?: string;
+        readonly uses?: string;
+        readonly with?: Record<string, string>;
         readonly env?: Record<string, string>;
         readonly "continue-on-error"?: boolean;
       }[];
@@ -103,6 +105,23 @@ describe("Cloudflare deploy workflow contract", () => {
     expect(summaryStep?.run).toContain(
       "正式域名、DNS、TLS 和 custom domain 由上线负责人确认",
     );
+  });
+
+  it("pins the post-deploy smoke Node version before probing", () => {
+    const steps = workflowSteps(
+      loadDeployWorkflow(),
+      "post-deploy-verification",
+    );
+    const setupNode = steps.findIndex(
+      (step) => step.uses === "actions/setup-node@v6",
+    );
+    const smoke = steps.findIndex((step) =>
+      step.run?.includes("cloudflare-smoke.js deployed-smoke"),
+    );
+
+    expect(setupNode).toBeGreaterThanOrEqual(0);
+    expect(steps[setupNode]?.with?.["node-version-file"]).toBe(".node-version");
+    expect(smoke).toBeGreaterThan(setupNode);
   });
 
   it("keeps preview smoke free of production-only dependency installation", () => {

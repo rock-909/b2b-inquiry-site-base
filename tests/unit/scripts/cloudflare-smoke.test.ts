@@ -120,17 +120,27 @@ function createDeployedFetchMock() {
       }
 
       if (
-        [
-          ...CORE_PUBLIC_PAGE_PATHS,
-          "/api/health",
-          "/.well-known/security.txt",
-        ].includes(pathname)
+        CORE_PUBLIC_PAGE_PATHS.includes(
+          pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
+        )
       ) {
-        return response(200, "healthy deployed page");
+        return response(200, HEALTHY_HTML, {
+          "content-type": "text/html; charset=utf-8",
+        });
       }
 
-      if ([MISSING_OFFERING_PATH, "/security-policy.txt"].includes(pathname)) {
-        return response(404, "not found");
+      if (pathname === MISSING_OFFERING_PATH) {
+        return response(404, HEALTHY_HTML, {
+          "content-type": "text/html; charset=utf-8",
+        });
+      }
+
+      if (["/api/health", "/.well-known/security.txt"].includes(pathname)) {
+        return response(200, "ok", { "content-type": "text/plain" });
+      }
+
+      if (pathname === "/security-policy.txt") {
+        return response(404, "not found", { "content-type": "text/plain" });
       }
 
       return response(404, "not found");
@@ -191,18 +201,32 @@ function listenForDeployedSmoke(): Promise<{
       paths.push(pathname);
 
       if (
-        [
-          ...CORE_PUBLIC_PAGE_PATHS,
-          "/api/health",
-          "/.well-known/security.txt",
-        ].includes(pathname)
+        CORE_PUBLIC_PAGE_PATHS.includes(
+          pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
+        )
       ) {
+        serverResponse.writeHead(200, {
+          "content-type": "text/html; charset=utf-8",
+        });
+        serverResponse.end(HEALTHY_HTML);
+        return;
+      }
+
+      if (pathname === MISSING_OFFERING_PATH) {
+        serverResponse.writeHead(404, {
+          "content-type": "text/html; charset=utf-8",
+        });
+        serverResponse.end(HEALTHY_HTML);
+        return;
+      }
+
+      if (["/api/health", "/.well-known/security.txt"].includes(pathname)) {
         serverResponse.writeHead(200, { "content-type": "text/plain" });
         serverResponse.end("ok");
         return;
       }
 
-      if ([MISSING_OFFERING_PATH, "/security-policy.txt"].includes(pathname)) {
+      if (pathname === "/security-policy.txt") {
         serverResponse.writeHead(404, { "content-type": "text/plain" });
         serverResponse.end("not found");
         return;
@@ -573,7 +597,9 @@ describe("deployed smoke", () => {
           aboutAttempts += 1;
           return aboutAttempts === 1
             ? response(500, "temporary failure")
-            : response(200, "recovered");
+            : response(200, HEALTHY_HTML, {
+                "content-type": "text/html; charset=utf-8",
+              });
         }
 
         return deployedFetchMock(input, init);
@@ -595,6 +621,57 @@ describe("deployed smoke", () => {
     await expect(smokePromise).resolves.toBe(true);
     expect(aboutAttempts).toBe(2);
   });
+
+  it.each([
+    [
+      "plain text response",
+      HEALTHY_HTML,
+      { "content-type": "text/plain" },
+      ["  - Expected /contact to return HTML, got text/plain"],
+    ],
+    [
+      "truncated HTML response",
+      `<!doctype html><html><body>${"cut off".repeat(200)}`,
+      { "content-type": "text/html" },
+      ["  - Expected /contact to return a complete HTML document"],
+    ],
+    [
+      "rendered application error",
+      `<!doctype html><html><body>Application error${"x".repeat(1100)}</body></html>`,
+      { "content-type": "text/html" },
+      ["  - Unexpected application error surfaced on /contact"],
+    ],
+  ])(
+    "rejects a deployed page with a %s",
+    async (_case, body, headers, expectedErrors) => {
+      captureExpectedConsoleErrors(
+        "[post-deploy-smoke] Failures detected:",
+        ...expectedErrors,
+      );
+      const deployedFetchMock = createDeployedFetchMock();
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+          if (getRequestPath(input) === "/contact") {
+            return response(200, body, headers);
+          }
+
+          return deployedFetchMock(input, init);
+        }),
+      );
+
+      await expect(
+        runDeployedSmoke([
+          "--base-url",
+          "https://deployed.example",
+          "--header-name",
+          "x-smoke-secret",
+          "--header-value",
+          "proof",
+        ]),
+      ).resolves.toBe(false);
+    },
+  );
 
   it("runs deployed smoke from a minimal fixture without node_modules", async () => {
     const { baseUrl, paths } = await listenForDeployedSmoke();
