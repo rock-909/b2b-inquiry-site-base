@@ -4,7 +4,6 @@
 @source "../app";
 @source "../components";
 @source "../lib/content";
-@source "../../content";
 
 /* Tailwind v4 Plugins (order: animate before typography)
    - tailwindcss-animate: UI animation keyframes (animate-in, fade-in, slide-in-*)

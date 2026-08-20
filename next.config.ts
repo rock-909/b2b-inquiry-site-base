@@ -74,9 +74,6 @@ const nextConfig: NextConfig = {
   // Turbopack 配置 - 明确指定项目根目录
   turbopack: {
     root: __dirname,
-    resolveAlias: {
-      "@content": path.resolve(__dirname, "content"),
-    },
   },
 
   // Cloudflare deploy artifacts prioritize bundle size; disable browser source maps there.
@@ -129,7 +126,6 @@ const nextConfig: NextConfig = {
       ...config.resolve.alias,
       "@": path.resolve(__dirname, "src"),
       "@messages": path.resolve(__dirname, "messages"),
-      "@content": path.resolve(__dirname, "content"),
     };
 
     return config;

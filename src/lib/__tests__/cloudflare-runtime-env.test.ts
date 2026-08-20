@@ -28,7 +28,7 @@ describe("Cloudflare runtime env timing", () => {
         ...createEnvMock(runtimeValues).env,
         RESEND_API_KEY: undefined,
         EMAIL_FROM: undefined,
-        EMAIL_REPLY_TO: undefined,
+        INQUIRY_RECIPIENT_EMAIL: undefined,
       },
     }));
 
@@ -55,7 +55,7 @@ describe("Cloudflare runtime env timing", () => {
 
     runtimeValues.RESEND_API_KEY = "runtime-resend-key";
     runtimeValues.EMAIL_FROM = "noreply@mail.reference-site.test";
-    runtimeValues.EMAIL_REPLY_TO = "sales@reference-site.test";
+    runtimeValues.INQUIRY_RECIPIENT_EMAIL = "sales@reference-site.test";
 
     expect(service.isReady()).toBe(true);
     expect(constructorCalls).toHaveBeenCalledWith("runtime-resend-key");

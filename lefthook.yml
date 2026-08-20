@@ -11,7 +11,7 @@ pre-commit:
     # 多语言同步检查
     i18n-sync:
       run: |
-        if git diff --cached --name-only | grep -E '^(messages/|content/|i18n\.(json|ts)$|src/.+i18n|translation\.config\.js)' >/dev/null; then
+        if git diff --cached --name-only | grep -E '^(messages/|i18n\.(json|ts)$|src/.+i18n|translation\.config\.js)' >/dev/null; then
           node scripts/quality/checks/translations.js
         else
           echo "跳过 i18n 同步检查（无相关变更）"

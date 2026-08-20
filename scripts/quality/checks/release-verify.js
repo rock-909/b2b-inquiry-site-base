@@ -23,6 +23,7 @@ const RELEASE_VERIFY_COMMANDS = [
     args: ["scripts/quality/checks/cloudflare-config-check.js"],
   },
   { id: "type-check", command: "pnpm", args: ["type-check"] },
+  { id: "test-type-check", command: "pnpm", args: ["type-check:tests"] },
   { id: "lint-check", command: "pnpm", args: ["lint:check"] },
   { id: "tests", command: "pnpm", args: ["test"] },
   {

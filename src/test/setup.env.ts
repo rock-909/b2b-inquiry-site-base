@@ -32,7 +32,7 @@ vi.stubEnv("AIRTABLE_API_KEY", "test-airtable-key");
 vi.stubEnv("AIRTABLE_BASE_ID", "test-base-id");
 vi.stubEnv("AIRTABLE_TABLE_NAME", "test-table");
 vi.stubEnv("EMAIL_FROM", "test@example.com");
-vi.stubEnv("EMAIL_REPLY_TO", "reply@example.com");
+vi.stubEnv("INQUIRY_RECIPIENT_EMAIL", "reply@example.com");
 vi.stubEnv("ADMIN_API_TOKEN", "test-admin-token");
 vi.stubEnv("TURNSTILE_BYPASS", "false");
 vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "test-account-id");
@@ -48,7 +48,7 @@ vi.mock("@t3-oss/env-nextjs", () => ({
     AIRTABLE_BASE_ID: "test-base-id",
     AIRTABLE_TABLE_NAME: "test-table",
     EMAIL_FROM: "test@example.com",
-    EMAIL_REPLY_TO: "reply@example.com",
+    INQUIRY_RECIPIENT_EMAIL: "reply@example.com",
     ADMIN_API_TOKEN: "test-admin-token",
     TURNSTILE_BYPASS: false,
     CLOUDFLARE_ACCOUNT_ID: "test-account-id",
@@ -67,7 +67,7 @@ vi.mock("@/lib/env", () => {
     AIRTABLE_BASE_ID: "test-base-id",
     AIRTABLE_TABLE_NAME: "test-table",
     EMAIL_FROM: "test@example.com",
-    EMAIL_REPLY_TO: "reply@example.com",
+    INQUIRY_RECIPIENT_EMAIL: "reply@example.com",
     ADMIN_API_TOKEN: "test-admin-token",
     CLOUDFLARE_ACCOUNT_ID: "test-account-id",
     NEXT_PUBLIC_BASE_URL: "https://example.com",

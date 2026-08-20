@@ -52,7 +52,7 @@ export class ResendService {
   private isConfigured: boolean = false;
   private emailConfig: {
     from: string;
-    replyTo: string;
+    recipient: string;
   };
 
   constructor() {
@@ -60,16 +60,16 @@ export class ResendService {
   }
 
   private readEmailEnv(
-    key: "EMAIL_FROM" | "EMAIL_REPLY_TO",
+    key: "EMAIL_FROM" | "INQUIRY_RECIPIENT_EMAIL",
   ): string | undefined {
     return getRuntimeEnvString(key) ?? env[key];
   }
 
   private readEmailConfig(): typeof this.emailConfig {
-    const replyTo = this.readEmailEnv("EMAIL_REPLY_TO");
+    const recipient = this.readEmailEnv("INQUIRY_RECIPIENT_EMAIL");
     return {
       from: this.readEmailEnv("EMAIL_FROM") || SINGLE_SITE_CONFIG.contact.email,
-      replyTo: replyTo || SINGLE_SITE_CONFIG.contact.email,
+      recipient: recipient || SINGLE_SITE_CONFIG.contact.email,
     };
   }
 
@@ -93,7 +93,7 @@ export class ResendService {
 
       logger.info("Resend email service initialized successfully", {
         from: this.emailConfig.from,
-        replyTo: this.emailConfig.replyTo,
+        recipient: this.emailConfig.recipient,
       });
     } catch (error) {
       logger.error("Failed to initialize Resend service", {
@@ -122,7 +122,7 @@ export class ResendService {
 
       const result = await this.resend!.send({
         from: this.emailConfig.from,
-        to: [this.emailConfig.replyTo],
+        to: [this.emailConfig.recipient],
         replyTo: sanitizedData.email,
         subject: EMAIL_COPY.inquiry.subject(sanitizedData),
         html: emailContent.html,
@@ -139,7 +139,7 @@ export class ResendService {
       logger.info("Inquiry email sent successfully", {
         referenceId: sanitizedData.referenceId,
         messageId: result.data.id,
-        to: sanitizeEmail(this.emailConfig.replyTo),
+        to: sanitizeEmail(this.emailConfig.recipient),
         from: sanitizeEmail(sanitizedData.email),
         offeringId: sanitizedData.offeringId,
       });

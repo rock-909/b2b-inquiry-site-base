@@ -153,6 +153,8 @@ describe("Cloudflare deploy workflow contract", () => {
     const providerSecretNames = [
       "RATE_LIMIT_PEPPER",
       "TURNSTILE_SECRET_KEY",
+      "EMAIL_FROM",
+      "INQUIRY_RECIPIENT_EMAIL",
       "RESEND_API_KEY",
       "AIRTABLE_API_KEY",
       "AIRTABLE_BASE_ID",
