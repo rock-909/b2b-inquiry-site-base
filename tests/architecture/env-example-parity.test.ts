@@ -46,6 +46,12 @@ const TOOLING_ENV_USAGE_ROOTS = [
   "playwright.config.ts",
   "tests/e2e",
 ] as const;
+const PUBLIC_RUNTIME_ENV_SOURCE_PATH = "src/lib/public-runtime-env.ts";
+// NODE_ENV 由框架注入；NEXT_PUBLIC_APP_ENV 由 next.config.ts 在构建时从
+// APP_ENV 派生（映射本身由 next-config-contract 的行为断言证明）。两者都不是
+// 用户输入，所以在 client schema 登记要求中显式豁免。
+const FRAMEWORK_PUBLIC_ENV_KEYS = new Set(["NODE_ENV"]);
+const DERIVED_PUBLIC_ENV_KEYS = new Set(["NEXT_PUBLIC_APP_ENV"]);
 
 function readRepoFile(repoPath: string) {
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test reads fixed repo-local files
@@ -96,6 +102,14 @@ function getPropertyName(name: ts.PropertyName): string | null {
   return null;
 }
 
+function unwrapLiteralExpression(expression: ts.Expression): ts.Expression {
+  // `as const satisfies …` 会把对象字面量包进 SatisfiesExpression，直接判
+  // initializer 的 kind 会漏掉这类声明。
+  return ts.isSatisfiesExpression(expression) || ts.isAsExpression(expression)
+    ? unwrapLiteralExpression(expression.expression)
+    : expression;
+}
+
 function findObjectLiteral(
   source: string,
   variableName: string,
@@ -108,11 +122,14 @@ function findObjectLiteral(
       ts.isVariableDeclaration(node) &&
       ts.isIdentifier(node.name) &&
       node.name.text === variableName &&
-      node.initializer &&
-      ts.isObjectLiteralExpression(node.initializer)
+      node.initializer
     ) {
-      objectLiteral = node.initializer;
-      return;
+      const unwrapped = unwrapLiteralExpression(node.initializer);
+
+      if (ts.isObjectLiteralExpression(unwrapped)) {
+        objectLiteral = unwrapped;
+        return;
+      }
     }
 
     ts.forEachChild(node, visit);
@@ -261,6 +278,44 @@ describe(".env.example parity", () => {
     expect(unknownExampleKeys).toEqual([]);
     expect(envExample.get("CLOUDFLARE_API_TOKEN")).toBeDefined();
     expect(schemaKeys.has("CLOUDFLARE_API_TOKEN")).toBe(false);
+  });
+
+  // public-runtime-env 的 allowlist 是客户端读 env 的唯一合法入口。它每多一个
+  // key 就绕过一次中心 schema 的登记，而上面的扫描根恰好不含 src/，这条漂移
+  // 只有这里能看见。只守「allowlist 的读取都有登记」这一个方向：反向（schema
+  // 每个 key 都要进 allowlist）不是已证明的契约，不做。
+  it("keeps public runtime allowlist reads registered in the client env schema", () => {
+    const allowlistKeys = extractObjectLiteralKeys(
+      readRepoFile(PUBLIC_RUNTIME_ENV_SOURCE_PATH),
+      "PUBLIC_RUNTIME_ENV_READERS",
+    );
+    const clientSchemaKeys = new Set(
+      extractObjectLiteralKeys(
+        readRepoFile(ENV_SOURCE_PATH),
+        "clientEnvSchema",
+      ),
+    );
+
+    // 豁免名单里的 key 必须真的还在 allowlist 里：key 被删除时豁免也要跟着缩，
+    // 不能留一张永远为真的豁免表。
+    for (const key of [
+      ...FRAMEWORK_PUBLIC_ENV_KEYS,
+      ...DERIVED_PUBLIC_ENV_KEYS,
+    ]) {
+      expect(
+        allowlistKeys,
+        `${key} should stay on the public allowlist`,
+      ).toContain(key);
+    }
+
+    const unregistered = allowlistKeys.filter(
+      (key) =>
+        !clientSchemaKeys.has(key) &&
+        !FRAMEWORK_PUBLIC_ENV_KEYS.has(key) &&
+        !DERIVED_PUBLIC_ENV_KEYS.has(key),
+    );
+
+    expect(sortedStrings(unregistered)).toEqual([]);
   });
 
   it("keeps tooling and proof env keys used outside the runtime schema in the env example", () => {
