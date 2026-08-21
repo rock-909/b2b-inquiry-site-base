@@ -30,6 +30,39 @@ describe("next.config contract", () => {
     ).toBe(true);
   });
 
+  // NEXT_PUBLIC_APP_ENV 不是用户输入，是构建时从 APP_ENV 派生的客户端标签。
+  // env 层的 parity 测试把它豁免在「allowlist 读取必须有登记」之外，豁免的
+  // 前提是这条派生链真实存在——这里真的执行一次配置证明映射生效，豁免才
+  // 不是白条。只扫源码文本挡不住把映射写进变量或注释里的假绿灯。
+  it("derives NEXT_PUBLIC_APP_ENV from APP_ENV at build time", async () => {
+    const readDerivedLabel = async (appEnv: string | undefined) => {
+      const previous = process.env["APP_ENV"];
+      if (appEnv === undefined) {
+        delete process.env["APP_ENV"];
+      } else {
+        process.env["APP_ENV"] = appEnv;
+      }
+
+      try {
+        vi.resetModules();
+        const nextConfigModule = await import("../../next.config");
+        return (
+          nextConfigModule.default.env as Record<string, string> | undefined
+        )?.["NEXT_PUBLIC_APP_ENV"];
+      } finally {
+        if (previous === undefined) {
+          delete process.env["APP_ENV"];
+        } else {
+          process.env["APP_ENV"] = previous;
+        }
+        vi.resetModules();
+      }
+    };
+
+    expect(await readDerivedLabel("preview")).toBe("preview");
+    expect(await readDerivedLabel(undefined)).toBe("local");
+  });
+
   it("keeps the request-quote route out of Instant Navigations", async () => {
     const requestQuotePage =
       await import("../../src/app/[locale]/request-quote/page");

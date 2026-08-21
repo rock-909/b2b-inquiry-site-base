@@ -11,9 +11,9 @@ import eslintComments from "@eslint-community/eslint-plugin-eslint-comments/conf
 
 const security = securityPlugin.default ?? securityPlugin;
 const promise = promisePlugin.default ?? promisePlugin;
-// Only values that appear as bare numeric literals in lintable production code
-// are kept. Unused ignore entries were removed so no-magic-numbers keeps its
-// teeth; re-add a value here only when a real production literal needs it.
+// Common project literals are allowlisted to limit lint noise. Numbers
+// outside this list still fail no-magic-numbers; add entries only for
+// intentional production literals with a concrete use.
 const MAGIC_NUMBER_IGNORE_LIST = [
   // 基础数字
   0, 1, -1, 2, 3, 4, 5, 6, 7, 8, 9, 10,

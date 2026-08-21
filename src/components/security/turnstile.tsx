@@ -132,11 +132,15 @@ export function TurnstileWidget({
   const isBypassMode =
     isPublicRuntimeDevelopment() &&
     getPublicRuntimeEnvBoolean("NEXT_PUBLIC_TURNSTILE_BYPASS") === true;
-  const appEnv = getPublicRuntimeEnvString("NEXT_PUBLIC_APP_ENV"),
-    isTestMode =
-      appEnv !== "production" &&
-      (!isPublicRuntimeProduction() || appEnv === "preview") &&
-      getPublicRuntimeEnvBoolean("NEXT_PUBLIC_TEST_MODE") === true;
+  const appEnv = getPublicRuntimeEnvString("NEXT_PUBLIC_APP_ENV");
+  // NODE_ENV=production 只说明这是 production build，不代表实际生产部署：
+  // preview lane 同样是 production build。所以 build 非 production 时放行，
+  // build 是 production 时只认部署标签明确为 preview 的那一条缝。
+  const isProductionBuild = isPublicRuntimeProduction();
+  const isTestMode =
+    appEnv !== "production" &&
+    (!isProductionBuild || appEnv === "preview") &&
+    getPublicRuntimeEnvBoolean("NEXT_PUBLIC_TEST_MODE") === true;
   const isUnavailable = !siteKey && !isBypassMode && !isTestMode;
   const autoResolveTriggeredRef = useRef(false);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
