@@ -86,11 +86,16 @@ function collectRunCommands(node: unknown, found: string[] = []): string[] {
 describe("CI workflow contract", () => {
   it("runs an honestly named preview configuration smoke in the quality job", () => {
     const qualitySteps = readCiWorkflowConfig().jobs?.quality?.steps ?? [];
+    // 语义定位：跑的是 preview 档位的配置冒烟，而不是逐字锁步骤名和命令串——
+    // 措辞迭代不该红，命令片段和档位才是契约。
+    const smoke = qualitySteps.find(
+      (step) =>
+        step.run?.includes("production-config.js") &&
+        step.run.includes("APP_ENV=preview"),
+    );
 
-    expect(qualitySteps).toContainEqual({
-      name: "preview config smoke",
-      run: "APP_ENV=preview node scripts/quality/checks/production-config.js",
-    });
+    expect(smoke, "preview config smoke step must exist").toBeDefined();
+    expect(smoke?.name).toMatch(/preview/iu);
   });
 
   // CI 作业和步骤都必须传播失败；其他工作流有自己的契约。
@@ -154,7 +159,8 @@ describe("CI workflow contract", () => {
     const includes = rule?.paths?.include ?? [];
 
     expect(rule, "lead safe-json Semgrep rule must exist").toBeDefined();
-    expect(includes).toContain("src/app/api/inquiry/route.ts");
+    // 「only」是契约的一半：规则必须命中 lead writer，且不得外溢到其他文件。
+    expect(includes).toEqual(["src/app/api/inquiry/route.ts"]);
   });
 
   it("keeps Lighthouse as a manual performance proof", () => {
@@ -175,14 +181,16 @@ describe("CI workflow contract", () => {
     const prePush = config["pre-push"]?.commands ?? {};
     const hookCommands = collectRunCommands(config).join("\n");
 
-    expect(Object.keys(preCommit)).toEqual(["format-check", "i18n-sync"]);
-    expect(Object.keys(prePush)).toEqual([
-      "type-check",
-      "tests",
-      "build-check",
-    ]);
+    // 钩子窄职责的实质由两条边界守住：必需检查必须在场，broad scan 必须不在。
+    // 不再要求键名清单逐项全等：新增一个快速合法钩子不应让契约变红。
+    for (const key of ["format-check", "i18n-sync"]) {
+      expect(preCommit[key], `pre-commit.${key} should stay`).toBeDefined();
+    }
+    for (const key of ["type-check", "tests", "build-check"]) {
+      expect(prePush[key], `pre-push.${key} should stay`).toBeDefined();
+    }
     expect(prePush["type-check"]?.run).toContain("pnpm type-check:tests");
-    expect(prePush.tests?.run).toBe("pnpm test");
+    expect(prePush.tests?.run).toContain("pnpm test");
     expect(prePush["build-check"]?.run).toContain("pnpm build");
     expect(hookCommands).not.toMatch(
       /RUN_FAST_PUSH|dependency-cruiser|pnpm audit|knip:check|semgrep|website:build:cf|playwright/iu,
