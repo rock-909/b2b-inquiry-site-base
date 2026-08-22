@@ -225,7 +225,11 @@ describe("CI workflow contract", () => {
     for (const key of ["type-check", "tests", "build-check"]) {
       expect(prePush[key], `pre-push.${key} should stay`).toBeDefined();
     }
-    expect(prePush["type-check"]?.run).toMatch(/(^|&&)\s*pnpm type-check\b/u);
+    // token 边界不能用 \b："type-check:tests" 在 check 和冒号之间也成立
+    // \b，会把删掉真实 pnpm type-check 的配置漏放进来。
+    expect(prePush["type-check"]?.run).toMatch(
+      /(^|&&)\s*pnpm type-check(?:\s|$)/u,
+    );
     expect(prePush["type-check"]?.run).toContain("pnpm type-check:tests");
     expect(prePush.tests?.run).toContain("pnpm test");
     expect(prePush["build-check"]?.run).toContain("production-config.js");
