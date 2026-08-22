@@ -37,18 +37,34 @@ function DropdownMenuPositioner({
 }
 
 function DropdownMenuContent({
+  animation = "scale",
   className,
   ...props
-}: React.ComponentProps<typeof MenuPrimitive.Popup>) {
+}: React.ComponentProps<typeof MenuPrimitive.Popup> & {
+  /**
+   * "scale" 适合点击型菜单；"fade" 适合 hover 型菜单，
+   * 去掉缩放和长过渡，避免快速 hover 时动画反复重启的卡顿感。
+   */
+  animation?: "scale" | "fade";
+}) {
   return (
     <MenuPrimitive.Popup
       data-slot="dropdown-menu-content"
       className={cn(
         "min-w-40 origin-[var(--transform-origin)] rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none",
-        "transition-[opacity,transform] duration-150 ease-out",
-        "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
-        "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
-        "data-[instant]:transition-none",
+        animation === "scale"
+          ? cn(
+              "transition-[opacity,transform] duration-150 ease-out",
+              "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
+              "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+              "data-[instant]:transition-none",
+            )
+          : cn(
+              "transition-[opacity] duration-100 ease-out",
+              "data-[starting-style]:opacity-0",
+              "data-[ending-style]:opacity-0",
+              "data-[instant]:transition-none",
+            ),
         className,
       )}
       {...props}

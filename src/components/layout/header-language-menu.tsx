@@ -52,8 +52,8 @@ export function HeaderLanguageMenu({
       <DropdownMenuTrigger
         type="button"
         openOnHover
-        delay={100}
-        closeDelay={0}
+        delay={0}
+        closeDelay={80}
         data-testid="language-toggle-button"
         aria-label={tAccessibility("language", {
           language: currentLanguageLabel,
@@ -76,7 +76,10 @@ export function HeaderLanguageMenu({
 
       <DropdownMenuPortal>
         <DropdownMenuPositioner sideOffset={6} align="end">
-          <DropdownMenuContent data-testid="language-dropdown-content">
+          <DropdownMenuContent
+            animation="fade"
+            data-testid="language-dropdown-content"
+          >
             <div className="space-y-0.5">
               {LANGUAGE_OPTIONS.map((option) => {
                 const isCurrent = option.locale === currentLocale;

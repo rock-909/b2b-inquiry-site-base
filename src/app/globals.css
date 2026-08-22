@@ -512,16 +512,6 @@
     @apply col-start-1 flex min-w-0 items-center gap-4 overflow-hidden pr-3;
   }
 
-  .header-brand-text {
-    max-width: min(100%, 9.5rem);
-  }
-
-  @media (min-width: 1200px) {
-    .header-brand-text {
-      max-width: none;
-    }
-  }
-
   .header-nav-links-compact {
     @apply gap-0;
   }
