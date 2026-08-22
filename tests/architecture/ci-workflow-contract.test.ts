@@ -86,12 +86,12 @@ function collectRunCommands(node: unknown, found: string[] = []): string[] {
 describe("CI workflow contract", () => {
   it("runs an honestly named preview configuration smoke in the quality job", () => {
     const qualitySteps = readCiWorkflowConfig().jobs?.quality?.steps ?? [];
-    // 语义定位：跑的是 preview 档位的配置冒烟，而不是逐字锁步骤名和命令串——
-    // 措辞迭代不该红，命令片段和档位才是契约。
-    const smoke = qualitySteps.find(
-      (step) =>
-        step.run?.includes("production-config.js") &&
-        step.run.includes("APP_ENV=preview"),
+    // 锚定真实命令行而不是字符串片段：echo、注释或包装命令里出现同样
+    // 的 token 不能冒充冒烟步骤。整行匹配保证它是一条独立 shell 命令。
+    const smoke = qualitySteps.find((step) =>
+      /^APP_ENV=preview node scripts\/quality\/checks\/production-config\.js$/mu.test(
+        step.run ?? "",
+      ),
     );
 
     expect(smoke, "preview config smoke step must exist").toBeDefined();
@@ -181,9 +181,14 @@ describe("CI workflow contract", () => {
     const prePush = config["pre-push"]?.commands ?? {};
     const hookCommands = collectRunCommands(config).join("\n");
 
-    // 钩子窄职责的实质由两条边界守住：必需检查必须在场，broad scan 必须不在。
-    // 不再要求键名清单逐项全等：新增一个快速合法钩子不应让契约变红。
-    for (const key of ["format-check", "i18n-sync"]) {
+    // 钩子窄职责的实质由两条边界守住：必需检查必须在场（含关键命令），
+    // broad scan 必须不在。不要求键名清单逐项全等：新增一个快速合法钩子
+    // 不应让契约变红。
+    expect(
+      preCommit["format-check"]?.run,
+      "format-check must run prettier",
+    ).toContain("prettier");
+    for (const key of ["i18n-sync"]) {
       expect(preCommit[key], `pre-commit.${key} should stay`).toBeDefined();
     }
     for (const key of ["type-check", "tests", "build-check"]) {
@@ -191,7 +196,8 @@ describe("CI workflow contract", () => {
     }
     expect(prePush["type-check"]?.run).toContain("pnpm type-check:tests");
     expect(prePush.tests?.run).toContain("pnpm test");
-    expect(prePush["build-check"]?.run).toContain("pnpm build");
+    expect(prePush["build-check"]?.run).toContain("production-config.js");
+    expect(prePush["build-check"]?.run).toContain("client-boundary.js");
     expect(hookCommands).not.toMatch(
       /RUN_FAST_PUSH|dependency-cruiser|pnpm audit|knip:check|semgrep|website:build:cf|playwright/iu,
     );

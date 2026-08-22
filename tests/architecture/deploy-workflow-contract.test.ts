@@ -113,15 +113,25 @@ describe("Cloudflare deploy workflow contract", () => {
     );
     expect(deployStep?.run).toContain("worker-url=${DEPLOY_URL}");
 
-    // 总结的两条证明边界按语义断言，不锁措辞和步骤名：preview 必须声明
-    // 「不证明当前 SHA 已部署」，production 必须把 workers.dev 与正式域名
-    // 责任分开。两条边界缺一不可。
+    // 总结的两条证明边界按关键语义逐项断言，不锁整句措辞和步骤名：
+    // preview 边界 = preview + SHA + 不证明三个关键语义各自在场；
+    // production 边界 = 自动 smoke 对象（workers.dev）与人工确认清单
+    // （正式域名、DNS、TLS、custom domain）逐项在场——漏掉任何一项
+    // 都等于丢掉一部分发布真实性边界。
     const summaryStep = buildSteps.find((step) =>
       step.run?.includes("GITHUB_STEP_SUMMARY"),
     );
     expect(summaryStep, "deployment summary step must exist").toBeDefined();
-    expect(summaryStep?.run).toContain("不证明当前 SHA 已部署");
+    expect(summaryStep?.run).toContain("preview");
+    expect(summaryStep?.run).toContain("SHA");
+    expect(summaryStep?.run).toContain("不证明");
     expect(summaryStep?.run).toContain("workers.dev");
+    for (const boundary of ["正式域名", "DNS", "TLS", "custom domain"]) {
+      expect(
+        summaryStep?.run,
+        `production proof boundary must keep ${boundary}`,
+      ).toContain(boundary);
+    }
     expect(summaryStep?.run).toContain("由上线负责人确认");
   });
 
@@ -165,8 +175,13 @@ describe("Cloudflare deploy workflow contract", () => {
 
   it("treats preview input as external smoke data, not deploy proof shell", () => {
     const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+    // 定位锚定到真实 node 调用整行：echo/注释里出现同样 token 的假步骤
+    // 不能冒充 smoke。预览地址必须在引号内展开（环境变量注入，不是 shell
+    // 拼接），引号语义包含在锚定正则里。
     const smoke = steps.find((step) =>
-      step.run?.includes("external-url-smoke"),
+      /^node scripts\/quality\/checks\/cloudflare-smoke\.js external-url-smoke --base-url "\$\{PREVIEW_URL\}"$/mu.test(
+        step.run ?? "",
+      ),
     );
     const providerSecretNames = [
       "RATE_LIMIT_PEPPER",
@@ -180,11 +195,8 @@ describe("Cloudflare deploy workflow contract", () => {
       "UPSTASH_REDIS_REST_TOKEN",
     ];
 
-    // 不锁步骤名；命令拆成两段语义断言：跑的是外部 URL smoke，且预览地址
-    // 必须在引号内展开（环境变量注入，不是 shell 拼接）。
+    expect(smoke, "external url smoke step must exist").toBeDefined();
     expect(smoke?.if).toContain("inputs.environment == 'preview'");
-    expect(smoke?.run).toContain("cloudflare-smoke.js external-url-smoke");
-    expect(smoke?.run).toContain('--base-url "${PREVIEW_URL}"');
     expect(smoke?.run).not.toContain("inputs.preview_url");
     expect(smoke?.env?.PREVIEW_URL).toBe("${{ inputs.preview_url }}");
 
