@@ -48,20 +48,26 @@ describe("Cloudflare deploy workflow contract", () => {
     );
 
     expect(guard?.run).toMatch(/GITHUB_REF_NAME[^\n]+!=[^\n]+main/u);
+    // 拦截必须真的拦：报错后要 exit 1，否则只是打印警告然后继续部署。
+    expect(guard?.run).toContain("exit 1");
     expect(guard?.if).toContain("inputs.environment == 'production'");
   });
 
   it("runs strict production gates before deployment", () => {
     const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
-    const configGate = findStepIndex(
+    const configGateIndex = findStepIndex(
       steps,
       "scripts/quality/checks/production-config.js",
     );
+    const configGate = steps[configGateIndex];
     const deploy = steps.findIndex((step) => step.id === "deploy_production");
     const deployStep = steps[deploy];
 
-    expect(configGate).toBeGreaterThanOrEqual(0);
-    expect(deploy).toBeGreaterThan(configGate);
+    expect(configGateIndex).toBeGreaterThanOrEqual(0);
+    // 生产门禁必须是严格档位，不是普通检查重跑一遍。
+    expect(configGate?.run).toContain("PUBLIC_LAUNCH_STRICT=true");
+    expect(configGate?.run).toContain("APP_ENV=production");
+    expect(deploy).toBeGreaterThan(configGateIndex);
     expect(deployStep?.if).toContain("inputs.environment == 'production'");
     expect(deployStep?.run).toContain(
       "pnpm exec opennextjs-cloudflare deploy --env production",
@@ -70,7 +76,8 @@ describe("Cloudflare deploy workflow contract", () => {
   });
 
   it("deploys the Cloudflare artifact already built by release proof", () => {
-    const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+    const workflow = loadDeployWorkflow();
+    const steps = workflowSteps(workflow, "build-and-deploy");
     const releaseProof = steps.find((step) =>
       step.run?.includes("pnpm release:verify"),
     );
@@ -78,8 +85,13 @@ describe("Cloudflare deploy workflow contract", () => {
     expect(releaseProof?.run).toContain(
       "pnpm release:verify 2>&1 | tee cf_build.log",
     );
+    // 单次构建是全 workflow 的约束，不只是 build-and-deploy 这个 job——
+    // 别的 job 里偷偕再建一次也要红。
+    const allSteps = Object.values(workflow.jobs ?? {}).flatMap(
+      (job) => job?.steps ?? [],
+    );
     expect(
-      steps.filter((step) => step.run?.includes("pnpm website:build:cf")),
+      allSteps.filter((step) => step.run?.includes("pnpm website:build:cf")),
     ).toHaveLength(0);
   });
 
@@ -92,7 +104,6 @@ describe("Cloudflare deploy workflow contract", () => {
     const deployStep = buildSteps.find(
       (step) => step.id === "deploy_production",
     );
-    const summaryStep = buildSteps.find((step) => step.name === "部署总结");
 
     expect(
       normalizeNeeds(workflow.jobs?.["post-deploy-verification"]?.needs),
@@ -101,10 +112,41 @@ describe("Cloudflare deploy workflow contract", () => {
       "needs.build-and-deploy.outputs.deployment_url",
     );
     expect(deployStep?.run).toContain("worker-url=${DEPLOY_URL}");
-    expect(summaryStep?.run).toContain("Worker 诊断 URL");
-    expect(summaryStep?.run).toContain(
-      "正式域名、DNS、TLS 和 custom domain 由上线负责人确认",
+
+    // 总结的两条证明边界按关键语义断言，且必须各归其位：先切出最后一个
+    // preview 条件块（proof block），再按 elif 分出 preview 臂和 production
+    // 臂。preview 关键语义（preview/SHA/不证明）只能在 preview 臂；自动
+    // smoke 对象与人工确认清单（正式域名、DNS、TLS、custom domain）只能
+    // 在 production 臂——串位或漏项都是丢发布真实性边界。
+    const summaryStep = buildSteps.find((step) =>
+      step.run?.includes("GITHUB_STEP_SUMMARY"),
     );
+    expect(summaryStep, "deployment summary step must exist").toBeDefined();
+    const summaryRun = summaryStep?.run ?? "";
+    const proofBlockStart = summaryRun.lastIndexOf(
+      'if [ "$DEPLOY_ENVIRONMENT" = "preview" ]',
+    );
+    expect(proofBlockStart, "preview proof branch must exist").toBeGreaterThan(
+      0,
+    );
+    const proofBlock = summaryRun.slice(proofBlockStart);
+    const elifIndex = proofBlock.indexOf("elif");
+    expect(elifIndex, "production proof arm must exist").toBeGreaterThan(0);
+
+    const previewArm = proofBlock.slice(0, elifIndex);
+    expect(previewArm).toContain("preview");
+    expect(previewArm).toContain("SHA");
+    expect(previewArm).toContain("不证明");
+
+    const productionArm = proofBlock.slice(elifIndex);
+    expect(productionArm).toContain("workers.dev");
+    for (const boundary of ["正式域名", "DNS", "TLS", "custom domain"]) {
+      expect(
+        productionArm,
+        `production proof boundary must keep ${boundary}`,
+      ).toContain(boundary);
+    }
+    expect(productionArm).toContain("由上线负责人确认");
   });
 
   it("pins the post-deploy smoke Node version before probing", () => {
@@ -112,8 +154,8 @@ describe("Cloudflare deploy workflow contract", () => {
       loadDeployWorkflow(),
       "post-deploy-verification",
     );
-    const setupNode = steps.findIndex(
-      (step) => step.uses === "actions/setup-node@v6",
+    const setupNode = steps.findIndex((step) =>
+      step.uses?.startsWith("actions/setup-node@"),
     );
     const smoke = steps.findIndex((step) =>
       step.run?.includes("cloudflare-smoke.js deployed-smoke"),
@@ -147,8 +189,16 @@ describe("Cloudflare deploy workflow contract", () => {
 
   it("treats preview input as external smoke data, not deploy proof shell", () => {
     const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+    // 定位锚定到真实执行的 node 调用整行（heredoc 数据体不算）：echo/
+    // 注释/从不执行的文本里出现同样 token 的假步骤不能冒充 smoke。预览
+    // 地址必须在引号内展开（环境变量注入，不是 shell 拼接），引号语义
+    // 包含在锚定正则里。
     const smoke = steps.find((step) =>
-      step.run?.includes("external-url-smoke"),
+      executableLines(step.run ?? "").some((line) =>
+        /^node scripts\/quality\/checks\/cloudflare-smoke\.js external-url-smoke --base-url "\$\{PREVIEW_URL\}"$/u.test(
+          line,
+        ),
+      ),
     );
     const providerSecretNames = [
       "RATE_LIMIT_PEPPER",
@@ -162,11 +212,8 @@ describe("Cloudflare deploy workflow contract", () => {
       "UPSTASH_REDIS_REST_TOKEN",
     ];
 
-    expect(smoke?.name).toBe("外部 URL smoke（preview 输入）");
+    expect(smoke, "external url smoke step must exist").toBeDefined();
     expect(smoke?.if).toContain("inputs.environment == 'preview'");
-    expect(smoke?.run).toContain(
-      'node scripts/quality/checks/cloudflare-smoke.js external-url-smoke --base-url "${PREVIEW_URL}"',
-    );
     expect(smoke?.run).not.toContain("inputs.preview_url");
     expect(smoke?.env?.PREVIEW_URL).toBe("${{ inputs.preview_url }}");
 
@@ -184,7 +231,8 @@ describe("Cloudflare deploy workflow contract", () => {
 
   it("does not export a deployment URL for preview-only external smoke", () => {
     const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
-    const resolver = steps.find((step) => step.name === "汇总 URL");
+    // 用 id 定位而不是中文步骤名：改标题不该红，步骤职责才是契约。
+    const resolver = steps.find((step) => step.id === "resolve_urls");
 
     expect(resolver?.run).not.toContain("deployment-url=${PREVIEW_URL}");
     expect(resolver?.run).not.toContain("external-smoke-url=${PREVIEW_URL}");
@@ -219,4 +267,31 @@ function findStepIndex(
   commandFragment: string,
 ) {
   return steps.findIndex((step) => step.run?.includes(commandFragment));
+}
+
+/**
+ * 返回 run 中真正会被 shell 执行的行：跳过 heredoc 体（<<'EOF' … EOF）。
+ * heredoc 内的文本只是数据，不能作为「步骤执行了某命令」的证据——否则
+ * 把目标命令写进一个从不执行的 heredoc 就能骗过锚定匹配。
+ */
+function executableLines(run: string): string[] {
+  const lines: string[] = [];
+  let heredocEnd: string | null = null;
+
+  for (const line of run.split("\n")) {
+    if (heredocEnd !== null) {
+      if (line.trim() === heredocEnd) {
+        heredocEnd = null;
+      }
+      continue;
+    }
+
+    const heredocStart = /<<-?\s*["']?(\w+)["']?/u.exec(line);
+    if (heredocStart) {
+      heredocEnd = heredocStart[1] ?? null;
+    }
+    lines.push(line.trim());
+  }
+
+  return lines.filter((line) => line.length > 0);
 }

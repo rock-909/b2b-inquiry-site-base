@@ -60,6 +60,7 @@ function extractHighContrastBlocks(css: string) {
     }
 
     let depth = 0;
+    let closedAtIndex = -1;
 
     for (let index = blockStart; index < css.length; index += 1) {
       const character = css[index];
@@ -70,12 +71,22 @@ function extractHighContrastBlocks(css: string) {
         depth -= 1;
 
         if (depth === 0) {
-          blocks.push(css.slice(startIndex, index + 1));
-          searchStartIndex = index + 1;
+          closedAtIndex = index;
           break;
         }
       }
     }
+
+    // 未闭合的块若只是跳过，searchStartIndex 不前进，外层 while 会原地
+    // 死循环。CSS 写坏属于测试输入错误，必须快速失败。
+    if (closedAtIndex === -1) {
+      throw new Error(
+        `Unterminated ${marker} block in CSS; cannot extract high-contrast overrides`,
+      );
+    }
+
+    blocks.push(css.slice(startIndex, closedAtIndex + 1));
+    searchStartIndex = closedAtIndex + 1;
   }
 
   return blocks;
