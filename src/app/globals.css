@@ -216,6 +216,30 @@
 }
 
 @layer components {
+  /* 尺寸标注线分隔：端部刻度，无文字（图纸语汇签名设备） */
+  .rule-dimension {
+    position: relative;
+    border-top: 1px solid var(--border-strong);
+  }
+
+  .rule-dimension::before,
+  .rule-dimension::after {
+    content: "";
+    position: absolute;
+    top: -5px;
+    width: 1px;
+    height: 9px;
+    background-color: var(--border-strong);
+  }
+
+  .rule-dimension::before {
+    left: 0;
+  }
+
+  .rule-dimension::after {
+    right: 0;
+  }
+
   .surface-card {
     border-radius: var(--card-radius);
     border: 1px solid var(--border);

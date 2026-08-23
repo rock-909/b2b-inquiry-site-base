@@ -228,7 +228,7 @@ function InquiryFormLive({
       : undefined;
 
   return (
-    <section className="surface-card p-6 md:p-8">
+    <section className="rule-dimension pt-8">
       <form
         ref={formRef}
         aria-label={ariaLabel}
