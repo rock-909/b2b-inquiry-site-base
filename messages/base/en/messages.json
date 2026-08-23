@@ -121,12 +121,31 @@
   },
   "home": {
     "hero": {
-      "eyebrow": "B2B inquiry reference",
       "title": "Turn qualified interest into a useful conversation.",
       "subtitle": "A neutral starting point for businesses that need a clear offer, credible proof and a focused inquiry path.",
       "cta": {
         "primary": "Start an inquiry",
         "secondary": "Learn about the site"
+      },
+      "ctaNote": "Written reply · no account · no call pressure",
+      "factSheet": {
+        "label": "Fact sheet",
+        "revision": "Rev A",
+        "responseTarget": {
+          "term": "Response target",
+          "pendingValue": "— owner to confirm"
+        },
+        "languages": {
+          "term": "Inquiry languages"
+        },
+        "workflow": {
+          "term": "Quote workflow",
+          "value": "Review → clarify → quote"
+        },
+        "contactOwner": {
+          "term": "Contact owner",
+          "pendingValue": "— before launch"
+        }
       }
     },
     "value": {

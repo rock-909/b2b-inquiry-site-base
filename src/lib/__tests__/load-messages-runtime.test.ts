@@ -143,11 +143,16 @@ describe("load-messages runtime loading", () => {
 
     const enMessages = await loadCompleteMessages("en");
 
-    expect(getPathValue(enMessages, ["home", "hero", "eyebrow"])).toBe(
-      "B2B inquiry reference",
-    );
-
     const enHero = expectRecordPath(enMessages, ["home", "hero"]);
+    // The eyebrow label was retired with the hero redesign; the single-decision
+    // CTA note and fact sheet are part of the current hero contract.
+    expect("eyebrow" in enHero).toBe(false);
+    expect(getPathValue(enMessages, ["home", "hero", "ctaNote"])).toBe(
+      "Written reply · no account · no call pressure",
+    );
+    expect(
+      getPathValue(enMessages, ["home", "hero", "factSheet", "label"]),
+    ).toBe("Fact sheet");
     // The hero visual is the working-principle diagram; the retired
     // product-line preview card must not resurface in runtime messages.
     expect("preview" in enHero).toBe(false);
