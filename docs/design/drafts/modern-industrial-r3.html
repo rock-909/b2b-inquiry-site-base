@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modern Industrial — 设计方向预览稿 R3</title>
+<style>
+  /* ============================================================
+     Modern Industrial B2B — R3「工程图纸」签名体系
+     签名元素：图纸边框刻度 / 标题栏 title block / 尺寸标注线 /
+               十字对位标记 / 坐标网格 —— 全部 hairline 灰阶实现
+     蓝色纪律：只用于交互点 + 每屏至多一处数据强调
+     ============================================================ */
+  :root {
+    --canvas: oklch(0.995 0.002 250);
+    --surface: oklch(0.975 0.003 250);
+    --border: oklch(0.915 0.004 250);
+    --border-strong: oklch(0.83 0.006 250);
+    --ink-line: oklch(0.21 0.006 250);          /* 图纸线条原色 */
+    --text: oklch(0.21 0.006 250);
+    --text-subtle: oklch(0.40 0.006 250);
+    --text-muted: oklch(0.52 0.007 250);
+    --accent: oklch(0.55 0.13 250);
+    --accent-hover: oklch(0.42 0.10 250);
+    --grid-line: oklch(0.21 0.006 250 / 0.05);
+    --radius-control: 8px;
+    --radius-surface: 10px;
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { overflow-x: clip; }
+  body {
+    font-family: var(--font-sans);
+    background: var(--canvas);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.65;
+  }
+
+  /* ---- 预览稿导航条（属于预览文档，不属于设计）---- */
+  .draft-nav {
+    position: sticky; top: 0; z-index: 99;
+    display: flex; gap: 24px; align-items: center;
+    padding: 10px 24px;
+    background: oklch(0.19 0.006 250); color: #fff;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em;
+  }
+  .draft-nav a { color: #a3a3a3; text-decoration: none; }
+  .draft-nav a:hover { color: #fff; }
+  .draft-nav .tag { color: oklch(0.72 0.09 250); margin-right: auto; }
+
+  section.view { padding: 0 0 120px; }
+  .view-label {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
+    color: var(--text-muted); text-transform: uppercase;
+    padding: 14px 32px; background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .container { max-width: 1120px; margin: 0 auto; padding: 0 36px; }
+
+  h1 {
+    /* Apple 式大标题：Semibold 而非 Bold —— system-ui 在 700 下发黑发闷 */
+    font-size: clamp(40px, 5vw, 64px); line-height: 1.07;
+    letter-spacing: -0.02em; font-weight: 600;
+    text-wrap: balance; overflow-wrap: anywhere; min-width: 0;
+  }
+  h1 .dot { color: var(--accent); }
+  h2 { font-size: 29px; letter-spacing: -0.018em; font-weight: 600; line-height: 1.15; }
+  .lede { font-size: 16px; color: var(--text-subtle); max-width: 46ch; }
+
+  /* ---- 按钮：每屏一个实心主行动 ---- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 40px; padding: 0 18px; border-radius: var(--radius-control);
+    font-size: 14px; font-weight: 500; text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 120ms var(--ease-out),
+                border-color 120ms var(--ease-out),
+                color 120ms var(--ease-out);
+    cursor: pointer;
+  }
+  .btn-primary { background: var(--accent); color: oklch(0.99 0.002 250); border: 1px solid transparent; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border-strong); }
+  .btn-outline:hover { border-color: var(--text-muted); }
+  .btn-small { height: 34px; padding: 0 14px; font-size: 13px; }
+  .arrow { transition: transform 120ms var(--ease-out); }
+  .btn:hover .arrow { transform: translateX(2px); }
+
+  /* ============================================================
+     签名设备 1：图纸边框（viewport 四角对位标记 + 边中点刻度）
+     ============================================================ */
+  .sheet-frame { position: fixed; inset: 0; pointer-events: none; z-index: 98; }
+  .sheet-frame i { position: absolute; background: var(--border-strong); }
+  .sheet-frame .c { width: 14px; height: 14px; background: none; }
+  .sheet-frame .c::before, .sheet-frame .c::after {
+    content: ""; position: absolute; background: var(--border-strong);
+  }
+  .sheet-frame .c::before { width: 14px; height: 1px; top: 50%; }
+  .sheet-frame .c::after { width: 1px; height: 14px; left: 50%; }
+  .sheet-frame .tl { top: 10px; left: 10px; }
+  .sheet-frame .tr { top: 10px; right: 10px; }
+  .sheet-frame .bl { bottom: 10px; left: 10px; }
+  .sheet-frame .br { bottom: 10px; right: 10px; }
+  .sheet-frame .mt, .sheet-frame .mb { left: 50%; width: 1px; height: 8px; }
+  .sheet-frame .mt { top: 0; } .sheet-frame .mb { bottom: 0; }
+  .sheet-frame .ml, .sheet-frame .mr { top: 50%; height: 1px; width: 8px; }
+  .sheet-frame .ml { left: 0; } .sheet-frame .mr { right: 0; }
+
+  /* ============================================================
+     签名设备 2：坐标网格（hero 背景，向下淡出）
+     ============================================================ */
+  .grid-zone { position: relative; }
+  .grid-zone::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 560px;
+    background-image:
+      linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 88px 88px;
+    -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent);
+    mask-image: linear-gradient(to bottom, black 40%, transparent);
+    pointer-events: none;
+  }
+  .grid-zone > * { position: relative; }
+
+  /* ============================================================
+     签名设备 3：尺寸标注线（区块分隔，端部刻度，无文字）
+     ============================================================ */
+  .dim-line { position: relative; height: 1px; background: var(--border-strong); }
+  .dim-line::before, .dim-line::after {
+    content: ""; position: absolute; top: -4px;
+    width: 1px; height: 9px; background: var(--border-strong);
+  }
+  .dim-line::before { left: 0; }
+  .dim-line::after { right: 0; }
+
+  /* ============================================================
+     签名设备 4：标题栏 title block（角部对位标记 + 刻度行）
+     ============================================================ */
+  .title-block { position: relative; border: 1px solid var(--border-strong); background: var(--canvas); }
+  .title-block .mark { position: absolute; width: 15px; height: 15px; }
+  .title-block .mark::before, .title-block .mark::after {
+    content: ""; position: absolute; background: var(--text-muted);
+  }
+  .title-block .mark::before { width: 15px; height: 1px; top: 50%; }
+  .title-block .mark::after { width: 1px; height: 15px; left: 50%; }
+  .title-block .m-tl { top: -8px; left: -8px; }
+  .title-block .m-br { bottom: -8px; right: -8px; }
+  .tb-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 22px; border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .tb-head span {
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+  .tb-head .rev { color: var(--text); }
+  .spec-row {
+    display: grid; grid-template-columns: 1fr auto; gap: 16px;
+    padding: 14px 22px; border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .spec-row::before {
+    content: ""; position: absolute; left: 0; top: 50%; margin-top: -4px;
+    width: 8px; height: 1px; background: var(--border-strong);
+  }
+  .spec-row:last-child { border-bottom: 0; }
+  .spec-key { font-size: 13px; color: var(--text-muted); }
+  .spec-val { font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--text); }
+  .spec-val.pending { color: var(--text-muted); }
+  .spec-val .live { color: var(--accent); }
+
+  /* ================= 站点 Header ================= */
+  header.site {
+    position: sticky; top: 37px; z-index: 10;
+    background: oklch(0.995 0.002 250 / 0.92); backdrop-filter: blur(12px);
+    /* Cursor 式：无底线，靠背景对比而非边框分隔 */
+  }
+  .site-inner {
+    max-width: 1120px; margin: 0 auto; padding: 0 36px;
+    height: 60px; display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  }
+  .logo { font-weight: 590; font-size: 15px; letter-spacing: -0.01em; text-decoration: none; color: var(--text); white-space: nowrap; }
+  .site-right { display: flex; align-items: center; gap: 16px; }
+  nav.main { display: flex; gap: 4px; }
+  nav.main a {
+    /* Cursor 实测：全顶同色（非灰阶分层）、无当前页视觉标记 ——
+       位置感由页面内容承担；hover 反馈 = 文字变淡 */
+    font-size: 14px; font-weight: 400; color: var(--text);
+    text-decoration: none; padding: 7px 12px; border-radius: 8px;
+    transition: color 100ms var(--ease-out);
+  }
+  nav.main a:hover { color: var(--text-muted); }
+  .lang { font-size: 13px; color: var(--text-muted); cursor: default; white-space: nowrap; }
+
+  /* ================= VIEW 01 · HOME ================= */
+  .hero {
+    display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: 72px; align-items: end; padding-top: 120px;
+  }
+  .hero-copy h1 { margin: 26px 0 24px; }
+  .hero-actions { display: flex; gap: 12px; align-items: center; }
+
+  /* ---- 首屏行动区 · Variant A：单一决策 + 焦虑消除 ---- */
+  .cta-a { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+  .btn-lg { height: 46px; padding: 0 24px; font-size: 15px; }
+  .cta-note {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+  .cta-note i { font-style: normal; color: var(--border-strong); padding: 0 6px; }
+  .quiet-link {
+    font-size: 14px; color: var(--text-subtle); text-decoration: none;
+    border-bottom: 1px solid var(--border-strong); padding-bottom: 2px;
+    transition: color 100ms var(--ease-out), border-color 100ms var(--ease-out);
+  }
+  .quiet-link:hover { color: var(--text); border-color: var(--text-muted); }
+
+  .hero .title-block { align-self: start; margin-top: 120px; }
+
+  .home-next {
+    margin-top: 0; padding-top: 96px;
+    display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 72px;
+    align-items: start;
+  }
+  .home-next p { font-size: 17px; color: var(--text-subtle); max-width: 44ch; }
+
+  /* ================= VIEW 02 · PRODUCTS ================= */
+  .prod-wrap { padding-top: 104px; }
+  .prod-head {
+    display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 3fr);
+    gap: 48px; align-items: end; margin-bottom: 52px;
+  }
+  .prod-head h2 { max-width: 15em; }
+  .prod-count { font-size: 14px; color: var(--text-muted); line-height: 1.55; }
+
+  /* 工程目录表头：功能性列标注，非装饰标签 */
+  .rowlist { border-top: 1px solid var(--border-strong); }
+  .col-head {
+    display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr) auto;
+    gap: 32px; padding: 0 4px 12px;
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--text-muted);
+  }
+  .row-item {
+    position: relative;
+    display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr) auto;
+    gap: 32px; align-items: baseline;
+    padding: 30px 4px; border-bottom: 1px solid var(--border);
+    text-decoration: none; color: inherit;
+    transition: background-color 120ms var(--ease-out);
+  }
+  .row-item::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+    background: var(--accent); transform: scaleY(0);
+    transition: transform 140ms var(--ease-out); transform-origin: top;
+  }
+  .row-item:hover { background: var(--surface); }
+  .row-item:hover::before { transform: scaleY(1); }
+  .row-name { font-size: 17px; font-weight: 550; letter-spacing: -0.01em; display: flex; gap: 18px; align-items: baseline; min-width: 0; }
+  .row-num { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); font-weight: 400; transition: color 120ms var(--ease-out); }
+  .row-item:hover .row-num { color: var(--accent); }
+  .row-desc { font-size: 14px; color: var(--text-subtle); min-width: 0; }
+  .row-type { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+  .row-arrow { display: inline-block; transition: transform 120ms var(--ease-out); }
+  .row-item:hover .row-arrow { transform: translateX(3px); }
+
+  /* ================= VIEW 03 · QUOTE ================= */
+  .quote-wrap { padding-top: 104px; }
+  .quote-head { max-width: 620px; margin-bottom: 60px; }
+  .quote-head h2 { margin-bottom: 18px; }
+  .quote-grid {
+    display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+    gap: 72px; align-items: start;
+  }
+  .form-open { border-top: 1px solid var(--border-strong); padding-top: 40px; position: relative; }
+  /* 表单开场线端部刻度（尺寸线语汇） */
+  .form-open::before, .form-open::after {
+    content: ""; position: absolute; top: -5px;
+    width: 1px; height: 9px; background: var(--border-strong);
+  }
+  .form-open::before { left: 0; }
+  .form-open::after { right: 0; }
+  .field { margin-bottom: 28px; }
+  .field label {
+    display: block; font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-subtle); margin-bottom: 9px;
+  }
+  .field label .req { color: var(--accent); }
+  .field label .opt { color: var(--text-muted); text-transform: none; letter-spacing: 0; }
+  .input, textarea.input {
+    width: 100%; height: 44px; padding: 0 14px;
+    border: 1px solid var(--border-strong); border-radius: var(--radius-control);
+    font-size: 14px; font-family: inherit; color: var(--text);
+    background: var(--canvas);
+    transition: border-color 120ms var(--ease-out), box-shadow 120ms var(--ease-out);
+  }
+  textarea.input { height: auto; min-height: 120px; padding: 12px 14px; resize: vertical; }
+  .input:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px oklch(0.55 0.13 250 / 0.14);
+  }
+  .input::placeholder { color: var(--text-muted); }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .form-actions { margin-top: 8px; display: flex; align-items: center; gap: 18px; }
+  .form-note { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); letter-spacing: 0.04em; }
+
+  .side-block { padding: 26px 0 26px 24px; border-top: 1px solid var(--border); position: relative; }
+  .side-block::before {
+    content: ""; position: absolute; left: 0; top: -5px;
+    width: 1px; height: 9px; background: var(--border-strong);
+  }
+  .side-block:first-child { border-top: 0; padding-top: 6px; }
+  .side-block:first-child::before { display: none; }
+  .side-block h3 { font-size: 15px; font-weight: 550; margin-bottom: 12px; letter-spacing: -0.01em; }
+  .side-block ul { list-style: none; }
+  .side-block li { font-size: 14px; color: var(--text-subtle); padding: 5px 0; }
+
+  /* ================= VIEW 04 · DARK ================= */
+  .dark {
+    --canvas: oklch(0.13 0.008 250);
+    --surface: oklch(0.165 0.008 250);
+    --border: oklch(0.24 0.008 250);
+    --border-strong: oklch(0.34 0.01 250);
+    --text: oklch(0.93 0.004 250);
+    --text-subtle: oklch(0.74 0.006 250);
+    --text-muted: oklch(0.60 0.008 250);
+    --accent: oklch(0.68 0.13 250);
+    --accent-hover: oklch(0.78 0.09 250);
+    --grid-line: oklch(0.93 0.004 250 / 0.045);
+    background: var(--canvas); color: var(--text);
+  }
+  .dark header.site { background: oklch(0.13 0.008 250 / 0.92); }
+
+  /* ================= VIEW 05 · MOBILE 375 ================= */
+  .mobile-stage { display: flex; justify-content: center; padding: 48px 0 24px; }
+  .mobile {
+    width: 375px; border: 1px solid var(--border-strong); border-radius: 24px;
+    overflow: hidden; background: var(--canvas);
+  }
+  .mobile .m-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 18px; border-bottom: 1px solid var(--border);
+  }
+  .mobile .m-body { padding: 40px 18px 32px; }
+  .mobile h1 { font-size: 34px; }
+  .mobile .spec-row { padding: 13px 16px; }
+  .mobile .hero-actions { flex-direction: column; align-items: stretch; }
+  .mobile .btn { justify-content: center; }
+  .mobile .lede { font-size: 15px; }
+
+  @media (max-width: 900px) {
+    .hero, .quote-grid, .home-next, .prod-head { grid-template-columns: 1fr; gap: 40px; }
+    .hero .title-block { margin-top: 0; }
+    .row-item, .col-head { grid-template-columns: 1fr; gap: 8px; }
+    .col-head span:nth-child(n+2) { display: none; }
+    .site-inner { height: auto; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+    .form-grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="draft-nav">
+  <span class="tag">DESIGN DRAFT R3 · NOT RUNTIME TRUTH</span>
+  <a href="#v1">01 HOME</a>
+  <a href="#v2">02 PRODUCTS</a>
+  <a href="#v3">03 QUOTE</a>
+  <a href="#v4">04 DARK</a>
+  <a href="#v5">05 MOBILE</a>
+</div>
+
+<!-- 签名设备 1：图纸边框（全局） -->
+<div class="sheet-frame" aria-hidden="true">
+  <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+  <i class="mt"></i><i class="mb"></i><i class="ml"></i><i class="mr"></i>
+</div>
+
+<!-- ============ VIEW 01 · HOME ============ -->
+<section class="view" id="v1">
+  <div class="view-label">View 01 — Home · 网格坐标 + 标题栏 + 蓝色句点签名</div>
+  <header class="site">
+    <div class="site-inner">
+      <a class="logo" href="#">Northstar Industrial Reference</a>
+      <div class="site-right">
+        <nav class="main">
+          <a href="#" aria-current="page">Home</a>
+          <a href="#">Products</a>
+          <a href="#">About</a>
+        </nav>
+        <span class="lang">EN</span>
+        <a class="btn btn-outline btn-small" href="#">Start an inquiry</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid-zone">
+    <div class="container">
+      <div class="hero">
+        <div class="hero-copy">
+          <h1>Turn qualified interest into a useful conversation<span class="dot">.</span></h1>
+          <p class="lede">A neutral starting point for businesses that need a clear offer, credible proof and a focused inquiry path.</p>
+          <!-- 首屏行动区：单一决策 + 焦虑消除。
+               依据：承诺阶梯 —— Hero 处于旅程认知/兴趣阶段，
+               只做一次低门槛决策；邮箱等高价索取留给后续步骤。 -->
+          <div class="cta-a" style="margin-top:40px">
+            <a class="btn btn-primary btn-lg" href="#">Start an inquiry <span class="arrow">→</span></a>
+            <span class="cta-note">WRITTEN REPLY<i>·</i>NO ACCOUNT<i>·</i>NO CALL PRESSURE</span>
+            <a class="quiet-link" href="#">See what this site includes ↓</a>
+          </div>
+        </div>
+
+        <!-- 签名设备 4：标题栏 -->
+        <aside class="title-block" aria-label="Site reference facts (placeholder)">
+          <i class="mark m-tl"></i><i class="mark m-br"></i>
+          <div class="tb-head"><span>Fact Sheet</span><span class="rev">REV A</span></div>
+          <div class="spec-row"><span class="spec-key">Response target</span><span class="spec-val pending">— owner to confirm</span></div>
+          <div class="spec-row"><span class="spec-key">Inquiry languages</span><span class="spec-val">EN / ZH</span></div>
+          <div class="spec-row"><span class="spec-key">Quote workflow</span><span class="spec-val">REVIEW → CLARIFY → QUOTE</span></div>
+          <div class="spec-row"><span class="spec-key">Contact owner</span><span class="spec-val pending">— before launch</span></div>
+        </aside>
+      </div>
+
+      <!-- 签名设备 3：尺寸标注线作区块分隔 -->
+      <div class="dim-line" style="margin-top: 104px" aria-hidden="true"></div>
+
+      <div class="home-next">
+        <h2>A small site with the pieces that matter.</h2>
+        <p>Use the structure as-is, then replace the identity, offer, proof and content for the next business. Every page serves one job: help a qualified buyer start a conversation the business can actually answer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VIEW 02 · PRODUCTS ============ -->
+<section class="view" id="v2">
+  <div class="view-label">View 02 — Products · 工程目录表头 / 行 hover 指示线 + 蓝色行号</div>
+  <div class="container">
+    <div class="prod-wrap">
+      <div class="prod-head">
+        <h2>Products built around real buyer requirements.</h2>
+        <p class="prod-count">One reference entry ships with the template. Derived sites append verified offerings as catalog rows.</p>
+      </div>
+
+      <div class="rowlist">
+        <div class="col-head" aria-hidden="true">
+          <span>Designation</span>
+          <span>Description</span>
+          <span>Type</span>
+        </div>
+        <a class="row-item" href="#">
+          <span class="row-name"><span class="row-num">01</span>Sample Offering</span>
+          <span class="row-desc">A neutral catalog example for a derived B2B product line.</span>
+          <span class="row-type">Reference entry <span class="row-arrow">→</span></span>
+        </a>
+        <a class="row-item" href="#">
+          <span class="row-name"><span class="row-num">02</span>Second Entry Placeholder</span>
+          <span class="row-desc">Row scale stays readable from one entry to many.</span>
+          <span class="row-type">Placeholder <span class="row-arrow">→</span></span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VIEW 03 · QUOTE ============ -->
+<section class="view" id="v3">
+  <div class="view-label">View 03 — Quote · 尺寸线开场 / 侧栏刻度 / 焦点态</div>
+  <div class="container">
+    <div class="quote-wrap">
+      <div class="quote-head">
+        <h2>Start with the essentials.</h2>
+        <p class="lede">Send what you know. The business can confirm fit, ask for missing details or prepare the next appropriate response.</p>
+      </div>
+
+      <div class="quote-grid">
+        <form onsubmit="return false">
+          <div class="form-open">
+            <div class="form-grid-2">
+              <div class="field">
+                <label for="f-name">Full Name <span class="req">*</span></label>
+                <input class="input" id="f-name" placeholder="Jane Doe">
+              </div>
+              <div class="field">
+                <label for="f-email">Email Address <span class="req">*</span></label>
+                <input class="input" id="f-email" type="email" placeholder="jane@company.com" value="jane@company.com">
+              </div>
+            </div>
+            <div class="field">
+              <label for="f-msg">Message <span class="opt">— optional</span></label>
+              <textarea class="input" id="f-msg" placeholder="Requirement, timing, market or any useful context."></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Send inquiry <span class="arrow">→</span></button>
+              <span class="form-note">TAB / SHIFT+TAB · FOCUS RING SHOWN ON FOCUS</span>
+            </div>
+          </div>
+        </form>
+
+        <aside>
+          <div class="side-block">
+            <h3>After you submit</h3>
+            <ul>
+              <li>The team reviews fit and responds with the next useful step.</li>
+              <li>Missing details are requested in writing.</li>
+            </ul>
+          </div>
+          <div class="side-block">
+            <h3>A useful reply can cover</h3>
+            <ul>
+              <li>Applicable specifications and service boundaries</li>
+              <li>Sample or evaluation options when available</li>
+              <li>A written quote after required details are confirmed</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VIEW 04 · DARK ============ -->
+<section class="view dark" id="v4">
+  <div class="view-label" style="background:oklch(0.165 0.008 250); border-color:oklch(0.24 0.008 250)">View 04 — Dark · 网格更亮 / 蓝色提亮 / 亮度即层级</div>
+  <header class="site">
+    <div class="site-inner">
+      <a class="logo" href="#">Northstar Industrial Reference</a>
+      <div class="site-right">
+        <nav class="main">
+          <a href="#" aria-current="page">Home</a>
+          <a href="#">Products</a>
+          <a href="#">About</a>
+        </nav>
+        <span class="lang">EN</span>
+        <a class="btn btn-outline btn-small" href="#">Start an inquiry</a>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid-zone">
+    <div class="container">
+      <div class="hero">
+        <div class="hero-copy">
+          <h1>Turn qualified interest into a useful conversation<span class="dot">.</span></h1>
+          <p class="lede">A neutral starting point for businesses that need a clear offer, credible proof and a focused inquiry path.</p>
+          <div class="cta-a">
+            <a class="btn btn-primary btn-lg" href="#">Start an inquiry <span class="arrow">→</span></a>
+            <span class="cta-note">WRITTEN REPLY<i>·</i>NO ACCOUNT<i>·</i>NO CALL PRESSURE</span>
+          </div>
+        </div>
+
+        <aside class="title-block" aria-label="Site reference facts (placeholder)">
+          <i class="mark m-tl"></i><i class="mark m-br"></i>
+          <div class="tb-head"><span>Fact Sheet</span><span class="rev">REV A</span></div>
+          <div class="spec-row"><span class="spec-key">Response target</span><span class="spec-val pending">— owner to confirm</span></div>
+          <div class="spec-row"><span class="spec-key">Inquiry languages</span><span class="spec-val">EN / ZH</span></div>
+          <div class="spec-row"><span class="spec-key">Quote workflow</span><span class="spec-val">REVIEW → CLARIFY → QUOTE</span></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ VIEW 05 · MOBILE 375 ============ -->
+<section class="view" id="v5">
+  <div class="view-label">View 05 — Mobile 375 · 面板通栏 / CTA 纵排</div>
+  <div class="mobile-stage">
+    <div class="mobile">
+      <div class="m-head">
+        <span class="logo" style="font-size:14px">Northstar Industrial</span>
+        <a class="btn btn-primary btn-small" href="#">Inquire</a>
+      </div>
+      <div class="m-body">
+        <h1>Turn qualified interest into a useful conversation<span class="dot">.</span></h1>
+        <p class="lede" style="margin:18px 0 24px">A neutral starting point for businesses that need a clear offer, credible proof and a focused inquiry path.</p>
+        <div class="cta-a">
+          <a class="btn btn-primary btn-lg" href="#">Start an inquiry →</a>
+          <span class="cta-note">WRITTEN REPLY<i>·</i>NO ACCOUNT</span>
+        </div>
+        <div class="title-block" style="margin-top:32px">
+          <div class="tb-head"><span>Fact Sheet</span><span class="rev">REV A</span></div>
+          <div class="spec-row"><span class="spec-key">Inquiry languages</span><span class="spec-val">EN / ZH</span></div>
+          <div class="spec-row"><span class="spec-key">Quote workflow</span><span class="spec-val">REVIEW → CLARIFY</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
