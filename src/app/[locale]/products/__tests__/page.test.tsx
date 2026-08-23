@@ -67,9 +67,8 @@ describe("ProductsPage", () => {
         name: messages.products.page.heading,
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: messages.products.page.viewDetails }),
-    ).toHaveAttribute("href", "/products/sample-offering");
+    const row = screen.getByRole("link", { name: /Sample Offering/ });
+    expect(row).toHaveAttribute("href", "/products/sample-offering");
     expect(screen.getByText("Sample Offering")).toBeInTheDocument();
   });
 

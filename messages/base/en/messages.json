@@ -165,10 +165,11 @@
       "description": "Review the configured product range and continue to the inquiry path with the relevant product context."
     },
     "page": {
-      "eyebrow": "Product catalog",
       "heading": "Products built around real buyer requirements",
       "description": "Replace the reference entry with verified product facts before launch.",
-      "viewDetails": "View details"
+      "viewDetails": "View details",
+      "colDesignation": "Designation",
+      "colDescription": "Description"
     },
     "detail": {
       "backToProducts": "Back to products",
