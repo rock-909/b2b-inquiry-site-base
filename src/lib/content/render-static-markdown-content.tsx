@@ -7,42 +7,16 @@
 
 import type { ReactNode } from "react";
 import { InlineMarkdown } from "@/lib/content/inline-markdown";
+import { parseHeadingId } from "@/lib/content/heading-id";
 
 const BOLD_WRAPPER_LENGTH = 2;
 const H2_PREFIX_LENGTH = 3;
 const H3_PREFIX_LENGTH = 4;
 const LIST_ITEM_PREFIX_LENGTH = 2;
-const EXPLICIT_ID_PATTERN = /\s*\\?\{#([a-z0-9-]+)\\?\}\s*$/;
 
 interface StaticListItem {
   readonly key: string;
   readonly content: ReactNode;
-}
-
-function slugifyHeading(text: string): string {
-  const trimmed = text.trim();
-  if (trimmed === "") {
-    return "";
-  }
-
-  return trimmed
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fff\s-]/g, "")
-    .replace(/\s+/g, "-");
-}
-
-export function parseHeadingId(text: string): {
-  displayText: string;
-  id: string;
-} {
-  const match = EXPLICIT_ID_PATTERN.exec(text);
-  if (match) {
-    return {
-      displayText: text.slice(0, match.index).trim(),
-      id: match[1] ?? "",
-    };
-  }
-  return { displayText: text, id: slugifyHeading(text) };
 }
 
 interface RenderState {

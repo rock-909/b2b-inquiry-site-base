@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { type Locale, type PageType } from "@/config/paths";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { shouldIndexPublicPage } from "@/config/single-site-seo";
 import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import { routing } from "@/i18n/routing-config";
@@ -34,7 +35,9 @@ interface StaticPageMetadataConfigOptions {
   readonly includeEmptyDescription?: boolean;
 }
 
-const FALLBACK_LOCALE: Locale = "en";
+// SEO 的 locale 回退与路由共用同一真相源：单语言站上非默认 locale 一律
+// 归一到 defaultLocale，避免「页面是新语言、OG locale 仍是旧值」的半完成态。
+const FALLBACK_LOCALE: Locale = LOCALES_CONFIG.defaultLocale;
 const DEFAULT_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
 
 function resolveLocale(locale: Locale): Locale {

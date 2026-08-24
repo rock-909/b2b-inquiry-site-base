@@ -88,7 +88,11 @@ describe("Header", () => {
     expect(
       screen.getByRole("navigation", { name: "Main navigation" }),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("language-toggle-island")).toBeInTheDocument();
+    // 单语言站点不渲染语言控件（无 false affordance）；多语言恢复由
+    // LOCALES_CONFIG 驱动，属组件内部逻辑。
+    expect(
+      screen.queryByTestId("language-toggle-island"),
+    ).not.toBeInTheDocument();
     expect(screen.getByTestId("mobile-navigation")).toBeInTheDocument();
   });
 

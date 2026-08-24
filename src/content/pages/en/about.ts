@@ -11,7 +11,7 @@ const aboutPage = {
     publishedAt: "2026-08-06",
     updatedAt: "2026-08-06",
     author: "B2B Inquiry Site Base",
-    layout: "default",
+    layout: "legal",
     showToc: true,
     lastReviewed: "2026-08-06",
     draft: false,
