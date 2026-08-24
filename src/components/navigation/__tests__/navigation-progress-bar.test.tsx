@@ -281,8 +281,8 @@ describe("NavigationProgressBar", () => {
       expect(
         shouldStartNavigationProgress(
           plainLeftClick,
-          createAnchor("/request-quote?config=two%20units#details"),
-          "http://localhost/request-quote?config=two+units",
+          createAnchor("/contact?config=two%20units#details"),
+          "http://localhost/contact?config=two+units",
         ),
       ).toBe(false);
     });
@@ -296,7 +296,7 @@ describe("NavigationProgressBar", () => {
       expect(
         shouldStartHistoryNavigationProgress(
           "/contact",
-          "/request-quote?source=mobile_nav_cta",
+          "/contact?source=mobile_nav_cta",
         ),
       ).toBe(true);
       expect(shouldStartHistoryNavigationProgress("/contact", "/contact")).toBe(

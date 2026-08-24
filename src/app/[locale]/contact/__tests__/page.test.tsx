@@ -174,9 +174,9 @@ describe("ContactPage static content", () => {
     render(
       <ContactMethodsCard
         copy={{
-          title: "Email & RFQ",
+          title: "Email & inquiry",
           emailLabel: "Email",
-          emailUnavailable: "Use the RFQ form if email is unavailable.",
+          emailUnavailable: "Use the inquiry form if email is unavailable.",
           phoneLabel: "Phone",
         }}
       />,

@@ -26,7 +26,7 @@ describe("UTM attribution", () => {
   it("keeps the first touch across pages and appends it to the inquiry", () => {
     window.history.replaceState({}, "", "/landing?utm_source=google");
     storeAttributionData();
-    window.history.replaceState({}, "", "/request-quote?utm_source=direct");
+    window.history.replaceState({}, "", "/contact?utm_source=direct");
     storeAttributionData();
 
     const formData = new FormData();

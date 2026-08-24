@@ -43,12 +43,11 @@ describe("inquiryLeadSchema", () => {
       ...GENERAL_INQUIRY,
       message: "Line one\nLine two",
       utmSource: "google",
-      landingPage: "/request-quote",
+      landingPage: "/contact",
     });
 
     expect(result.message).toBe("Line one\nLine two");
     expect(result.utmSource).toBe("google");
-    expect(result.landingPage).toBe("/request-quote");
+    expect(result.landingPage).toBe("/contact");
   });
-
 });

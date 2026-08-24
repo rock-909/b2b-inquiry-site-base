@@ -61,7 +61,7 @@ describe("createLeadRecord", () => {
     const data = {
       firstName: "Jane",
       lastName: "Buyer",
-      email: "Buyer+RFQ@Example.com",
+      email: "Buyer@Example.com",
       message: "Need details",
       requirements: "Custom packaging",
       referenceId: "INQ-test-123",
@@ -92,7 +92,7 @@ describe("createLeadRecord", () => {
       records: [
         {
           fields: {
-            Email: "buyer+rfq@example.com",
+            Email: "buyer@example.com",
             "Submitted At": expect.any(String),
             Status: "New",
             Source: "Website Inquiry",

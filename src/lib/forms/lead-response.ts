@@ -5,7 +5,7 @@
  * (`{ success: true, data: { referenceId } }`). The two form decoders used to
  * re-implement this check independently and drifted; this is the single place
  * that reads the public reference id. Each form keeps its own *error* mapping
- * (contact preserves `errorCode`/`details`; the RFQ collapses to a generic
+
  * message), so only the shared success shape lives here.
  */
 export function readLeadReferenceId(

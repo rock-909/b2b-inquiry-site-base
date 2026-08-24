@@ -19,7 +19,6 @@ vi.mock("@/i18n/routing-config", () => ({
       "/about": "/about",
       "/contact": "/contact",
       "/products": "/products",
-      "/request-quote": "/request-quote",
     },
     localeCookie: { maxAge: 60 * 60 * 24 * 365 },
   },

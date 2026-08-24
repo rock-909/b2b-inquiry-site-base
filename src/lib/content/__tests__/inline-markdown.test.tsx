@@ -41,13 +41,13 @@ describe("InlineMarkdown", () => {
   it("renders links nested inside bold segments", () => {
     render(
       <p>
-        <InlineMarkdown text="**[Start your trade quote →](/request-quote)**" />
+        <InlineMarkdown text="**[Start your trade quote →](/contact)**" />
       </p>,
     );
     const link = screen.getByRole("link", {
       name: "Start your trade quote →",
     });
-    expect(link).toHaveAttribute("href", "/request-quote");
+    expect(link).toHaveAttribute("href", "/contact");
     expect(link.closest("strong")).not.toBeNull();
     expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument();
   });

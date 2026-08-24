@@ -76,8 +76,8 @@ describe("structured-data generators", () => {
       expect(schema).not.toHaveProperty("additionalType");
     });
 
-    it("When building a request-quote WebPage, Then the node references stable site identities", () => {
-      const pageUrl = new URL("/request-quote", SITE_CONFIG.baseUrl).toString();
+    it("When building a WebPage, Then the node references stable site identities", () => {
+      const pageUrl = new URL("/contact", SITE_CONFIG.baseUrl).toString();
       const schema = buildWebPageSchema({
         locale: "en",
         name: "Request a Quote",
