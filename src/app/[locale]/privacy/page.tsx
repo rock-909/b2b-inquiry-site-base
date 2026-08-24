@@ -31,5 +31,5 @@ export default async function PrivacyPage({
 }: {
   params: Promise<LocaleParam>;
 }) {
-  return StaticContentPage({ params, config: pageConfig });
+  return await StaticContentPage({ params, config: pageConfig });
 }
