@@ -1,3 +1,7 @@
+import {
+  INQUIRY_FIELD_WIRE_DETAILS,
+  type InquiryErrorField,
+} from "@/constants/inquiry-field-error-protocol";
 import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 
 const FIELD_CLASS = "min-w-0 space-y-2";
@@ -9,21 +13,9 @@ const ERROR_CLASS = "text-xs leading-5 text-[var(--error-foreground)]";
 const REQUIRED_CLASS =
   "after:ml-0.5 after:text-destructive after:content-['*']";
 
-const FIELD_ERROR_CODES = {
-  fullName: [
-    "errors.fullName.required",
-    "errors.fullName.invalid",
-    "errors.fullName.tooLong",
-  ],
-  email: [
-    "errors.email.required",
-    "errors.email.invalid",
-    "errors.email.tooLong",
-  ],
-  message: ["errors.message.invalid", "errors.message.tooLong"],
-} as const;
+const FIELD_ERROR_CODES = INQUIRY_FIELD_WIRE_DETAILS;
 
-type VisibleField = keyof typeof FIELD_ERROR_CODES;
+type VisibleField = InquiryErrorField;
 
 function resolveFieldError(
   field: VisibleField,

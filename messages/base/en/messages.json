@@ -234,6 +234,7 @@
         "loadFailed": "Security verification failed to load.",
         "devBypass": "Dev mode: Turnstile verification bypassed",
         "testMode": "Bot protection disabled in test mode",
+        "expired": "Security verification expired. Please complete it again.",
         "rescueBeforeEmail": "Email us instead —",
         "rescueAfterEmail": "Include your requirement and contact details.",
         "rescueSubject": "Quote request"
@@ -255,7 +256,9 @@
         "message": {
           "invalid": "Message contains invalid characters",
           "tooLong": "Message must be 2000 characters or fewer"
-        }
+        },
+        "rateLimitSummary": "Too many attempts. Please wait before sending your inquiry again.",
+        "rateLimitReady": "You can send your inquiry again now."
       }
     }
   },

@@ -3,6 +3,8 @@
 import {
   type FormEvent,
   type ReactNode,
+  type RefObject,
+  useEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -46,6 +48,102 @@ const getServerHydrationSnapshot = () => false;
 
 const INQUIRY_ENDPOINT = "/api/inquiry";
 const JSON_HEADERS = { "Content-Type": "application/json" } as const;
+
+/** 错误焦点等一帧再执行（布局稳定后 scrollIntoView 才准确）；无 rAF 环境同步执行。 */
+function runAfterPaint(callback: () => void): () => void {
+  if (typeof window.requestAnimationFrame === "function") {
+    const frameId = window.requestAnimationFrame(callback);
+
+    return () => window.cancelAnimationFrame(frameId);
+  }
+
+  callback();
+
+  return () => undefined;
+}
+
+/**
+ * Turnstile 令牌生命周期：令牌值、过期标记、reset 登记与落定清理。
+ * 从 InquiryFormLive 原样搬出以通过函数规模门禁并收拢安全边界状态；
+ * 行为不变，不是新的通用抽象。
+ */
+function useTurnstileTokenLifecycle() {
+  const [token, setToken] = useState("");
+  const [verificationExpired, setVerificationExpired] = useState(false);
+  // reset 回调用 ref 登记：widget remount 后不留下失效引用。
+  const resetRef = useRef<(() => void) | null>(null);
+
+  const registerReset = (reset: () => void) => {
+    resetRef.current = reset;
+
+    return () => {
+      if (resetRef.current === reset) {
+        resetRef.current = null;
+      }
+    };
+  };
+
+  // 令牌是一次性的：每次提交落定（成功或失败）都要清掉并让 widget 重新出题。
+  // `resetRef.current?.()` 是那条重置链路的起点，断了买家会卡在一个永远禁用
+  // 的提交按钮前。
+  const clearAfterSettlement = () => {
+    setToken("");
+    setVerificationExpired(false);
+    resetRef.current?.();
+  };
+
+  return {
+    token,
+    verificationExpired,
+    registerReset,
+    clearAfterSettlement,
+    handleSuccess: (newToken: string) => {
+      setToken(newToken);
+      setVerificationExpired(false);
+    },
+    handleExpire: () => {
+      setToken("");
+      setVerificationExpired(true);
+    },
+    handleError: () => {
+      setToken("");
+      setVerificationExpired(false);
+    },
+  };
+}
+
+/**
+ * 429 冷却：到期自动解除按钮门控；不做逐秒倒计时，避免屏幕阅读器每秒被播报。
+ */
+function useRateLimitCooldown() {
+  const [retryUntil, setRetryUntil] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (retryUntil === null) {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(
+      () => setRetryUntil(null),
+      Math.max(0, retryUntil - Date.now()),
+    );
+
+    return () => window.clearTimeout(timeoutId);
+  }, [retryUntil]);
+
+  return {
+    rateLimitActive: retryUntil !== null,
+    /** 非正秒数视为无需冷却。 */
+    startFromSeconds(seconds: number) {
+      if (seconds > 0) {
+        setRetryUntil(Date.now() + seconds * 1000);
+      }
+    },
+    clear() {
+      setRetryUntil(null);
+    },
+  };
+}
 
 /**
  * 一次提交的请求预算。
@@ -140,6 +238,40 @@ function clearSubmittedFields(form: HTMLFormElement | null) {
   }
 }
 
+/**
+ * 服务端错误落定后，把焦点和视口带到第一个可识别的错误字段；无法识别时
+ * 聚焦错误摘要。等一帧让浏览器完成布局，scrollIntoView 才拿得到正确几何。
+ * 只监听 displayState：cooldown 到期、新 token 到来都不会触发重复抢焦点。
+ */
+function useSubmitErrorFocus(
+  displayState: InquirySubmitState,
+  formRef: RefObject<HTMLFormElement | null>,
+  errorSummaryRef: RefObject<HTMLDivElement | null>,
+) {
+  useEffect(() => {
+    if (displayState.status !== "error") {
+      return undefined;
+    }
+
+    const focusErrorTarget = () => {
+      const target =
+        formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]') ??
+        errorSummaryRef.current;
+
+      if (!target?.isConnected) {
+        return;
+      }
+
+      target.focus({ preventScroll: true });
+      // jsdom 不实现 scrollIntoView；真实浏览器均有，可选调用保持降级安全。
+      target.scrollIntoView?.({ block: "center", behavior: "auto" });
+    };
+
+    return runAfterPaint(focusErrorTarget);
+    // ref 是稳定容器，不构成重跑语义；displayState 是唯一的触发源。
+  }, [displayState, formRef, errorSummaryRef]);
+}
+
 function InquiryFormLive({
   source,
   copy,
@@ -155,34 +287,18 @@ function InquiryFormLive({
       : context.interest;
   const { initialMessage } = context;
   const formRef = useRef<HTMLFormElement>(null);
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [displayState, setDisplayState] = useState<InquirySubmitState>({
     status: "idle",
   });
+  const errorSummaryRef = useRef<HTMLDivElement | null>(null);
   // 提交锁用 ref 而不是上面的状态：状态更新是异步的，同一轮里连发两次提交会
   // 都读到 idle。ref 是同步的。
   const isSubmittingRef = useRef(false);
-  const turnstileResetRef = useRef<(() => void) | null>(null);
 
-  // 登记 widget 的 reset 回调，返回注销函数，remount 后不留下失效的引用。
-  const registerTurnstileReset = (reset: () => void) => {
-    turnstileResetRef.current = reset;
-    return () => {
-      if (turnstileResetRef.current === reset) {
-        turnstileResetRef.current = null;
-      }
-    };
-  };
+  const turnstile = useTurnstileTokenLifecycle();
+  const rateLimit = useRateLimitCooldown();
 
-  const clearTurnstileToken = () => setTurnstileToken("");
-
-  // 令牌是一次性的：每次提交落定（成功或失败）都要清掉并让 widget 重新出题。
-  // `turnstileResetRef.current?.()` 是那条重置链路的起点，断了买家会卡在一个
-  // 永远禁用的提交按钮前。
-  const clearTurnstileAfterSettlement = () => {
-    setTurnstileToken("");
-    turnstileResetRef.current?.();
-  };
+  useSubmitErrorFocus(displayState, formRef, errorSummaryRef);
 
   const submit = async (formData: FormData) => {
     // 请求进行中忽略重复提交：按钮是禁用的，但回车照样能提交表单。
@@ -194,25 +310,42 @@ function InquiryFormLive({
 
     try {
       appendAttributionToFormData(formData);
-      const decoded = await postInquiry(formData, turnstileToken, context);
+      const decoded = await postInquiry(formData, turnstile.token, context);
       setDisplayState(decoded);
+
+      if (
+        decoded.status === "error" &&
+        decoded.errorKind === "rateLimit" &&
+        decoded.retryAfterSeconds !== undefined
+      ) {
+        rateLimit.startFromSeconds(decoded.retryAfterSeconds);
+      } else {
+        rateLimit.clear();
+      }
+
       if (decoded.status === "success") {
         trackGenerateLead(source === "contact" ? "contact" : "rfq");
         clearSubmittedFields(formRef.current);
       }
     } catch {
       setDisplayState({ status: "error", errorKind: "server" });
+      rateLimit.clear();
     }
 
     isSubmittingRef.current = false;
-    clearTurnstileAfterSettlement();
+    turnstile.clearAfterSettlement();
   };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    // 冷却期内 Enter 或程序化提交不再发请求，也不把限流反馈覆盖成其他错误。
+    if (rateLimit.rateLimitActive) {
+      return;
+    }
+
     // 没验证过就绝不发请求。按钮此时是禁用的，但回车能绕过按钮。
-    if (!turnstileToken) {
+    if (!turnstile.token) {
       setDisplayState({ status: "error", errorKind: "security" });
       return;
     }
@@ -254,10 +387,10 @@ function InquiryFormLive({
         <TurnstileWidget
           className="w-full"
           labels={copy.turnstile}
-          onError={clearTurnstileToken}
-          onExpire={clearTurnstileToken}
-          onSuccess={setTurnstileToken}
-          onReadyRef={registerTurnstileReset}
+          onError={turnstile.handleError}
+          onExpire={turnstile.handleExpire}
+          onSuccess={turnstile.handleSuccess}
+          onReadyRef={turnstile.registerReset}
           size="normal"
           theme="auto"
         />
@@ -266,7 +399,10 @@ function InquiryFormLive({
           copy={copy}
           displayState={displayState}
           isSubmitting={displayState.status === "submitting"}
-          turnstileReady={Boolean(turnstileToken)}
+          turnstileReady={Boolean(turnstile.token)}
+          rateLimitActive={rateLimit.rateLimitActive}
+          verificationExpired={turnstile.verificationExpired}
+          errorSummaryRef={errorSummaryRef}
         />
       </form>
     </section>

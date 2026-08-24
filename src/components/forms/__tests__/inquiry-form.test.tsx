@@ -361,6 +361,20 @@ describe("InquiryForm contract", () => {
     );
     expect(document.getElementById("inquiry-message-error")).toBeTruthy();
     expect(document.getElementById("inquiry-message-hint")).toBeTruthy();
+
+    // 焦点管理合同（组件层证明接线；真实视口滚动由 E2E 证明）：
+    // 第一个无效字段获得焦点。
+    expect(document.activeElement).toBe(fullName);
+
+    // 错误摘要走程序化聚焦单通道：不得保留 role="alert"/aria-live，
+    // 否则与焦点播报形成双重朗读。role/aria-live 挂在 callout 根元素，
+    // 必须定位根元素断言——查内层文本 div 会造成假绿灯。
+    const summaryCallout = screen
+      .getByText(copy.errors.fieldSummary)
+      .closest('[data-slot="status-callout"]');
+    expect(summaryCallout).not.toBeNull();
+    expect(summaryCallout).not.toHaveAttribute("role", "alert");
+    expect(summaryCallout).not.toHaveAttribute("aria-live");
   });
 
   it("clears fullName, email, and message after contact success while keeping the reference ID", async () => {
@@ -445,51 +459,113 @@ describe("InquiryForm contract", () => {
     expect(message).toHaveValue("Keep this text");
   });
 
-  it("preserves filled fields after HTTP 429 and accepts retry after fresh Turnstile", async () => {
-    const { container, copy } = renderInquiryForm("contact");
-    const { fullName, email, message, form } = getFormControls(container);
+  it("shows a rate-limit state with cooldown and gates resubmission after HTTP 429", async () => {
+    vi.useFakeTimers();
+    // 断言失败也不能把假时钟泄漏给后续测试。
+    try {
+      const { container, copy } = renderInquiryForm("contact");
+      const { fullName, email, message, form } = getFormControls(container);
 
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "Retry Buyer" } });
-    fireEvent.change(email, { target: { value: "retry@example.com" } });
-    fireEvent.change(message, { target: { value: "Retry message" } });
+      fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
+      fireEvent.change(fullName, { target: { value: "Retry Buyer" } });
+      fireEvent.change(email, { target: { value: "retry@example.com" } });
+      fireEvent.change(message, { target: { value: "Retry message" } });
 
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          success: false,
-          errorCode: "RATE_LIMIT_EXCEEDED",
-        }),
-        { status: 429 },
-      ),
-    );
+      vi.mocked(fetch).mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            success: false,
+            errorCode: "RATE_LIMIT_EXCEEDED",
+          }),
+          { status: 429, headers: { "Retry-After": "60" } },
+        ),
+      );
 
-    await act(async () => {
-      fireEvent.submit(form);
-    });
+      await act(async () => {
+        fireEvent.submit(form);
+      });
 
-    expect(
-      await screen.findByText(copy.errors.serverSummary),
-    ).toBeInTheDocument();
-    expect(fullName).toHaveValue("Retry Buyer");
-    expect(email).toHaveValue("retry@example.com");
-    expect(message).toHaveValue("Retry message");
+      // 限流有专属文案，不再伪装成服务器故障；已填内容保留。
+      expect(
+        screen.getByText(copy.errors.rateLimitSummary),
+      ).toBeInTheDocument();
+      expect(fullName).toHaveValue("Retry Buyer");
+      expect(email).toHaveValue("retry@example.com");
+      expect(message).toHaveValue("Retry message");
 
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
+      // 冷却期内按钮门控，Enter 提交不发第二次请求，也不覆盖限流反馈。
+      const submitButton = within(form).getByRole("button", {
+        name: copy.submit,
+      });
+      expect(submitButton).toBeDisabled();
 
-    await act(async () => {
-      fireEvent.submit(form);
-    });
+      await act(async () => {
+        fireEvent.submit(form);
+      });
+      expect(fetch).toHaveBeenCalledTimes(1);
+      expect(
+        screen.getByText(copy.errors.rateLimitSummary),
+      ).toBeInTheDocument();
 
-    await waitFor(() => {
+      // 冷却期内即使取得新 token，限流门控仍然优先：按钮不允许提前解锁。
+      fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
+      expect(submitButton).toBeDisabled();
+
+      await act(async () => {
+        fireEvent.submit(form);
+      });
+      expect(fetch).toHaveBeenCalledTimes(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(60_000);
+      });
+
+      // 冷却结束有 ready 提示；冷却期内已取得的新令牌此刻生效，按钮解锁。
+      expect(screen.getByText(copy.errors.rateLimitReady)).toBeInTheDocument();
+      expect(submitButton).toBeEnabled();
+
+      await act(async () => {
+        fireEvent.submit(form);
+      });
+
       expect(fetch).toHaveBeenCalledTimes(2);
+      expect(getFetchBody()).toMatchObject({
+        fullName: "Retry Buyer",
+        email: "retry@example.com",
+        message: "Retry message",
+        turnstileToken: "mock-inquiry-turnstile-token",
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("explains Turnstile expiry without stealing focus and recovers on a fresh token", async () => {
+    const { container, copy } = renderInquiryForm("contact");
+    const { form } = getFormControls(container);
+
+    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
+    const submitButton = within(form).getByRole("button", {
+      name: copy.submit,
     });
-    expect(getFetchBody()).toMatchObject({
-      fullName: "Retry Buyer",
-      email: "retry@example.com",
-      message: "Retry message",
-      turnstileToken: "mock-inquiry-turnstile-token",
-    });
+    expect(submitButton).toBeEnabled();
+    expect(screen.queryByText(copy.turnstile.expired)).not.toBeInTheDocument();
+
+    // 买家填了几分钟长文后令牌过期：按钮禁用，但出现解释性提示。
+    // 过期提示不得抢走当前输入焦点（polite 提示 + 不移动焦点）。
+    const messageBox = container.querySelector(
+      'textarea[name="message"]',
+    ) as HTMLTextAreaElement;
+    messageBox.focus();
+    fireEvent.click(screen.getByTestId("inquiry-turnstile-expire"));
+
+    expect(await screen.findByText(copy.turnstile.expired)).toBeVisible();
+    expect(document.activeElement).toBe(messageBox);
+
+    // 新令牌到达后提示消失、按钮恢复，不需要任何手动刷新。
+    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
+    expect(screen.queryByText(copy.turnstile.expired)).not.toBeInTheDocument();
+    expect(submitButton).toBeEnabled();
   });
 
   it("keeps summary-only behavior for unknown field details", async () => {
@@ -532,6 +608,14 @@ describe("InquiryForm contract", () => {
     expect(email).not.toHaveAttribute("aria-invalid");
     expect(message).not.toHaveAttribute("aria-invalid");
     expect(message).toHaveAttribute("aria-describedby", "inquiry-message-hint");
+
+    // 无可识别字段错误时，聚焦降级目标：错误摘要（tabIndex=-1，可程序聚焦
+    // 但不进入 Tab 序）。
+    // ref 挂在 callout 根元素上，文本是其子节点：定位到根再比较。
+    const summaryCallout = screen
+      .getByText(copy.errors.fieldSummary)
+      .closest('[data-slot="status-callout"]');
+    expect(document.activeElement).toBe(summaryCallout);
   });
 });
 
