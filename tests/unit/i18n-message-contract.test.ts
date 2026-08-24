@@ -13,8 +13,6 @@ const enMessages = getSourceMessages("en") as JsonObject & {
   contact?: JsonObject;
 };
 
-const REQUEST_QUOTE_PAGE_KEYS = [] as const;
-
 const CONTACT_PANEL_KEYS = [
   "contact.panel.contactTitle",
   "contact.panel.email",
@@ -53,15 +51,6 @@ describe("real i18n runtime message contract", () => {
       "sales@example.invalid",
     );
     assertNonEmptyStringLeaves(copy, "inquiry.form");
-  });
-
-  it("keeps request quote page and metadata owners", () => {
-    for (const keyPath of REQUEST_QUOTE_PAGE_KEYS) {
-      const value = getMessageValue(enMessages, keyPath);
-
-      expect(typeof value, keyPath).toBe("string");
-      expect(String(value).trim(), keyPath).not.toBe("");
-    }
   });
 
   it("keeps contact panel and inquiry handoff owners", () => {
