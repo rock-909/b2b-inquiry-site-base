@@ -1,60 +1,35 @@
 import type { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
 import {
   generateLocaleStaticParams,
   type LocaleParam,
 } from "@/app/[locale]/generate-static-params";
-import { LegalPageShell } from "@/components/content/legal-page-shell";
-import { resolveLocaleParam } from "@/i18n/locale-utils";
-import { loadLegalPage } from "@/lib/content/legal-page";
 import {
-  createStaticPageMetadataConfig,
-  generateMetadataForPath,
-} from "@/lib/seo-metadata";
-import { getLocalizedPath } from "@/config/paths";
+  generateStaticContentPageMetadata,
+  StaticContentPage,
+  type StaticContentPageConfig,
+} from "@/app/[locale]/static-content-page";
+
+const pageConfig: StaticContentPageConfig = {
+  pageType: "privacy",
+  slug: "privacy",
+} as const;
 
 export function generateStaticParams() {
   return generateLocaleStaticParams();
 }
 
-interface PrivacyPageProps {
+export function generateMetadata(props: {
   params: Promise<LocaleParam>;
+}): Promise<Metadata> {
+  return generateStaticContentPageMetadata(props, pageConfig);
 }
 
-export async function generateMetadata({
+// 本页在构建期就整页预渲染，没有请求期数据可等；经 StaticContentPage 统一
+// 渲染（与 about 一致），禁用脚本访客由 fallback 承载。
+export default async function PrivacyPage({
   params,
-}: PrivacyPageProps): Promise<Metadata> {
-  const locale = resolveLocaleParam(await params);
-  const { metadata } = await loadLegalPage("privacy", locale);
-
-  return generateMetadataForPath({
-    locale,
-    pageType: "privacy",
-    path: getLocalizedPath("privacy", locale),
-    config: createStaticPageMetadataConfig(metadata, {
-      includeEmptyDescription: true,
-    }),
-  });
-}
-
-// 本页在构建期就整页预渲染，没有请求期数据可等，加 Suspense 只会让正文
-// 流到 <main> 外的隐藏容器里；禁用脚本的访客于是永远停在骨架屏上。
-export default async function PrivacyPage({ params }: PrivacyPageProps) {
-  const locale = resolveLocaleParam(await params);
-  setRequestLocale(locale);
-  const { metadata, content, headings } = await loadLegalPage(
-    "privacy",
-    locale,
-  );
-
-  return (
-    <LegalPageShell
-      metadata={metadata}
-      content={content}
-      headings={headings}
-      locale={locale}
-      schemaType="WebPage"
-      pagePath={getLocalizedPath("privacy", locale)}
-    />
-  );
+}: {
+  params: Promise<LocaleParam>;
+}) {
+  return await StaticContentPage({ params, config: pageConfig });
 }

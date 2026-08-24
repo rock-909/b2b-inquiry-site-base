@@ -91,10 +91,6 @@ export const clientEnvSchema = {
     .default("false")
     .transform((val) => val === "true"),
 
-  // Internationalization
-  NEXT_PUBLIC_DEFAULT_LOCALE: string().default("en"),
-  NEXT_PUBLIC_SUPPORTED_LOCALES: string().default("en"),
-
   // Security
   NEXT_PUBLIC_SECURITY_MODE: zEnum(["strict", "relaxed"]).default("strict"),
 
@@ -143,8 +139,6 @@ export const runtimeEnv = {
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   NEXT_PUBLIC_TURNSTILE_BYPASS: process.env.NEXT_PUBLIC_TURNSTILE_BYPASS,
   NEXT_PUBLIC_TEST_MODE: process.env.NEXT_PUBLIC_TEST_MODE,
-  NEXT_PUBLIC_DEFAULT_LOCALE: process.env.NEXT_PUBLIC_DEFAULT_LOCALE,
-  NEXT_PUBLIC_SUPPORTED_LOCALES: process.env.NEXT_PUBLIC_SUPPORTED_LOCALES,
   NEXT_PUBLIC_SECURITY_MODE: process.env.NEXT_PUBLIC_SECURITY_MODE,
   NEXT_PUBLIC_DEPLOYMENT_PLATFORM: process.env.NEXT_PUBLIC_DEPLOYMENT_PLATFORM,
 };

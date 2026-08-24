@@ -3,6 +3,7 @@
  *
  * 服务端渲染的头部，交互部件以客户端小岛方式注入，减少首屏 JS 体积。
  */
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
 import { Link } from "@/i18n/routing";
 import type { Locale } from "@/i18n/routing-config";
@@ -188,21 +189,33 @@ function HeaderUtilityControls({
               </Link>
             </div>
           ) : null}
-          <div className="header-full-desktop-only h-10 items-center">
-            <LanguageToggleIsland
-              ariaLabel={languageAriaLabel}
-              locale={locale}
-            />
-          </div>
+          {/* 单语言站点没有可切换目标：不渲染语言控件，避免 false affordance
+              与无效键盘停靠点（perf/ux 深审双重实证）。多语言时自动恢复。 */}
+          {LOCALES_CONFIG.locales.length > 1 ? (
+            <div className="header-full-desktop-only h-10 items-center">
+              <LanguageToggleIsland
+                ariaLabel={languageAriaLabel}
+                locale={locale}
+              />
+            </div>
+          ) : null}
           <div className="header-mobile-only h-10 w-10">
             <MobileNavigationIsland
-              languageSwitcher={<MobileLanguageSwitcher locale={locale} />}
+              languageSwitcher={
+                LOCALES_CONFIG.locales.length > 1 ? (
+                  <MobileLanguageSwitcher locale={locale} />
+                ) : undefined
+              }
               openMenuLabel={openMenuLabel}
               closeMenuLabel={closeMenuLabel}
             >
               <MobileNavigationLinks
                 contactSalesLabel={contactSalesLabel}
-                languageSwitcher={<MobileLanguageSwitcher locale={locale} />}
+                languageSwitcher={
+                  LOCALES_CONFIG.locales.length > 1 ? (
+                    <MobileLanguageSwitcher locale={locale} />
+                  ) : undefined
+                }
                 data-testid="header-mobile-navigation-fallback-links"
               />
             </MobileNavigationIsland>

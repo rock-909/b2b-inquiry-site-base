@@ -1,4 +1,4 @@
-import { parseHeadingId } from "@/lib/content/render-static-markdown-content";
+import { parseHeadingId } from "@/lib/content/heading-id";
 import { getStaticPage } from "@/lib/content/static-pages";
 import type { LegalPageMetadata, Locale } from "@/types/content.types";
 
@@ -42,6 +42,8 @@ export function loadLegalPage(
 
   const metadata: LegalPageMetadata = {
     ...page.metadata,
+    // 本 loader 的全部消费方都是法律/参考文档页，统一 legal 布局 + TOC；
+    // 源内容若声明其他 layout，这里会强制纠正并视为内容侧的笔误。
     layout: "legal",
     showToc: true,
     lastReviewed:
