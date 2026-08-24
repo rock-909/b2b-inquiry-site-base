@@ -1,31 +1,24 @@
 import { type ZodIssue } from "zod";
 import {
+  INQUIRY_FIELD_ERROR_DETAILS,
+  INQUIRY_FIELD_ERROR_KEYS as PROTOCOL_FIELD_ERROR_KEYS,
+} from "@/constants/inquiry-field-error-protocol";
+import {
   mapZodIssuesToValidationDetails,
   type ValidationFieldErrorKeys,
 } from "@/lib/api/validation-error-details";
 
 /**
  * Inquiry field → inquiry.form error namespace prefixes.
+ * 从 client-safe 协议模块派生，新增 detail 只改协议常量，不改这里。
  */
-export const INQUIRY_FIELD_ERROR_KEYS = {
-  fullName: "errors.fullName",
-  email: "errors.email",
-  message: "errors.message",
-} as const satisfies ValidationFieldErrorKeys;
+export const INQUIRY_FIELD_ERROR_KEYS =
+  PROTOCOL_FIELD_ERROR_KEYS satisfies ValidationFieldErrorKeys;
 
 /**
  * Detail leaves with matching inquiry.form copy for visible field errors.
  */
-export const INQUIRY_RENDERABLE_DETAIL_KEYS = [
-  "errors.fullName.required",
-  "errors.fullName.invalid",
-  "errors.fullName.tooLong",
-  "errors.email.required",
-  "errors.email.invalid",
-  "errors.email.tooLong",
-  "errors.message.invalid",
-  "errors.message.tooLong",
-] as const;
+export const INQUIRY_RENDERABLE_DETAIL_KEYS = INQUIRY_FIELD_ERROR_DETAILS;
 
 /**
  * Detail leaves the inquiry mapper can emit for inquiryLeadSchema.

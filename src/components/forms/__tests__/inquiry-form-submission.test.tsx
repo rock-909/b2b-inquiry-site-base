@@ -120,10 +120,15 @@ describe("InquiryForm submission lifecycle", () => {
   });
 
   it("resets the Turnstile widget after a failed submit", async () => {
+    // 用普通服务器错误而不是 429：限流有自己的冷却与文案合同，
+    // 那些行为只在 inquiry-form.test.tsx 里验证，这个测试只管 reset 链路。
     vi.mocked(fetch).mockResolvedValueOnce(
       new Response(
-        JSON.stringify({ success: false, errorCode: "RATE_LIMIT_EXCEEDED" }),
-        { status: 429 },
+        JSON.stringify({
+          success: false,
+          errorCode: "INQUIRY_PROCESSING_ERROR",
+        }),
+        { status: 500 },
       ),
     );
 

@@ -56,6 +56,20 @@ describe("inquiry form copy", () => {
     );
   });
 
+  it("reads the submission feedback copy for rate limit and Turnstile expiry", () => {
+    const copy = createTestInquiryFormCopy();
+
+    expect(copy.errors.rateLimitSummary).toBe(
+      "Too many attempts. Please wait before sending your inquiry again.",
+    );
+    expect(copy.errors.rateLimitReady).toBe(
+      "You can send your inquiry again now.",
+    );
+    expect(copy.turnstile.expired).toBe(
+      "Security verification expired. Please complete it again.",
+    );
+  });
+
   it("uses fieldSummary for generic validation failures instead of a generic leaf", () => {
     const copy = createTestInquiryFormCopy();
     const messages = getSourceMessages("en") as Record<string, unknown>;

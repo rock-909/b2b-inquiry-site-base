@@ -50,6 +50,73 @@ describe("decodeInquirySubmitState", () => {
     });
   });
 
+  it("classifies rate limit errors with a valid Retry-After header", async () => {
+    const response = new Response(
+      JSON.stringify({
+        success: false,
+        errorCode: API_ERROR_CODES.RATE_LIMIT_EXCEEDED,
+      }),
+      {
+        status: 429,
+        headers: { "Retry-After": "60" },
+      },
+    );
+
+    await expect(decodeInquirySubmitState(response)).resolves.toEqual({
+      status: "error",
+      errorKind: "rateLimit",
+      retryAfterSeconds: 60,
+    });
+  });
+
+  it("accepts a zero Retry-After as an immediate cooldown release", async () => {
+    const response = new Response(
+      JSON.stringify({
+        success: false,
+        errorCode: API_ERROR_CODES.RATE_LIMIT_EXCEEDED,
+      }),
+      {
+        status: 429,
+        headers: { "Retry-After": "0" },
+      },
+    );
+
+    await expect(decodeInquirySubmitState(response)).resolves.toEqual({
+      status: "error",
+      errorKind: "rateLimit",
+      retryAfterSeconds: 0,
+    });
+  });
+
+  it.each([
+    ["missing header", undefined],
+    ["non-numeric header", "in a minute"],
+    ["negative seconds", "-30"],
+    ["absurdly large seconds", "86400"],
+  ] as const)(
+    "falls back to the default cooldown for %s",
+    async (_label, retryAfter) => {
+      const headers = new Headers();
+      if (retryAfter !== undefined) {
+        headers.set("Retry-After", retryAfter);
+      }
+
+      const response = new Response(
+        JSON.stringify({
+          success: false,
+          errorCode: API_ERROR_CODES.RATE_LIMIT_EXCEEDED,
+        }),
+        { status: 429, headers },
+      );
+
+      await expect(decodeInquirySubmitState(response)).resolves.toEqual({
+        status: "error",
+        errorKind: "rateLimit",
+        retryAfterSeconds: 60,
+      });
+    },
+  );
+
   it("classifies processing failures as server errors", async () => {
     const response = new Response(
       JSON.stringify({

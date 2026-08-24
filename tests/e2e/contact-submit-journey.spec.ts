@@ -117,6 +117,20 @@ async function expectAccessibleServerFieldErrors(page: Page, path: string) {
     "inquiry-message-hint inquiry-message-error",
   );
 
+  // 焦点管理合同：服务端字段错误后，第一个无效字段获得焦点，且必须完整落在
+  // 视口内（不被 sticky header 遮挡、不滚出屏幕）。jsdom 组件测试只能证明
+  // focus 接线，真实视口滚动只能在这里证明。
+  await expect(fullName).toBeFocused();
+  const errorFieldBox = await fullName.boundingBox();
+  expect(
+    errorFieldBox,
+    "error field must be laid out inside the viewport",
+  ).not.toBeNull();
+  expect(errorFieldBox!.y).toBeGreaterThanOrEqual(0);
+  expect(errorFieldBox!.y + errorFieldBox!.height).toBeLessThanOrEqual(
+    page.viewportSize()?.height ?? Number.POSITIVE_INFINITY,
+  );
+
   await checkA11y(page, 'form[data-lead-path="api-inquiry"]', {
     includedImpacts: ["critical", "serious"],
   });
@@ -129,3 +143,10 @@ for (const path of ["/contact", "/request-quote"] as const) {
     await expectAccessibleServerFieldErrors(page, path);
   });
 }
+
+test("server field errors on a short mobile viewport keep the first invalid field visible and focused", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await expectAccessibleServerFieldErrors(page, "/contact");
+});
