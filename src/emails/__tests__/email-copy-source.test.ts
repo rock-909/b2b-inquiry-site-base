@@ -20,8 +20,6 @@ const inquiryEmailData: InquiryEmailData = {
   firstName: "John",
   lastName: "Doe",
   email: "john.doe@example.com",
-  offeringId: "sample-offering",
-  offeringName: "Sample Offering",
   requirements: "Need urgent delivery.",
 };
 
@@ -30,7 +28,6 @@ const inquiryEmailDataWithPlaceholderLikeInput: InquiryEmailData = {
   firstName: "John",
   lastName: "Doe",
   email: "john.doe@example.com",
-  offeringName: "{quantity}",
   requirements: "Need {lastName}",
 };
 
@@ -90,7 +87,7 @@ describe("email copy source", () => {
       `[${inquiryEmailData.referenceId}] ${formatTemplate(
         emailTemplates.inquiry.subject,
         {},
-      )}: Sample Offering`,
+      )}`,
     );
   });
 
@@ -102,8 +99,9 @@ describe("email copy source", () => {
   });
 
   it("preserves user input that looks like later template placeholders", () => {
+    // 用户输入形似模板占位符也不得进入 subject 展开。
     expect(
       EMAIL_COPY.inquiry.subject(inquiryEmailDataWithPlaceholderLikeInput),
-    ).toBe("[INQ-abc123-deadbeef] Website inquiry: {quantity}");
+    ).toBe("[INQ-abc123-deadbeef] Website inquiry");
   });
 });

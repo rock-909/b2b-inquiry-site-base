@@ -25,7 +25,6 @@ const CORE_PUBLIC_PAGE_PATHS = [
   OFFERING_PATH,
   "/about",
   "/contact",
-  "/request-quote",
   "/privacy",
   "/terms",
 ] as const;
@@ -754,7 +753,6 @@ describe("deployed smoke", () => {
     await vi.waitFor(() => {
       expect(requested.has("/about")).toBe(true);
       expect(requested.has("/contact")).toBe(true);
-      expect(requested.has("/request-quote")).toBe(true);
       expect(requested.has("/api/health")).toBe(true);
     });
 

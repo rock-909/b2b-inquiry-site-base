@@ -18,32 +18,17 @@ describe("lead pipeline utils", () => {
   it("builds the canonical Airtable message without quantity", () => {
     expect(
       generateInquiryMessage({
-        offeringName: "Test Offering",
-        interest: "OEM branding",
         requirements: "Need custom height\nStainless finish",
       }),
-    ).toBe(
-      "Offering: Test Offering\nInterest: OEM branding\nRequirements: Need custom height\nStainless finish",
-    );
+    ).toBe("Requirements: Need custom height\nStainless finish");
   });
 
   it("omits blank optional message parts", () => {
     expect(
       generateInquiryMessage({
-        offeringName: " ",
-        interest: " ",
         requirements: "",
       }),
     ).toBe("General inquiry");
-  });
-
-  it("combines interest with canonical message", () => {
-    expect(
-      generateInquiryMessage({
-        interest: "OEM branding",
-        requirements: "Need 50 units",
-      }),
-    ).toBe("Interest: OEM branding\nRequirements: Need 50 units");
   });
 
   it("resolves only the canonical message", () => {

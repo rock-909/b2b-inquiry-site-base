@@ -21,7 +21,7 @@ vi.mock("next-intl/server", () => ({
     const copy: Record<string, string> = {
       "detail.backToProducts": "Back to products",
       "detail.highlightsTitle": "Highlights",
-      "detail.requestQuote": "Request a quote",
+      "detail.startInquiry": "Start an inquiry",
     };
     return copy[key] ?? key;
   }),
@@ -66,15 +66,15 @@ describe("ProductDetailPage", () => {
     ]);
   });
 
-  it("renders one canonical offering and its RFQ link", async () => {
+  it("renders one canonical offering and its inquiry CTA", async () => {
     render(await ProductDetailPage({ params: SAMPLE_PARAMS }));
 
     expect(
       screen.getByRole("heading", { level: 1, name: "Sample Offering" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Request a quote" }),
-    ).toHaveAttribute("href", "/request-quote?offeringId=sample-offering");
+      screen.getByRole("link", { name: "Start an inquiry" }),
+    ).toHaveAttribute("href", "/contact");
     expect(mockJsonLdGraphScript).toHaveBeenCalledWith(
       expect.objectContaining({
         locale: "en",

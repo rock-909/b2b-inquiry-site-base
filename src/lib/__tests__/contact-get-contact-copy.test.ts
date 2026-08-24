@@ -9,9 +9,9 @@ function createCompleteContactMessages(): MessageRecord {
       description:
         "Share the essentials so the business can identify the next useful step.",
       panel: {
-        contactTitle: "Email & RFQ",
+        contactTitle: "Email & inquiry",
         email: "Email",
-        emailUnavailable: "Use the RFQ form if email is unavailable.",
+        emailUnavailable: "Use the inquiry form if email is unavailable.",
         phone: "Phone",
         hoursTitle: "Business hours",
         weekdays: "Weekdays",
@@ -38,7 +38,7 @@ describe("getContactCopyFromMessages", () => {
     expect(copy.header.description).toBe(
       "Share the essentials so the business can identify the next useful step.",
     );
-    expect(copy.panel.contact.title).toBe("Email & RFQ");
+    expect(copy.panel.contact.title).toBe("Email & inquiry");
     expect(copy.panel.response.prepareValue).toBe(
       "Share the requirement, scope, timing and destination.",
     );

@@ -97,8 +97,6 @@ describe("resend - Service Initialization", () => {
       firstName: "Jane",
       lastName: "Smith",
       email: "jane.smith@example.com",
-      offeringId: "sample-offering",
-      offeringName: "Sample Offering",
       requirements: "Need bulk pricing",
     });
 
@@ -151,9 +149,6 @@ describe("resend - sendInquiryEmail", () => {
         from: "test@example.com",
         to: ["reply@example.com"],
         replyTo: "jane.smith@example.com",
-        subject: expect.stringContaining("Sample Offering"),
-        html: expect.stringContaining("Sample Offering"),
-        text: expect.stringContaining("Sample Offering"),
         tags: expect.arrayContaining([{ name: "type", value: "inquiry" }]),
       }),
     );
@@ -174,7 +169,7 @@ describe("resend - sendInquiryEmail", () => {
     const emailData = {
       ...validInquiryData,
       email: "JANE@EXAMPLE.COM",
-      offeringName: "<Pump {lastName}>",
+      lastName: "<Pump {lastName}>",
       requirements: "Need {lastName}\n\nwith data:text/plain and onclick=alert",
     };
 
@@ -188,8 +183,8 @@ describe("resend - sendInquiryEmail", () => {
     const payload = mockResendSend.mock.calls[0]?.[0];
 
     expect(payload).not.toHaveProperty("react");
-    expect(payload.html).toContain("&lt;Pump {lastName}&gt;");
-    expect(payload.text).toContain("<Pump {lastName}>");
+    expect(payload.html).toContain("Jane &lt;Pump {lastName}&gt;");
+    expect(payload.text).toContain("Jane <Pump {lastName}>");
     expect(payload.text).toContain(
       "Need {lastName}\n\nwith data:text/plain and onclick=alert",
     );

@@ -63,22 +63,13 @@ const contactCopy = {
 
 vi.mock("@/components/forms/inquiry-form", () => ({
   InquiryForm: ({
-    source,
-    context,
     copy,
     fallback,
   }: {
-    source: string;
-    context: { kind: string };
     copy: unknown;
     fallback: React.ReactNode;
   }) => (
-    <section
-      data-testid="inquiry-form"
-      data-source={source}
-      data-context-kind={context.kind}
-      data-has-copy={copy ? "true" : "false"}
-    >
+    <section data-testid="inquiry-form" data-has-copy={copy ? "true" : "false"}>
       {fallback}
     </section>
   ),
@@ -118,14 +109,6 @@ describe("ContactPage static content", () => {
     ).toHaveTextContent("Contact");
     expect(screen.getByTestId("content-body")).toBeInTheDocument();
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
-    expect(screen.getByTestId("inquiry-form")).toHaveAttribute(
-      "data-source",
-      "contact",
-    );
-    expect(screen.getByTestId("inquiry-form")).toHaveAttribute(
-      "data-context-kind",
-      "general-context",
-    );
   });
 
   it("keeps the no-JS inquiry fallback inside the form column", async () => {
@@ -175,7 +158,7 @@ describe("ContactPage static content", () => {
     await renderAsyncPage(page as React.JSX.Element);
 
     expect(
-      screen.getByRole("heading", { name: "Email & RFQ" }),
+      screen.getByRole("heading", { name: "Email & inquiry" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Email & WhatsApp/i)).not.toBeInTheDocument();
     expect(
@@ -191,9 +174,9 @@ describe("ContactPage static content", () => {
     render(
       <ContactMethodsCard
         copy={{
-          title: "Email & RFQ",
+          title: "Email & inquiry",
           emailLabel: "Email",
-          emailUnavailable: "Use the RFQ form if email is unavailable.",
+          emailUnavailable: "Use the inquiry form if email is unavailable.",
           phoneLabel: "Phone",
         }}
       />,

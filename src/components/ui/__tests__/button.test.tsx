@@ -37,13 +37,13 @@ describe("Button", () => {
 
   it("lets links reuse the same variants without changing their semantics", () => {
     render(
-      <a href="/request-quote" className={buttonVariants()}>
+      <a href="/contact" className={buttonVariants()}>
         Request a Quote
       </a>,
     );
 
     const link = screen.getByRole("link", { name: "Request a Quote" });
-    expect(link).toHaveAttribute("href", "/request-quote");
+    expect(link).toHaveAttribute("href", "/contact");
     expect(link.className).toContain("var(--button-primary-bg)");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });

@@ -38,7 +38,7 @@ Use evidence a buyer can check: approved specifications, samples, inspection opt
 
 ## Give the next step
 
-The site should end with one clear path: **[start an inquiry](/request-quote)** with the details needed for a useful reply.
+The site should end with one clear path: **[start an inquiry](/contact)** with the details needed for a useful reply.
 `,
 } satisfies Page;
 

@@ -5,7 +5,6 @@ import { shouldIndexPublicPage } from "@/config/single-site-seo";
 const CORE_PAGE_TYPES = [
   "home",
   "about",
-  "requestQuote",
   "contact",
   "privacy",
   "terms",

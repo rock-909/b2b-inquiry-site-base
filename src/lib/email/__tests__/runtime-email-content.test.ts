@@ -10,9 +10,6 @@ describe("runtime email content", () => {
       firstName: "Pat",
       lastName: "Lee",
       email: "pat@example.com",
-      offeringId: "sample-offering",
-      offeringName: "Sample Offering",
-      interest: "OEM branding",
       requirements: "Line one\nLine two",
     };
 
@@ -20,16 +17,11 @@ describe("runtime email content", () => {
 
     expect(content.text).toContain("Reference: INQ-abc123-deadbeef");
     expect(content.html).toContain("INQ-abc123-deadbeef");
-    expect(content.html).toContain("Sample Offering");
     expect(content.html).toContain("Pat Lee");
     expect(content.html).toContain("pat@example.com");
-    expect(content.html).toContain("OEM branding");
     expect(content.html).toContain("Line one");
     expect(content.html).toContain("Line two");
 
-    expect(content.text).toContain("Offering: Sample Offering");
-    expect(content.text).toContain("Offering ID: sample-offering");
-    expect(content.text).toContain("Interest: OEM branding");
     expect(content.text).toContain("Contact Name: Pat Lee");
     expect(content.text).toContain("Email: pat@example.com");
     expect(content.text).toContain("Requirements: Line one\nLine two");
@@ -55,12 +47,10 @@ describe("runtime email content", () => {
       firstName: "J&ne",
       lastName: "<Buyer>",
       email: "pat@example.com",
-      offeringName: "Widget {quantity}",
       requirements: "Need <fast> & 'safe' output",
     });
 
     expect(content.html).toContain("J&amp;ne &lt;Buyer&gt;");
-    expect(content.html).toContain("Widget {quantity}");
     expect(content.html).toContain(
       "Need &lt;fast&gt; &amp; &#39;safe&#39; output",
     );

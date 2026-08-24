@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { logger } from "@/lib/logger";
-import { TEST_OFFERING } from "@/test/offerings";
 import { INQUIRY_LEAD_TYPE, type InquiryLeadInput } from "../lead-schema";
 import { processValidatedInquiry } from "../process-lead";
 
@@ -20,15 +19,12 @@ vi.mock("@/lib/resend-core", () => ({
   },
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
-vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 const VALID_LEAD: InquiryLeadInput = {
   type: INQUIRY_LEAD_TYPE,
   fullName: "Jane Buyer",
   email: "jane@example.com",
   message: "Need custom height\nStainless finish",
-  offeringId: TEST_OFFERING.id,
-  interest: "OEM branding",
 };
 
 describe("processValidatedInquiry", () => {
@@ -52,9 +48,6 @@ describe("processValidatedInquiry", () => {
       firstName: "Jane",
       lastName: "Buyer",
       email: "jane@example.com",
-      offeringId: TEST_OFFERING.id,
-      offeringName: TEST_OFFERING.name,
-      interest: "OEM branding",
       requirements: "Need custom height\nStainless finish",
     });
     expect(mockCreateLead).toHaveBeenCalledWith(
@@ -62,9 +55,6 @@ describe("processValidatedInquiry", () => {
         firstName: "Jane",
         lastName: "Buyer",
         email: "jane@example.com",
-        offeringId: TEST_OFFERING.id,
-        offeringName: TEST_OFFERING.name,
-        interest: "OEM branding",
         requirements: "Need custom height\nStainless finish",
         message: expect.stringContaining("Requirements: Need custom height"),
         referenceId: expect.stringMatching(/^INQ-/),

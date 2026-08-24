@@ -237,12 +237,7 @@ export function ContactFormWithFallback({
 
   return (
     <div className="min-w-0 space-y-6" data-testid="contact-form-column">
-      <InquiryForm
-        source="contact"
-        copy={inquiryCopy}
-        context={{ kind: "general-context" }}
-        fallback={inquiryFallback}
-      />
+      <InquiryForm copy={inquiryCopy} fallback={inquiryFallback} />
     </div>
   );
 }

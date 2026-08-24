@@ -17,7 +17,6 @@ describe("load-messages canonical runtime source", () => {
     expect(messages).toHaveProperty("contact");
     expect(messages).toHaveProperty("emailTemplates");
     expect(messages).toHaveProperty("home");
-    expect(messages).toHaveProperty("requestQuote");
     expect(messages).not.toHaveProperty("common");
     expect(messages).not.toHaveProperty("blog");
     expect(messages).not.toHaveProperty("customProject");

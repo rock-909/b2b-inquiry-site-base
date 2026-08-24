@@ -8,17 +8,11 @@ import {
 } from "@testing-library/react";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  MAX_INQUIRY_CONFIG_PREFILL_LENGTH,
-  MAX_LEAD_INTEREST_LENGTH,
-} from "@/constants/validation-limits";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
-import { resolveInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
 import { turnstileLabelsSpy } from "@/test/inquiry-turnstile-mock";
 import {
-  GENERAL_CONTEXT,
   getFormControls,
   renderInquiryForm,
 } from "@/test/inquiry-form-harness";
@@ -103,22 +97,19 @@ describe("InquiryForm contract", () => {
     vi.unstubAllGlobals();
   });
 
-  it.each(["contact", "request-quote"] as const)(
-    "renders the same three-field contract in %s mode",
-    (source) => {
-      const { container, copy } = renderInquiryForm(source);
-      assertThreeFieldContract(container, copy);
-    },
-  );
+  it("renders the three-field contract", () => {
+    const { container, copy } = renderInquiryForm();
+    assertThreeFieldContract(container, copy);
+  });
 
   it("passes inquiry copy to TurnstileWidget", () => {
-    const { copy } = renderInquiryForm("contact");
+    const { copy } = renderInquiryForm();
 
     expect(turnstileLabelsSpy).toHaveBeenCalledWith(copy.turnstile);
   });
 
   it("serializes a filled website honeypot into the inquiry payload", async () => {
-    const { container } = renderInquiryForm("contact");
+    const { container } = renderInquiryForm();
     const { fullName, email, form } = getFormControls(container);
     const honeypot = form.querySelector<HTMLInputElement>(
       'input[name="website"]',
@@ -152,7 +143,7 @@ describe("InquiryForm contract", () => {
   });
 
   it("posts to /api/inquiry with optional blank message", async () => {
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { fullName, email, form } = getFormControls(container);
 
     fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
@@ -182,43 +173,8 @@ describe("InquiryForm contract", () => {
     );
   });
 
-  it("posts offering context as untrusted id plus free-text interest only", async () => {
-    const { container } = renderInquiryForm("request-quote", {
-      kind: "offering-context",
-      offeringId: "sample-offering",
-      displayLabel: "Forged browser label",
-      interest: "Custom fabrication",
-    });
-    const { fullName, email, form } = getFormControls(container);
-
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "Ada Buyer" } });
-    fireEvent.change(email, { target: { value: "ada@example.com" } });
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith(
-        "/api/inquiry",
-        expect.objectContaining({ method: "POST" }),
-      );
-    });
-
-    expect(getFetchBody()).toMatchObject({
-      fullName: "Ada Buyer",
-      email: "ada@example.com",
-      offeringId: "sample-offering",
-      interest: "Custom fabrication",
-      website: "",
-      turnstileToken: "mock-inquiry-turnstile-token",
-    });
-    expect(getFetchBody()).not.toHaveProperty("offeringName");
-  });
-
   it("submits on Enter from a text control once Turnstile is ready", async () => {
-    const { container } = renderInquiryForm("contact");
+    const { container } = renderInquiryForm();
     const { fullName, email, form } = getFormControls(container);
 
     fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
@@ -235,7 +191,7 @@ describe("InquiryForm contract", () => {
   });
 
   it("does not post without a Turnstile token", async () => {
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { fullName, email, form } = getFormControls(container);
 
     fireEvent.change(fullName, { target: { value: "No Token" } });
@@ -258,12 +214,7 @@ describe("InquiryForm contract", () => {
     const copy = createTestInquiryFormCopy();
     const fallback = <InquiryFormStaticFallback copy={copy} />;
     const { container } = render(
-      <InquiryForm
-        context={GENERAL_CONTEXT}
-        copy={copy}
-        fallback={fallback}
-        source="contact"
-      />,
+      <InquiryForm copy={copy} fallback={fallback} />,
     );
     const { fullName, email, form } = getFormControls(container);
 
@@ -295,12 +246,7 @@ describe("InquiryForm contract", () => {
     const copy = createTestInquiryFormCopy();
     const fallback = <InquiryFormStaticFallback copy={copy} />;
     const { container } = render(
-      <InquiryForm
-        context={GENERAL_CONTEXT}
-        copy={copy}
-        fallback={fallback}
-        source="contact"
-      />,
+      <InquiryForm copy={copy} fallback={fallback} />,
     );
     const { fullName, email, message, form } = getFormControls(container);
 
@@ -378,7 +324,7 @@ describe("InquiryForm contract", () => {
   });
 
   it("clears fullName, email, and message after contact success while keeping the reference ID", async () => {
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { fullName, email, message, form } = getFormControls(container);
 
     fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
@@ -400,35 +346,8 @@ describe("InquiryForm contract", () => {
     expect(message).toHaveValue("");
   });
 
-  it("clears prefilled message after offering inquiry success", async () => {
-    const estimatorMessage = "Need span data for 40m opening";
-    const { container, copy } = renderInquiryForm("request-quote", {
-      kind: "offering-context",
-      offeringId: "sample-offering",
-      displayLabel: "Sample Offering",
-      initialMessage: estimatorMessage,
-    });
-    const { fullName, email, message, form } = getFormControls(container);
-
-    expect(message).toHaveValue(estimatorMessage);
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "RFQ Buyer" } });
-    fireEvent.change(email, { target: { value: "rfq@example.com" } });
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    await screen.findByText(
-      `${copy.success} ${copy.referenceLabel}: inq-ref-1`,
-    );
-    expect(fullName).toHaveValue("");
-    expect(email).toHaveValue("");
-    expect(message).toHaveValue("");
-  });
-
   it("preserves filled fields after validation failure", async () => {
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { fullName, email, message, form } = getFormControls(container);
 
     fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
@@ -463,7 +382,7 @@ describe("InquiryForm contract", () => {
     vi.useFakeTimers();
     // 断言失败也不能把假时钟泄漏给后续测试。
     try {
-      const { container, copy } = renderInquiryForm("contact");
+      const { container, copy } = renderInquiryForm();
       const { fullName, email, message, form } = getFormControls(container);
 
       fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
@@ -541,7 +460,7 @@ describe("InquiryForm contract", () => {
   });
 
   it("explains Turnstile expiry without stealing focus and recovers on a fresh token", async () => {
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { form } = getFormControls(container);
 
     fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
@@ -572,12 +491,7 @@ describe("InquiryForm contract", () => {
     const copy = createTestInquiryFormCopy();
     const fallback = <InquiryFormStaticFallback copy={copy} />;
     const { container } = render(
-      <InquiryForm
-        context={GENERAL_CONTEXT}
-        copy={copy}
-        fallback={fallback}
-        source="contact"
-      />,
+      <InquiryForm copy={copy} fallback={fallback} />,
     );
     const { fullName, email, message, form } = getFormControls(container);
 
@@ -619,216 +533,18 @@ describe("InquiryForm contract", () => {
   });
 });
 
-function setRequestQuoteSearch(search: string) {
-  vi.stubGlobal("location", {
-    ...window.location,
-    href: `http://localhost/request-quote${search}`,
-    pathname: "/request-quote",
-    search,
-  });
-}
-
 describe("InquiryForm hydration", () => {
-  it("SSR renders the static fallback without a live form or validated context", () => {
+  it("SSR renders the static fallback without a live form", () => {
     const copy = createTestInquiryFormCopy();
     const fallback = <InquiryFormStaticFallback copy={copy} />;
     const html = renderToString(
-      <InquiryForm
-        context={{
-          kind: "offering-context",
-          offeringId: "sample-offering",
-          displayLabel: "Sample Offering",
-          initialMessage: "estimator-summary",
-        }}
-        copy={copy}
-        fallback={fallback}
-        source="request-quote"
-      />,
+      <InquiryForm copy={copy} fallback={fallback} />,
     );
 
     expect(html).toContain('data-testid="inquiry-form-static-fallback"');
     expect(html).toContain(copy.noJsExplanation);
     expect(html).not.toMatch(/<form[\s>]/);
-    expect(html).not.toContain("inquiry-interest-context");
     expect(html).not.toContain('data-testid="inquiry-form"');
-  });
-
-  it("hydrates validated context only after the live form mounts", async () => {
-    const { container, copy } = renderInquiryForm("request-quote", {
-      kind: "general-context",
-      interest: "reseller project",
-      initialMessage: "Visible prefill",
-    });
-
-    expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
-      "reseller project",
-    );
-    expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
-      copy.contextLabel,
-    );
-    expect(getFormControls(container).message).toHaveValue("Visible prefill");
-  });
-});
-
-describe("InquiryForm validated context", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    window.sessionStorage.clear();
-    global.fetch = vi.fn(async () =>
-      Response.json({
-        success: true,
-        data: { referenceId: "inq-ref-rfq" },
-      }),
-    );
-  });
-
-  it("submits offeringId and interest from offering handoff", async () => {
-    const context = resolveInquiryContext({
-      offeringId: "sample-offering",
-      interest: "coastal project",
-      config: "Need span data",
-    });
-    const { container, copy } = renderInquiryForm("request-quote", context);
-    const { fullName, email, form, message } = getFormControls(container);
-
-    expect(message).toHaveValue("Need span data");
-    expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
-      "Sample Offering",
-    );
-    expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
-      copy.contextLabel,
-    );
-
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "RFQ Buyer" } });
-    fireEvent.change(email, { target: { value: "rfq@example.com" } });
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
-    expect(getFetchBody()).toMatchObject({
-      offeringId: "sample-offering",
-      interest: "coastal project",
-    });
-    expect(getFetchBody()).not.toHaveProperty("offeringName");
-  });
-
-  it("renders the server-resolved offering label and submits offering id", async () => {
-    const { container, copy } = renderInquiryForm("request-quote", {
-      kind: "offering-context",
-      offeringId: "sample-offering",
-      displayLabel: "Sample Offering",
-    });
-
-    expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
-      "Sample Offering",
-    );
-    expect(screen.getByTestId("inquiry-interest-context")).toHaveTextContent(
-      copy.contextLabel,
-    );
-
-    const { fullName, email, form } = getFormControls(container);
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "RFQ Buyer" } });
-    fireEvent.change(email, { target: { value: "rfq@example.com" } });
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
-    expect(getFetchBody()).toMatchObject({
-      offeringId: "sample-offering",
-    });
-    expect(getFetchBody()).not.toHaveProperty("offeringName");
-  });
-
-  it("submits general inquiry with interest and no offering id", async () => {
-    const interest = "x".repeat(MAX_LEAD_INTEREST_LENGTH);
-    const { container } = renderInquiryForm("request-quote", {
-      kind: "general-context",
-      interest,
-    });
-
-    const { fullName, email, form } = getFormControls(container);
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "RFQ Buyer" } });
-    fireEvent.change(email, { target: { value: "rfq@example.com" } });
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
-    expect(getFetchBody()).toMatchObject({
-      interest,
-    });
-    expect(getFetchBody()).not.toHaveProperty("offeringId");
-  });
-
-  it("pre-fills, edits, and clears the initial message", async () => {
-    const { container } = renderInquiryForm("request-quote", {
-      kind: "general-context",
-      initialMessage: "c".repeat(MAX_INQUIRY_CONFIG_PREFILL_LENGTH),
-    });
-    const { message } = getFormControls(container);
-
-    expect(message).toHaveValue("c".repeat(MAX_INQUIRY_CONFIG_PREFILL_LENGTH));
-    fireEvent.change(message, {
-      target: { value: "Edited estimator summary" },
-    });
-    expect(message).toHaveValue("Edited estimator summary");
-    fireEvent.change(message, { target: { value: "" } });
-    expect(message).toHaveValue("");
-  });
-
-  it("keeps attribution, honeypot, and Turnstile fields in offering submissions", async () => {
-    window.sessionStorage.setItem(
-      "inquiry_attribution",
-      JSON.stringify({
-        utmSource: "google",
-        landingPage: "/en/request-quote",
-      }),
-    );
-    const { container } = renderInquiryForm("request-quote", {
-      kind: "offering-context",
-      offeringId: "sample-offering",
-      displayLabel: "Sample Offering",
-    });
-    const { fullName, email, form } = getFormControls(container);
-    const honeypot = form.querySelector<HTMLInputElement>(
-      'input[name="website"]',
-    );
-
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "Ada Buyer" } });
-    fireEvent.change(email, { target: { value: "ada@example.com" } });
-    fireEvent.change(honeypot!, {
-      target: { value: "https://spam.example" },
-    });
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
-    expect(getFetchBody()).toMatchObject({
-      offeringId: "sample-offering",
-      website: "https://spam.example",
-      turnstileToken: "mock-inquiry-turnstile-token",
-      utmSource: "google",
-      landingPage: "/en/request-quote",
-    });
-  });
-
-  it("ignores request-quote context when contact uses general-context", () => {
-    setRequestQuoteSearch("?offeringId=sample-offering&config=hidden");
-    const { container } = renderInquiryForm("contact", GENERAL_CONTEXT);
-
-    expect(screen.queryByTestId("inquiry-interest-context")).toBeNull();
-    expect(getFormControls(container).message).toHaveValue("");
   });
 });
 

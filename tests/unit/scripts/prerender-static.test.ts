@@ -70,44 +70,6 @@ function createBuildFixture({
   return rootDir;
 }
 
-function createRequestQuotePostponedFixture(locales: string[]) {
-  const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
-  tempDirs.push(rootDir);
-  writeJson(rootDir, ".next/server/app-paths-manifest.json", {
-    "/[locale]/about/page": "app/[locale]/about/page.js",
-    "/[locale]/contact/page": "app/[locale]/contact/page.js",
-    "/[locale]/request-quote/page": "app/[locale]/request-quote/page.js",
-  });
-  writeJson(rootDir, ".next/prerender-manifest.json", {
-    routes: Object.fromEntries(
-      locales.flatMap((locale) => [
-        [`/${locale}/about`, { srcRoute: "/[locale]/about" }],
-        [`/${locale}/contact`, { srcRoute: "/[locale]/contact" }],
-        [`/${locale}/request-quote`, { srcRoute: "/[locale]/request-quote" }],
-      ]),
-    ),
-  });
-  for (const templateRoute of ["about", "contact", "request-quote"]) {
-    writeJson(rootDir, `.next/server/app/[locale]/${templateRoute}.meta`, {
-      headers: { "x-nextjs-prerender": "1" },
-      postponed: "template shell",
-    });
-  }
-  for (const locale of locales) {
-    writeJson(rootDir, `.next/server/app/${locale}/about.meta`, {
-      headers: { "x-nextjs-prerender": "1" },
-    });
-    writeJson(rootDir, `.next/server/app/${locale}/contact.meta`, {
-      headers: { "x-nextjs-prerender": "1" },
-    });
-    writeJson(rootDir, `.next/server/app/${locale}/request-quote.meta`, {
-      headers: { "x-nextjs-prerender": "1" },
-      postponed: "search params",
-    });
-  }
-  return rootDir;
-}
-
 function createStaticBuildWithoutTemplateShellsFixture({
   includeAboutRoute = true,
 } = {}) {
@@ -116,7 +78,6 @@ function createStaticBuildWithoutTemplateShellsFixture({
   writeJson(rootDir, ".next/server/app-paths-manifest.json", {
     "/[locale]/about/page": "app/[locale]/about/page.js",
     "/[locale]/contact/page": "app/[locale]/contact/page.js",
-    "/[locale]/request-quote/page": "app/[locale]/request-quote/page.js",
   });
   writeJson(rootDir, ".next/prerender-manifest.json", {
     routes: {
@@ -218,23 +179,6 @@ describe("prerender static behavior gate", () => {
         'stale dynamic-route exemption "/en/contact"',
       ),
     });
-  });
-
-  it("accepts postponed Request Quote routes derived from configured locales", () => {
-    expect(
-      collectPrerenderStaticFindings({
-        rootDir: createRequestQuotePostponedFixture(["en", "fr"]),
-        configuredLocales: ["en", "fr"],
-      }),
-    ).toEqual([]);
-  });
-
-  it("accepts static output without PPR template shells and keeps Request Quote dynamic", () => {
-    expect(
-      collectPrerenderStaticFindings({
-        rootDir: createStaticBuildWithoutTemplateShellsFixture(),
-      }),
-    ).toEqual([]);
   });
 
   it("still rejects a missing concrete static route without PPR template shells", () => {

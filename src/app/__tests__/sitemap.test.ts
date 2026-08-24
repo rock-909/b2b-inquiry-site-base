@@ -11,7 +11,6 @@ describe("sitemap", () => {
       "/products",
       "/products/sample-offering",
       "/about",
-      "/request-quote",
       "/contact",
       "/privacy",
       "/terms",
@@ -33,7 +32,6 @@ describe("sitemap", () => {
 
     expect(byPath["/"]).not.toHaveProperty("lastModified");
     expect(byPath["/products"]).not.toHaveProperty("lastModified");
-    expect(byPath["/request-quote"]).not.toHaveProperty("lastModified");
     expect(byPath["/products/sample-offering"]?.lastModified).toEqual(
       new Date("2026-08-12T00:00:00Z"),
     );

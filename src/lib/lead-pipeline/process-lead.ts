@@ -1,6 +1,5 @@
 import "server-only";
 
-import { getOfferingById } from "@/config/offerings";
 import { AirtableService } from "@/lib/airtable/service";
 import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 import {
@@ -50,7 +49,6 @@ function createProcessingFailureResult(referenceId?: string): LeadResult {
 
 function createOwnerLead(lead: InquiryLeadInput, referenceId: string) {
   const { firstName, lastName } = splitName(lead.fullName);
-  const offering = getOfferingById(lead.offeringId);
   const requirements = resolveBuyerMessage({ message: lead.message });
 
   return {
@@ -58,10 +56,6 @@ function createOwnerLead(lead: InquiryLeadInput, referenceId: string) {
     firstName,
     lastName,
     email: lead.email,
-    ...(lead.interest ? { interest: lead.interest } : {}),
-    ...(offering
-      ? { offeringId: offering.id, offeringName: offering.name }
-      : {}),
     ...(requirements ? { requirements } : {}),
     attribution: pickAttributionFields(lead),
   };
@@ -75,10 +69,6 @@ function createInquiryEmailData(lead: OwnerLead): InquiryEmailData {
     firstName: lead.firstName,
     lastName: lead.lastName,
     email: lead.email,
-    ...(lead.interest ? { interest: lead.interest } : {}),
-    ...(lead.offeringId && lead.offeringName
-      ? { offeringId: lead.offeringId, offeringName: lead.offeringName }
-      : {}),
     ...(lead.requirements ? { requirements: lead.requirements } : {}),
   };
 }
@@ -102,8 +92,6 @@ async function createInquiryLeadRecord(
   emailSent: boolean,
 ): Promise<boolean> {
   const baseMessage = generateInquiryMessage({
-    offeringName: lead.offeringName,
-    interest: lead.interest,
     requirements: lead.requirements,
   });
   // 邮件没发出去时，业主唯一能看到这条线索的地方就是这条记录。
@@ -119,10 +107,6 @@ async function createInquiryLeadRecord(
       lastName: lead.lastName,
       email: lead.email,
       message,
-      ...(lead.interest ? { interest: lead.interest } : {}),
-      ...(lead.offeringId && lead.offeringName
-        ? { offeringId: lead.offeringId, offeringName: lead.offeringName }
-        : {}),
       ...(lead.requirements ? { requirements: lead.requirements } : {}),
       referenceId: lead.referenceId,
       ...lead.attribution,

@@ -69,7 +69,7 @@ function rendersImportedJsxIdentifier(
 }
 
 describe("contact entry boundary", () => {
-  it("keeps production contact and request-quote pages on InquiryForm -> /api/inquiry", () => {
+  it("keeps the production contact page on InquiryForm -> /api/inquiry", () => {
     // 「表单自己发请求到 /api/inquiry」这半条契约，证明在
     // src/components/forms/__tests__/inquiry-form.test.tsx，那里断言的是真实发
     // 出的请求地址。源码文本断言换不来这个：把地址提成常量就会让它假报警。
@@ -77,7 +77,6 @@ describe("contact entry boundary", () => {
     // 抽象层也不会有任何断言变红。旧的源码文本断言同样守不住，这里不是回退。
     for (const filePath of [
       "src/app/[locale]/contact/contact-page-sections.tsx",
-      "src/app/[locale]/request-quote/page.tsx",
     ]) {
       const source = read(filePath);
       const sourceFile = createSourceFile(filePath, source);

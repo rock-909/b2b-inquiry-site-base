@@ -21,7 +21,6 @@ describe("footer links", () => {
       {
         key: "support",
         links: [
-          ["requestQuote", "/request-quote"],
           ["privacy", "/privacy"],
           ["terms", "/terms"],
         ],

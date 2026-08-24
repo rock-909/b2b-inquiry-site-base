@@ -39,33 +39,13 @@ function resolveFieldError(
   return fieldErrors[leaf] ?? null;
 }
 
-export function InquiryInterestContext({
-  interest,
-  copy,
-}: {
-  interest: string;
-  copy: InquiryFormCopy;
-}) {
-  return (
-    <p
-      className="rounded-lg border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground"
-      data-testid="inquiry-interest-context"
-    >
-      <span className="font-medium text-foreground">{copy.contextLabel}: </span>
-      <span translate="no">{interest}</span>
-    </p>
-  );
-}
-
 export function InquiryFormFields({
   copy,
   fieldDetails,
-  initialMessage,
   messageMaxLength,
 }: {
   copy: InquiryFormCopy;
   fieldDetails?: readonly string[];
-  initialMessage?: string;
   messageMaxLength: number;
 }) {
   const messageHintId = "inquiry-message-hint";
@@ -142,9 +122,7 @@ export function InquiryFormFields({
           }
           aria-invalid={messageError ? true : undefined}
           className={`${INPUT_CLASS} min-h-32 resize-y leading-6`}
-          defaultValue={initialMessage}
           id="inquiry-message"
-          key={initialMessage ?? "empty-message"}
           maxLength={messageMaxLength}
           name="message"
           rows={5}

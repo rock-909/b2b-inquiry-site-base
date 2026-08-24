@@ -43,9 +43,6 @@ const inquiryFailureInputs: ReadonlyArray<Record<string, unknown>> = [
   { ...validBase, email: 42 },
   { ...validBase, email: "not-an-email" },
   { ...validBase, email: `a@${"x".repeat(300)}.com` },
-  { ...validBase, offeringId: "not-real" },
-  { ...validBase, offeringId: 1 },
-  { ...validBase, interest: 123 },
   { ...validBase, message: 123 },
   { ...validBase, message: "A".repeat(5000) },
   { ...validBase, utmSource: "x".repeat(257) },
@@ -103,9 +100,8 @@ describe("inquiry validation detail mapping", () => {
   it("maps internal field issues to errors.generic instead of field-specific keys", () => {
     const input = {
       ...validBase,
-      company: 123,
+      utmSource: 123,
       message: 999,
-      interest: 789,
     };
     const parsed = inquiryLeadSchema.safeParse(input);
 
@@ -118,9 +114,7 @@ describe("inquiry validation detail mapping", () => {
     expect(mapInquiryValidationDetails(parsed.error.issues, input)).not.toEqual(
       expect.arrayContaining([
         "errors.company.invalid",
-        "errors.interest.invalid",
         "errors.company.required",
-        "errors.interest.required",
       ]),
     );
   });

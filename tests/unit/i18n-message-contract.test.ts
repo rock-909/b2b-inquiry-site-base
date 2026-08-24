@@ -9,17 +9,9 @@ type JsonObject = Record<string, unknown>;
 
 const enMessages = getSourceMessages("en") as JsonObject & {
   apiErrors: Record<string, unknown>;
-  requestQuote?: unknown;
   inquiry?: JsonObject;
   contact?: JsonObject;
 };
-
-const REQUEST_QUOTE_PAGE_KEYS = [
-  "requestQuote.metadata.title",
-  "requestQuote.metadata.description",
-  "requestQuote.page.heading",
-  "requestQuote.page.intro",
-] as const;
 
 const CONTACT_PANEL_KEYS = [
   "contact.panel.contactTitle",
@@ -61,15 +53,6 @@ describe("real i18n runtime message contract", () => {
     assertNonEmptyStringLeaves(copy, "inquiry.form");
   });
 
-  it("keeps request quote page and metadata owners", () => {
-    for (const keyPath of REQUEST_QUOTE_PAGE_KEYS) {
-      const value = getMessageValue(enMessages, keyPath);
-
-      expect(typeof value, keyPath).toBe("string");
-      expect(String(value).trim(), keyPath).not.toBe("");
-    }
-  });
-
   it("keeps contact panel and inquiry handoff owners", () => {
     for (const keyPath of CONTACT_PANEL_KEYS) {
       const value = getMessageValue(enMessages, keyPath);
@@ -97,11 +80,6 @@ describe("real i18n runtime message contract", () => {
     expect(
       getMessageValue(enMessages, "inquiry.form.errors.fieldSummary"),
     ).toEqual(expect.any(String));
-  });
-
-  it("keeps RFQ copy in the canonical locale source", () => {
-    expect(enMessagesSource).toHaveProperty("requestQuote");
-    expect(enMessages).toHaveProperty("requestQuote");
   });
 
   it("keeps API error messages aligned with live error codes", () => {

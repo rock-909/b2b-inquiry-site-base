@@ -30,6 +30,6 @@ export const EMAIL_COPY = {
       `[${data.referenceId}] ${formatTemplate(
         emailTemplateCopy.inquiry.subject,
         {},
-      )}${data.offeringName ? `: ${data.offeringName}` : ""}`,
+      )}`,
   },
 } as const;

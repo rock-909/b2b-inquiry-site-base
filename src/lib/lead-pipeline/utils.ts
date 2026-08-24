@@ -22,21 +22,11 @@ export function splitName(fullName: string): SplitNameResult {
 }
 
 export interface InquiryMessageParts {
-  offeringName?: string | undefined;
-  interest?: string | undefined;
   requirements?: string | undefined;
 }
 
 export function generateInquiryMessage(parts: InquiryMessageParts): string {
   const lines: string[] = [];
-
-  if (parts.offeringName?.trim()) {
-    lines.push(`Offering: ${parts.offeringName.trim()}`);
-  }
-
-  if (parts.interest?.trim()) {
-    lines.push(`Interest: ${parts.interest.trim()}`);
-  }
 
   if (parts.requirements?.trim()) {
     lines.push(`Requirements: ${parts.requirements.trim()}`);

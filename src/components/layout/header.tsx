@@ -152,9 +152,7 @@ function HeaderUtilityControls({
   openMenuLabel: string;
   closeMenuLabel: string;
 }) {
-  const contactHref =
-    SINGLE_SITE_HOME_LINK_TARGETS.requestQuote ??
-    SINGLE_SITE_HOME_LINK_TARGETS.contact;
+  const contactHref = SINGLE_SITE_HOME_LINK_TARGETS.contact;
 
   return (
     <div className="header-nav-right" data-testid="header-utility-controls">

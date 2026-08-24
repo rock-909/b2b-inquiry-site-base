@@ -12,7 +12,6 @@ const CORE_PATHS = {
   home: "/",
   products: "/products",
   about: "/about",
-  requestQuote: "/request-quote",
   contact: "/contact",
   privacy: "/privacy",
   terms: "/terms",

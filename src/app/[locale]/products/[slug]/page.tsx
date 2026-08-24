@@ -9,6 +9,7 @@ import {
   getOfferingById,
   getOfferingPath,
 } from "@/config/offerings";
+import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
@@ -119,11 +120,11 @@ export default async function ProductDetailPage({
         </section>
 
         <Link
-          href={`/request-quote?offeringId=${encodeURIComponent(offering.id)}`}
+          href={SINGLE_SITE_HOME_LINK_TARGETS.contact}
           prefetch={false}
           className={buttonVariants({ className: "mt-10" })}
         >
-          {t("detail.requestQuote")}
+          {t("detail.startInquiry")}
         </Link>
       </article>
     </>

@@ -21,10 +21,8 @@ export const MAX_LEAD_EMAIL_LENGTH = 254 as const;
 export const MAX_LEAD_NAME_LENGTH = 100 as const;
 
 /** Max buyer interest length for canonical inquiry leads. */
-export const MAX_LEAD_INTEREST_LENGTH = 200 as const;
 
 /** Max optional buyer message length for canonical inquiry leads. */
 export const MAX_LEAD_MESSAGE_LENGTH = 2000 as const;
 
 /** Max length for estimator `?config=` URL prefill on the inquiry form. */
-export const MAX_INQUIRY_CONFIG_PREFILL_LENGTH = 500 as const;

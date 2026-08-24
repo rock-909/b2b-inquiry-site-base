@@ -52,7 +52,7 @@ describe("InquiryForm submission lifecycle", () => {
         }),
     );
 
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { form } = fillRequiredFields(container);
     const submit = within(form).getByRole("button", { name: copy.submit });
 
@@ -79,7 +79,7 @@ describe("InquiryForm submission lifecycle", () => {
   });
 
   it("requires a fresh Turnstile token for the next submit", async () => {
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { form } = fillRequiredFields(container);
 
     await act(async () => {
@@ -104,7 +104,7 @@ describe("InquiryForm submission lifecycle", () => {
       throw new Error("analytics unavailable");
     });
 
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { form, fullName, email } = fillRequiredFields(container);
 
     await act(async () => {
@@ -132,7 +132,7 @@ describe("InquiryForm submission lifecycle", () => {
       ),
     );
 
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { form } = fillRequiredFields(container);
 
     await act(async () => {
@@ -173,7 +173,7 @@ describe("InquiryForm submission lifecycle", () => {
         }),
     );
 
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { form } = fillRequiredFields(container);
 
     await act(async () => {
@@ -220,7 +220,7 @@ describe("InquiryForm submission lifecycle", () => {
     Reflect.deleteProperty(globalThis, "AbortSignal");
 
     try {
-      const { container, copy } = renderInquiryForm("contact");
+      const { container, copy } = renderInquiryForm();
       const { form } = fillRequiredFields(container);
 
       await act(async () => {
@@ -239,7 +239,7 @@ describe("InquiryForm submission lifecycle", () => {
   it("shows a server error when the network request throws", async () => {
     vi.mocked(fetch).mockRejectedValueOnce(new TypeError("Failed to fetch"));
 
-    const { container, copy } = renderInquiryForm("contact");
+    const { container, copy } = renderInquiryForm();
     const { form, fullName, email } = fillRequiredFields(container);
 
     await act(async () => {

@@ -55,7 +55,6 @@ const FOOTER_NAVIGATION_PAGE_TYPES = [
 ] as const satisfies readonly PageType[];
 
 const FOOTER_SUPPORT_PAGE_TYPES = [
-  "requestQuote",
   "privacy",
   "terms",
 ] as const satisfies readonly PageType[];
@@ -69,7 +68,6 @@ const FOOTER_TRANSLATION_KEYS = {
   products: "footer.sections.navigation.products",
   about: "footer.sections.navigation.about",
   contact: "footer.sections.navigation.contact",
-  requestQuote: "footer.sections.support.requestQuote",
   privacy: "footer.sections.support.privacy",
   terms: "footer.sections.support.terms",
 } as const satisfies Record<FooterLinkPageType, string>;

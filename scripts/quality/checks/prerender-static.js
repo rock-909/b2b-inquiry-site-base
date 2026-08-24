@@ -5,20 +5,9 @@ const ROOT = process.cwd();
 const { locales: CONFIGURED_LOCALES } = require("../../../i18n-locales.config");
 const DEFAULT_BUILD_DIR = ".next";
 
-const REQUEST_QUOTE_DYNAMIC_REASON =
-  "server-validated search-param rendering on Request Quote";
-
-function buildDynamicRouteExemptions(configuredLocales) {
-  return new Map(
-    configuredLocales.map((locale) => [
-      `/${locale}/request-quote`,
-      REQUEST_QUOTE_DYNAMIC_REASON,
-    ]),
-  );
-}
-
-const DYNAMIC_ROUTE_EXEMPTIONS =
-  buildDynamicRouteExemptions(CONFIGURED_LOCALES);
+// 报价页已移除：当前没有需要豁免整页预渲染检查的动态路由。
+// 机制保留给未来真实需要的路由，测试用合成 Map 覆盖。
+const DYNAMIC_ROUTE_EXEMPTIONS = new Map();
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -159,7 +148,7 @@ function collectPrerenderStaticFindings({
   dynamicRouteExemptions,
 } = {}) {
   const effectiveDynamicRouteExemptions =
-    dynamicRouteExemptions ?? buildDynamicRouteExemptions(configuredLocales);
+    dynamicRouteExemptions ?? DYNAMIC_ROUTE_EXEMPTIONS;
   const buildRoot = path.join(rootDir, buildDir);
   const appPathsPath = path.join(buildRoot, "server/app-paths-manifest.json");
   const prerenderPath = path.join(buildRoot, "prerender-manifest.json");

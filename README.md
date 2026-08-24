@@ -7,7 +7,7 @@
 ## 当前站点范围
 
 - 单语言：English only，公开 URL 不带 `/en` 前缀。
-- 页面：Home、About、Request Quote、Contact、Privacy、Terms。
+- 页面：Home、Products、About、Contact、Privacy、Terms。
 - 业务身份、offering 和页面内容必须由派生站 owner 在公开上线前替换确认。
 
 模板内置的是询盘、安全和交付基础能力。产品目录、服务目录或混合 offering 页面属于派生站的业务内容层：多数 B2B 站都会增加这些页面，但不需要在模板核心里预置固定目录模型或运行时 mode。
@@ -23,7 +23,7 @@ cp .dev.vars.example .dev.vars    # Cloudflare 本地预览环境变量
 pnpm dev
 ```
 
-询盘、联系表单和 RFQ 页面需要在 `.env.local` 里填入真实服务配置。服务端密钥包括 `AIRTABLE_API_KEY`、`RESEND_API_KEY` 和 `TURNSTILE_SECRET_KEY`；`NEXT_PUBLIC_TURNSTILE_SITE_KEY` 是浏览器侧公开站点 key。完整键位以 `.env.example` 为准，派生和上线见 `docs/派生项目交接.md`。
+询盘表单需要在 `.env.local` 里填入真实服务配置。服务端密钥包括 `AIRTABLE_API_KEY`、`RESEND_API_KEY` 和 `TURNSTILE_SECRET_KEY`；`NEXT_PUBLIC_TURNSTILE_SITE_KEY` 是浏览器侧公开站点 key。完整键位以 `.env.example` 为准，派生和上线见 `docs/派生项目交接.md`。
 
 ## 常用命令
 

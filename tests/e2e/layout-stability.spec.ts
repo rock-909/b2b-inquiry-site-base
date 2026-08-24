@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
  *
  * The inquiry form renders a short no-JS card until hydration, then swaps in
  * the full form. Without reserved space that swap pushes everything below it
- * down — measured as CLS 0.203 on /request-quote, where the form sits above
+ * down — measured at CLS 0.203 on the inquiry form swap, where the form sits above
  * the fold. This asserts the swap costs no visible movement.
  *
  * Lighthouse fails a route above 0.15; 0.1 is Web Vitals' "good" bound and the
@@ -25,7 +25,7 @@ const STACKED_VIEWPORTS = [
   { name: "tablet", width: 768, height: 1024 },
 ] as const;
 
-const INQUIRY_FORM_PAGES = ["/request-quote", "/contact"] as const;
+const INQUIRY_FORM_PAGES = ["/contact"] as const;
 
 declare global {
   interface Window {

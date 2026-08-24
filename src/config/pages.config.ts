@@ -64,13 +64,6 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = [
     contentSlug: "about",
   },
   {
-    pageType: "requestQuote",
-    path: "/request-quote",
-    navigationKey: null,
-    sitemap: { include: true, changeFrequency: "monthly", priority: 0.9 },
-    contentSlug: null,
-  },
-  {
     pageType: "contact",
     path: "/contact",
     navigationKey: "navigation.contactSales",

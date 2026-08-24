@@ -145,7 +145,7 @@ async function expectAccessibleServerFieldErrors(page: Page, path: string) {
   });
 }
 
-for (const path of ["/contact", "/request-quote"] as const) {
+for (const path of ["/contact"] as const) {
   test(`server field errors on ${path} keep the summary and expose accessible field details`, async ({
     page,
   }) => {
@@ -153,7 +153,7 @@ for (const path of ["/contact", "/request-quote"] as const) {
   });
 }
 
-for (const path of ["/contact", "/request-quote"] as const) {
+for (const path of ["/contact"] as const) {
   test(`server field errors on a short mobile viewport keep the first invalid field visible and focused on ${path}`, async ({
     page,
   }) => {

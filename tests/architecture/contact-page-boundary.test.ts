@@ -23,64 +23,29 @@ function createSourceFile(filePath: string, source: string): ts.SourceFile {
   );
 }
 
-function rendersInquiryFormWithContactSource(source: string): boolean {
+function rendersInquiryFormWithStaticFallback(source: string): boolean {
   const sourceFile = createSourceFile(CONTACT_SECTIONS, source);
   let rendersInquiryForm = false;
-  let hasContactSource = false;
-  let hasGeneralContext = false;
+  let usesStaticFallback = false;
 
   const visit = (node: ts.Node): void => {
     if (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) {
       const tagName = node.tagName;
       if (ts.isIdentifier(tagName) && tagName.text === "InquiryForm") {
         rendersInquiryForm = true;
-
-        for (const attribute of node.attributes.properties) {
-          if (
-            !ts.isJsxAttribute(attribute) ||
-            !ts.isIdentifier(attribute.name) ||
-            attribute.initializer === undefined
-          ) {
-            continue;
-          }
-
-          if (
-            attribute.name.text === "source" &&
-            ts.isStringLiteral(attribute.initializer) &&
-            attribute.initializer.text === "contact"
-          ) {
-            hasContactSource = true;
-          }
-
-          if (
-            attribute.name.text === "context" &&
-            ts.isJsxExpression(attribute.initializer)
-          ) {
-            const expression = attribute.initializer.expression;
-            if (
-              expression &&
-              ts.isObjectLiteralExpression(expression) &&
-              expression.properties.some(
-                (property) =>
-                  ts.isPropertyAssignment(property) &&
-                  ts.isIdentifier(property.name) &&
-                  property.name.text === "kind" &&
-                  ts.isStringLiteral(property.initializer) &&
-                  property.initializer.text === "general-context",
-              )
-            ) {
-              hasGeneralContext = true;
-            }
-          }
-        }
+      }
+      if (
+        ts.isIdentifier(tagName) &&
+        tagName.text === "InquiryFormStaticFallback"
+      ) {
+        usesStaticFallback = true;
       }
     }
-
     ts.forEachChild(node, visit);
   };
 
   visit(sourceFile);
-  return rendersInquiryForm && hasContactSource && hasGeneralContext;
+  return rendersInquiryForm && usesStaticFallback;
 }
 
 describe("Contact page source boundaries", () => {
@@ -109,14 +74,14 @@ describe("Contact page source boundaries", () => {
     expect(source).toContain("assertContactPageMetadata");
   });
 
-  it("renders InquiryForm directly with general context and static fallback", () => {
+  it("renders InquiryForm directly with the static fallback", () => {
     const source = read(CONTACT_SECTIONS);
 
     expect(source).toContain("InquiryForm");
     expect(source).toContain("InquiryFormStaticFallback");
     expect(source).toContain("inquiry-form-static-fallback");
     expect(source).toContain("fallback={inquiryFallback}");
-    expect(rendersInquiryFormWithContactSource(source)).toBe(true);
+    expect(rendersInquiryFormWithStaticFallback(source)).toBe(true);
   });
 
   it("keeps the no-JS fallback informational without fake form markup", () => {
