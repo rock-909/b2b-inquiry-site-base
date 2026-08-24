@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveTurnstileWidgetMode } from "@/components/security/turnstile";
+import { resolveTurnstileWidgetMode } from "@/components/security/turnstile-mode";
 
 function input(
   overrides: Partial<Parameters<typeof resolveTurnstileWidgetMode>[0]> = {},
