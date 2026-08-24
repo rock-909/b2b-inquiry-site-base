@@ -131,6 +131,15 @@ async function expectAccessibleServerFieldErrors(page: Page, path: string) {
     page.viewportSize()?.height ?? Number.POSITIVE_INFINITY,
   );
 
+  // sticky header 遮挡证明：header 是 sticky top-0，量它的真实底边，
+  // 错误字段顶部不得高于该值。
+  // 页面内容区也有语义 header（文章头），sticky 顶栏是唯一的 banner 角色。
+  const headerBox = await page.getByRole("banner").boundingBox();
+  expect(headerBox, "sticky header must be measurable").not.toBeNull();
+  expect(errorFieldBox!.y).toBeGreaterThanOrEqual(
+    headerBox!.y + headerBox!.height,
+  );
+
   await checkA11y(page, 'form[data-lead-path="api-inquiry"]', {
     includedImpacts: ["critical", "serious"],
   });
@@ -144,9 +153,11 @@ for (const path of ["/contact", "/request-quote"] as const) {
   });
 }
 
-test("server field errors on a short mobile viewport keep the first invalid field visible and focused", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 320, height: 568 });
-  await expectAccessibleServerFieldErrors(page, "/contact");
-});
+for (const path of ["/contact", "/request-quote"] as const) {
+  test(`server field errors on a short mobile viewport keep the first invalid field visible and focused on ${path}`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await expectAccessibleServerFieldErrors(page, path);
+  });
+}

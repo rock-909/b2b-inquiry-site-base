@@ -50,13 +50,21 @@ function wireDetails<Field extends InquiryErrorField>(
  * 字段名单在这里展开一次（leaf 清单仍由 PROTOCOL 单源派生）；泛型返回值保证
  * 每个 key 的数组元素类型逐字段精确，不需要任何断言。
  */
-export const INQUIRY_FIELD_ERROR_KEYS = {
+// 显式标注 Record<InquiryErrorField, …>：协议新增字段而这里漏写时，
+// type-check 直接失败——这就是字段名单的 exhaustive 封口。
+export const INQUIRY_FIELD_ERROR_KEYS: Record<
+  InquiryErrorField,
+  `errors.${InquiryErrorField}`
+> = {
   fullName: fieldErrorPrefixes("fullName"),
   email: fieldErrorPrefixes("email"),
   message: fieldErrorPrefixes("message"),
 };
 
-export const INQUIRY_FIELD_WIRE_DETAILS = {
+export const INQUIRY_FIELD_WIRE_DETAILS: Record<
+  InquiryErrorField,
+  readonly InquiryFieldErrorDetail[]
+> = {
   fullName: wireDetails("fullName"),
   email: wireDetails("email"),
   message: wireDetails("message"),

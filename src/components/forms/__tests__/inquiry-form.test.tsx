@@ -361,6 +361,16 @@ describe("InquiryForm contract", () => {
     );
     expect(document.getElementById("inquiry-message-error")).toBeTruthy();
     expect(document.getElementById("inquiry-message-hint")).toBeTruthy();
+
+    // 焦点管理合同（组件层证明接线；真实视口滚动由 E2E 证明）：
+    // 第一个无效字段获得焦点。
+    expect(document.activeElement).toBe(fullName);
+
+    // 错误摘要走程序化聚焦单通道：不得保留 role="alert"/aria-live，
+    // 否则与焦点播报形成双重朗读。
+    const summary = screen.getByText(copy.errors.fieldSummary);
+    expect(summary).not.toHaveAttribute("role", "alert");
+    expect(summary).not.toHaveAttribute("aria-live");
   });
 
   it("clears fullName, email, and message after contact success while keeping the reference ID", async () => {
@@ -538,9 +548,15 @@ describe("InquiryForm contract", () => {
     expect(screen.queryByText(copy.turnstile.expired)).not.toBeInTheDocument();
 
     // 买家填了几分钟长文后令牌过期：按钮禁用，但出现解释性提示。
+    // 过期提示不得抢走当前输入焦点（polite 提示 + 不移动焦点）。
+    const messageBox = container.querySelector(
+      'textarea[name="message"]',
+    ) as HTMLTextAreaElement;
+    messageBox.focus();
     fireEvent.click(screen.getByTestId("inquiry-turnstile-expire"));
 
     expect(await screen.findByText(copy.turnstile.expired)).toBeVisible();
+    expect(document.activeElement).toBe(messageBox);
 
     // 新令牌到达后提示消失、按钮恢复，不需要任何手动刷新。
     fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
@@ -588,6 +604,14 @@ describe("InquiryForm contract", () => {
     expect(email).not.toHaveAttribute("aria-invalid");
     expect(message).not.toHaveAttribute("aria-invalid");
     expect(message).toHaveAttribute("aria-describedby", "inquiry-message-hint");
+
+    // 无可识别字段错误时，聚焦降级目标：错误摘要（tabIndex=-1，可程序聚焦
+    // 但不进入 Tab 序）。
+    // ref 挂在 callout 根元素上，文本是其子节点：定位到根再比较。
+    const summaryCallout = screen
+      .getByText(copy.errors.fieldSummary)
+      .closest('[data-slot="status-callout"]');
+    expect(document.activeElement).toBe(summaryCallout);
   });
 });
 

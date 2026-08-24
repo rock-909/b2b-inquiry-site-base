@@ -69,6 +69,25 @@ describe("decodeInquirySubmitState", () => {
     });
   });
 
+  it("accepts the legal upper bound of 120 seconds as-is", async () => {
+    const response = new Response(
+      JSON.stringify({
+        success: false,
+        errorCode: API_ERROR_CODES.RATE_LIMIT_EXCEEDED,
+      }),
+      {
+        status: 429,
+        headers: { "Retry-After": "120" },
+      },
+    );
+
+    await expect(decodeInquirySubmitState(response)).resolves.toEqual({
+      status: "error",
+      errorKind: "rateLimit",
+      retryAfterSeconds: 120,
+    });
+  });
+
   it("accepts a zero Retry-After as an immediate cooldown release", async () => {
     const response = new Response(
       JSON.stringify({
