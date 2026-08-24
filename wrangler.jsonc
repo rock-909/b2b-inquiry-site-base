@@ -13,6 +13,16 @@
   "keep_names": false,
   // Keep cold starts close to the visitor when Cloudflare can infer placement.
   "placement": { "mode": "smart" },
+  // Workers Logs 基线（免费层 20 万条/天、保留 3 天）：事故取证依赖它。
+  // 低频 B2B 站首版全量采样；上线后核对日请求量未接近额度再维持 100%。
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": true,
+      "head_sampling_rate": 1,
+    },
+  },
   // Static assets (OpenNext output)
   "assets": {
     "directory": ".open-next/assets",

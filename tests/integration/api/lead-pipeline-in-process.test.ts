@@ -19,6 +19,12 @@ const { fetchMock } = vi.hoisted(() => {
   return { fetchMock };
 });
 
+vi.mock("@/lib/observability/inquiry-failure-latch", () => ({
+  recordInquiryIncident: vi.fn(async () => undefined),
+  hasRecentInquiryFailure: vi.fn(async () => false),
+  isInquiryObservabilityConfigured: vi.fn(() => true),
+}));
+
 import * as inquiryRoute from "@/app/api/inquiry/route";
 import { resetRateLimitStore } from "@/lib/security/distributed-rate-limit";
 
