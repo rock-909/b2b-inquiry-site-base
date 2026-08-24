@@ -184,47 +184,6 @@ test.describe("No-JS HTML contract (English-only)", () => {
     await expectBodyRenderedOnce(page);
   });
 
-  test("request quote page renders inquiry fallback without JavaScript", async ({
-    page,
-  }) => {
-    await page.goto("http://localhost:3000/request-quote", {
-      waitUntil: "domcontentloaded",
-    });
-
-    await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    await expect(
-      page.getByRole("heading", { name: /start with the essentials/i }),
-    ).toBeVisible();
-
-    const html = await page.content();
-    expectExactlyOneMain(html);
-    expect(html).toContain('data-testid="inquiry-form-static-fallback"');
-    expect(html).not.toMatch(/<form[\s>]/);
-
-    const staticFallback = page
-      .locator(
-        '#main-content [data-testid="inquiry-form-static-fallback"]:visible',
-      )
-      .first();
-
-    await expect(staticFallback).toBeVisible();
-    await expect(
-      staticFallback.getByText(/secure inquiry form needs JavaScript/i),
-    ).toBeVisible();
-    await expect(staticFallback.getByRole("link", { name: /@/i })).toHaveCount(
-      0,
-    );
-    await expect(staticFallback.getByRole("button")).toHaveCount(0);
-    await expectNoReservedGap(page);
-    await expectBodyRenderedOnce(page);
-    // Exactly one card in the whole document. Comparing the total against the
-    // inside-main count instead would pass on two copies that both sit inside
-    // main; an absolute count catches that too.
-    await expect(
-      page.locator('[data-testid="inquiry-form-static-fallback"]'),
-    ).toHaveCount(1);
-  });
-
   test("every canonical public page exposes one composed main landmark", async ({
     page,
   }) => {

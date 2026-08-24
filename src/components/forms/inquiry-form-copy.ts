@@ -4,15 +4,12 @@ import {
 } from "@/constants/inquiry-field-error-protocol";
 import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
 
-export type InquiryFormSource = "contact" | "request-quote";
-
 type InquiryFormMessageKey =
   | "optional"
   | "fullName"
   | "email"
   | "message"
   | "messageHint"
-  | "contextLabel"
   | "submit"
   | "submitting"
   | "success"
@@ -21,7 +18,6 @@ type InquiryFormMessageKey =
   | "noJsExplanation"
   | "noJsEmailPrefix"
   | "contactAriaLabel"
-  | "requestQuoteAriaLabel"
   | "errors.fieldSummary"
   | "errors.securitySummary"
   | "errors.serverSummary"
@@ -68,7 +64,6 @@ export function createInquiryFormCopy(
     email: t("email"),
     message: t("message"),
     messageHint: t("messageHint"),
-    contextLabel: t("contextLabel"),
     submit: t("submit"),
     submitting: t("submitting"),
     success: t("success"),
@@ -77,7 +72,6 @@ export function createInquiryFormCopy(
     noJsExplanation: t("noJsExplanation"),
     noJsEmailPrefix: t("noJsEmailPrefix"),
     contactAriaLabel: t("contactAriaLabel"),
-    requestQuoteAriaLabel: t("requestQuoteAriaLabel"),
     turnstile: {
       unavailable: t("turnstile.unavailable"),
       loadFailed: t("turnstile.loadFailed"),

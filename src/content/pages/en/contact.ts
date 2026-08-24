@@ -23,7 +23,7 @@ const contactPage = {
   content: String.raw`
 This page is a **non-production reference**. Replace the identity, email, location, response time and operating hours with owner-confirmed details.
 
-The fastest route is the **[inquiry form](/request-quote)**. A useful request normally includes the requirement, quantity or scope, destination market and timing.
+The fastest route is the **[inquiry form](/contact)**. A useful request normally includes the requirement, quantity or scope, destination market and timing.
 `,
 } satisfies Page;
 

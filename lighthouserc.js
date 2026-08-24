@@ -60,7 +60,6 @@ const allUrls = [
   ...criticalUrls,
   `${BASE_URL}/products`,
   `${BASE_URL}/about`,
-  `${BASE_URL}/request-quote`,
   `${BASE_URL}/contact`,
   `${BASE_URL}/privacy`,
   `${BASE_URL}/terms`,

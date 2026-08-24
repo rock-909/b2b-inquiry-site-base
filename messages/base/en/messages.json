@@ -111,7 +111,6 @@
       },
       "support": {
         "title": "Support",
-        "requestQuote": "Start an inquiry",
         "privacy": "Privacy Policy",
         "terms": "Terms of Service"
       }
@@ -197,21 +196,6 @@
       "prepareValue": "Share the requirement, scope, timing and destination."
     }
   },
-  "requestQuote": {
-    "metadata": {
-      "title": "Request a Quote",
-      "description": "Share your requirement, scope, quantity, destination and timing so the business can determine the next useful step."
-    },
-    "page": {
-      "heading": "Start with the essentials",
-      "intro": "Send what you know. The business can confirm fit, ask for missing details or prepare the next appropriate response.",
-      "afterSubmitTitle": "After you submit",
-      "confidenceTitle": "What a useful reply can cover",
-      "confidenceWarranty": "Applicable specifications, scope or service boundaries",
-      "confidenceSamples": "Sample, evaluation or discovery options when available",
-      "confidencePricing": "A written quote after the required details are confirmed"
-    }
-  },
   "inquiry": {
     "form": {
       "optional": "optional",
@@ -219,7 +203,6 @@
       "email": "Email address",
       "message": "Message",
       "messageHint": "Optional — share your requirement, timing, market or any useful context.",
-      "contextLabel": "Context from your link",
       "submit": "Send inquiry",
       "submitting": "Sending...",
       "success": "Received. The team can review your inquiry and respond with the next useful step or the details still needed.",
@@ -228,7 +211,6 @@
       "noJsExplanation": "The secure inquiry form needs JavaScript because bot verification cannot run without it.",
       "noJsEmailPrefix": "Email us directly at",
       "contactAriaLabel": "Contact inquiry",
-      "requestQuoteAriaLabel": "Request a quote",
       "turnstile": {
         "unavailable": "Security verification is temporarily unavailable.",
         "loadFailed": "Security verification failed to load.",

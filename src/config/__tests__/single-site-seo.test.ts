@@ -5,12 +5,11 @@ import {
 } from "@/config/single-site-seo";
 
 describe("single-site SEO", () => {
-  it("owns only the seven core static pages", () => {
+  it("owns only the six core static pages", () => {
     expect(getSingleSitePublicStaticPages()).toEqual([
       "",
       "/products",
       "/about",
-      "/request-quote",
       "/contact",
       "/privacy",
       "/terms",

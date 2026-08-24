@@ -43,6 +43,6 @@ describe("home page", () => {
           name: messages.home.finalCta.primary,
         })
         .at(-1),
-    ).toHaveAttribute("href", "/request-quote");
+    ).toHaveAttribute("href", "/contact");
   });
 });

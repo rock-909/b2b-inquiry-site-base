@@ -9,14 +9,8 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import {
-  InquiryFormFields,
-  InquiryInterestContext,
-} from "@/components/forms/inquiry-form-fields";
-import {
-  type InquiryFormCopy,
-  type InquiryFormSource,
-} from "@/components/forms/inquiry-form-copy";
+import { InquiryFormFields } from "@/components/forms/inquiry-form-fields";
+import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryFormStatus } from "@/components/forms/inquiry-form-status";
 import {
   createInquiryPayload,
@@ -29,16 +23,12 @@ import {
 import { TurnstileWidget } from "@/components/security/turnstile";
 import { trackGenerateLead } from "@/lib/marketing/lead-event";
 import { appendAttributionToFormData } from "@/lib/marketing/utm";
-import type { ValidatedInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 
-export type { InquiryFormSource } from "@/components/forms/inquiry-form-copy";
 export type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 
 export interface InquiryFormProps {
-  readonly source: InquiryFormSource;
   readonly copy: InquiryFormCopy;
   readonly fallback: ReactNode;
-  readonly context: ValidatedInquiryContext;
 }
 
 const unsubscribeHydration = () => undefined;
@@ -199,16 +189,13 @@ function createRequestBudgetSignal(): AbortSignal | undefined {
 async function postInquiry(
   formData: FormData,
   turnstileToken: string,
-  context: ValidatedInquiryContext,
 ): Promise<InquirySubmitState> {
   try {
     const signal = createRequestBudgetSignal();
     const response = await fetch(INQUIRY_ENDPOINT, {
       method: "POST",
       headers: JSON_HEADERS,
-      body: JSON.stringify(
-        createInquiryPayload(formData, turnstileToken, context),
-      ),
+      body: JSON.stringify(createInquiryPayload(formData, turnstileToken)),
       ...(signal ? { signal } : {}),
     });
     return await decodeInquirySubmitState(response);
@@ -272,20 +259,7 @@ function useSubmitErrorFocus(
   }, [displayState, formRef, errorSummaryRef]);
 }
 
-function InquiryFormLive({
-  source,
-  copy,
-  context,
-}: {
-  source: InquiryFormSource;
-  copy: InquiryFormCopy;
-  context: ValidatedInquiryContext;
-}) {
-  const visibleContext =
-    context.kind === "offering-context"
-      ? context.displayLabel
-      : context.interest;
-  const { initialMessage } = context;
+function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [displayState, setDisplayState] = useState<InquirySubmitState>({
     status: "idle",
@@ -310,7 +284,7 @@ function InquiryFormLive({
 
     try {
       appendAttributionToFormData(formData);
-      const decoded = await postInquiry(formData, turnstile.token, context);
+      const decoded = await postInquiry(formData, turnstile.token);
       setDisplayState(decoded);
 
       if (
@@ -324,7 +298,7 @@ function InquiryFormLive({
       }
 
       if (decoded.status === "success") {
-        trackGenerateLead(source === "contact" ? "contact" : "rfq");
+        trackGenerateLead();
         clearSubmittedFields(formRef.current);
       }
     } catch {
@@ -353,8 +327,7 @@ function InquiryFormLive({
     submit(new FormData(event.currentTarget)).catch(() => undefined);
   };
 
-  const ariaLabel =
-    source === "contact" ? copy.contactAriaLabel : copy.requestQuoteAriaLabel;
+  const ariaLabel = copy.contactAriaLabel;
   const fieldDetails =
     displayState.status === "error" && displayState.errorKind === "field"
       ? displayState.fieldDetails
@@ -366,22 +339,15 @@ function InquiryFormLive({
         ref={formRef}
         aria-label={ariaLabel}
         className="space-y-6"
-        data-analytics-event={
-          source === "contact" ? "contact_submit" : "rfq_submit"
-        }
+        data-analytics-event="contact_submit"
         data-lead-path="api-inquiry"
         data-testid="inquiry-form"
         onSubmit={handleSubmit}
       >
-        {visibleContext ? (
-          <InquiryInterestContext interest={visibleContext} copy={copy} />
-        ) : null}
-
         <InquiryFormFields
           copy={copy}
           messageMaxLength={getInquiryMessageMaxLength()}
           {...(fieldDetails ? { fieldDetails } : {})}
-          {...(initialMessage ? { initialMessage } : {})}
         />
 
         <TurnstileWidget
@@ -409,12 +375,7 @@ function InquiryFormLive({
   );
 }
 
-export function InquiryForm({
-  source,
-  copy,
-  fallback,
-  context,
-}: InquiryFormProps) {
+export function InquiryForm({ copy, fallback }: InquiryFormProps) {
   const isHydrated = useSyncExternalStore(
     subscribeHydration,
     getClientHydrationSnapshot,
@@ -424,7 +385,7 @@ export function InquiryForm({
   if (!isHydrated) {
     // The static card is ~160px; the live form is ~470-700px depending on
     // width. Without reserved space the swap pushes everything below it down
-    // (measured CLS 0.203 on /request-quote). The bands track the live form's
+    // (measured CLS 0.203 on the inquiry form swap). The bands track the live form's
     // measured height per breakpoint; tests/e2e/layout-stability.spec.ts fails
     // if they drift far enough to move the page.
     return (
@@ -442,5 +403,5 @@ export function InquiryForm({
     );
   }
 
-  return <InquiryFormLive copy={copy} context={context} source={source} />;
+  return <InquiryFormLive copy={copy} />;
 }

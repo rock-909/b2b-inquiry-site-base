@@ -35,7 +35,6 @@ const CORE_PUBLIC_PAGE_PATHS = [
   SMOKE_OFFERING_PATH,
   "/about",
   "/contact",
-  "/request-quote",
   "/privacy",
   "/terms",
 ];

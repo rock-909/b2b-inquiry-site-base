@@ -66,7 +66,7 @@ describe("ProductDetailPage", () => {
     ]);
   });
 
-  it("renders one canonical offering and its RFQ link", async () => {
+  it("renders one canonical offering and its inquiry CTA", async () => {
     render(await ProductDetailPage({ params: SAMPLE_PARAMS }));
 
     expect(
@@ -74,7 +74,7 @@ describe("ProductDetailPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Request a quote" }),
-    ).toHaveAttribute("href", "/request-quote?offeringId=sample-offering");
+    ).toHaveAttribute("href", "/contact");
     expect(mockJsonLdGraphScript).toHaveBeenCalledWith(
       expect.objectContaining({
         locale: "en",

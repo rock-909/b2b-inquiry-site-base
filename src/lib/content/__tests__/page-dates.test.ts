@@ -13,12 +13,10 @@ describe("page-dates", () => {
     const pagesWithoutStaticContent = new Set([
       "",
       getCanonicalPath("products"),
-      getCanonicalPath("requestQuote"),
     ]);
     const representativePageContracts = [
       { path: "", hasStaticContent: false },
       { path: "/about", hasStaticContent: true },
-      { path: "/request-quote", hasStaticContent: false },
       { path: "/contact", hasStaticContent: true },
       { path: "/privacy", hasStaticContent: true },
       { path: "/terms", hasStaticContent: true },
@@ -39,7 +37,6 @@ describe("page-dates", () => {
       "home",
       "products",
       "about",
-      "requestQuote",
       "contact",
       "privacy",
       "terms",

@@ -1,7 +1,6 @@
 import { render, within } from "@testing-library/react";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
-import { type ValidatedInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
 
 /**
@@ -9,24 +8,10 @@ import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
  * 别再复制一份取控件的正则——宽松的正则会同时命中多个控件。
  */
 
-export const GENERAL_CONTEXT: ValidatedInquiryContext = {
-  kind: "general-context",
-};
-
-export function renderInquiryForm(
-  source: "contact" | "request-quote" = "contact",
-  context: ValidatedInquiryContext = GENERAL_CONTEXT,
-) {
+export function renderInquiryForm() {
   const copy = createTestInquiryFormCopy();
   const fallback = <InquiryFormStaticFallback copy={copy} />;
-  const utils = render(
-    <InquiryForm
-      context={context}
-      copy={copy}
-      fallback={fallback}
-      source={source}
-    />,
-  );
+  const utils = render(<InquiryForm copy={copy} fallback={fallback} />);
   return { copy, ...utils };
 }
 

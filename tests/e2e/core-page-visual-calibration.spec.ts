@@ -86,12 +86,12 @@ test.describe("Core page visual calibration", () => {
     expect(pageErrors).toStrictEqual([]);
   });
 
-  test("contact and request-quote full pages have no critical or serious a11y issues", async ({
+  test("contact full page has no critical or serious a11y issues", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     const pageErrors = collectPageErrors(page);
-    const leadSurfaces = ["/contact", "/request-quote"] as const;
+    const leadSurfaces = ["/contact"] as const;
 
     for (const path of leadSurfaces) {
       await preparePage(page, path);

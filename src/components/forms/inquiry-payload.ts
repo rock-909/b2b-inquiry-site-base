@@ -1,5 +1,4 @@
 import { MAX_LEAD_MESSAGE_LENGTH } from "@/constants/validation-limits";
-import type { ValidatedInquiryContext } from "@/lib/lead-pipeline/inquiry-handoff";
 import {
   pickAttributionFieldsFromFormData,
   type MarketingAttributionFields,
@@ -9,8 +8,6 @@ export interface InquiryPayload extends MarketingAttributionFields {
   readonly fullName: string;
   readonly email: string;
   readonly message?: string;
-  readonly interest?: string;
-  readonly offeringId?: string;
   readonly website: string;
   readonly turnstileToken: string;
 }
@@ -23,7 +20,6 @@ function getOptionalString(formData: FormData, key: string): string {
 export function createInquiryPayload(
   formData: FormData,
   turnstileToken: string,
-  context: ValidatedInquiryContext,
 ): InquiryPayload {
   const fullName = getOptionalString(formData, "fullName");
   const email = getOptionalString(formData, "email");
@@ -35,10 +31,6 @@ export function createInquiryPayload(
     email,
     website,
     ...(message ? { message } : {}),
-    ...(context.interest ? { interest: context.interest } : {}),
-    ...(context.kind === "offering-context"
-      ? { offeringId: context.offeringId }
-      : {}),
     turnstileToken,
     ...pickAttributionFieldsFromFormData(formData),
   };

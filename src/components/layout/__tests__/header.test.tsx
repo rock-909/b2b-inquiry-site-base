@@ -14,7 +14,6 @@ const mockSingleSiteHomeLinkTargets = vi.hoisted(
   (): { current: MockHomeLinkTargets } => ({
     current: {
       contact: "/contact",
-      requestQuote: "/request-quote",
       products: "/products",
       primaryCta: "/products",
       secondaryCta: "/contact",
@@ -74,7 +73,6 @@ describe("Header", () => {
     vi.clearAllMocks();
     mockSingleSiteHomeLinkTargets.current = {
       contact: "/contact",
-      requestQuote: "/request-quote",
       products: "/products",
       primaryCta: "/products",
       secondaryCta: "/contact",
@@ -101,11 +99,11 @@ describe("Header", () => {
 
     expect(screen.getByTestId("header-cta")).toHaveAttribute(
       "href",
-      "/request-quote",
+      "/contact",
     );
     expect(screen.getByTestId("header-mobile-cta")).toHaveAttribute(
       "href",
-      "/request-quote",
+      "/contact",
     );
     expect(screen.getAllByText("Start an inquiry")).toHaveLength(2);
   });

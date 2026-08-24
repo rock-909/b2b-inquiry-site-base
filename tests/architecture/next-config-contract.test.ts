@@ -63,13 +63,6 @@ describe("next.config contract", () => {
     expect(await readDerivedLabel(undefined)).toBe("local");
   });
 
-  it("keeps the request-quote route out of Instant Navigations", async () => {
-    const requestQuotePage =
-      await import("../../src/app/[locale]/request-quote/page");
-
-    expect(requestQuotePage.instant).toBe(false);
-  });
-
   it("keeps the TS7 project CLI isolated from Next's TS6 dependency", async () => {
     const nextConfigModule = await import("../../next.config");
     const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {

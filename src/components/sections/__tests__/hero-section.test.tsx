@@ -23,7 +23,7 @@ describe("HeroSection", () => {
 
     expect(
       screen.getByRole("link", { name: messages.home.hero.cta.primary }),
-    ).toHaveAttribute("href", "/request-quote");
+    ).toHaveAttribute("href", "/contact");
     expect(
       screen.getByRole("link", { name: messages.home.hero.cta.secondary }),
     ).toHaveAttribute("href", "/about");

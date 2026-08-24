@@ -46,8 +46,7 @@ const mockHomeLinkTargets = vi.hoisted(
   (): { current: MockHomeLinkTargets } => ({
     current: {
       contact: "/contact",
-      requestQuote: "/request-quote",
-      primaryCta: "/request-quote",
+      primaryCta: "/contact",
       secondaryCta: "/about",
     },
   }),
@@ -96,8 +95,7 @@ describe("MobileNavigationLinks", () => {
     );
     mockHomeLinkTargets.current = {
       contact: "/contact",
-      requestQuote: "/request-quote",
-      primaryCta: "/request-quote",
+      primaryCta: "/contact",
       secondaryCta: "/about",
     };
   });
@@ -144,12 +142,12 @@ describe("MobileNavigationLinks", () => {
     expect(screen.queryByRole("link", { name: "Contact" })).toBeNull();
   });
 
-  it("points the CTA at the quote route with the mobile-nav source tag", () => {
+  it("points the CTA at the inquiry form with the mobile-nav source tag", () => {
     render(<MobileNavigationLinks />);
 
     expect(
       screen.getAllByRole("link", { name: CTA_LABEL }).at(-1),
-    ).toHaveAttribute("href", "/request-quote?source=mobile_nav_cta");
+    ).toHaveAttribute("href", "/contact?source=mobile_nav_cta");
   });
 
   it("omits the drawer CTA when the active profile has no contact route", () => {

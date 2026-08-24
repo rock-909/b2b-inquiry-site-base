@@ -104,23 +104,12 @@ describe("Footer Component", () => {
       href: link.getAttribute("href"),
       text: link.textContent,
     }));
-    const supportLinks = Array.from(
-      supportSection?.querySelectorAll("a") ?? [],
-    ).map((link) => ({
-      href: link.getAttribute("href"),
-      text: link.textContent,
-    }));
-
     expect(navigationLinks).toEqual([
       { href: "/", text: "Home" },
       { href: "/products", text: "Products" },
       { href: "/about", text: "About" },
       { href: "/contact", text: "Contact" },
     ]);
-    expect(supportLinks).toContainEqual({
-      href: "/request-quote",
-      text: "Start an inquiry",
-    });
   });
 
   it("throws with the full message path when footer.copyright is missing", () => {

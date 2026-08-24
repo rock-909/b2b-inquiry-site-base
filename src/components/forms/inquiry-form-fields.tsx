@@ -39,24 +39,6 @@ function resolveFieldError(
   return fieldErrors[leaf] ?? null;
 }
 
-export function InquiryInterestContext({
-  interest,
-  copy,
-}: {
-  interest: string;
-  copy: InquiryFormCopy;
-}) {
-  return (
-    <p
-      className="rounded-lg border border-border bg-muted/40 p-4 text-sm leading-6 text-muted-foreground"
-      data-testid="inquiry-interest-context"
-    >
-      <span className="font-medium text-foreground">{copy.contextLabel}: </span>
-      <span translate="no">{interest}</span>
-    </p>
-  );
-}
-
 export function InquiryFormFields({
   copy,
   fieldDetails,

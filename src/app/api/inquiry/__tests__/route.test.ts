@@ -212,7 +212,7 @@ describe("/api/inquiry route", () => {
           utmSource: "google",
           utmMedium: "cpc",
           utmCampaign: "sample-campaign",
-          landingPage: "/en/request-quote",
+          landingPage: "/en/contact",
           capturedAt: "2026-07-04T00:00:00.000Z",
         }),
       );
@@ -225,7 +225,7 @@ describe("/api/inquiry route", () => {
           utmSource: "google",
           utmMedium: "cpc",
           utmCampaign: "sample-campaign",
-          landingPage: "/en/request-quote",
+          landingPage: "/en/contact",
           capturedAt: "2026-07-04T00:00:00.000Z",
         }),
       );
