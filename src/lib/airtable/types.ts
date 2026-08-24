@@ -18,8 +18,5 @@ export interface InquiryLeadData extends BaseLeadData {
   firstName: string;
   lastName: string;
   message: string;
-  interest?: string;
-  offeringId?: string;
-  offeringName?: string;
   requirements?: string;
 }

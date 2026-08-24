@@ -38,7 +38,6 @@ interface MockHomeLinkTargets {
   primaryCta: string;
   secondaryCta: string;
   contact?: string;
-  requestQuote?: string;
 }
 
 // Mutable link-target source so the CTA-omission branch can be exercised.

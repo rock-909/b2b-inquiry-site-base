@@ -89,17 +89,17 @@ describe("NavigationProgressBar", () => {
   });
 
   it("completes when only the search params change", async () => {
-    mockUsePathname.mockReturnValue("/request-quote");
-    setTestLocation("/request-quote");
+    mockUsePathname.mockReturnValue("/contact");
+    setTestLocation("/contact");
 
     const { rerender } = render(
       <>
         <NavigationProgressBar />
-        <a href="/request-quote?source=mobile_nav_cta">Request quote</a>
+        <a href="/contact?source=mobile_nav_cta">Contact</a>
       </>,
     );
 
-    fireEvent.click(screen.getByRole("link", { name: "Request quote" }));
+    fireEvent.click(screen.getByRole("link", { name: "Contact" }));
 
     expect(screen.getByTestId("navigation-progress-bar-fill")).toHaveStyle({
       transform: "scaleX(0.18)",
@@ -111,7 +111,7 @@ describe("NavigationProgressBar", () => {
     rerender(
       <>
         <NavigationProgressBar />
-        <a href="/request-quote?source=mobile_nav_cta">Request quote</a>
+        <a href="/contact?source=mobile_nav_cta">Contact</a>
       </>,
     );
 
@@ -160,8 +160,8 @@ describe("NavigationProgressBar", () => {
     setTestLocation("/products");
     const { rerender } = render(<NavigationProgressBar />);
 
-    setTestLocation("/request-quote");
-    mockUsePathname.mockReturnValue("/request-quote");
+    setTestLocation("/contact");
+    mockUsePathname.mockReturnValue("/contact");
     rerender(<NavigationProgressBar />);
 
     await act(async () => {
@@ -185,7 +185,7 @@ describe("NavigationProgressBar", () => {
     setTestLocation("/products");
     const { rerender } = render(<NavigationProgressBar />);
 
-    setTestLocation("/request-quote");
+    setTestLocation("/contact");
     await act(async () => {
       window.dispatchEvent(new PopStateEvent("popstate"));
     });
@@ -199,7 +199,7 @@ describe("NavigationProgressBar", () => {
     });
     expect(screen.getByTestId("navigation-progress-bar")).toBeInTheDocument();
 
-    mockUsePathname.mockReturnValue("/request-quote");
+    mockUsePathname.mockReturnValue("/contact");
     rerender(<NavigationProgressBar />);
     expect(screen.getByTestId("navigation-progress-bar-fill")).toHaveStyle({
       transform: "scaleX(1)",
@@ -291,20 +291,17 @@ describe("NavigationProgressBar", () => {
   describe("shouldStartHistoryNavigationProgress", () => {
     it("starts for pathname and query changes but not the same route key", () => {
       expect(
-        shouldStartHistoryNavigationProgress("/products", "/request-quote"),
+        shouldStartHistoryNavigationProgress("/products", "/contact"),
       ).toBe(true);
       expect(
         shouldStartHistoryNavigationProgress(
-          "/request-quote",
+          "/contact",
           "/request-quote?source=mobile_nav_cta",
         ),
       ).toBe(true);
-      expect(
-        shouldStartHistoryNavigationProgress(
-          "/request-quote",
-          "/request-quote",
-        ),
-      ).toBe(false);
+      expect(shouldStartHistoryNavigationProgress("/contact", "/contact")).toBe(
+        false,
+      );
     });
   });
 

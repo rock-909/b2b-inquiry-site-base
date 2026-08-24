@@ -1,6 +1,6 @@
 /**
  * Shared public inquiry API route.
- * Contact, Request Quote, and validated offering context all write through `/api/inquiry`.
+ * The site's single inquiry form writes through `/api/inquiry`.
  */
 
 import "server-only";

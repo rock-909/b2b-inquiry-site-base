@@ -1,12 +1,10 @@
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
-import * as safeParseJsonModule from "@/lib/api/safe-parse-json";
 import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
 import * as leadSchemaModule from "@/lib/lead-pipeline/lead-schema";
 import { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
 import { verifyTurnstileDetailed } from "@/lib/security/turnstile";
-import { TEST_OFFERING } from "@/test/offerings";
 import { OPTIONS, POST } from "../route";
 
 // Mock dependencies before imports
@@ -110,7 +108,6 @@ describe("/api/inquiry route", () => {
       type: "browser-spoof",
       fullName: "John Doe",
       email: "john@example.com",
-      offeringId: TEST_OFFERING.id,
       message: "I am interested in your products.",
     };
 
@@ -118,38 +115,8 @@ describe("/api/inquiry route", () => {
       turnstileToken: "valid-token",
       fullName: "Rita Buyer",
       email: "rita@example.com",
-      message: "Submitted via the request-quote form.",
+      message: "Submitted via the contact form.",
     };
-
-    it("accepts an offering inquiry and forwards the validated identity", async () => {
-      const safeParseSpy = vi.spyOn(safeParseJsonModule, "safeParseJson");
-      const schemaSpy = vi.spyOn(
-        leadSchemaModule.inquiryLeadSchema,
-        "safeParse",
-      );
-      const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data).toEqual({
-        success: true,
-        data: { referenceId: "ref-123" },
-      });
-      expect(processValidatedInquiry).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "inquiry",
-          email: "john@example.com",
-          offeringId: TEST_OFFERING.id,
-        }),
-      );
-      expect(safeParseSpy).toHaveBeenCalledTimes(1);
-      expect(schemaSpy).toHaveBeenCalledTimes(1);
-      expect(processValidatedInquiry).toHaveBeenCalledTimes(1);
-      expect(response.headers.get("x-request-id")).toBeNull();
-      expect(response.headers.get("x-observability-surface")).toBeNull();
-    });
 
     it("accepts a general inquiry with no offering identity", async () => {
       const request = createInquiryRequest(JSON.stringify(generalInquiryData));
@@ -163,46 +130,6 @@ describe("/api/inquiry route", () => {
         .calls[0]![0] as Record<string, unknown>;
       expect(callArgs.type).toBe("inquiry");
       expect(callArgs.offeringId).toBeUndefined();
-    });
-
-    it("accepts interest-only general inquiry and keeps interest as free text", async () => {
-      const request = createInquiryRequest(
-        JSON.stringify({
-          ...generalInquiryData,
-          interest: "Custom fabrication",
-        }),
-      );
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      const callArgs = vi.mocked(processValidatedInquiry).mock
-        .calls[0]![0] as Record<string, unknown>;
-      expect(callArgs.type).toBe("inquiry");
-      expect(callArgs.interest).toBe("Custom fabrication");
-      expect(callArgs.offeringId).toBeUndefined();
-    });
-
-    it("rejects an unknown offering id before lead processing", async () => {
-      const request = createInquiryRequest(
-        JSON.stringify({
-          ...validInquiryData,
-          offeringId: "not-a-real-offering",
-        }),
-      );
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data).toEqual({
-        success: false,
-        errorCode: API_ERROR_CODES.INQUIRY_VALIDATION_FAILED,
-        details: ["errors.generic"],
-      });
-      expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
 
     it("passes attribution fields to processValidatedInquiry", async () => {
@@ -720,9 +647,7 @@ describe("/api/inquiry route", () => {
       type: "inquiry",
       fullName: "Full Coverage Buyer",
       email: "coverage@example.com",
-      offeringId: TEST_OFFERING.id,
       message: "Every declared field carries a value.",
-      interest: "Custom fabrication",
       utmSource: "google",
       utmMedium: "cpc",
       utmCampaign: "sample-2026",
@@ -761,8 +686,7 @@ describe("/api/inquiry route", () => {
       const request = createInquiryRequest(
         JSON.stringify({
           ...generalInquiryData,
-          offeringId: "",
-          interest: "   ",
+          message: "",
         }),
       );
 
@@ -772,8 +696,7 @@ describe("/api/inquiry route", () => {
       expect(response.status).toBe(200);
       const callArgs = vi.mocked(processValidatedInquiry).mock
         .calls[0]![0] as Record<string, unknown>;
-      expect(callArgs.offeringId).toBeUndefined();
-      expect(callArgs.interest).toBeUndefined();
+      expect(callArgs.message).toBeUndefined();
     });
 
     it("should exclude turnstileToken from lead data", async () => {

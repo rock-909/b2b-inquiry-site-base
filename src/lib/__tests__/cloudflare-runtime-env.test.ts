@@ -100,7 +100,6 @@ describe("Cloudflare runtime env timing", () => {
       lastName: "Tester",
       email: "runtime@example.com",
       message: "Runtime env should be available when Airtable initializes.",
-      interest: "Runtime env check",
     });
 
     expect(fetchMock).toHaveBeenCalledWith(

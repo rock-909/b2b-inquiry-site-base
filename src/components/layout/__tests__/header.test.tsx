@@ -6,7 +6,6 @@ interface MockHomeLinkTargets {
   primaryCta: string;
   secondaryCta: string;
   contact?: string;
-  requestQuote?: string;
   products?: string;
 }
 

@@ -124,7 +124,7 @@ export default async function ProductDetailPage({
           prefetch={false}
           className={buttonVariants({ className: "mt-10" })}
         >
-          {t("detail.requestQuote")}
+          {t("detail.startInquiry")}
         </Link>
       </article>
     </>

@@ -45,15 +45,6 @@ function addInquiryFields(fields: AirtableFields, data: InquiryLeadData): void {
   fields["First Name"] = sanitizeAirtableTextField(data.firstName);
   fields["Last Name"] = sanitizeAirtableTextField(data.lastName);
   fields["Message"] = sanitizeAirtableTextField(data.message);
-  if (data.interest) {
-    fields["Interest"] = sanitizeAirtableTextField(data.interest);
-  }
-  if (data.offeringId) {
-    fields["Offering ID"] = sanitizeAirtableTextField(data.offeringId);
-  }
-  if (data.offeringName) {
-    fields["Offering Name"] = sanitizeAirtableTextField(data.offeringName);
-  }
   if (data.requirements) {
     fields["Requirements"] = sanitizeAirtableTextField(data.requirements);
   }

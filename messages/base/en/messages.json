@@ -153,7 +153,7 @@
     "detail": {
       "backToProducts": "Back to products",
       "highlightsTitle": "Highlights",
-      "requestQuote": "Request a quote"
+      "startInquiry": "Start an inquiry"
     }
   },
   "contact": {
@@ -178,9 +178,9 @@
       }
     },
     "panel": {
-      "contactTitle": "Email & RFQ",
+      "contactTitle": "Email & inquiry",
       "email": "Email",
-      "emailUnavailable": "Use the RFQ form if email is unavailable.",
+      "emailUnavailable": "Use the inquiry form if email is unavailable.",
       "phone": "Phone",
       "hoursTitle": "Business hours",
       "weekdays": "Weekdays",

@@ -8,14 +8,9 @@ import {
   object,
   type output as ZodOutput,
   string,
-  union,
-  undefined as zUndefined,
-  unknown,
   type ZodOptional,
   type ZodString,
-  type ZodType,
 } from "zod";
-import { getOfferingById } from "@/config/offerings";
 import {
   canonicalBuyerEmailSchema,
   canonicalBuyerFullNameSchema,
@@ -23,7 +18,6 @@ import {
 } from "@/lib/lead-pipeline/canonical-buyer-fields";
 import { sanitizePlainText } from "@/lib/security/validation";
 import type { AttributionFieldName } from "@/lib/marketing/attribution-fields";
-import { MAX_LEAD_INTEREST_LENGTH } from "@/constants";
 
 export const INQUIRY_LEAD_TYPE = "inquiry" as const;
 
@@ -45,31 +39,6 @@ const baseLeadFields = {
 };
 
 /**
- * 空串归一：浏览器把没填的字段发成 ""，不是发成缺省。归一属于 schema，不属于
- * 路由——放在路由里就得为每个新字段补一行清洗，漏一行就是一个静默丢字段的 bug。
- * 写法照抄 canonicalBuyerMessageSchema。
- */
-function optionalBlankToUndefined<Output>(inner: ZodType<Output>) {
-  return unknown()
-    .transform((value) =>
-      typeof value === "string" && value.trim().length === 0
-        ? undefined
-        : value,
-    )
-    .pipe(union([zUndefined(), inner]));
-}
-
-const offeringIdSchema = string()
-  .trim()
-  .min(1)
-  .refine((offeringId) => getOfferingById(offeringId) !== undefined, {
-    error: "offeringId must match a configured offering",
-  });
-const interestSchema = sanitizedString().overwrite((value) =>
-  value.slice(0, MAX_LEAD_INTEREST_LENGTH),
-);
-
-/**
  * 单独导出对象层，让路由合同测试直接读取真实字段，而不是维护平行清单。
  */
 export const inquiryLeadObjectSchema = object({
@@ -77,8 +46,6 @@ export const inquiryLeadObjectSchema = object({
   fullName: canonicalBuyerFullNameSchema,
   email: canonicalBuyerEmailSchema,
   message: canonicalBuyerMessageSchema.optional(),
-  interest: optionalBlankToUndefined(interestSchema).optional(),
-  offeringId: optionalBlankToUndefined(offeringIdSchema).optional(),
   ...baseLeadFields,
 });
 

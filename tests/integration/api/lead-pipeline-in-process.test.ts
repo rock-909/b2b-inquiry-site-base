@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { captureExpectedConsoleErrors } from "@/test/console";
-import { TEST_OFFERING } from "@/test/offerings";
 
 /**
  * In-process lead-pipeline integration proof.
@@ -10,8 +9,7 @@ import { TEST_OFFERING } from "@/test/offerings";
  * Runs the REAL pipeline: real Zod schema, real `processValidatedInquiry`,
  * real in-memory rate limiter, and the real Turnstile verification logic.
  *
- * Only the business offering fixture and external wires are stubbed:
- * - `@/config/offerings` — stable test-owned business identity
+ * Only the external wires are stubbed:
  * - `global.fetch` — Turnstile, Resend, and Airtable HTTP APIs
  */
 
@@ -20,8 +18,6 @@ const { fetchMock } = vi.hoisted(() => {
   globalThis.fetch = fetchMock as unknown as typeof fetch;
   return { fetchMock };
 });
-
-vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 import * as inquiryRoute from "@/app/api/inquiry/route";
 import { resetRateLimitStore } from "@/lib/security/distributed-rate-limit";
@@ -113,7 +109,6 @@ const VALID_INQUIRY_BODY = {
   turnstileToken: "valid-turnstile-token",
   fullName: "Jane Buyer",
   email: "buyer@example.com",
-  offeringId: TEST_OFFERING.id,
   message: "Custom packaging details",
 };
 
@@ -182,8 +177,6 @@ describe("lead pipeline (in-process integration)", () => {
       Status: "New",
       "First Name": "Jane",
       "Last Name": "Buyer",
-      "Offering Name": TEST_OFFERING.name,
-      "Offering ID": TEST_OFFERING.id,
       Requirements: "Custom packaging details",
     });
     expect(fields).not.toHaveProperty("Company");
@@ -191,7 +184,6 @@ describe("lead pipeline (in-process integration)", () => {
     expect(typeof fields["Reference ID"]).toBe("string");
     expect(fields["Reference ID"]).toBe(body.data.referenceId);
     expect(typeof fields["Message"]).toBe("string");
-    expect(fields["Message"]).toContain(TEST_OFFERING.name);
     // 邮件发出去了就不能挂失败提示，否则业主每条线索都在报警
     expect(fields["Message"]).not.toContain("⚠️");
 

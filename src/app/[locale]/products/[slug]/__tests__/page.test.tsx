@@ -21,7 +21,7 @@ vi.mock("next-intl/server", () => ({
     const copy: Record<string, string> = {
       "detail.backToProducts": "Back to products",
       "detail.highlightsTitle": "Highlights",
-      "detail.requestQuote": "Request a quote",
+      "detail.startInquiry": "Start an inquiry",
     };
     return copy[key] ?? key;
   }),
@@ -73,7 +73,7 @@ describe("ProductDetailPage", () => {
       screen.getByRole("heading", { level: 1, name: "Sample Offering" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Request a quote" }),
+      screen.getByRole("link", { name: "Start an inquiry" }),
     ).toHaveAttribute("href", "/contact");
     expect(mockJsonLdGraphScript).toHaveBeenCalledWith(
       expect.objectContaining({

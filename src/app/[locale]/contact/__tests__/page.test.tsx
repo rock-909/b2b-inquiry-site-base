@@ -158,7 +158,7 @@ describe("ContactPage static content", () => {
     await renderAsyncPage(page as React.JSX.Element);
 
     expect(
-      screen.getByRole("heading", { name: "Email & RFQ" }),
+      screen.getByRole("heading", { name: "Email & inquiry" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/Email & WhatsApp/i)).not.toBeInTheDocument();
     expect(

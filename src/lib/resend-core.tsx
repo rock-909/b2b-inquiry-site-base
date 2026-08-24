@@ -26,13 +26,6 @@ function sanitizeInquiryData(data: InquiryEmailData): InquiryEmailData {
     firstName: sanitizePlainText(data.firstName),
     lastName: sanitizePlainText(data.lastName),
     email: data.email.toLowerCase().trim(),
-    interest: data.interest ? sanitizePlainText(data.interest) : undefined,
-    offeringId: data.offeringId
-      ? sanitizePlainText(data.offeringId)
-      : undefined,
-    offeringName: data.offeringName
-      ? sanitizePlainText(data.offeringName)
-      : undefined,
     requirements: data.requirements
       ? sanitizeMultilineText(data.requirements)
       : undefined,
@@ -141,7 +134,6 @@ export class ResendService {
         messageId: result.data.id,
         to: sanitizeEmail(this.emailConfig.recipient),
         from: sanitizeEmail(sanitizedData.email),
-        offeringId: sanitizedData.offeringId,
       });
 
       return result.data.id;
@@ -150,7 +142,6 @@ export class ResendService {
         referenceId: data.referenceId,
         error: error instanceof Error ? error.message : "Unknown error",
         email: sanitizeEmail(data.email),
-        offeringId: data.offeringId,
       });
       throw new Error("Failed to send inquiry email", { cause: error });
     }

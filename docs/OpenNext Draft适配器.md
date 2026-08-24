@@ -85,9 +85,6 @@ PR #1318 处理 Cache Components 在 Node.js 与 workerd 间的三个差异：
 `open-next.config.ts` 继续使用 `r2IncrementalCache`。Preview 与 Production
 必须使用不同的 `NEXT_INC_CACHE_R2_BUCKET`，不能共享 bucket。
 
-`src/app/[locale]/request-quote/page.tsx` 保持 `instant = false`。询盘页完整
-HTML、无 JavaScript fallback 和布局稳定性优先于 Instant Navigation。
-
 ## R2 预填充边界
 
 `opennextjs-cloudflare deploy` 可能在发布应用 Worker 前启动临时远程 Worker，

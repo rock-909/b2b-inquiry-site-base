@@ -5,9 +5,6 @@ export const inquiryEmailDataSchema = object({
   firstName: string(),
   lastName: string(),
   email: email(),
-  interest: string().optional(),
-  offeringId: string().optional(),
-  offeringName: string().optional(),
   requirements: string().optional(),
 });
 

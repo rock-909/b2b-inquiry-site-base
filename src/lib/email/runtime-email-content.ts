@@ -124,15 +124,6 @@ export function buildInquiryEmailContent(
       value: `${data.firstName} ${data.lastName}`,
     },
     { label: EMAIL_COPY.common.fields.email, value: data.email },
-    data.offeringName
-      ? { label: EMAIL_COPY.common.fields.offering, value: data.offeringName }
-      : null,
-    data.offeringId
-      ? { label: EMAIL_COPY.common.fields.offeringId, value: data.offeringId }
-      : null,
-    data.interest
-      ? { label: EMAIL_COPY.common.fields.interest, value: data.interest }
-      : null,
     data.requirements
       ? {
           label: EMAIL_COPY.common.fields.requirements,

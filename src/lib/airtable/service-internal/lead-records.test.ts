@@ -15,8 +15,6 @@ const validInquiryLeadData = {
   lastName: "Doe",
   email: "john.doe@example.com",
   message: "Test message",
-  offeringName: "Sample Offering",
-  offeringId: "sample-offering",
 };
 
 function mockAirtableResponse(body: unknown, status = 200) {
@@ -65,9 +63,6 @@ describe("createLeadRecord", () => {
       lastName: "Buyer",
       email: "Buyer+RFQ@Example.com",
       message: "Need details",
-      interest: "OEM branding",
-      offeringName: "Sample Offering",
-      offeringId: "sample-offering",
       requirements: "Custom packaging",
       referenceId: "INQ-test-123",
       utmSource: "google",
@@ -105,9 +100,6 @@ describe("createLeadRecord", () => {
             "First Name": "Jane",
             "Last Name": "Buyer",
             Message: "Need details",
-            Interest: "OEM branding",
-            "Offering Name": "Sample Offering",
-            "Offering ID": "sample-offering",
             Requirements: "Custom packaging",
             "UTM Source": "google",
             "UTM Medium": "cpc",
@@ -129,9 +121,6 @@ describe("createLeadRecord", () => {
         lastName: "García-López",
         email: "buyer@example.com",
         message: "=message",
-        interest: "+Interest",
-        offeringName: "+Offering",
-        offeringId: "-offering-id",
         requirements: "@requirements",
       }),
     );
@@ -144,9 +133,6 @@ describe("createLeadRecord", () => {
             "First Name": "'=Buyer",
             "Last Name": "García-López",
             Message: "'=message",
-            Interest: "'+Interest",
-            "Offering Name": "'+Offering",
-            "Offering ID": "'-offering-id",
             Requirements: "'@requirements",
           }),
         },
