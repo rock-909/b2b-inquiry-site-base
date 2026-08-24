@@ -80,7 +80,7 @@ async function validateInquiryTurnstile(
   // Cloudflare 侧不可达/5xx/超时属于基础设施事故，不是买家的失败：
   // 记入事故闩锁让外部监控发现；正常拒绝（token 无效）不触发。
   if (verificationResult.status === "service-unavailable") {
-    await recordInquiryIncident("turnstile_unavailable");
+    scheduleObservabilityWrite(recordInquiryIncident("turnstile_unavailable"));
   }
 
   const error = mapLeadTurnstileResultToResponse(verificationResult);
@@ -276,7 +276,9 @@ async function handleInquiryPost(request: NextRequest, clientIP: string) {
       processingTime: Date.now() - startTime,
     });
 
-    await recordInquiryIncident("unexpected_inquiry_error");
+    scheduleObservabilityWrite(
+      recordInquiryIncident("unexpected_inquiry_error"),
+    );
 
     return createApiErrorResponse(
       API_ERROR_CODES.INQUIRY_PROCESSING_ERROR,

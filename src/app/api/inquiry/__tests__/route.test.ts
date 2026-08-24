@@ -832,6 +832,56 @@ describe("/api/inquiry route", () => {
       expect(recordInquiryIncident).not.toHaveBeenCalled();
     });
 
+    it("latches turnstile_unavailable when Cloudflare siteverify is unreachable", async () => {
+      vi.mocked(verifyTurnstileDetailed).mockResolvedValueOnce({
+        success: false,
+        errorCodes: ["network-error"],
+      });
+
+      await submitWith({
+        turnstileToken: "valid-token",
+        fullName: "Jane",
+        email: "jane@example.com",
+      });
+
+      expect(recordInquiryIncident).toHaveBeenCalledWith(
+        "turnstile_unavailable",
+      );
+    });
+
+    it("does not latch a normal Turnstile token rejection", async () => {
+      vi.mocked(verifyTurnstileDetailed).mockResolvedValueOnce({
+        status: "failed",
+        errorCodes: ["invalid-input-response"],
+      });
+
+      await submitWith({
+        turnstileToken: "bad-token",
+        fullName: "Jane",
+        email: "jane@example.com",
+      });
+
+      expect(recordInquiryIncident).not.toHaveBeenCalled();
+    });
+
+    it("latches unexpected_inquiry_error when the handler throws", async () => {
+      // processValidatedInquiry 自身吞掉内部异常并返回失败结果，
+      // 所以这里让 payload 解析之后的更深层抛错：mock 投递函数抛出。
+      vi.mocked(processValidatedInquiry).mockRejectedValueOnce(
+        new Error("boom"),
+      );
+
+      await submitWith({
+        turnstileToken: "valid-token",
+        fullName: "Jane",
+        email: "jane@example.com",
+      });
+
+      expect(recordInquiryIncident).toHaveBeenCalledWith(
+        "unexpected_inquiry_error",
+      );
+    });
+
     it("latches rate_limit_store_unavailable on storage failure", async () => {
       vi.mocked(checkInquiryRateLimit).mockResolvedValueOnce({
         allowed: false,
