@@ -367,10 +367,14 @@ describe("InquiryForm contract", () => {
     expect(document.activeElement).toBe(fullName);
 
     // 错误摘要走程序化聚焦单通道：不得保留 role="alert"/aria-live，
-    // 否则与焦点播报形成双重朗读。
-    const summary = screen.getByText(copy.errors.fieldSummary);
-    expect(summary).not.toHaveAttribute("role", "alert");
-    expect(summary).not.toHaveAttribute("aria-live");
+    // 否则与焦点播报形成双重朗读。role/aria-live 挂在 callout 根元素，
+    // 必须定位根元素断言——查内层文本 div 会造成假绿灯。
+    const summaryCallout = screen
+      .getByText(copy.errors.fieldSummary)
+      .closest('[data-slot="status-callout"]');
+    expect(summaryCallout).not.toBeNull();
+    expect(summaryCallout).not.toHaveAttribute("role", "alert");
+    expect(summaryCallout).not.toHaveAttribute("aria-live");
   });
 
   it("clears fullName, email, and message after contact success while keeping the reference ID", async () => {
