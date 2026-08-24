@@ -851,7 +851,7 @@ describe("/api/inquiry route", () => {
 
     it("does not latch a normal Turnstile token rejection", async () => {
       vi.mocked(verifyTurnstileDetailed).mockResolvedValueOnce({
-        status: "failed",
+        success: false,
         errorCodes: ["invalid-input-response"],
       });
 
