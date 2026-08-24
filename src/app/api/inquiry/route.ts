@@ -6,6 +6,7 @@
 import "server-only";
 
 import { recordInquiryIncident } from "@/lib/observability/inquiry-failure-latch";
+import { scheduleObservabilityWrite } from "@/lib/observability/schedule-observability-write";
 import { NextRequest, type NextResponse } from "next/server";
 import {
   createApiErrorResponse,
@@ -196,25 +197,28 @@ function incidentKindForDelivery(
   | "email_delivery_failed"
   | "airtable_delivery_failed"
   | null {
-  if (outcome.success) return null;
+  // 注意：任一通道成功时 process-lead 就返回 success=true，所以分级只能看
+  // 真实通道结果——success 提前返回会漏掉全部单通道告警（首轮验收阻塞点）。
   if (!outcome.emailSent && !outcome.recordCreated) return "delivery_failed";
-  return !outcome.emailSent
-    ? "email_delivery_failed"
-    : "airtable_delivery_failed";
+  if (!outcome.emailSent) return "email_delivery_failed";
+  if (!outcome.recordCreated) return "airtable_delivery_failed";
+  return null;
 }
 
 /**
  * 交付结果收尾：先按分级写事故闩锁（部分失败/全部失败），再返回对应响应。
  */
-async function finalizeInquiryOutcome(
+function finalizeInquiryOutcome(
   result: Awaited<ReturnType<typeof processValidatedInquiry>>,
   clientIP: string,
   startTime: number,
-): Promise<NextResponse> {
+): NextResponse {
   const incidentKind = incidentKindForDelivery(result);
 
   if (incidentKind) {
-    await recordInquiryIncident(incidentKind, result.referenceId);
+    scheduleObservabilityWrite(
+      recordInquiryIncident(incidentKind, result.referenceId),
+    );
   }
 
   return result.success
@@ -308,7 +312,9 @@ async function handleRateLimitedInquiryPost(request: NextRequest) {
 
     // 存储故障是 fail-closed：所有询盘都会被 503 拦住，属于基础设施事故。
     if (result.deniedReason === "storage_failure") {
-      await recordInquiryIncident("rate_limit_store_unavailable");
+      scheduleObservabilityWrite(
+        recordInquiryIncident("rate_limit_store_unavailable"),
+      );
     }
 
     response.headers.set("X-RateLimit-Remaining", String(result.remaining));
@@ -319,7 +325,9 @@ async function handleRateLimitedInquiryPost(request: NextRequest) {
     return response;
   } catch (error) {
     logger.error("Unexpected rate limit infrastructure failure", { error });
-    await recordInquiryIncident("rate_limit_store_unavailable");
+    scheduleObservabilityWrite(
+      recordInquiryIncident("rate_limit_store_unavailable"),
+    );
     return createApiErrorResponse(
       API_ERROR_CODES.SERVICE_UNAVAILABLE,
       HTTP_SERVICE_UNAVAILABLE,

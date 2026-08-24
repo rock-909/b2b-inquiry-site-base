@@ -2,6 +2,11 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
+import { recordInquiryIncident } from "@/lib/observability/inquiry-failure-latch";
+
+vi.mock("@/lib/observability/inquiry-failure-latch", () => ({
+  recordInquiryIncident: vi.fn(async () => undefined),
+}));
 import * as leadSchemaModule from "@/lib/lead-pipeline/lead-schema";
 import { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
 import { verifyTurnstileDetailed } from "@/lib/security/turnstile";
@@ -740,6 +745,107 @@ describe("/api/inquiry route", () => {
       const body = await response.text();
 
       expect(body).toBe("");
+    });
+  });
+  describe("inquiry incident latch triggers", () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      global.fetch = vi.fn(async () =>
+        Response.json({ success: true, data: {} }),
+      );
+      vi.mocked(recordInquiryIncident).mockClear();
+    });
+
+    async function submitWith(payload: Record<string, unknown>): Promise<void> {
+      const request = createInquiryRequest(JSON.stringify(payload));
+      await POST(request);
+    }
+
+    it("latches email_delivery_failed when only email fails", async () => {
+      vi.mocked(processValidatedInquiry).mockResolvedValueOnce({
+        success: true,
+        emailSent: false,
+        recordCreated: true,
+        referenceId: "INQ-email-fail",
+      });
+
+      await submitWith({
+        turnstileToken: "valid-token",
+        fullName: "Jane",
+        email: "jane@example.com",
+      });
+
+      expect(recordInquiryIncident).toHaveBeenCalledWith(
+        "email_delivery_failed",
+        "INQ-email-fail",
+      );
+    });
+
+    it("latches airtable_delivery_failed when only Airtable fails", async () => {
+      vi.mocked(processValidatedInquiry).mockResolvedValueOnce({
+        success: true,
+        emailSent: true,
+        recordCreated: false,
+        referenceId: "INQ-at-fail",
+      });
+
+      await submitWith({
+        turnstileToken: "valid-token",
+        fullName: "Jane",
+        email: "jane@example.com",
+      });
+
+      expect(recordInquiryIncident).toHaveBeenCalledWith(
+        "airtable_delivery_failed",
+        "INQ-at-fail",
+      );
+    });
+
+    it("latches delivery_failed when both channels fail", async () => {
+      vi.mocked(processValidatedInquiry).mockResolvedValueOnce({
+        success: false,
+        emailSent: false,
+        recordCreated: false,
+        referenceId: "INQ-all-fail",
+        error: "PROCESSING_FAILED",
+      });
+
+      await submitWith({
+        turnstileToken: "valid-token",
+        fullName: "Jane",
+        email: "jane@example.com",
+      });
+
+      expect(recordInquiryIncident).toHaveBeenCalledWith(
+        "delivery_failed",
+        "INQ-all-fail",
+      );
+    });
+
+    it("does not latch on full success", async () => {
+      await submitWith({
+        turnstileToken: "valid-token",
+        fullName: "Jane",
+        email: "jane@example.com",
+      });
+
+      expect(recordInquiryIncident).not.toHaveBeenCalled();
+    });
+
+    it("latches rate_limit_store_unavailable on storage failure", async () => {
+      vi.mocked(checkInquiryRateLimit).mockResolvedValueOnce({
+        allowed: false,
+        remaining: 0,
+        resetTime: Date.now() + 60000,
+        retryAfter: null,
+        deniedReason: "storage_failure",
+      });
+
+      await submitWith({ fullName: "Jane", email: "jane@example.com" });
+
+      expect(recordInquiryIncident).toHaveBeenCalledWith(
+        "rate_limit_store_unavailable",
+      );
     });
   });
 });
