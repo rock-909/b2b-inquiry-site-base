@@ -8,10 +8,18 @@ import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
  * 别再复制一份取控件的正则——宽松的正则会同时命中多个控件。
  */
 
-export function renderInquiryForm() {
+export function renderInquiryForm(options?: { initialMessage?: string }) {
   const copy = createTestInquiryFormCopy();
   const fallback = <InquiryFormStaticFallback copy={copy} />;
-  const utils = render(<InquiryForm copy={copy} fallback={fallback} />);
+  const utils = render(
+    <InquiryForm
+      copy={copy}
+      fallback={fallback}
+      {...(options?.initialMessage
+        ? { initialMessage: options.initialMessage }
+        : {})}
+    />,
+  );
   return { copy, ...utils };
 }
 
