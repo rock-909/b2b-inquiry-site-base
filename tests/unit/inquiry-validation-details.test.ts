@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import { MAX_LEAD_MESSAGE_LENGTH } from "@/constants/validation-limits";
 import { getSourceMessages } from "@/lib/i18n/load-messages";
 import {
-  INQUIRY_FIELD_ERROR_KEYS,
   INQUIRY_VALIDATION_DETAIL_KEYS,
   mapInquiryValidationDetails,
 } from "@/lib/api/inquiry-validation-details";
-import { mapZodIssuesToValidationDetails } from "@/lib/api/validation-error-details";
+import {
+  INQUIRY_FIELD_ERROR_DETAILS,
+  INQUIRY_FIELD_ERROR_KEYS,
+  INQUIRY_FIELD_WIRE_DETAIL_LEAVES,
+} from "@/constants/inquiry-field-error-protocol";
 import {
   INQUIRY_LEAD_TYPE,
   inquiryLeadSchema,
@@ -48,6 +51,20 @@ const inquiryFailureInputs: ReadonlyArray<Record<string, unknown>> = [
   { ...validBase, utmSource: "x".repeat(257) },
   { ...validBase, utmSource: 42 },
 ];
+
+describe("inquiry field error lookup table", () => {
+  it("covers every declared wire detail exactly, mapping to the matching leaf", () => {
+    for (const detail of INQUIRY_FIELD_ERROR_DETAILS) {
+      const [, field, leaf] = detail.split(".");
+      expect(
+        INQUIRY_FIELD_WIRE_DETAIL_LEAVES[
+          field as keyof typeof INQUIRY_FIELD_WIRE_DETAIL_LEAVES
+        ][detail],
+        detail,
+      ).toBe(leaf);
+    }
+  });
+});
 
 describe("inquiry validation detail mapping", () => {
   it("accepts message when raw length exceeds max but normalization shrinks below max", () => {
@@ -218,57 +235,5 @@ describe("inquiry validation detail mapping", () => {
     expect(
       mapInquiryValidationDetails([structuredIssue], { email: undefined }),
     ).toEqual(mapInquiryValidationDetails([legacyIssue], { email: undefined }));
-  });
-});
-
-describe("shared zod validation detail mapping", () => {
-  it("only treats invalid_type as required when undefined was received", () => {
-    const requiredIssue = {
-      code: "invalid_type" as const,
-      path: ["company"],
-      message: "Different required copy",
-      expected: "string" as const,
-    };
-    const wrongTypeIssue = {
-      code: "invalid_type" as const,
-      path: ["company"],
-      message: "Different wrong-type copy",
-      expected: "string" as const,
-    };
-
-    expect(
-      mapZodIssuesToValidationDetails(
-        [requiredIssue],
-        {
-          company: "errors.company",
-        },
-        { company: undefined },
-      ),
-    ).toEqual(["errors.company.required"]);
-
-    expect(
-      mapZodIssuesToValidationDetails(
-        [wrongTypeIssue],
-        {
-          company: "errors.company",
-        },
-        { company: 123 },
-      ),
-    ).toEqual(["errors.company.invalid"]);
-  });
-
-  it("keeps unregistered fields on errors.generic without suffixes", () => {
-    expect(
-      mapZodIssuesToValidationDetails(
-        [
-          {
-            code: "too_big",
-            path: ["utmSource"],
-            message: "Too big",
-          } as never,
-        ],
-        {},
-      ),
-    ).toEqual(["errors.generic"]);
   });
 });

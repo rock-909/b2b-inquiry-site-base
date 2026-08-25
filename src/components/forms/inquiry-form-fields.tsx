@@ -1,5 +1,5 @@
 import {
-  INQUIRY_FIELD_WIRE_DETAILS,
+  INQUIRY_FIELD_WIRE_DETAIL_LEAVES,
   type InquiryErrorField,
 } from "@/constants/inquiry-field-error-protocol";
 import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
@@ -13,12 +13,12 @@ const ERROR_CLASS = "text-xs leading-5 text-[var(--error-foreground)]";
 const REQUIRED_CLASS =
   "after:ml-0.5 after:text-destructive after:content-['*']";
 
-const FIELD_ERROR_CODES = INQUIRY_FIELD_WIRE_DETAILS;
+const FIELD_ERROR_LEAVES = INQUIRY_FIELD_WIRE_DETAIL_LEAVES;
 
 type VisibleField = InquiryErrorField;
 
-function resolveFieldError(
-  field: VisibleField,
+function resolveFieldError<Field extends VisibleField>(
+  field: Field,
   fieldDetails: readonly string[] | undefined,
   copy: InquiryFormCopy,
 ): string | null {
@@ -26,17 +26,20 @@ function resolveFieldError(
     return null;
   }
 
-  const codes = FIELD_ERROR_CODES[field];
-  const codeSet = new Set<string>(codes as readonly string[]);
-  const matchedCode = fieldDetails.find((detail) => codeSet.has(detail));
+  // 精确查找表替代字符串拆解与 copy 断言：leaf 与文案 key 全部由协议类型封口。
+  const leafByDetail: Record<string, string | undefined> =
+    FIELD_ERROR_LEAVES[field];
 
-  if (!matchedCode) {
-    return null;
+  for (const detail of fieldDetails) {
+    const leaf = leafByDetail[detail];
+    if (leaf !== undefined) {
+      // 查找表只含该 field 协议内 leaf，copy 完整性由 InquiryFieldErrorCopyMap 合同封口。
+      const fieldCopy: Record<string, string | undefined> = copy.errors[field];
+      return fieldCopy[leaf] ?? null;
+    }
   }
 
-  const leaf = matchedCode.split(".").slice(2).join(".");
-  const fieldErrors = copy.errors[field] as Record<string, string>;
-  return fieldErrors[leaf] ?? null;
+  return null;
 }
 
 export function InquiryFormFields({
