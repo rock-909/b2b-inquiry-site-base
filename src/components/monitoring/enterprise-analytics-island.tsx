@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Script from "next/script";
 import {
   getPublicRuntimeEnvString,
@@ -30,7 +30,6 @@ export function EnterpriseAnalyticsIsland({
   analyticsAllowed: boolean;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const isProd = isPublicRuntimeProduction();
   const gaMeasurementId = getPublicRuntimeEnvString(
     "NEXT_PUBLIC_GA_MEASUREMENT_ID",
@@ -47,14 +46,14 @@ export function EnterpriseAnalyticsIsland({
 
   useEffect(() => {
     if (!gaEnabled || typeof window.gtag !== "function") return;
-    const url =
-      pathname +
-      (searchParams?.toString() ? `?${searchParams.toString()}` : "");
+    // S-F02：pageview 只上报去 query/hash 的 URL。query 可能携带买家预填、
+    // 邮箱等会话上下文，不该流向第三方分析；page_location 必须显式覆写，
+    // 留空时 GA4 会回退读取 document.location，照样把 query 带出去。
     window.gtag("config", gaMeasurementId!, {
-      page_path: url,
-      page_location: window.location.href,
+      page_path: pathname,
+      page_location: `${window.location.origin}${pathname}`,
     });
-  }, [pathname, searchParams, gaEnabled, gaMeasurementId]);
+  }, [pathname, gaEnabled, gaMeasurementId]);
   /* eslint-enable react-you-might-not-need-an-effect/no-event-handler -- the exception ends after the GA synchronization effects. */
 
   if (!analyticsAllowed) return null;

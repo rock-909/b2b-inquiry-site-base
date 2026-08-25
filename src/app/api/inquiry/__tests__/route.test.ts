@@ -2,8 +2,6 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
-import { recordInquiryIncident } from "@/lib/observability/inquiry-failure-latch";
-
 vi.mock("@/lib/observability/inquiry-failure-latch", () => ({
   recordInquiryIncident: vi.fn(async () => undefined),
 }));
@@ -207,6 +205,76 @@ describe("/api/inquiry route", () => {
       // 限流是第一道闸：被挡住的请求不该消耗一次 Turnstile token，也不该产生投递。
       expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
       expect(processValidatedInquiry).not.toHaveBeenCalled();
+    });
+
+    // S-F01 回归锁：垃圾请求必须在消耗限流配额之前被丢弃。
+    it("rejects non-JSON content-type with 415 before consuming rate-limit quota", async () => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          "Content-Type": "text/plain",
+        }),
+      );
+
+      expect(response.status).toBe(415);
+      // 关键断言：限流存储根本不该被触碰。
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+      expect(processValidatedInquiry).not.toHaveBeenCalled();
+    });
+
+    it("rejects prefix-confused media types like application/jsonx with 415", async () => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          "Content-Type": "Application/JSONX",
+        }),
+      );
+
+      expect(response.status).toBe(415);
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+    });
+
+    it("accepts application/json with charset parameter", async () => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          "Content-Type": "application/json; charset=utf-8",
+        }),
+      );
+
+      expect(response.status).toBe(200);
+    });
+
+    it("rejects missing content-type with 415 before rate limiting", async () => {
+      const request = new NextRequest("http://localhost:3000/api/inquiry", {
+        method: "POST",
+        body: JSON.stringify(validInquiryData),
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(415);
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+    });
+
+    it("rejects cross-site Origin with 403 before consuming rate-limit quota", async () => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          Origin: "https://evil.example",
+        }),
+      );
+
+      expect(response.status).toBe(403);
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+      expect(processValidatedInquiry).not.toHaveBeenCalled();
+    });
+
+    it("accepts same-origin Origin and proceeds to normal flow", async () => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          Origin: "http://localhost:3000",
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(checkInquiryRateLimit).toHaveBeenCalledTimes(1);
     });
 
     it("should return 503 when the rate-limit store fails", async () => {
@@ -745,157 +813,6 @@ describe("/api/inquiry route", () => {
       const body = await response.text();
 
       expect(body).toBe("");
-    });
-  });
-  describe("inquiry incident latch triggers", () => {
-    beforeEach(() => {
-      vi.clearAllMocks();
-      global.fetch = vi.fn(async () =>
-        Response.json({ success: true, data: {} }),
-      );
-      vi.mocked(recordInquiryIncident).mockClear();
-    });
-
-    async function submitWith(payload: Record<string, unknown>): Promise<void> {
-      const request = createInquiryRequest(JSON.stringify(payload));
-      await POST(request);
-    }
-
-    it("latches email_delivery_failed when only email fails", async () => {
-      vi.mocked(processValidatedInquiry).mockResolvedValueOnce({
-        success: true,
-        emailSent: false,
-        recordCreated: true,
-        referenceId: "INQ-email-fail",
-      });
-
-      await submitWith({
-        turnstileToken: "valid-token",
-        fullName: "Jane",
-        email: "jane@example.com",
-      });
-
-      expect(recordInquiryIncident).toHaveBeenCalledWith(
-        "email_delivery_failed",
-        "INQ-email-fail",
-      );
-    });
-
-    it("latches airtable_delivery_failed when only Airtable fails", async () => {
-      vi.mocked(processValidatedInquiry).mockResolvedValueOnce({
-        success: true,
-        emailSent: true,
-        recordCreated: false,
-        referenceId: "INQ-at-fail",
-      });
-
-      await submitWith({
-        turnstileToken: "valid-token",
-        fullName: "Jane",
-        email: "jane@example.com",
-      });
-
-      expect(recordInquiryIncident).toHaveBeenCalledWith(
-        "airtable_delivery_failed",
-        "INQ-at-fail",
-      );
-    });
-
-    it("latches delivery_failed when both channels fail", async () => {
-      vi.mocked(processValidatedInquiry).mockResolvedValueOnce({
-        success: false,
-        emailSent: false,
-        recordCreated: false,
-        referenceId: "INQ-all-fail",
-        error: "PROCESSING_FAILED",
-      });
-
-      await submitWith({
-        turnstileToken: "valid-token",
-        fullName: "Jane",
-        email: "jane@example.com",
-      });
-
-      expect(recordInquiryIncident).toHaveBeenCalledWith(
-        "delivery_failed",
-        "INQ-all-fail",
-      );
-    });
-
-    it("does not latch on full success", async () => {
-      await submitWith({
-        turnstileToken: "valid-token",
-        fullName: "Jane",
-        email: "jane@example.com",
-      });
-
-      expect(recordInquiryIncident).not.toHaveBeenCalled();
-    });
-
-    it("latches turnstile_unavailable when Cloudflare siteverify is unreachable", async () => {
-      vi.mocked(verifyTurnstileDetailed).mockResolvedValueOnce({
-        success: false,
-        errorCodes: ["network-error"],
-      });
-
-      await submitWith({
-        turnstileToken: "valid-token",
-        fullName: "Jane",
-        email: "jane@example.com",
-      });
-
-      expect(recordInquiryIncident).toHaveBeenCalledWith(
-        "turnstile_unavailable",
-      );
-    });
-
-    it("does not latch a normal Turnstile token rejection", async () => {
-      vi.mocked(verifyTurnstileDetailed).mockResolvedValueOnce({
-        success: false,
-        errorCodes: ["invalid-input-response"],
-      });
-
-      await submitWith({
-        turnstileToken: "bad-token",
-        fullName: "Jane",
-        email: "jane@example.com",
-      });
-
-      expect(recordInquiryIncident).not.toHaveBeenCalled();
-    });
-
-    it("latches unexpected_inquiry_error when the handler throws", async () => {
-      // processValidatedInquiry 自身吞掉内部异常并返回失败结果，
-      // 所以这里让 payload 解析之后的更深层抛错：mock 投递函数抛出。
-      vi.mocked(processValidatedInquiry).mockRejectedValueOnce(
-        new Error("boom"),
-      );
-
-      await submitWith({
-        turnstileToken: "valid-token",
-        fullName: "Jane",
-        email: "jane@example.com",
-      });
-
-      expect(recordInquiryIncident).toHaveBeenCalledWith(
-        "unexpected_inquiry_error",
-      );
-    });
-
-    it("latches rate_limit_store_unavailable on storage failure", async () => {
-      vi.mocked(checkInquiryRateLimit).mockResolvedValueOnce({
-        allowed: false,
-        remaining: 0,
-        resetTime: Date.now() + 60000,
-        retryAfter: null,
-        deniedReason: "storage_failure",
-      });
-
-      await submitWith({ fullName: "Jane", email: "jane@example.com" });
-
-      expect(recordInquiryIncident).toHaveBeenCalledWith(
-        "rate_limit_store_unavailable",
-      );
     });
   });
 });

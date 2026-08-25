@@ -35,6 +35,13 @@ interface ChildProcessResult {
   stderr: string;
 }
 
+const SECURITY_HEADERS = {
+  "x-frame-options": "DENY",
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "content-security-policy": "default-src 'self'",
+};
+
 function response(
   status: number,
   body = "ok",
@@ -69,6 +76,7 @@ function createPreviewFetchMock() {
       ) {
         const headers = new Headers({
           "content-type": "text/html; charset=utf-8",
+          ...SECURITY_HEADERS,
         });
         return response(200, HEALTHY_HTML, headers);
       }
@@ -82,11 +90,13 @@ function createPreviewFetchMock() {
       if (pathname === MISSING_OFFERING_PATH) {
         return response(404, HEALTHY_HTML, {
           "content-type": "text/html; charset=utf-8",
+          ...SECURITY_HEADERS,
         });
       }
 
       return response(404, HEALTHY_HTML, {
         "content-type": "text/html; charset=utf-8",
+        ...SECURITY_HEADERS,
       });
     },
   );
@@ -125,12 +135,14 @@ function createDeployedFetchMock() {
       ) {
         return response(200, HEALTHY_HTML, {
           "content-type": "text/html; charset=utf-8",
+          ...SECURITY_HEADERS,
         });
       }
 
       if (pathname === MISSING_OFFERING_PATH) {
         return response(404, HEALTHY_HTML, {
           "content-type": "text/html; charset=utf-8",
+          ...SECURITY_HEADERS,
         });
       }
 
@@ -206,6 +218,7 @@ function listenForDeployedSmoke(): Promise<{
       ) {
         serverResponse.writeHead(200, {
           "content-type": "text/html; charset=utf-8",
+          ...SECURITY_HEADERS,
         });
         serverResponse.end(HEALTHY_HTML);
         return;
@@ -214,6 +227,7 @@ function listenForDeployedSmoke(): Promise<{
       if (pathname === MISSING_OFFERING_PATH) {
         serverResponse.writeHead(404, {
           "content-type": "text/html; charset=utf-8",
+          ...SECURITY_HEADERS,
         });
         serverResponse.end(HEALTHY_HTML);
         return;
@@ -423,6 +437,7 @@ describe("cloudflare preview smoke", () => {
               resolve(
                 response(200, HEALTHY_HTML, {
                   "content-type": "text/html; charset=utf-8",
+                  ...SECURITY_HEADERS,
                 }),
               );
           });
@@ -532,7 +547,8 @@ describe("cloudflare preview smoke", () => {
         "fetch",
         vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
           if (getRequestPath(input) === "/contact") {
-            return response(200, body, headers);
+            // 用例自带 header 放最后覆盖：每个用例只验证自己瞄准的那类失败。
+            return response(200, body, { ...SECURITY_HEADERS, ...headers });
           }
 
           return previewFetchMock(input, init);
@@ -598,6 +614,7 @@ describe("deployed smoke", () => {
             ? response(500, "temporary failure")
             : response(200, HEALTHY_HTML, {
                 "content-type": "text/html; charset=utf-8",
+                ...SECURITY_HEADERS,
               });
         }
 
@@ -652,7 +669,8 @@ describe("deployed smoke", () => {
         "fetch",
         vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
           if (getRequestPath(input) === "/contact") {
-            return response(200, body, headers);
+            // 用例自带 header 放最后覆盖：每个用例只验证自己瞄准的那类失败。
+            return response(200, body, { ...SECURITY_HEADERS, ...headers });
           }
 
           return deployedFetchMock(input, init);
