@@ -301,9 +301,14 @@ async function handleInquiryPost(request: NextRequest, clientIP: string) {
 function rejectPlausiblyIllegitimateRequest(
   request: NextRequest,
 ): NextResponse | null {
-  const contentType = request.headers.get("content-type") ?? "";
+  // 取分号前的媒体类型做精确比较：startsWith 会放过 application/jsonx
+  // 这类前缀混淆头（R1 验收阻塞项）；charset 参数照常放行。
+  const mediaType = (request.headers.get("content-type") ?? "")
+    .split(";")[0]!
+    .trim()
+    .toLowerCase();
 
-  if (!contentType.toLowerCase().startsWith("application/json")) {
+  if (mediaType !== "application/json") {
     return createApiErrorResponse(
       API_ERROR_CODES.UNSUPPORTED_MEDIA_TYPE,
       HTTP_UNSUPPORTED_MEDIA_TYPE,
