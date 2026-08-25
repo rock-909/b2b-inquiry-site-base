@@ -15,6 +15,17 @@ vi.mock("@/components/seo/json-ld-script", () => ({
   JsonLdGraphScript: () => null,
 }));
 
+// 首页现在内嵌真实表单区块；这里 mock 掉区块组件（表单行为由
+// inquiry-form.test.tsx 与 e2e 证明），页面级只证明编排正确。
+vi.mock("@/components/sections/inquiry-form-embed", () => ({
+  EmbeddedInquiryFormSection: (props: Record<string, unknown>) => (
+    <section
+      data-testid="embedded-inquiry-section"
+      data-title={props.title as string}
+    />
+  ),
+}));
+
 async function renderPage() {
   render(await HomePage({ params: Promise.resolve({ locale: "en" }) }));
 }
@@ -31,18 +42,12 @@ describe("home page", () => {
     ).toBeInTheDocument();
   });
 
-  it("ends with the inquiry action", async () => {
+  it("ends with the embedded inquiry form section", async () => {
     await renderPage();
 
-    expect(
-      screen.getByRole("heading", { name: messages.home.finalCta.title }),
-    ).toBeInTheDocument();
-    expect(
-      screen
-        .getAllByRole("link", {
-          name: messages.home.finalCta.primary,
-        })
-        .at(-1),
-    ).toHaveAttribute("href", "/contact");
+    expect(screen.getByTestId("embedded-inquiry-section")).toHaveAttribute(
+      "data-title",
+      messages.home.finalCta.title,
+    );
   });
 });

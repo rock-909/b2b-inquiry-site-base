@@ -17,14 +17,36 @@ const { mockGenerateMetadataForPath, mockJsonLdGraphScript, mockNotFound } =
 vi.mock("next/navigation", () => ({ notFound: mockNotFound }));
 vi.mock("next-intl/server", () => ({
   setRequestLocale: vi.fn(),
-  getTranslations: vi.fn(async () => (key: string) => {
-    const copy: Record<string, string> = {
-      "detail.backToProducts": "Back to products",
-      "detail.highlightsTitle": "Highlights",
-      "detail.startInquiry": "Start an inquiry",
-    };
-    return copy[key] ?? key;
-  }),
+  getTranslations: vi.fn(
+    async () => (key: string, values?: Record<string, string>) => {
+      const copy: Record<string, string> = {
+        "detail.backToProducts": "Back to products",
+        "detail.highlightsTitle": "Highlights",
+        "detail.startInquiry": "Get a quote",
+        "detail.inquirySectionTitle": "Inquire about {productName}",
+        // inquiry.form 命名空间的预填模板（tForm 不带前缀调用）。
+        productInterestTemplate: "I'm interested in {productName}.",
+      };
+      const raw = copy[key] ?? key;
+      if (!values) return raw;
+      return Object.entries(values).reduce(
+        (acc, [k, v]) => acc.replaceAll(`{${k}}`, v),
+        raw,
+      );
+    },
+  ),
+}));
+
+// 产品页内嵌表单区块 mock（行为证明在组件测试与 e2e）。
+vi.mock("@/components/sections/inquiry-form-embed", () => ({
+  EmbeddedInquiryFormSection: (props: Record<string, unknown>) => (
+    <section
+      data-testid="embedded-inquiry-section"
+      data-id={props.id as string | undefined}
+      data-title={props.title as string}
+      data-initial-message={props.initialMessage as string | undefined}
+    />
+  ),
 }));
 vi.mock("@/i18n/routing", () => ({
   routing: { locales: ["en"] },
@@ -72,9 +94,22 @@ describe("ProductDetailPage", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Sample Offering" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "Start an inquiry" }),
-    ).toHaveAttribute("href", "/contact");
+    const cta = screen.getByRole("link", { name: "Get a quote" });
+    expect(cta).toHaveAttribute("href", "#inquiry");
+
+    // 内嵌表单区块：SSR 锚点 id + 插值标题 + 产品语境预填。
+    expect(screen.getByTestId("embedded-inquiry-section")).toHaveAttribute(
+      "data-id",
+      "inquiry",
+    );
+    expect(screen.getByTestId("embedded-inquiry-section")).toHaveAttribute(
+      "data-title",
+      "Inquire about Sample Offering",
+    );
+    expect(screen.getByTestId("embedded-inquiry-section")).toHaveAttribute(
+      "data-initial-message",
+      "I'm interested in Sample Offering.",
+    );
     expect(mockJsonLdGraphScript).toHaveBeenCalledWith(
       expect.objectContaining({
         locale: "en",

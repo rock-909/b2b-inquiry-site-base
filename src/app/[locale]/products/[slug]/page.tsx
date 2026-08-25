@@ -3,16 +3,17 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { generateLocaleStaticParams } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
+import { EmbeddedInquiryFormSection } from "@/components/sections/inquiry-form-embed";
 import { buttonVariants } from "@/components/ui/button-variants";
 import {
   OFFERINGS,
   getOfferingById,
   getOfferingPath,
 } from "@/config/offerings";
-import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
 import {
   buildBreadcrumbListSchema,
@@ -62,6 +63,8 @@ export default async function ProductDetailPage({
   const offering = resolveOffering(slug);
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "products" });
+  const tForm = await getTranslations({ locale, namespace: "inquiry.form" });
+  const messages = getSourceMessages(locale);
   const productPath = getOfferingPath(offering.id);
   const productUrl = new URL(
     productPath,
@@ -119,13 +122,20 @@ export default async function ProductDetailPage({
           </ul>
         </section>
 
-        <Link
-          href={SINGLE_SITE_HOME_LINK_TARGETS.contact}
-          prefetch={false}
-          className={buttonVariants({ className: "mt-10" })}
-        >
+        <a href="#inquiry" className={buttonVariants({ className: "mt-10" })}>
           {t("detail.startInquiry")}
-        </Link>
+        </a>
+
+        <EmbeddedInquiryFormSection
+          id="inquiry"
+          title={t("detail.inquirySectionTitle", {
+            productName: offering.name,
+          })}
+          initialMessage={tForm("productInterestTemplate", {
+            productName: offering.name,
+          })}
+          messages={messages}
+        />
       </article>
     </>
   );

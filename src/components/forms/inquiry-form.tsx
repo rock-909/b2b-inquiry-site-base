@@ -29,6 +29,13 @@ export type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 export interface InquiryFormProps {
   readonly copy: InquiryFormCopy;
   readonly fallback: ReactNode;
+  /**
+   * 产品语境预填：仅产品详情页传入（来源为编译期 offerings 配置，非用户输入）。
+   * 走 textarea defaultValue——React 文本渲染不是 HTML sink；提交仍经
+   * canonicalBuyerMessageSchema 校验。传入前截断到 message 上限，
+   * 避免超长初始值先过浏览器 maxLength 再被服务端 400。
+   */
+  readonly initialMessage?: string;
 }
 
 const unsubscribeHydration = () => undefined;
@@ -259,7 +266,13 @@ function useSubmitErrorFocus(
   }, [displayState, formRef, errorSummaryRef]);
 }
 
-function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
+function InquiryFormLive({
+  copy,
+  initialMessage,
+}: {
+  copy: InquiryFormCopy;
+  initialMessage?: string;
+}) {
   const formRef = useRef<HTMLFormElement>(null);
   const [displayState, setDisplayState] = useState<InquirySubmitState>({
     status: "idle",
@@ -346,6 +359,7 @@ function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
       >
         <InquiryFormFields
           copy={copy}
+          {...(initialMessage ? { initialMessage } : {})}
           messageMaxLength={getInquiryMessageMaxLength()}
           {...(fieldDetails ? { fieldDetails } : {})}
         />
@@ -375,7 +389,17 @@ function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
   );
 }
 
-export function InquiryForm({ copy, fallback }: InquiryFormProps) {
+export function InquiryForm({
+  copy,
+  fallback,
+  initialMessage,
+}: InquiryFormProps) {
+  // 与 MAX_LEAD_MESSAGE_LENGTH 对齐：超长初始值会先过浏览器再被服务端拒绝。
+  const safeInitialMessage =
+    initialMessage && initialMessage.length > getInquiryMessageMaxLength()
+      ? initialMessage.slice(0, getInquiryMessageMaxLength())
+      : initialMessage;
+
   const isHydrated = useSyncExternalStore(
     subscribeHydration,
     getClientHydrationSnapshot,
@@ -403,5 +427,10 @@ export function InquiryForm({ copy, fallback }: InquiryFormProps) {
     );
   }
 
-  return <InquiryFormLive copy={copy} />;
+  return (
+    <InquiryFormLive
+      copy={copy}
+      {...(safeInitialMessage ? { initialMessage: safeInitialMessage } : {})}
+    />
+  );
 }
