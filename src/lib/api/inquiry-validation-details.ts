@@ -1,13 +1,13 @@
 import { type ZodIssue } from "zod";
 import {
-  type InquiryErrorField,
+  type InquiryFieldErrorDetail,
   INQUIRY_FIELD_ERROR_DETAILS,
-  INQUIRY_FIELD_ERROR_KEYS,
 } from "@/constants/inquiry-field-error-protocol";
 
 const GENERIC_VALIDATION_DETAIL = "errors.generic";
 
-type InquiryErrorLeafName = "required" | "invalid" | "tooLong" | "tooShort";
+/** 协议声明的全部可见 leaf（inquiry schema 不存在 minLength>1，无 tooShort）。 */
+type InquiryVisibleLeaf = "required" | "invalid" | "tooLong";
 
 function getSourceValueAtPath(
   source: Record<string, unknown>,
@@ -43,15 +43,17 @@ function readCustomReason(issue: ZodIssue): unknown {
 
 /**
  * 与既有 wire 行为逐条对齐的分类规则：
- * - too_small：minimum<=1、source 缺失或空白 → required，否则 tooShort；
+ * - too_small：minimum<=1 或 source 缺失/空白 → required，否则 tooLong 之外的
+ *   tooSmall 场景在 inquiryLeadSchema 下不存在（各字段均为 min(1)/max(N)）；
+ * - too_big → tooLong；
  * - invalid_type：source 缺失或空白 → required，否则 invalid；
  * - custom：显式 reason==="required"，或 source 缺失/空白 → required，否则 invalid；
- * - too_big → tooLong；其余 code → invalid。
+ * - 其余 code（含 email 格式 invalid_format 等）→ invalid。
  */
 function classifyIssue(
   issue: ZodIssue,
   source: Record<string, unknown>,
-): InquiryErrorLeafName {
+): InquiryVisibleLeaf {
   const sourceValue = getSourceValueAtPath(source, issue.path);
   const missingOrBlank =
     sourceValue === undefined || isBlankSourceValue(sourceValue);
@@ -59,10 +61,9 @@ function classifyIssue(
   switch (issue.code) {
     case "too_small":
       if ("minimum" in issue && typeof issue.minimum === "number") {
-        if (issue.minimum <= 1) return "required";
-        return missingOrBlank ? "required" : "tooShort";
+        return issue.minimum <= 1 || missingOrBlank ? "required" : "invalid";
       }
-      return missingOrBlank ? "required" : "tooShort";
+      return missingOrBlank ? "required" : "invalid";
     case "too_big":
       return "tooLong";
     case "invalid_type":
@@ -76,39 +77,47 @@ function classifyIssue(
 }
 
 /** 协议字段名单的 exhaustive 封口：新增字段漏写分支时 type-check 直接红。 */
-function inquiryFieldPrefix(field: string): string | undefined {
-  switch (field as InquiryErrorField) {
+function mapInquiryIssue(
+  issue: ZodIssue,
+  source: Record<string, unknown>,
+): InquiryFieldErrorDetail | typeof GENERIC_VALIDATION_DETAIL {
+  const [rawField] = issue.path;
+
+  switch (rawField) {
     case "fullName":
-      return INQUIRY_FIELD_ERROR_KEYS.fullName;
+      return `errors.fullName.${classifyIssue(issue, source)}`;
     case "email":
-      return INQUIRY_FIELD_ERROR_KEYS.email;
-    case "message":
-      return INQUIRY_FIELD_ERROR_KEYS.message;
+      return `errors.email.${classifyIssue(issue, source)}`;
+    case "message": {
+      // message 协议只有 invalid/tooLong；required 在该 schema 下不可达
+      //（message 为 optional 且无 min>1），防御性归入 generic 回退。
+      const leaf = classifyIssue(issue, source);
+      if (leaf === "required") {
+        return GENERIC_VALIDATION_DETAIL;
+      }
+      return `errors.message.${leaf}`;
+    }
     default:
-      return undefined;
+      return GENERIC_VALIDATION_DETAIL;
   }
 }
 
 /**
- * 服务端唯一入口：Zod issue 直接映射为精确的 wire detail 字符串。
- * 保持与旧实现完全一致的三条合同：issue 顺序去重、同字段 .required 抑制
- * .invalid、未注册字段回退 errors.generic。wire 字符串格式不变。
+ * 服务端唯一入口：Zod issue 直接映射为精确的 wire detail key。
+ * 与旧实现完全一致的三条运行时合同：issue 顺序去重、同字段 .required 抑制
+ * .invalid、未注册字段回退 errors.generic；wire 字符串格式不变。
  */
 export function mapInquiryValidationDetails(
   issues: readonly ZodIssue[],
   source: Record<string, unknown> = {},
-): string[] {
-  const details: string[] = [];
+): Array<InquiryFieldErrorDetail | typeof GENERIC_VALIDATION_DETAIL> {
+  const details: Array<
+    InquiryFieldErrorDetail | typeof GENERIC_VALIDATION_DETAIL
+  > = [];
   const seen = new Set<string>();
 
   for (const issue of issues) {
-    const [rawField] = issue.path;
-    const prefix =
-      typeof rawField === "string" ? inquiryFieldPrefix(rawField) : undefined;
-
-    const detail = prefix
-      ? `${prefix}.${classifyIssue(issue, source)}`
-      : GENERIC_VALIDATION_DETAIL;
+    const detail = mapInquiryIssue(issue, source);
 
     if (!seen.has(detail)) {
       seen.add(detail);
@@ -119,7 +128,7 @@ export function mapInquiryValidationDetails(
   return details.filter((detail) => {
     if (!detail.endsWith(".invalid")) return true;
     const baseKey = detail.slice(0, -".invalid".length);
-    return !details.includes(`${baseKey}.required`);
+    return !details.some((other) => other === `${baseKey}.required`);
   });
 }
 

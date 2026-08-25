@@ -27,15 +27,32 @@ function resolveFieldError<Field extends VisibleField>(
   }
 
   // 精确查找表替代字符串拆解与 copy 断言：leaf 与文案 key 全部由协议类型封口。
-  const leafByDetail: Record<string, string | undefined> =
-    FIELD_ERROR_LEAVES[field];
+  const leafByDetail = FIELD_ERROR_LEAVES[field];
 
   for (const detail of fieldDetails) {
     const leaf = leafByDetail[detail];
-    if (leaf !== undefined) {
-      // 查找表只含该 field 协议内 leaf，copy 完整性由 InquiryFieldErrorCopyMap 合同封口。
-      const fieldCopy: Record<string, string | undefined> = copy.errors[field];
-      return fieldCopy[leaf] ?? null;
+    if (leaf === undefined) {
+      continue;
+    }
+
+    // 按字段分发后两侧类型都收窄为具体字面量，无需任何断言；
+    // message 无 required 文案，该分支在 inquiryLeadSchema 下也不可达。
+    switch (field) {
+      case "fullName":
+        return copy.errors.fullName[leaf] ?? null;
+      case "email":
+        return copy.errors.email[leaf] ?? null;
+      case "message":
+        // message 无 required 文案；该分支在 inquiryLeadSchema 下也不可达。
+        if (leaf === "invalid") {
+          return copy.errors.message.invalid ?? null;
+        }
+        if (leaf === "tooLong") {
+          return copy.errors.message.tooLong ?? null;
+        }
+        break;
+      default:
+        break;
     }
   }
 

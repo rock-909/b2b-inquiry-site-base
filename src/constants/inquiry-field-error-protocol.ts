@@ -84,7 +84,11 @@ export const INQUIRY_FIELD_ERROR_DETAILS = [
 export const INQUIRY_FIELD_WIRE_DETAIL_LEAVES: {
   readonly [Field in InquiryErrorField]: Readonly<
     Record<string, InquiryErrorLeaf<Field> | undefined>
-  >;
+  > & {
+    readonly [
+      D in `errors.${Field & string}.${InquiryErrorLeaf<Field>}`
+    ]: InquiryErrorLeaf<Field>;
+  };
 } = {
   fullName: {
     "errors.fullName.required": "required",
