@@ -17,6 +17,7 @@ describe("single-site SEO", () => {
   });
 
   it("keeps private runtime paths out of indexing", () => {
-    expect(SINGLE_SITE_ROBOTS_DISALLOW_PATHS).toEqual(["/api/", "/_next/"]);
+    // /_next/ 必须保持可抓取：Googlebot 渲染依赖 /_next/static 资产。
+    expect(SINGLE_SITE_ROBOTS_DISALLOW_PATHS).toEqual(["/api/"]);
   });
 });
