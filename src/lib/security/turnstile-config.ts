@@ -1,5 +1,6 @@
 import { env, getRuntimeEnvString } from "@/lib/env";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
+import { parseCommaSeparatedValues } from "@/lib/security/parse-comma-separated";
 import { logger } from "@/lib/logger";
 
 /**
@@ -9,12 +10,8 @@ function parseConfiguredHosts(): string[] {
   const hosts =
     getRuntimeEnvString("TURNSTILE_ALLOWED_HOSTS") ??
     env.TURNSTILE_ALLOWED_HOSTS;
-  if (!hosts) return [];
 
-  return hosts.split(",").flatMap((value: string) => {
-    const normalized = value.trim().toLowerCase();
-    return normalized ? [normalized] : [];
-  });
+  return parseCommaSeparatedValues(hosts);
 }
 
 /**

@@ -16,7 +16,7 @@ import {
   applyCorsHeaders,
   createCorsPreflightResponse,
 } from "@/lib/api/cors-utils";
-import { isAllowedOrigin, isSameOrigin } from "@/config/cors";
+import { isAllowedOrigin, isSameOrigin } from "@/lib/security/origin-policy";
 import { mapInquiryValidationDetails } from "@/lib/api/inquiry-validation-details";
 import { safeParseJson } from "@/lib/api/safe-parse-json";
 import { isRuntimeProduction } from "@/lib/env";
