@@ -74,7 +74,9 @@ describe("robots.ts", () => {
 
       expect(wildcardRule?.allow).toBe("/");
       expect(disallowed).toContain("/api/");
-      expect(disallowed).toContain("/_next/");
+      // /_next/ 必须保持可抓取：Googlebot 渲染依赖 /_next/static 资产，
+      // 屏蔽会导致渲染抓取失败（反例回归锁）。
+      expect(disallowed).not.toContain("/_next/");
     });
 
     it("should not reference removed test paths", () => {

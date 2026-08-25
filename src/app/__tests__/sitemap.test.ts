@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import sitemap from "@/app/sitemap";
+import { OFFERINGS } from "@/config/offerings";
 
 describe("sitemap", () => {
   it("contains the public pages and configured product routes once", async () => {
@@ -32,8 +33,10 @@ describe("sitemap", () => {
 
     expect(byPath["/"]).not.toHaveProperty("lastModified");
     expect(byPath["/products"]).not.toHaveProperty("lastModified");
+    // 验证接线（lastmod 来自 offering.updatedAt），不锁死具体日期字面量：
+    // 业主更新内容并 bump updatedAt 时测试仍然有效。
     expect(byPath["/products/sample-offering"]?.lastModified).toEqual(
-      new Date("2026-08-12T00:00:00Z"),
+      new Date(OFFERINGS[0]!.updatedAt),
     );
     for (const path of ["/about", "/contact", "/privacy", "/terms"]) {
       expect(byPath[path]?.lastModified).toBeInstanceOf(Date);

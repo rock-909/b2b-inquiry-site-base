@@ -19,7 +19,10 @@ export const OFFERINGS = [
       "Add only specifications and proof the owner can verify.",
       "Use the shared inquiry path for project-specific questions.",
     ],
-    updatedAt: "2026-08-12T00:00:00Z",
+    // updatedAt 必须反映内容的最后一次显著变更（改 name/summary/description/
+    // highlights 时同步 bump）：sitemap 的 lastmod 直接发布此值，过期会向搜索
+    // 引擎谎报新鲜度。上次修正：7349ec26 于 2026-08-17 大改本条目但未 bump。
+    updatedAt: "2026-08-17T00:00:00Z",
   },
 ] as const satisfies readonly Offering[];
 
