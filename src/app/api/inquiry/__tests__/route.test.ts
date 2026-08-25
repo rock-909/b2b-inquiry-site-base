@@ -209,6 +209,55 @@ describe("/api/inquiry route", () => {
       expect(processValidatedInquiry).not.toHaveBeenCalled();
     });
 
+    // S-F01 回归锁：垃圾请求必须在消耗限流配额之前被丢弃。
+    it("rejects non-JSON content-type with 415 before consuming rate-limit quota", async () => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          "Content-Type": "text/plain",
+        }),
+      );
+
+      expect(response.status).toBe(415);
+      // 关键断言：限流存储根本不该被触碰。
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+      expect(processValidatedInquiry).not.toHaveBeenCalled();
+    });
+
+    it("rejects missing content-type with 415 before rate limiting", async () => {
+      const request = new NextRequest("http://localhost:3000/api/inquiry", {
+        method: "POST",
+        body: JSON.stringify(validInquiryData),
+      });
+
+      const response = await POST(request);
+
+      expect(response.status).toBe(415);
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+    });
+
+    it("rejects cross-site Origin with 403 before consuming rate-limit quota", async () => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          Origin: "https://evil.example",
+        }),
+      );
+
+      expect(response.status).toBe(403);
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+      expect(processValidatedInquiry).not.toHaveBeenCalled();
+    });
+
+    it("accepts same-origin Origin and proceeds to normal flow", async () => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          Origin: "http://localhost:3000",
+        }),
+      );
+
+      expect(response.status).toBe(200);
+      expect(checkInquiryRateLimit).toHaveBeenCalledTimes(1);
+    });
+
     it("should return 503 when the rate-limit store fails", async () => {
       vi.mocked(checkInquiryRateLimit).mockResolvedValueOnce({
         allowed: false,

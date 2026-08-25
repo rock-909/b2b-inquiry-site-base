@@ -135,6 +135,10 @@ async function requestCloudflarePreviewSmoke(
     leakedMiddlewareCookie: response.headers.get("x-middleware-set-cookie"),
     robotsTag: response.headers.get("x-robots-tag"),
     contentType: response.headers.get("content-type"),
+    frameOptions: response.headers.get("x-frame-options"),
+    nosniff: response.headers.get("x-content-type-options"),
+    referrerPolicy: response.headers.get("referrer-policy"),
+    csp: response.headers.get("content-security-policy"),
     nextCache: response.headers.get("x-nextjs-cache"),
     nextPostponed: response.headers.get("x-nextjs-postponed"),
     body: await response.text(),
@@ -181,6 +185,34 @@ function pushHealthyHtmlResponse(response, failures) {
   pushFailureUnless(
     !response.body.includes("Application error"),
     `Unexpected application error surfaced on ${response.pathname}`,
+    failures,
+  );
+}
+
+// F-05：安全 header 必须真的到达浏览器——配置存在不等于生效，
+// 部署管线（CDN/Worker/静态资产分流）任何一环丢失都只能在这里发现。
+function pushSecurityHeaderChecks(response, failures) {
+  const headerChecks = [
+    ["x-frame-options", response.frameOptions, "DENY"],
+    ["x-content-type-options", response.nosniff, "nosniff"],
+    [
+      "referrer-policy",
+      response.referrerPolicy,
+      "strict-origin-when-cross-origin",
+    ],
+  ];
+
+  for (const [headerName, actual, expected] of headerChecks) {
+    pushFailureUnless(
+      (actual ?? "").toLowerCase().includes(expected.toLowerCase()),
+      `Expected ${response.pathname} to carry ${headerName}: ${expected}, got ${actual ?? "none"}`,
+      failures,
+    );
+  }
+
+  pushFailureUnless(
+    typeof response.csp === "string" && response.csp.length > 0,
+    `Expected ${response.pathname} to carry a non-empty content-security-policy`,
     failures,
   );
 }
@@ -313,6 +345,7 @@ async function runCloudflarePreviewSmoke(args = []) {
     }
     if (expectation.html) {
       pushHealthyHtmlResponse(response, failures);
+      pushSecurityHeaderChecks(response, failures);
     }
   }
 
@@ -454,6 +487,10 @@ async function requestDeployedSmoke(baseUrl, pathname, headers, retryEvents) {
         leakedMiddlewareCookie: response.headers.get("x-middleware-set-cookie"),
         robotsTag: response.headers.get("x-robots-tag"),
         contentType: response.headers.get("content-type"),
+        frameOptions: response.headers.get("x-frame-options"),
+        nosniff: response.headers.get("x-content-type-options"),
+        referrerPolicy: response.headers.get("referrer-policy"),
+        csp: response.headers.get("content-security-policy"),
         body,
         retries,
       };
@@ -505,6 +542,7 @@ async function runDeployedSmoke(args = []) {
     pushExpectedStatus(response, expectation.status, failures);
     if (expectation.html) {
       pushHealthyHtmlResponse(response, failures);
+      pushSecurityHeaderChecks(response, failures);
     }
     if (expectation.robotsTag) {
       pushFailureUnless(
