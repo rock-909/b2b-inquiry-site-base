@@ -7,11 +7,10 @@ import {
 } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { HeroSection } from "@/components/sections/hero-section";
-import { buttonVariants } from "@/components/ui/button-variants";
+import { EmbeddedInquiryFormSection } from "@/components/sections/inquiry-form-embed";
 import { getLocalizedPath } from "@/config/paths";
-import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
-import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
+import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
 
 interface HomePageProps {
@@ -50,32 +49,11 @@ export default async function HomePage({ params }: HomePageProps) {
           </p>
         </div>
       </section>
-      <section className="section-divider px-6 py-14 md:py-[72px]">
-        <div className="mx-auto flex max-w-[720px] flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-section text-balance">{t("finalCta.title")}</h2>
-            <p className="mt-3 text-pretty text-muted-foreground">
-              {t("finalCta.description")}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href={SINGLE_SITE_HOME_LINK_TARGETS.primaryCta}
-              prefetch={false}
-              className={buttonVariants()}
-            >
-              {t("finalCta.primary")}
-            </Link>
-            <Link
-              href={SINGLE_SITE_HOME_LINK_TARGETS.secondaryCta}
-              prefetch={false}
-              className={buttonVariants({ variant: "outline" })}
-            >
-              {t("finalCta.secondary")}
-            </Link>
-          </div>
-        </div>
-      </section>
+      <EmbeddedInquiryFormSection
+        title={t("finalCta.title")}
+        description={t("finalCta.description")}
+        messages={getSourceMessages(locale)}
+      />
     </>
   );
 }

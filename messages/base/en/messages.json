@@ -134,9 +134,7 @@
     },
     "finalCta": {
       "title": "Have a requirement to discuss?",
-      "description": "Share the essentials and the team can follow up with the next useful question.",
-      "primary": "Start an inquiry",
-      "secondary": "Learn about the site"
+      "description": "Share the essentials and the team can follow up with the next useful question."
     }
   },
   "products": {
@@ -153,7 +151,8 @@
     "detail": {
       "backToProducts": "Back to products",
       "highlightsTitle": "Highlights",
-      "startInquiry": "Start an inquiry"
+      "startInquiry": "Get a quote",
+      "inquirySectionTitle": "Inquire about {productName}"
     }
   },
   "contact": {
@@ -219,7 +218,7 @@
         "expired": "Security verification expired. Please complete it again.",
         "rescueBeforeEmail": "Email us instead —",
         "rescueAfterEmail": "Include your requirement and contact details.",
-        "rescueSubject": "Quote request"
+        "rescueSubject": "Inquiry"
       },
       "errors": {
         "fieldSummary": "Please review the highlighted fields and try again.",
@@ -241,7 +240,8 @@
         },
         "rateLimitSummary": "Too many attempts. Please wait before sending your inquiry again.",
         "rateLimitReady": "You can send your inquiry again now."
-      }
+      },
+      "productInterestTemplate": "I'm interested in {productName}."
     }
   },
   "faq": {

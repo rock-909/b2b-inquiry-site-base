@@ -34,8 +34,9 @@ const homeB2BSectionPaths = [
   ["home", "value", "description"],
   ["home", "finalCta", "title"],
   ["home", "finalCta", "description"],
-  ["home", "finalCta", "primary"],
-  ["home", "finalCta", "secondary"],
+  ["products", "detail", "startInquiry"],
+  ["products", "detail", "inquirySectionTitle"],
+  ["inquiry", "form", "productInterestTemplate"],
 ] as const;
 
 const homeHeroProofPaths = [] as const;

@@ -101,6 +101,6 @@ describe("inquiry form copy", () => {
     expect(copy.turnstile.rescueAfterEmail).toBe(
       "Include your requirement and contact details.",
     );
-    expect(copy.turnstile.rescueSubject).toBe("Quote request");
+    expect(copy.turnstile.rescueSubject).toBe("Inquiry");
   });
 });

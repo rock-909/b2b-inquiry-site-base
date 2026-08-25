@@ -42,10 +42,12 @@ function resolveFieldError(
 export function InquiryFormFields({
   copy,
   fieldDetails,
+  initialMessage,
   messageMaxLength,
 }: {
   copy: InquiryFormCopy;
   fieldDetails?: readonly string[];
+  initialMessage?: string;
   messageMaxLength: number;
 }) {
   const messageHintId = "inquiry-message-hint";
@@ -122,6 +124,7 @@ export function InquiryFormFields({
           }
           aria-invalid={messageError ? true : undefined}
           className={`${INPUT_CLASS} min-h-32 resize-y leading-6`}
+          {...(initialMessage ? { defaultValue: initialMessage } : {})}
           id="inquiry-message"
           maxLength={messageMaxLength}
           name="message"

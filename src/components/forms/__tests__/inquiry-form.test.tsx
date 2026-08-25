@@ -108,6 +108,16 @@ describe("InquiryForm contract", () => {
     expect(turnstileLabelsSpy).toHaveBeenCalledWith(copy.turnstile);
   });
 
+  it("truncates oversized initialMessage to the message limit", async () => {
+    // 设计条件 E-1：initialMessage 在组件入口截断到 MAX_LEAD_MESSAGE_LENGTH，
+    // 避免超长初始值先过浏览器 maxLength 再被服务端 400。
+    const longMessage = "A".repeat(2001);
+    const { container } = renderInquiryForm({ initialMessage: longMessage });
+    const message = getFormControls(container).message;
+
+    expect(message).toHaveValue("A".repeat(2000));
+  });
+
   it("serializes a filled website honeypot into the inquiry payload", async () => {
     const { container } = renderInquiryForm();
     const { fullName, email, form } = getFormControls(container);

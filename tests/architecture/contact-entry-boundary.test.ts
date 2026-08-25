@@ -75,8 +75,11 @@ describe("contact entry boundary", () => {
     // 出的请求地址。源码文本断言换不来这个：把地址提成常量就会让它假报警。
     // 「中间没有第二层封装」这半条目前不设门禁——请求地址一样的话，重新引入一个
     // 抽象层也不会有任何断言变红。旧的源码文本断言同样守不住，这里不是回退。
+    // 三个表单入口（/contact、首页内容区、产品详情页）都必须直接渲染
+    // InquiryForm——嵌入区块组件不算中间抽象，它不碰请求地址。
     for (const filePath of [
       "src/app/[locale]/contact/contact-page-sections.tsx",
+      "src/components/sections/inquiry-form-embed.tsx",
     ]) {
       const source = read(filePath);
       const sourceFile = createSourceFile(filePath, source);

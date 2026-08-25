@@ -136,6 +136,30 @@ test.describe("No-JS HTML contract (English-only)", () => {
     ).toHaveCount(0);
   });
 
+  test("product page keeps #inquiry anchor reachable without JavaScript", async ({
+    page,
+  }) => {
+    // 设计条件 E-3：id="inquiry" 在服务端渲染的外层 section 上，
+    // 锚点定位不依赖水合——无 JS 时初始 HTML 就必须包含它。
+    // 相对路径走 playwright.config 的 baseURL：本地 3100 变通与 CI 3000 都正确。
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/products/sample-offering", {
+      waitUntil: "domcontentloaded",
+    });
+
+    await expect(page.locator("section#inquiry")).toBeAttached();
+    await expect(page.locator('a[href="#inquiry"]')).toBeAttached();
+
+    // 无 JS 时嵌入区块必须渲染静态兜底（mailto 引导），且不得出现
+    // 需要水合才能工作的 <form>——防止 fallback 被改成 null 仍绿灯。
+    const fallback = page.locator(
+      "section#inquiry [data-testid='inquiry-form-static-fallback']",
+    );
+    await expect(fallback).toBeAttached();
+    const formsInSection = await page.locator("section#inquiry form").count();
+    expect(formsInSection).toBe(0);
+  });
+
   test("contact page renders inquiry fallback without JavaScript", async ({
     page,
   }) => {
