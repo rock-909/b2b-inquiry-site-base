@@ -13,6 +13,11 @@ import {
   runExternalUrlSmoke,
 } from "../../../scripts/quality/checks/cloudflare-smoke.js";
 
+const RETRIABLE_TIMEOUT_ERROR = new DOMException(
+  "request timed out",
+  "TimeoutError",
+);
+
 const openServers: http.Server[] = [];
 const tempDirs: string[] = [];
 const FIXTURE_PREFIX = "b2b-minimal-cloudflare-smoke-";
@@ -811,5 +816,62 @@ describe("deployed smoke", () => {
         "proof",
       ]),
     ).resolves.toBe(false);
+  });
+
+  it("propagates non-retriable failures from the deployed lane unchanged", async () => {
+    const nonRetriable = new Error("synthetic non-retriable");
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(nonRetriable);
+
+    await expect(
+      runDeployedSmoke(["--base-url", "https://deployed.example"]),
+    ).rejects.toBe(nonRetriable);
+
+    fetchSpy.mockRestore();
+  });
+
+  it("wraps retry-exhausted retriable failures in the retry-loop error contract", async () => {
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(RETRIABLE_TIMEOUT_ERROR);
+
+    await expect(
+      runDeployedSmoke(["--base-url", "https://deployed.example"]),
+    ).rejects.toThrow("post-deploy-smoke retry loop exited without a response");
+    // 1 次初始请求 + DEPLOY_SMOKE_REQUEST_RETRIES 次重试，全部失败后包装。
+    expect(fetchSpy).toHaveBeenCalled();
+
+    fetchSpy.mockRestore();
+  });
+});
+
+describe("smoke argument contracts", () => {
+  it("keeps the unknown-argument error for a valueless --base-url in cf-preview-smoke", async () => {
+    await expect(runCloudflarePreviewSmoke(["--base-url"])).rejects.toThrow(
+      "Unknown argument: --base-url",
+    );
+  });
+
+  it("keeps the unknown-argument error for a valueless --base-url in external-url-smoke", async () => {
+    await expect(runExternalUrlSmoke(["--base-url"])).rejects.toThrow(
+      "Unknown argument: --base-url",
+    );
+  });
+
+  it("keeps the unknown-argument error for a valueless --header-name in deployed-smoke", async () => {
+    await expect(
+      runDeployedSmoke([
+        "--base-url",
+        "https://deployed.example",
+        "--header-name",
+      ]),
+    ).rejects.toThrow("Unknown argument: --header-name");
+  });
+
+  it("keeps the unknown-argument error for unrecognized flags", async () => {
+    await expect(runCloudflarePreviewSmoke(["--rounds"])).rejects.toThrow(
+      "Unknown argument: --rounds",
+    );
   });
 });
