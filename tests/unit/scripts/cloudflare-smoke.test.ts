@@ -818,6 +818,19 @@ describe("deployed smoke", () => {
     ).resolves.toBe(false);
   });
 
+  it("propagates non-retriable failures from the deployed lane unchanged", async () => {
+    const nonRetriable = new Error("synthetic non-retriable");
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(nonRetriable);
+
+    await expect(
+      runDeployedSmoke(["--base-url", "https://deployed.example"]),
+    ).rejects.toBe(nonRetriable);
+
+    fetchSpy.mockRestore();
+  });
+
   it("wraps retry-exhausted retriable failures in the retry-loop error contract", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")

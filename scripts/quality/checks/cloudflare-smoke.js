@@ -269,29 +269,34 @@ async function probePathname(
       return collectProbeFields(pathname, response, body, retries);
     } catch (error) {
       lastError = error;
-      // 不可重试的错误原样冒泡；无重试预算的 lane 同样立即冒泡。
-      if (!isRetriableFetchError(error) || attempt >= retries) {
-        if (retries > 0) {
-          // deployed lane 的既有错误合同：包装为统一的 retry-loop 失败。
-          const wrapped = new Error(
-            "post-deploy-smoke retry loop exited without a response",
-          );
-          wrapped.cause = error;
-          throw wrapped;
-        }
+      // 与旧实现一致的三段语义：
+      // 1) 不可重试错误立即原样冒泡；
+      // 2) 可重试错误且仍有预算 -> 重试；
+      // 3) 可重试错误且预算耗尽 -> deployed lane 包装为 retry-loop 失败。
+      if (!isRetriableFetchError(error)) {
         throw error;
       }
 
-      attempt += 1;
-      retryEvents.push({
-        pathname,
-        reason: error instanceof Error ? error.message : String(error),
-        nextAttempt: attempt + 1,
-      });
-      console.warn(
-        `[${logTag}] ${pathname} request failed; retrying attempt ${attempt + 1}/${retries + 1}`,
-      );
-      await delay(getRetryDelayMs(attempt - 1));
+      if (attempt < retries) {
+        attempt += 1;
+        retryEvents.push({
+          pathname,
+          reason: error instanceof Error ? error.message : String(error),
+          nextAttempt: attempt + 1,
+        });
+        console.warn(
+          `[${logTag}] ${pathname} request failed; retrying attempt ${attempt + 1}/${retries + 1}`,
+        );
+        await delay(getRetryDelayMs(attempt - 1));
+      } else if (retries > 0) {
+        const wrapped = new Error(
+          "post-deploy-smoke retry loop exited without a response",
+        );
+        wrapped.cause = error;
+        throw wrapped;
+      } else {
+        throw error;
+      }
     }
   }
 }
