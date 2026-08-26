@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const childProcess = require("node:child_process");
 const ts = require("typescript");
 
 const ROOT = process.cwd();
@@ -109,91 +110,62 @@ function collectSourceTokens(relPath, text) {
   return tokens;
 }
 
-function hasOpenNextIncrementalCacheWiring(text) {
-  const source = ts.createSourceFile(
-    "open-next.config.ts",
-    text,
-    ts.ScriptTarget.Latest,
-    true,
+/**
+ * 在隔离子进程里真实执行 <rootDir>/open-next.config.ts，并断言 R2
+ * incremental cache 的接线（identity 级）与导出身份。loader hooks 拦截
+ * OpenNext 模块说明符，因此合成 fixture 与真实仓库走同一条证明路径。
+ */
+function checkOpenNextWiring(rootDir, failures) {
+  const runnerPath = path.join(
+    __dirname,
+    "cloudflare-config-open-next-runner.mjs",
   );
-  const configInitializers = new Map();
-  const defineCloudflareConfigImports = new Set();
-  const r2IncrementalCacheImports = new Set();
-
-  for (const statement of source.statements) {
-    if (
-      !ts.isImportDeclaration(statement) ||
-      !ts.isStringLiteralLike(statement.moduleSpecifier)
-    ) {
-      continue;
-    }
-    const moduleName = statement.moduleSpecifier.text;
-    const importClause = statement.importClause;
-    const namedBindings = importClause?.namedBindings;
-    if (
-      moduleName === "@opennextjs/cloudflare" &&
-      namedBindings &&
-      ts.isNamedImports(namedBindings)
-    ) {
-      const imported = namedBindings.elements.find(
-        (element) =>
-          (element.propertyName ?? element.name).text ===
-          "defineCloudflareConfig",
-      );
-      if (imported) {
-        defineCloudflareConfigImports.add(imported.name.text);
-      }
-    }
-    if (
-      moduleName ===
-        "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache" &&
-      importClause?.name
-    ) {
-      r2IncrementalCacheImports.add(importClause.name.text);
-    }
+  let stdout;
+  try {
+    stdout = childProcess.execFileSync(
+      process.execPath,
+      [runnerPath, rootDir],
+      {
+        encoding: "utf8",
+        timeout: 30_000,
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+    );
+  } catch (error) {
+    failures.push({
+      file: "open-next.config.ts",
+      label:
+        "OpenNext config keeps the approved R2 incremental cache without split topology",
+      missing: [
+        `open-next.config.ts failed to load under the open-next module harness: ${String(error)}`,
+      ],
+      forbidden: [],
+    });
+    return;
   }
 
-  for (const statement of source.statements) {
-    if (!ts.isVariableStatement(statement)) continue;
-    for (const declaration of statement.declarationList.declarations) {
-      if (ts.isIdentifier(declaration.name) && declaration.initializer) {
-        configInitializers.set(declaration.name.text, declaration.initializer);
-      }
-    }
+  let result;
+  try {
+    result = JSON.parse(stdout);
+  } catch {
+    result = {
+      ok: false,
+      missing: ["unparseable harness output"],
+      forbidden: [],
+    };
   }
 
-  const isConfiguredCall = (node) => {
-    if (
-      !node ||
-      !ts.isCallExpression(node) ||
-      !ts.isIdentifier(node.expression) ||
-      !defineCloudflareConfigImports.has(node.expression.text)
-    ) {
-      return false;
-    }
-    const config = node.arguments[0];
-    if (!config || !ts.isObjectLiteralExpression(config)) return false;
-
-    return config.properties.some(
-      (property) =>
-        ts.isPropertyAssignment(property) &&
-        (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)) &&
-        property.name.text === "incrementalCache" &&
-        ts.isIdentifier(property.initializer) &&
-        r2IncrementalCacheImports.has(property.initializer.text),
-    );
-  };
-
-  return source.statements.some((statement) => {
-    if (!ts.isExportAssignment(statement) || statement.isExportEquals) {
-      return false;
-    }
-    if (isConfiguredCall(statement.expression)) return true;
-    return (
-      ts.isIdentifier(statement.expression) &&
-      isConfiguredCall(configInitializers.get(statement.expression.text))
-    );
-  });
+  if (!result.ok) {
+    failures.push({
+      file: "open-next.config.ts",
+      label:
+        "OpenNext config keeps the approved R2 incremental cache without split topology",
+      missing: Array.isArray(result.missing)
+        ? result.missing
+        : ["unknown wiring failure"],
+      forbidden: [],
+    });
+  }
 }
 
 function checkWrangler(rootDir, failures) {
@@ -263,24 +235,26 @@ function checkWrangler(rootDir, failures) {
 }
 
 function checkOpenNextConfig(rootDir, failures) {
+  // 精确 token 扫描保留：注释不触发、更长标识符不误报，覆盖 loader hook
+  // 无法看到的"导入后未接线"的非法拓扑 token。
   const text = readCloudflareConfigFile(rootDir, "open-next.config.ts");
   const tokens = collectSourceTokens("open-next.config.ts", text);
-  const missing = hasOpenNextIncrementalCacheWiring(text)
-    ? []
-    : ["incrementalCache: r2IncrementalCache"];
   const forbidden = OPEN_NEXT_FORBIDDEN_TOKENS.filter((token) =>
     tokens.has(token),
   );
 
-  if (missing.length > 0 || forbidden.length > 0) {
+  if (forbidden.length > 0) {
     failures.push({
       file: "open-next.config.ts",
       label:
         "OpenNext config keeps the approved R2 incremental cache without split topology",
-      missing,
+      missing: [],
       forbidden,
     });
+    return;
   }
+
+  checkOpenNextWiring(rootDir, failures);
 }
 
 function checkPackageScripts(rootDir, failures) {
