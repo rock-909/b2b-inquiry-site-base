@@ -40,6 +40,13 @@ const resolvedBaseUrl =
   process.env.PLAYWRIGHT_BASE_URL ||
   "http://localhost:3000";
 
+// 本地默认不复用已占用端口上的服务器：孤儿 next-server（上次运行未被清理）
+// 会被 Playwright 静默信任——它可能缺少测试环境变量（Turnstile 测试 key、
+// NEXT_PUBLIC_APP_ENV=preview）或跑着过期构建，导致 contact-submit / embedded
+// / no-js 等契约用例集体失败且极具误导性。确需复用时显式开启本开关。
+const shouldReuseExistingServer =
+  !isCI && process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === "true";
+
 // HTML reporter may start a local server and wait for Ctrl+C when open is enabled.
 // In non-interactive runners (e.g. ClaudeCode/CI logs), this causes the process to hang.
 const isInteractiveTerminal = Boolean(
@@ -142,7 +149,7 @@ export default defineConfig({
               ? "pnpm start"
               : "pnpm build && pnpm start",
           url: "http://localhost:3000",
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: shouldReuseExistingServer,
           timeout: process.env.CI ? 60 * 1000 : 180 * 1000, // CI已构建,启动更快
           // [local/test-mode] Local E2E proof boundary: this webServer uses test-mode services for stable smoke coverage.
           // It proves local rendering and interaction only, not real Turnstile or deployed lead proof.
