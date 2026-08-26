@@ -15,9 +15,6 @@ export interface ContentMetadata {
   publishedAt: string;
   updatedAt?: string;
   author?: string;
-  tags?: string[];
-  categories?: string[];
-  featured?: boolean;
   draft?: boolean;
   seo?: {
     title?: string;
@@ -32,27 +29,12 @@ export interface PageMetadata extends ContentMetadata {
   showToc?: boolean;
   lastReviewed?: string;
   faq?: FaqItem[];
-  heroTitle?: string;
-  heroSubtitle?: string;
-  heroDescription?: string;
-  aboutSections?: AboutPageSections;
 }
 
 export interface FaqItem {
   id: string;
   question: string;
   answer: string;
-}
-
-export interface AboutPageSections {
-  valuesTitle: string;
-  values: Record<string, { title: string; description: string }>;
-  statLabels: Record<string, string>;
-  cta: {
-    title: string;
-    description: string;
-    button: string;
-  };
 }
 
 export interface LegalPageMetadata extends PageMetadata {
@@ -65,7 +47,6 @@ export interface LegalPageMetadata extends PageMetadata {
 export interface ParsedContent<T extends ContentMetadata = ContentMetadata> {
   metadata: T;
   content: string;
-  excerpt?: string;
   slug: string;
   filePath: string;
 }
@@ -76,10 +57,3 @@ export interface Page extends ParsedContent<PageMetadata> {
 }
 
 export type { Locale };
-
-// Content validation result
-export interface ContentValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings: string[];
-}
