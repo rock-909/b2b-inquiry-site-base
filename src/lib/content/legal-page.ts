@@ -1,5 +1,8 @@
-import { parseHeadingId } from "@/lib/content/heading-id";
 import { getStaticPage } from "@/lib/content/static-pages";
+import {
+  type StaticMarkdownBlock,
+  parseStaticMarkdownBlocks,
+} from "@/lib/content/static-markdown-blocks";
 import type { LegalPageMetadata, Locale } from "@/types/content.types";
 
 export interface HeadingItem {
@@ -8,24 +11,24 @@ export interface HeadingItem {
   id: string;
 }
 
-const H2_PREFIX = "## ";
-const H3_PREFIX = "### ";
+function isHeading(
+  block: StaticMarkdownBlock,
+): block is Extract<StaticMarkdownBlock, { kind: "heading" }> {
+  return block.kind === "heading";
+}
 
+/**
+ * 目录与正文共用同一份解析结果：heading 数据直接来自渲染所用的块序列，
+ * 不再对同一内容做第二遍独立扫描。
+ */
 export function extractHeadingsFromContent(content: string): HeadingItem[] {
-  const headings: HeadingItem[] = [];
-
-  for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (trimmed.startsWith(H3_PREFIX)) {
-      const { displayText: text, id } = parseHeadingId(trimmed.slice(H3_PREFIX.length).trim());
-      headings.push({ level: 3, text, id });
-    } else if (trimmed.startsWith(H2_PREFIX)) {
-      const { displayText: text, id } = parseHeadingId(trimmed.slice(H2_PREFIX.length).trim());
-      headings.push({ level: 2, text, id });
-    }
-  }
-
-  return headings;
+  return parseStaticMarkdownBlocks(content)
+    .filter(isHeading)
+    .map((block) => ({
+      level: block.level === "h2" ? 2 : 3,
+      text: block.displayText,
+      id: block.id,
+    }));
 }
 
 interface LegalPageData {
