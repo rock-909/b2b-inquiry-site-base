@@ -1,9 +1,9 @@
-import { createLegalContent } from "@/lib/content/render-legal-content";
+import { createStaticMarkdownContent } from "@/lib/content/render-static-markdown-content";
 
 interface LegalContentRendererProps {
   content: string;
 }
 
 export function LegalContentRenderer({ content }: LegalContentRendererProps) {
-  return <>{createLegalContent(content)}</>;
+  return <>{createStaticMarkdownContent(content)}</>;
 }

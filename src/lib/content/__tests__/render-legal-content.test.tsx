@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createLegalContent } from "@/lib/content/render-legal-content";
+import { LegalContentRenderer } from "@/components/content/legal-content-renderer";
 import { createStaticMarkdownContent } from "@/lib/content/render-static-markdown-content";
 
 afterEach(() => {
@@ -152,27 +152,27 @@ describe("createStaticMarkdownContent", () => {
   });
 });
 
-describe("createLegalContent", () => {
-  it("keeps the legal renderer as a thin wrapper around static markdown rendering", () => {
-    const { container } = render(<>{createLegalContent("## Privacy")}</>);
+describe("LegalContentRenderer", () => {
+  it("renders static markdown content through the legal renderer", () => {
+    const { container } = render(<LegalContentRenderer content="## Privacy" />);
 
     expect(container.querySelector("h2")).toHaveTextContent("Privacy");
   });
 });
 
 describe("static markdown renderer ownership", () => {
-  it("keeps the generic renderer independent and legal rendering as a wrapper", () => {
+  it("keeps the generic renderer independent and the legal renderer as its only consumer", () => {
     const genericSource = readFileSync(
       "src/lib/content/render-static-markdown-content.tsx",
       "utf8",
     );
-    const legalSource = readFileSync(
-      "src/lib/content/render-legal-content.tsx",
+    const rendererSource = readFileSync(
+      "src/components/content/legal-content-renderer.tsx",
       "utf8",
     );
 
-    expect(genericSource).not.toContain("render-legal-content");
-    expect(legalSource).toContain("render-static-markdown-content");
-    expect(legalSource).toContain("createStaticMarkdownContent(content)");
+    expect(genericSource).not.toContain("legal-content-renderer");
+    expect(rendererSource).toContain("render-static-markdown-content");
+    expect(rendererSource).toContain("createStaticMarkdownContent(content)");
   });
 });
