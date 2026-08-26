@@ -17,7 +17,7 @@ export const INQUIRY_FIELD_ERROR_PROTOCOL = {
 
 export type InquiryErrorField = keyof typeof INQUIRY_FIELD_ERROR_PROTOCOL;
 
-type InquiryErrorLeaf<Field extends InquiryErrorField> =
+export type InquiryErrorLeaf<Field extends InquiryErrorField> =
   (typeof INQUIRY_FIELD_ERROR_PROTOCOL)[Field][number];
 
 /** wire 上的一条可见字段错误 detail，例如 errors.fullName.required。 */
@@ -76,3 +76,32 @@ export const INQUIRY_FIELD_ERROR_DETAILS = [
   ...INQUIRY_FIELD_WIRE_DETAILS.email,
   ...INQUIRY_FIELD_WIRE_DETAILS.message,
 ] as readonly InquiryFieldErrorDetail[];
+
+/**
+ * wire detail → 对应 leaf 的精确查找表。客户端用它替代字符串拆解（split），
+ * 服务端字段名单在这里逐项封口：协议新增 leaf 而这里漏写时，type-check 直接红。
+ */
+export const INQUIRY_FIELD_WIRE_DETAIL_LEAVES: {
+  readonly [Field in InquiryErrorField]: Readonly<
+    Record<string, InquiryErrorLeaf<Field> | undefined>
+  > & {
+    readonly [
+      D in `errors.${Field & string}.${InquiryErrorLeaf<Field>}`
+    ]: InquiryErrorLeaf<Field>;
+  };
+} = {
+  fullName: {
+    "errors.fullName.required": "required",
+    "errors.fullName.invalid": "invalid",
+    "errors.fullName.tooLong": "tooLong",
+  },
+  email: {
+    "errors.email.required": "required",
+    "errors.email.invalid": "invalid",
+    "errors.email.tooLong": "tooLong",
+  },
+  message: {
+    "errors.message.invalid": "invalid",
+    "errors.message.tooLong": "tooLong",
+  },
+};

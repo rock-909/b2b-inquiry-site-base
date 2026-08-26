@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import { MAX_LEAD_MESSAGE_LENGTH } from "@/constants/validation-limits";
 import { getSourceMessages } from "@/lib/i18n/load-messages";
 import {
-  INQUIRY_FIELD_ERROR_KEYS,
   INQUIRY_VALIDATION_DETAIL_KEYS,
   mapInquiryValidationDetails,
 } from "@/lib/api/inquiry-validation-details";
-import { mapZodIssuesToValidationDetails } from "@/lib/api/validation-error-details";
+import {
+  INQUIRY_FIELD_ERROR_DETAILS,
+  INQUIRY_FIELD_ERROR_KEYS,
+  INQUIRY_FIELD_WIRE_DETAIL_LEAVES,
+} from "@/constants/inquiry-field-error-protocol";
 import {
   INQUIRY_LEAD_TYPE,
   inquiryLeadSchema,
@@ -48,6 +51,164 @@ const inquiryFailureInputs: ReadonlyArray<Record<string, unknown>> = [
   { ...validBase, utmSource: "x".repeat(257) },
   { ...validBase, utmSource: 42 },
 ];
+
+describe("inquiry field error lookup table", () => {
+  it("covers every declared wire detail exactly, mapping to the matching leaf", () => {
+    for (const detail of INQUIRY_FIELD_ERROR_DETAILS) {
+      const [, field, leaf] = detail.split(".");
+      expect(
+        INQUIRY_FIELD_WIRE_DETAIL_LEAVES[
+          field as keyof typeof INQUIRY_FIELD_WIRE_DETAIL_LEAVES
+        ][detail],
+        detail,
+      ).toBe(leaf);
+    }
+  });
+});
+
+describe("exact wire contract for inquiry field errors", () => {
+  it("maps the real-schema failure matrix to exact, ordered detail arrays", () => {
+    const cases: ReadonlyArray<{
+      input: Record<string, unknown>;
+      expected: string[];
+    }> = [
+      {
+        input: { ...validBase, fullName: undefined },
+        expected: ["errors.fullName.required"],
+      },
+      {
+        input: { ...validBase, fullName: "" },
+        expected: ["errors.fullName.required"],
+      },
+      {
+        input: { ...validBase, fullName: 42 },
+        expected: ["errors.fullName.invalid"],
+      },
+      {
+        input: { ...validBase, fullName: "A".repeat(300) },
+        expected: ["errors.fullName.tooLong"],
+      },
+      {
+        input: { ...validBase, email: undefined },
+        expected: ["errors.email.required"],
+      },
+      {
+        input: { ...validBase, email: "" },
+        expected: ["errors.email.required"],
+      },
+      {
+        input: { ...validBase, email: 42 },
+        expected: ["errors.email.invalid"],
+      },
+      {
+        input: { ...validBase, email: "not-an-email" },
+        expected: ["errors.email.invalid"],
+      },
+      {
+        input: { ...validBase, email: `a@${"x".repeat(300)}.com` },
+        expected: ["errors.email.tooLong"],
+      },
+      {
+        input: { ...validBase, email: "=cmd(a1)@example.com" },
+        expected: ["errors.email.invalid"],
+      },
+      {
+        input: { ...validBase, message: 123 },
+        expected: ["errors.message.invalid"],
+      },
+      {
+        input: { ...validBase, message: "A".repeat(5000) },
+        expected: ["errors.message.tooLong"],
+      },
+    ];
+
+    for (const { input, expected } of cases) {
+      const parsed = inquiryLeadSchema.safeParse(input);
+      expect(parsed.success, JSON.stringify(input)).toBe(false);
+      if (parsed.success) continue;
+      expect(
+        mapInquiryValidationDetails(parsed.error.issues, input),
+        JSON.stringify(input),
+      ).toEqual(expected);
+    }
+  });
+
+  it("keeps issue order and de-duplicates repeated details", () => {
+    // schema 字段顺序：type → fullName → email → message → attribution。
+    const parsed = inquiryLeadSchema.safeParse({
+      ...validBase,
+      fullName: "",
+      email: "",
+      utmSource: 42,
+    });
+    expect(parsed.success).toBe(false);
+    if (parsed.success) return;
+
+    expect(
+      mapInquiryValidationDetails(parsed.error.issues, {
+        ...validBase,
+        fullName: "",
+        email: "",
+        utmSource: 42,
+      }),
+    ).toEqual([
+      "errors.fullName.required",
+      "errors.email.required",
+      "errors.generic",
+    ]);
+  });
+
+  it("suppresses .invalid when .required exists on the same field and keeps the remaining order", () => {
+    const issues = [
+      {
+        code: "custom",
+        path: ["email"],
+        message: "synthetic",
+        params: { reason: "required" },
+      },
+      {
+        code: "invalid_string",
+        path: ["email"],
+        message: "synthetic invalid",
+        validation: "regex",
+      },
+      {
+        code: "too_big",
+        path: ["fullName"],
+        maximum: 10,
+        type: "string",
+        inclusive: true,
+        message: "synthetic tooLong",
+      },
+    ] as unknown as Parameters<typeof mapInquiryValidationDetails>[0];
+
+    expect(mapInquiryValidationDetails(issues, validBase)).toEqual([
+      "errors.email.required",
+      "errors.fullName.tooLong",
+    ]);
+  });
+
+  it("collapses repeated unknown-field issues into a single errors.generic entry", () => {
+    const issues = [
+      {
+        code: "too_big",
+        path: ["utmSource"],
+        maximum: 255,
+        type: "string",
+        inclusive: true,
+        message: "synthetic",
+      },
+      {
+        code: "invalid_type",
+        path: ["utmSource"],
+        expected: "string",
+        message: "synthetic",
+      },
+    ] as unknown as Parameters<typeof mapInquiryValidationDetails>[0];
+
+    expect(mapInquiryValidationDetails(issues)).toEqual(["errors.generic"]);
+  });
+});
 
 describe("inquiry validation detail mapping", () => {
   it("accepts message when raw length exceeds max but normalization shrinks below max", () => {
@@ -218,57 +379,5 @@ describe("inquiry validation detail mapping", () => {
     expect(
       mapInquiryValidationDetails([structuredIssue], { email: undefined }),
     ).toEqual(mapInquiryValidationDetails([legacyIssue], { email: undefined }));
-  });
-});
-
-describe("shared zod validation detail mapping", () => {
-  it("only treats invalid_type as required when undefined was received", () => {
-    const requiredIssue = {
-      code: "invalid_type" as const,
-      path: ["company"],
-      message: "Different required copy",
-      expected: "string" as const,
-    };
-    const wrongTypeIssue = {
-      code: "invalid_type" as const,
-      path: ["company"],
-      message: "Different wrong-type copy",
-      expected: "string" as const,
-    };
-
-    expect(
-      mapZodIssuesToValidationDetails(
-        [requiredIssue],
-        {
-          company: "errors.company",
-        },
-        { company: undefined },
-      ),
-    ).toEqual(["errors.company.required"]);
-
-    expect(
-      mapZodIssuesToValidationDetails(
-        [wrongTypeIssue],
-        {
-          company: "errors.company",
-        },
-        { company: 123 },
-      ),
-    ).toEqual(["errors.company.invalid"]);
-  });
-
-  it("keeps unregistered fields on errors.generic without suffixes", () => {
-    expect(
-      mapZodIssuesToValidationDetails(
-        [
-          {
-            code: "too_big",
-            path: ["utmSource"],
-            message: "Too big",
-          } as never,
-        ],
-        {},
-      ),
-    ).toEqual(["errors.generic"]);
   });
 });

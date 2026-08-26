@@ -1,5 +1,5 @@
 import {
-  INQUIRY_FIELD_WIRE_DETAILS,
+  INQUIRY_FIELD_WIRE_DETAIL_LEAVES,
   type InquiryErrorField,
 } from "@/constants/inquiry-field-error-protocol";
 import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
@@ -13,12 +13,12 @@ const ERROR_CLASS = "text-xs leading-5 text-[var(--error-foreground)]";
 const REQUIRED_CLASS =
   "after:ml-0.5 after:text-destructive after:content-['*']";
 
-const FIELD_ERROR_CODES = INQUIRY_FIELD_WIRE_DETAILS;
+const FIELD_ERROR_LEAVES = INQUIRY_FIELD_WIRE_DETAIL_LEAVES;
 
 type VisibleField = InquiryErrorField;
 
-function resolveFieldError(
-  field: VisibleField,
+function resolveFieldError<Field extends VisibleField>(
+  field: Field,
   fieldDetails: readonly string[] | undefined,
   copy: InquiryFormCopy,
 ): string | null {
@@ -26,17 +26,37 @@ function resolveFieldError(
     return null;
   }
 
-  const codes = FIELD_ERROR_CODES[field];
-  const codeSet = new Set<string>(codes as readonly string[]);
-  const matchedCode = fieldDetails.find((detail) => codeSet.has(detail));
+  // 精确查找表替代字符串拆解与 copy 断言：leaf 与文案 key 全部由协议类型封口。
+  const leafByDetail = FIELD_ERROR_LEAVES[field];
 
-  if (!matchedCode) {
-    return null;
+  for (const detail of fieldDetails) {
+    const leaf = leafByDetail[detail];
+    if (leaf === undefined) {
+      continue;
+    }
+
+    // 按字段分发后两侧类型都收窄为具体字面量，无需任何断言；
+    // message 无 required 文案，该分支在 inquiryLeadSchema 下也不可达。
+    switch (field) {
+      case "fullName":
+        return copy.errors.fullName[leaf] ?? null;
+      case "email":
+        return copy.errors.email[leaf] ?? null;
+      case "message":
+        // message 无 required 文案；该分支在 inquiryLeadSchema 下也不可达。
+        if (leaf === "invalid") {
+          return copy.errors.message.invalid ?? null;
+        }
+        if (leaf === "tooLong") {
+          return copy.errors.message.tooLong ?? null;
+        }
+        break;
+      default:
+        break;
+    }
   }
 
-  const leaf = matchedCode.split(".").slice(2).join(".");
-  const fieldErrors = copy.errors[field] as Record<string, string>;
-  return fieldErrors[leaf] ?? null;
+  return null;
 }
 
 export function InquiryFormFields({
