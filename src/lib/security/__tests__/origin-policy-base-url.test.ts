@@ -32,7 +32,7 @@ describe("CORS base URL origin", () => {
     process.env.NEXT_PUBLIC_SITE_URL = "https://reference-site.example";
     vi.resetModules();
 
-    const { getAllowedCorsOrigins } = await import("../cors");
+    const { getAllowedCorsOrigins } = await import("../origin-policy");
 
     expect(getAllowedCorsOrigins()).toContain("https://reference-site.example");
   });
@@ -41,7 +41,7 @@ describe("CORS base URL origin", () => {
     process.env.NEXT_PUBLIC_BASE_URL = "https://base.example";
     vi.resetModules();
 
-    const { getAllowedCorsOrigins } = await import("../cors");
+    const { getAllowedCorsOrigins } = await import("../origin-policy");
 
     expect(getAllowedCorsOrigins()).toContain("https://base.example");
   });

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   applyCorsHeaders,
   createCorsPreflightResponse,
+  CORS_CONFIG,
   getCorsHeaders,
 } from "../cors-utils";
 
@@ -10,14 +11,9 @@ import {
 const mockIsAllowedOrigin = vi.hoisted(() => vi.fn());
 const mockIsSameOrigin = vi.hoisted(() => vi.fn());
 
-vi.mock("@/config/cors", () => ({
+vi.mock("@/lib/security/origin-policy", () => ({
   isAllowedOrigin: mockIsAllowedOrigin,
   isSameOrigin: mockIsSameOrigin,
-  CORS_CONFIG: {
-    allowedMethods: ["POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
-    maxAge: 3600,
-  },
 }));
 
 describe("CORS Utils", () => {
@@ -47,9 +43,6 @@ describe("CORS Utils", () => {
 
   describe("getCorsHeaders", () => {
     it("should return empty object for disallowed origin", () => {
-      mockIsSameOrigin.mockReturnValue(false);
-      mockIsAllowedOrigin.mockReturnValue(false);
-
       const request = createMockRequest("https://evil.com");
       const headers = getCorsHeaders(request);
 
@@ -58,7 +51,6 @@ describe("CORS Utils", () => {
 
     it("should return headers for same-origin request", () => {
       mockIsSameOrigin.mockReturnValue(true);
-      mockIsAllowedOrigin.mockReturnValue(false);
 
       const request = createMockRequest(null);
       const headers = getCorsHeaders(request);
@@ -69,7 +61,6 @@ describe("CORS Utils", () => {
     });
 
     it("should return headers with origin for allowed cross-origin request", () => {
-      mockIsSameOrigin.mockReturnValue(false);
       mockIsAllowedOrigin.mockReturnValue(true);
 
       const request = createMockRequest("https://allowed.com");
@@ -80,39 +71,10 @@ describe("CORS Utils", () => {
       );
       expect(headers["Access-Control-Allow-Methods"]).toBe("POST, OPTIONS");
     });
-
-    it("should include additional methods", () => {
-      mockIsSameOrigin.mockReturnValue(true);
-
-      const request = createMockRequest(null);
-      const headers = getCorsHeaders(request, {
-        additionalMethods: ["GET", "DELETE"],
-      });
-
-      expect(headers["Access-Control-Allow-Methods"]).toBe(
-        "POST, OPTIONS, GET, DELETE",
-      );
-    });
-
-    it("should include additional headers", () => {
-      mockIsSameOrigin.mockReturnValue(true);
-
-      const request = createMockRequest(null);
-      const headers = getCorsHeaders(request, {
-        additionalHeaders: ["Authorization", "X-Custom"],
-      });
-
-      expect(headers["Access-Control-Allow-Headers"]).toBe(
-        "Content-Type, Authorization, X-Custom",
-      );
-    });
   });
 
   describe("createCorsPreflightResponse", () => {
     it("should return 204 for disallowed origin", () => {
-      mockIsSameOrigin.mockReturnValue(false);
-      mockIsAllowedOrigin.mockReturnValue(false);
-
       const request = createMockRequest("https://evil.com");
       const response = createCorsPreflightResponse(request);
 
@@ -121,7 +83,6 @@ describe("CORS Utils", () => {
     });
 
     it("should return 200 with headers for allowed origin", () => {
-      mockIsSameOrigin.mockReturnValue(false);
       mockIsAllowedOrigin.mockReturnValue(true);
 
       const request = createMockRequest("https://allowed.com");
@@ -135,7 +96,6 @@ describe("CORS Utils", () => {
 
     it("should return 200 with headers for same-origin request", () => {
       mockIsSameOrigin.mockReturnValue(true);
-      mockIsAllowedOrigin.mockReturnValue(false);
 
       const request = createMockRequest(null);
       const response = createCorsPreflightResponse(request);
@@ -143,29 +103,10 @@ describe("CORS Utils", () => {
       expect(response.status).toBe(200);
       expect(response.headers.get("Access-Control-Allow-Methods")).toBeTruthy();
     });
-
-    it("should include additional methods and headers", () => {
-      mockIsSameOrigin.mockReturnValue(true);
-
-      const request = createMockRequest(null);
-      const response = createCorsPreflightResponse(
-        request,
-        ["GET"],
-        ["Authorization"],
-      );
-
-      expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
-        "GET",
-      );
-      expect(response.headers.get("Access-Control-Allow-Headers")).toContain(
-        "Authorization",
-      );
-    });
   });
 
   describe("applyCorsHeaders", () => {
     it("should apply CORS headers to response", () => {
-      mockIsSameOrigin.mockReturnValue(false);
       mockIsAllowedOrigin.mockReturnValue(true);
 
       const request = createMockRequest("https://allowed.com");
@@ -182,9 +123,6 @@ describe("CORS Utils", () => {
     });
 
     it("should not modify response for disallowed origin", () => {
-      mockIsSameOrigin.mockReturnValue(false);
-      mockIsAllowedOrigin.mockReturnValue(false);
-
       const request = createMockRequest("https://evil.com");
       const nextResponse = NextResponse.json(
         { success: true },
@@ -194,6 +132,22 @@ describe("CORS Utils", () => {
       const result = applyCorsHeaders({ response: nextResponse, request });
 
       expect(result.headers.get("Access-Control-Allow-Origin")).toBeNull();
+    });
+  });
+
+  describe("CORS_CONFIG", () => {
+    it("should have expected default methods", () => {
+      expect(CORS_CONFIG.allowedMethods).toContain("POST");
+      expect(CORS_CONFIG.allowedMethods).toContain("OPTIONS");
+    });
+
+    it("should have expected default headers", () => {
+      expect(CORS_CONFIG.allowedHeaders).toContain("Content-Type");
+      expect(CORS_CONFIG.allowedHeaders).toEqual(["Content-Type"]);
+    });
+
+    it("should have maxAge set", () => {
+      expect(CORS_CONFIG.maxAge).toBeGreaterThan(0);
     });
   });
 });

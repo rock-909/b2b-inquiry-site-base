@@ -1,15 +1,16 @@
 /**
- * CORS Configuration
+ * Origin / hostname allowlist policy.
  *
- * Provides an allowlist-based CORS configuration that aligns with
- * Turnstile hostname validation for consistent security policy.
+ * Dynamic origin policy for public write endpoints lives here, under the same
+ * ownership as Turnstile hostname validation, so the two allowlists can't drift.
  *
  * Configuration priority:
  * 1. CORS_ALLOWED_ORIGINS env variable (comma-separated)
- * 2. Falls back to Turnstile allowed hosts for consistency
+ * 2. Falls back to canonical site URL origin + Turnstile allowed hosts
  */
 
 import { getRuntimeEnvString } from "@/lib/env";
+import { parseCommaSeparatedValues } from "@/lib/security/parse-comma-separated";
 import { getAllowedTurnstileHosts } from "@/lib/security/turnstile-config";
 
 /**
@@ -17,13 +18,7 @@ import { getAllowedTurnstileHosts } from "@/lib/security/turnstile-config";
  * Returns empty array if not configured.
  */
 function parseCorsEnvOrigins(): string[] {
-  const origins = getRuntimeEnvString("CORS_ALLOWED_ORIGINS");
-  if (!origins) return [];
-
-  return origins.split(",").flatMap((origin) => {
-    const normalized = origin.trim().toLowerCase();
-    return normalized ? [normalized] : [];
-  });
+  return parseCommaSeparatedValues(getRuntimeEnvString("CORS_ALLOWED_ORIGINS"));
 }
 
 /**
@@ -132,17 +127,3 @@ export function isSameOrigin(
     return false;
   }
 }
-
-/**
- * CORS configuration for form API endpoints.
- */
-export const CORS_CONFIG = {
-  /** Allowed HTTP methods for form endpoints */
-  allowedMethods: ["POST", "OPTIONS"],
-
-  /** Allowed headers for form requests */
-  allowedHeaders: ["Content-Type"],
-
-  /** Preflight cache duration in seconds (1 hour) */
-  maxAge: 3600,
-} as const;
