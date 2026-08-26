@@ -48,7 +48,7 @@ export async function StaticContentPage({
   const locale = resolveLocaleParam(await params);
   setRequestLocale(locale);
 
-  const { metadata, content, headings } = await loadLegalPage(
+  const { metadata, blocks, headings } = await loadLegalPage(
     config.slug,
     locale,
   );
@@ -57,7 +57,7 @@ export async function StaticContentPage({
   return (
     <LegalPageShell
       metadata={metadata}
-      content={content}
+      blocks={blocks}
       headings={headings}
       locale={locale}
       schemaType={config.schemaType ?? "WebPage"}

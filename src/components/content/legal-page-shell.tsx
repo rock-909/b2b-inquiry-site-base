@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
-import { LegalContentRenderer } from "@/components/content/legal-content-renderer";
+import {
+  renderStaticMarkdownBlocks,
+} from "@/lib/content/render-static-markdown-content";
 import type { HeadingItem } from "@/lib/content/legal-page";
 import {
   buildBreadcrumbListSchema,
@@ -9,11 +11,13 @@ import {
   generateArticleData,
 } from "@/lib/structured-data-generators";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
+import type { StaticMarkdownBlock } from "@/lib/content/static-markdown-blocks";
 import type { LegalPageMetadata, Locale } from "@/types/content.types";
 
 interface LegalPageShellProps {
   metadata: LegalPageMetadata;
-  content: string;
+  /** 正文渲染与 TOC 共用的同一次解析结果。 */
+  blocks: readonly StaticMarkdownBlock[];
   headings: HeadingItem[];
   locale: Locale;
   schemaType: "WebPage" | "Article";
@@ -73,7 +77,7 @@ export function buildShellPageSchema(
 
 export async function LegalPageShell({
   metadata,
-  content,
+  blocks,
   headings,
   locale,
   schemaType,
@@ -147,7 +151,7 @@ export async function LegalPageShell({
           }
         >
           <article className="min-w-0">
-            <LegalContentRenderer content={content} />
+            {renderStaticMarkdownBlocks(blocks)}
             {schemaType === "Article" ? (
               <footer className="border-border mt-10 border-t pt-4">
                 <p className="text-muted-foreground text-sm leading-6">
