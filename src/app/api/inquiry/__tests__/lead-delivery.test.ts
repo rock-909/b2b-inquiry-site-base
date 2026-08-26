@@ -22,18 +22,22 @@ vi.mock("@/lib/logger", () => ({
   sanitizeEmail: (email: string | undefined | null) =>
     email ? "[REDACTED_EMAIL]" : "[NO_EMAIL]",
 }));
-vi.mock("@/lib/security/rate-limit-key-strategies", () => ({
-  getIPKey: routeMocks.getIPKey,
-}));
-vi.mock("@/lib/security/distributed-rate-limit", () => ({
-  checkInquiryRateLimit: routeMocks.checkInquiryRateLimit,
-}));
-vi.mock("@/lib/lead-pipeline/process-lead", () => ({
-  processValidatedInquiry: routeMocks.processValidatedInquiry,
-}));
-vi.mock("@/lib/security/turnstile", () => ({
-  verifyTurnstileDetailed: routeMocks.verifyTurnstileDetailed,
-}));
+vi.mock("@/lib/security/rate-limit-key-strategies", async () => {
+  const { routeMocks } = await import("./route-harness");
+  return { getIPKey: routeMocks.getIPKey };
+});
+vi.mock("@/lib/security/distributed-rate-limit", async () => {
+  const { routeMocks } = await import("./route-harness");
+  return { checkInquiryRateLimit: routeMocks.checkInquiryRateLimit };
+});
+vi.mock("@/lib/lead-pipeline/process-lead", async () => {
+  const { routeMocks } = await import("./route-harness");
+  return { processValidatedInquiry: routeMocks.processValidatedInquiry };
+});
+vi.mock("@/lib/security/turnstile", async () => {
+  const { routeMocks } = await import("./route-harness");
+  return { verifyTurnstileDetailed: routeMocks.verifyTurnstileDetailed };
+});
 vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 describe("/api/inquiry lead delivery", () => {

@@ -10,22 +10,28 @@
 
 import { NextRequest } from "next/server";
 import { vi } from "vitest";
+import type { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
+import type { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
+import type { verifyTurnstileDetailed } from "@/lib/security/turnstile";
+import type { getIPKey } from "@/lib/security/rate-limit-key-strategies";
 
 export const routeMocks = {
-  getIPKey: vi.fn(async () => "ip:test-key"),
-  checkInquiryRateLimit: vi.fn(async () => ({
+  getIPKey: vi.fn<typeof getIPKey>(async () => "ip:test-key"),
+  checkInquiryRateLimit: vi.fn<typeof checkInquiryRateLimit>(async () => ({
     allowed: true,
     remaining: 5,
     resetTime: Date.now() + 60_000,
     retryAfter: null,
   })),
-  processValidatedInquiry: vi.fn(async () => ({
+  processValidatedInquiry: vi.fn<typeof processValidatedInquiry>(async () => ({
     success: true,
     emailSent: true,
     recordCreated: true,
     referenceId: "ref-123",
   })),
-  verifyTurnstileDetailed: vi.fn(async () => ({ success: true })),
+  verifyTurnstileDetailed: vi.fn<typeof verifyTurnstileDetailed>(async () => ({
+    success: true,
+  })),
 };
 
 export function createInquiryRequest(
