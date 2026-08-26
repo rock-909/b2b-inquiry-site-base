@@ -95,6 +95,7 @@ function parseSmokeArgs(args, optionSpecs, initial) {
     if (arg === "--") continue;
 
     const spec = optionSpecs[arg];
+    // 与原实现一致：未知参数与"缺值"场景共用同一错误合同。
     if (!spec) {
       throw new Error(`Unknown argument: ${arg}`);
     }
@@ -104,12 +105,11 @@ function parseSmokeArgs(args, optionSpecs, initial) {
       continue;
     }
 
-    if (i + 1 < args.length) {
-      parsed[spec.key] = args[++i];
-      continue;
+    if (i + 1 >= args.length) {
+      throw new Error(`Unknown argument: ${arg}`);
     }
 
-    throw new Error(`Missing value for ${arg}`);
+    parsed[spec.key] = args[++i];
   }
 
   return parsed;
@@ -269,9 +269,15 @@ async function probePathname(
       return collectProbeFields(pathname, response, body, retries);
     } catch (error) {
       lastError = error;
-      // 可重试且还有重试预算才继续；否则把原始错误直接抛给调用方
-      // （如 preview lane 的超时中断必须原样冒泡）。
+      // 不可重试的错误原样冒泡；无重试预算的 lane 同样立即冒泡。
       if (!isRetriableFetchError(error) || attempt >= retries) {
+        if (retries > 0) {
+          // deployed lane 的既有错误合同：包装为统一的 retry-loop 失败。
+          throw new Error(
+            "post-deploy-smoke retry loop exited without a response",
+            { cause: lastError },
+          );
+        }
         throw error;
       }
 
@@ -697,7 +703,26 @@ async function runCloudflarePreviewDeployedProof() {
   }
 
   // Proof adapter 直接调用统一的 deployed 冒烟实现（不再以子进程重启本脚本）。
-  const smokePassed = await runDeployedSmoke(["--base-url", baseUrl]);
+  // 与旧子进程方案一致：smoke 抛出的 transport 异常也必须转换为失败 proof。
+  let smokePassed;
+  try {
+    smokePassed = await runDeployedSmoke(["--base-url", baseUrl]);
+  } catch (error) {
+    printCloudflarePreviewProofOutput("smoke", { status: 1 });
+    const result = {
+      status: "fail",
+      stage: "smoke",
+      generatedAt: new Date().toISOString(),
+      baseUrl,
+      discoveredUrls: urls,
+      deployCommand,
+      smokeCommand: `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url ${baseUrl}`,
+      reason: String(error),
+    };
+    writeCloudflarePreviewProofResult(result);
+    console.log(JSON.stringify(result, null, 2));
+    return 1;
+  }
   const smokeExitCode = smokePassed ? 0 : 1;
   printCloudflarePreviewProofOutput("smoke", { status: smokeExitCode });
 
