@@ -370,7 +370,7 @@ describe("Cloudflare config source contract", () => {
   });
 
   describe("open-next wiring harness", () => {
-    function writeWiredConfig(rootDir, body) {
+    function writeWiredConfig(rootDir: string, body: readonly string[]) {
       writePassingSideFiles(rootDir);
       writeFixtureFile(rootDir, "open-next.config.ts", body.join("\n"));
       writePassingWranglerConfig(rootDir);
@@ -483,6 +483,32 @@ describe("Cloudflare config source contract", () => {
         "export default config;",
         "",
       ]);
+
+      const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
+
+      expect(failures).toEqual([
+        expect.objectContaining({
+          file: "open-next.config.ts",
+          missing: expect.arrayContaining([
+            "incrementalCache: r2IncrementalCache",
+          ]),
+        }),
+      ]);
+    });
+
+    it("rejects a non-object defineCloudflareConfig argument", () => {
+      const rootDir = createFixture();
+      writePassingSideFiles(rootDir);
+      writePassingWranglerConfig(rootDir);
+      writeFixtureFile(
+        rootDir,
+        "open-next.config.ts",
+        [
+          'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
+          "export default defineCloudflareConfig(null);",
+          "",
+        ].join("\n"),
+      );
 
       const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
 

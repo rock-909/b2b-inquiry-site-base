@@ -55,17 +55,25 @@ try {
     }
     requireCoreLabel();
   } else {
-    const config = calls[0];
-    const keys = Object.keys(config);
-    if (
-      keys.length !== 1 ||
-      keys[0] !== "incrementalCache" ||
-      config.incrementalCache !== r2Sentinel
-    ) {
+    // 防御性检查：非对象调用参数（如 null）无法证明任何 wiring。
+    if (!calls[0] || typeof calls[0] !== "object") {
       missing.push(
         "defineCloudflareConfig must receive exactly { incrementalCache: <the R2 sentinel> }",
       );
       requireCoreLabel();
+    } else {
+      const config = calls[0];
+      const keys = Object.keys(config);
+      if (
+        keys.length !== 1 ||
+        keys[0] !== "incrementalCache" ||
+        config.incrementalCache !== r2Sentinel
+      ) {
+        missing.push(
+          "defineCloudflareConfig must receive exactly { incrementalCache: <the R2 sentinel> }",
+        );
+        requireCoreLabel();
+      }
     }
   }
 
@@ -94,9 +102,11 @@ try {
 
   emit({ ok: missing.length === 0, missing, forbidden: [] });
 } catch (error) {
+  // harness 内部任何异常都意味着 wiring 未被证明——同样携带核心标签。
   emit({
     ok: false,
     missing: [
+      MISSING_LABEL,
       `open-next.config.ts failed to load under the open-next module harness: ${String(error)}`,
     ],
     forbidden: [],
