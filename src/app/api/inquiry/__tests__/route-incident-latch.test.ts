@@ -50,11 +50,6 @@ vi.mock("@/lib/security/turnstile", () => ({
 
 vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
-vi.mock("@/lib/api/cors-utils", () => ({
-  applyCorsHeaders: vi.fn(({ response }: { response: unknown }) => response),
-  createCorsPreflightResponse: vi.fn(() => new Response(null, { status: 204 })),
-}));
-
 describe("inquiry incident latch triggers", () => {
   function createInquiryRequest(
     body: BodyInit | null,
