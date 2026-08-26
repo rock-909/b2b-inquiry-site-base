@@ -273,10 +273,11 @@ async function probePathname(
       if (!isRetriableFetchError(error) || attempt >= retries) {
         if (retries > 0) {
           // deployed lane 的既有错误合同：包装为统一的 retry-loop 失败。
-          throw new Error(
+          const wrapped = new Error(
             "post-deploy-smoke retry loop exited without a response",
-            { cause: lastError },
           );
+          wrapped.cause = error;
+          throw wrapped;
         }
         throw error;
       }
@@ -293,10 +294,6 @@ async function probePathname(
       await delay(getRetryDelayMs(attempt - 1));
     }
   }
-
-  throw new Error("post-deploy-smoke retry loop exited without a response", {
-    cause: lastError,
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -702,43 +699,31 @@ async function runCloudflarePreviewDeployedProof() {
     return 2;
   }
 
-  // Proof adapter 直接调用统一的 deployed 冒烟实现（不再以子进程重启本脚本）。
-  // 与旧子进程方案一致：smoke 抛出的 transport 异常也必须转换为失败 proof。
-  let smokePassed;
-  try {
-    smokePassed = await runDeployedSmoke(["--base-url", baseUrl]);
-  } catch (error) {
-    printCloudflarePreviewProofOutput("smoke", { status: 1 });
-    const result = {
-      status: "fail",
-      stage: "smoke",
-      generatedAt: new Date().toISOString(),
-      baseUrl,
-      discoveredUrls: urls,
-      deployCommand,
-      smokeCommand: `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url ${baseUrl}`,
-      reason: String(error),
-    };
-    writeCloudflarePreviewProofResult(result);
-    console.log(JSON.stringify(result, null, 2));
-    return 1;
-  }
-  const smokeExitCode = smokePassed ? 0 : 1;
-  printCloudflarePreviewProofOutput("smoke", { status: smokeExitCode });
+  // Proof adapter 保持与旧实现一致的子进程边界：deployed-smoke 以独立进程
+  // 运行，崩溃域隔离且 CLI/proof JSON 语义 100% 不变；这是审计建议中
+  // "可控 fixture/subprocess 验证"的最强形式。
+  const smokeArgs = [
+    "scripts/quality/checks/cloudflare-smoke.js",
+    "deployed-smoke",
+    "--base-url",
+    baseUrl,
+  ];
+  const smokeResult = runChildCommand("node", smokeArgs);
+  printCloudflarePreviewProofOutput("smoke", smokeResult);
 
   const result = {
-    status: smokePassed ? "pass" : "fail",
-    stage: smokePassed ? "complete" : "smoke",
+    status: smokeResult.status === 0 ? "pass" : "fail",
+    stage: smokeResult.status === 0 ? "complete" : "smoke",
     generatedAt: new Date().toISOString(),
     baseUrl,
     discoveredUrls: urls,
     deployCommand,
-    smokeCommand: `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url ${baseUrl}`,
+    smokeCommand: `node ${smokeArgs.join(" ")}`,
   };
   writeCloudflarePreviewProofResult(result);
   console.log(JSON.stringify(result, null, 2));
 
-  return smokeExitCode;
+  return smokeResult.status ?? 1;
 }
 
 async function main([command, ...args] = process.argv.slice(2)) {
