@@ -107,9 +107,12 @@ describe("single-parse contract", () => {
 
     const page = loadLegalPage("privacy", "en");
 
-    // loader 只做一次解析；TOC 与正文消费同一份块序列（identity 传递）。
+    // loader 只做一次解析；TOC 与正文消费同一份块序列（identity 级传递）。
     expect(parseMock).toHaveBeenCalledTimes(1);
-    expect(page.blocks).toEqual(SENTINEL_BLOCKS);
+    expect(page.blocks).toBe(SENTINEL_BLOCKS);
+    expect(page.headings).toEqual([
+      { level: 2, text: "Sentinel Scope", id: "scope" },
+    ]);
   });
 });
 
