@@ -57,7 +57,6 @@
       },
       {
         "files": [
-          "src/app/api/inquiry/__tests__/route.test.ts",
           "src/lib/__tests__/structured-data.test.ts",
           "src/lib/api/safe-parse-json.ts",
           "src/lib/security/__tests__/distributed-rate-limit.test.ts",
@@ -169,7 +168,6 @@
       {
         "files": [
           "src/app/[locale]/contact/__tests__/page.test.tsx",
-          "src/app/api/inquiry/__tests__/route.test.ts",
           "src/lib/__tests__/load-messages-runtime.test.ts",
           "src/components/forms/__tests__/inquiry-form.test.tsx",
           "src/lib/__tests__/load-messages.fallback.test.ts",
