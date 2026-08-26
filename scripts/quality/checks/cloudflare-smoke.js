@@ -74,36 +74,65 @@ const CF_PREVIEW_URL_PATTERN = new RegExp(
 );
 const CF_PREVIEW_DEPLOY_URL_PATTERN = CF_PREVIEW_URL_PATTERN;
 
-function parseCloudflarePreviewSmokeArgs(args) {
-  const parsed = {
-    baseUrl: DEFAULT_CF_PREVIEW_BASE_URL,
-    includeApiHealth: false,
-    rounds: 1,
-  };
+// ---------------------------------------------------------------------------
+// 统一的表驱动参数解析：mode 只声明自己的选项表，解析循环只有一份。
+// ---------------------------------------------------------------------------
+
+function valueOption(key) {
+  return { key, takesValue: true };
+}
+
+function flagOption(key) {
+  return { key };
+}
+
+function parseSmokeArgs(args, optionSpecs, initial) {
+  const parsed = { ...initial };
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
 
     if (arg === "--") continue;
 
-    if (arg === "--base-url" && i + 1 < args.length) {
-      parsed.baseUrl = args[++i];
+    const spec = optionSpecs[arg];
+    if (!spec) {
+      throw new Error(`Unknown argument: ${arg}`);
+    }
+
+    if (!spec.takesValue) {
+      parsed[spec.key] = true;
       continue;
     }
 
-    if (arg === "--include-api-health") {
-      parsed.includeApiHealth = true;
+    if (i + 1 < args.length) {
+      parsed[spec.key] = args[++i];
       continue;
     }
 
-    if (arg === "--rounds" && i + 1 < args.length) {
-      parsed.rounds = Number(args[++i]);
-      continue;
-    }
-
-    throw new Error(`Unknown argument: ${arg}`);
+    throw new Error(`Missing value for ${arg}`);
   }
 
+  return parsed;
+}
+
+const COMMON_BASE_URL_OPTION = "--base-url";
+
+function parseCloudflarePreviewSmokeArgs(args) {
+  const parsed = parseSmokeArgs(
+    args,
+    {
+      [COMMON_BASE_URL_OPTION]: valueOption("baseUrl"),
+      "--include-api-health": flagOption("includeApiHealth"),
+      "--rounds": valueOption("rounds"),
+    },
+    {
+      baseUrl: DEFAULT_CF_PREVIEW_BASE_URL,
+      includeApiHealth: false,
+      rounds: 1,
+    },
+  );
+
+  parsed.rounds = Number(parsed.rounds);
   if (!Number.isInteger(parsed.rounds) || parsed.rounds < 1) {
     throw new Error("--rounds must be a positive integer");
   }
@@ -111,27 +140,82 @@ function parseCloudflarePreviewSmokeArgs(args) {
   return parsed;
 }
 
-async function requestCloudflarePreviewSmoke(
-  baseUrl,
-  pathname,
-  headers = {},
-  redirect = "manual",
-) {
-  const url = new URL(pathname, baseUrl);
-  const response = await fetch(url, {
-    redirect,
-    headers: {
-      "user-agent": "cloudflare-preview-smoke",
-      ...headers,
-    },
-    signal: AbortSignal.timeout(DEPLOY_SMOKE_REQUEST_TIMEOUT_MS),
-  });
+function parseExternalUrlSmokeArgs(args) {
+  const parsed = parseSmokeArgs(
+    args,
+    { [COMMON_BASE_URL_OPTION]: valueOption("baseUrl") },
+    { baseUrl: DEFAULT_EXTERNAL_URL_SMOKE_BASE_URL },
+  );
 
+  if (!parsed.baseUrl) {
+    throw new Error("Missing required --base-url");
+  }
+
+  return parsed;
+}
+
+function parseDeployedSmokeArgs(args) {
+  const parsed = parseSmokeArgs(
+    args,
+    {
+      [COMMON_BASE_URL_OPTION]: valueOption("baseUrl"),
+      "--header-name": valueOption("headerName"),
+      "--header-value": valueOption("headerValue"),
+    },
+    {
+      baseUrl: DEFAULT_DEPLOY_SMOKE_BASE_URL,
+      headerName: process.env.DEPLOY_SMOKE_HEADER_NAME || "",
+      headerValue: process.env.DEPLOY_SMOKE_HEADER_VALUE || "",
+    },
+  );
+
+  if (!parsed.baseUrl) {
+    throw new Error("Missing required --base-url");
+  }
+
+  if (Boolean(parsed.headerName) !== Boolean(parsed.headerValue)) {
+    throw new Error(
+      "Both --header-name and --header-value must be provided together",
+    );
+  }
+
+  return parsed;
+}
+
+// ---------------------------------------------------------------------------
+// 统一的探针：一份请求/采集实现，重试策略与附加 header 由调用方给出。
+// ---------------------------------------------------------------------------
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function getRetryDelayMs(attempt) {
+  return DEPLOY_SMOKE_RETRY_DELAY_MS * 2 ** attempt;
+}
+
+function isRetriableFetchError(error) {
+  if (error instanceof DOMException && error.name === "TimeoutError") {
+    return true;
+  }
+
+  return (
+    error instanceof Error &&
+    "cause" in error &&
+    typeof error.cause === "object" &&
+    error.cause !== null &&
+    "code" in error.cause &&
+    error.cause.code === "UND_ERR_CONNECT_TIMEOUT"
+  );
+}
+
+function collectProbeFields(pathname, response, body, retries) {
   return {
     pathname,
     status: response.status,
     location: response.headers.get("location"),
-    setCookie: response.headers.get("set-cookie"),
     leakedMiddlewareCookie: response.headers.get("x-middleware-set-cookie"),
     robotsTag: response.headers.get("x-robots-tag"),
     contentType: response.headers.get("content-type"),
@@ -139,15 +223,79 @@ async function requestCloudflarePreviewSmoke(
     nosniff: response.headers.get("x-content-type-options"),
     referrerPolicy: response.headers.get("referrer-policy"),
     csp: response.headers.get("content-security-policy"),
-    nextCache: response.headers.get("x-nextjs-cache"),
-    nextPostponed: response.headers.get("x-nextjs-postponed"),
-    body: await response.text(),
+    body,
+    ...(retries !== undefined ? { retries } : {}),
   };
 }
 
-async function requestSmokeRound(expectations, request) {
-  return Promise.all(expectations.map(({ pathname }) => request(pathname)));
+/**
+ * 单条路由探测。所有 smoke lane 共用这一份 fetch/text/超时/重试实现；
+ * 无重试需求的 lane 传 retries=0（默认），行为与旧版完全一致。
+ */
+async function probePathname(
+  baseUrl,
+  pathname,
+  { userAgent, extraHeaders = {}, retries = 0, logTag, retryEvents = [] } = {},
+) {
+  const url = new URL(pathname, baseUrl);
+  const headers = { "user-agent": userAgent, ...extraHeaders };
+
+  let attempt = 0;
+  let lastError;
+
+  while (attempt <= retries) {
+    try {
+      const response = await fetch(url, {
+        redirect: "manual",
+        headers,
+        signal: AbortSignal.timeout(DEPLOY_SMOKE_REQUEST_TIMEOUT_MS),
+      });
+      const body = await response.text();
+
+      if (response.status >= 500 && attempt < retries) {
+        attempt += 1;
+        retryEvents.push({
+          pathname,
+          reason: `status ${response.status}`,
+          nextAttempt: attempt + 1,
+        });
+        console.warn(
+          `[${logTag}] ${pathname} returned ${response.status}; retrying attempt ${attempt + 1}/${retries + 1}`,
+        );
+        await delay(getRetryDelayMs(attempt - 1));
+        continue;
+      }
+
+      return collectProbeFields(pathname, response, body, retries);
+    } catch (error) {
+      lastError = error;
+      // 可重试且还有重试预算才继续；否则把原始错误直接抛给调用方
+      // （如 preview lane 的超时中断必须原样冒泡）。
+      if (!isRetriableFetchError(error) || attempt >= retries) {
+        throw error;
+      }
+
+      attempt += 1;
+      retryEvents.push({
+        pathname,
+        reason: error instanceof Error ? error.message : String(error),
+        nextAttempt: attempt + 1,
+      });
+      console.warn(
+        `[${logTag}] ${pathname} request failed; retrying attempt ${attempt + 1}/${retries + 1}`,
+      );
+      await delay(getRetryDelayMs(attempt - 1));
+    }
+  }
+
+  throw new Error("post-deploy-smoke retry loop exited without a response", {
+    cause: lastError,
+  });
 }
+
+// ---------------------------------------------------------------------------
+// 统一的评估器：按 lane 能力开关逐项核对，失败消息与旧实现逐字一致。
+// ---------------------------------------------------------------------------
 
 function pushFailureUnless(condition, message, failures) {
   if (!condition && !failures.includes(message)) failures.push(message);
@@ -157,34 +305,6 @@ function pushExpectedStatus(response, expectedStatus, failures) {
   pushFailureUnless(
     response.status === expectedStatus,
     `Expected ${response.pathname} to return ${expectedStatus}, got ${response.status}`,
-    failures,
-  );
-}
-
-function pushHealthyHtmlResponse(response, failures) {
-  pushFailureUnless(
-    response.contentType?.startsWith("text/html"),
-    `Expected ${response.pathname} to return HTML, got ${response.contentType ?? "no content-type"}`,
-    failures,
-  );
-  pushFailureUnless(
-    response.body.length >= MIN_HTML_BODY_LENGTH,
-    `Expected ${response.pathname} HTML body to be at least ${MIN_HTML_BODY_LENGTH} bytes, got ${response.body.length}`,
-    failures,
-  );
-  pushFailureUnless(
-    /<\/html>\s*$/iu.test(response.body),
-    `Expected ${response.pathname} to return a complete HTML document`,
-    failures,
-  );
-  pushFailureUnless(
-    !response.body.includes("Unexpected loadManifest"),
-    `Unexpected manifest loader failure surfaced on ${response.pathname}`,
-    failures,
-  );
-  pushFailureUnless(
-    !response.body.includes("Application error"),
-    `Unexpected application error surfaced on ${response.pathname}`,
     failures,
   );
 }
@@ -217,136 +337,175 @@ function pushSecurityHeaderChecks(response, failures) {
   );
 }
 
-function parseExternalUrlSmokeArgs(args) {
-  const parsed = {
-    baseUrl: DEFAULT_EXTERNAL_URL_SMOKE_BASE_URL,
-  };
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
-    if (arg === "--") continue;
-
-    if (arg === "--base-url" && i + 1 < args.length) {
-      parsed.baseUrl = args[++i];
-      continue;
-    }
-
-    throw new Error(`Unknown argument: ${arg}`);
-  }
-
-  if (!parsed.baseUrl) {
-    throw new Error("Missing required --base-url");
-  }
-
-  return parsed;
+function pushHealthyHtmlResponse(response, failures) {
+  pushFailureUnless(
+    response.contentType?.startsWith("text/html"),
+    `Expected ${response.pathname} to return HTML, got ${response.contentType ?? "no content-type"}`,
+    failures,
+  );
+  pushFailureUnless(
+    response.body.length >= MIN_HTML_BODY_LENGTH,
+    `Expected ${response.pathname} HTML body to be at least ${MIN_HTML_BODY_LENGTH} bytes, got ${response.body.length}`,
+    failures,
+  );
+  pushFailureUnless(
+    /<\/html>\s*$/iu.test(response.body),
+    `Expected ${response.pathname} to return a complete HTML document`,
+    failures,
+  );
+  pushFailureUnless(
+    !response.body.includes("Unexpected loadManifest"),
+    `Unexpected manifest loader failure surfaced on ${response.pathname}`,
+    failures,
+  );
+  pushFailureUnless(
+    !response.body.includes("Application error"),
+    `Unexpected application error surfaced on ${response.pathname}`,
+    failures,
+  );
 }
 
-async function requestExternalUrlSmoke(baseUrl, pathname) {
-  const url = new URL(pathname, baseUrl);
-  const response = await fetch(url, {
-    redirect: "manual",
-    headers: {
-      "user-agent": "external-url-smoke",
-    },
-    signal: AbortSignal.timeout(DEPLOY_SMOKE_REQUEST_TIMEOUT_MS),
-  });
-
-  return {
-    pathname,
-    status: response.status,
-    body: await response.text(),
-  };
+function pushBodyErrorChecks(response, failures) {
+  pushFailureUnless(
+    !response.body.includes("Unexpected loadManifest"),
+    `Unexpected manifest loader failure surfaced on ${response.pathname}`,
+    failures,
+  );
+  pushFailureUnless(
+    !response.body.includes("Application error"),
+    `Unexpected application error surfaced on ${response.pathname}`,
+    failures,
+  );
 }
+
+function pushRobotsTagCheck(response, expectation, failures) {
+  if (!expectation.robotsTag) return;
+  pushFailureUnless(
+    (response.robotsTag ?? "").includes(expectation.robotsTag),
+    `Expected ${response.pathname} to carry X-Robots-Tag: ${expectation.robotsTag}, got ${response.robotsTag ?? "none"}`,
+    failures,
+  );
+}
+
+function pushLeakedMiddlewareCookieCheck(response, failures) {
+  pushFailureUnless(
+    response.leakedMiddlewareCookie === null,
+    `Unexpected x-middleware-set-cookie leak on ${response.pathname}`,
+    failures,
+  );
+}
+
+/**
+ * 按 lane 能力开关评估单条探针结果。html=true 时隐含 body 错误检查，
+ * 与旧实现的检查集合完全一致；bodyErrors 显式开启供 external lane 使用。
+ */
+function evaluateProbe(
+  response,
+  expectation,
+  {
+    htmlChecks = false,
+    leakedCookieCheck = false,
+    bodyErrorChecks = false,
+  } = {},
+  failures = [],
+) {
+  pushExpectedStatus(response, expectation.status, failures);
+  pushRobotsTagCheck(response, expectation, failures);
+
+  if (expectation.html && htmlChecks) {
+    pushHealthyHtmlResponse(response, failures);
+    pushSecurityHeaderChecks(response, failures);
+  }
+
+  if (leakedCookieCheck) {
+    pushLeakedMiddlewareCookieCheck(response, failures);
+  }
+
+  if (bodyErrorChecks) {
+    pushBodyErrorChecks(response, failures);
+  }
+
+  return failures;
+}
+
+/** 并发探测一轮 expectation 列表。 */
+async function probeRound(expectations, probe) {
+  return Promise.all(expectations.map(({ pathname }) => probe(pathname)));
+}
+
+function printFailures(logTag, failures) {
+  console.error(`[${logTag}] Failures detected:`);
+  for (const failure of failures) {
+    console.error(`  - ${failure}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Lane runners：薄壳，只负责自己的日志、特殊流程与 plan 组装。
+// ---------------------------------------------------------------------------
+
+const EXTERNAL_URL_SMOKE_LOG_TAG = "external-url-smoke";
+const CF_PREVIEW_SMOKE_LOG_TAG = "cf-preview-smoke";
+const POST_DEPLOY_SMOKE_LOG_TAG = "post-deploy-smoke";
 
 async function runExternalUrlSmoke(args = []) {
   const { baseUrl } = parseExternalUrlSmokeArgs(args);
-  const failures = [];
 
-  console.log(`[external-url-smoke] Probing external URL surface ${baseUrl}`);
   console.log(
-    "[external-url-smoke] Policy: this checks the supplied URL only; it does not prove the current SHA, artifact, or deploy.",
+    `[${EXTERNAL_URL_SMOKE_LOG_TAG}] Probing external URL surface ${baseUrl}`,
+  );
+  console.log(
+    `[${EXTERNAL_URL_SMOKE_LOG_TAG}] Policy: this checks the supplied URL only; it does not prove the current SHA, artifact, or deploy.`,
   );
 
-  const responses = [];
-  for (const { pathname } of EXTERNAL_URL_SMOKE_EXPECTATIONS) {
-    responses.push(await requestExternalUrlSmoke(baseUrl, pathname));
-  }
-
-  for (const [index, response] of responses.entries()) {
-    pushExpectedStatus(
-      response,
-      EXTERNAL_URL_SMOKE_EXPECTATIONS[index].status,
-      failures,
-    );
-    pushFailureUnless(
-      !response.body.includes("Unexpected loadManifest"),
-      `Unexpected manifest loader failure surfaced on ${response.pathname}`,
-      failures,
-    );
-    pushFailureUnless(
-      !response.body.includes("Application error"),
-      `Unexpected application error surfaced on ${response.pathname}`,
-      failures,
-    );
+  const failures = [];
+  for (const expectation of EXTERNAL_URL_SMOKE_EXPECTATIONS) {
+    const response = await probePathname(baseUrl, expectation.pathname, {
+      userAgent: EXTERNAL_URL_SMOKE_LOG_TAG,
+    });
+    evaluateProbe(response, expectation, { bodyErrorChecks: true }, failures);
   }
 
   if (failures.length > 0) {
-    console.error("[external-url-smoke] Failures detected:");
-    for (const failure of failures) {
-      console.error(`  - ${failure}`);
-    }
+    printFailures(EXTERNAL_URL_SMOKE_LOG_TAG, failures);
     return false;
   }
 
-  console.log("[external-url-smoke] All checks passed");
+  console.log(`[${EXTERNAL_URL_SMOKE_LOG_TAG}] All checks passed`);
   return true;
 }
 
 async function runCloudflarePreviewSmoke(args = []) {
   const { baseUrl, includeApiHealth, rounds } =
     parseCloudflarePreviewSmokeArgs(args);
-  const failures = [];
   const expectations = [
     ...CF_PREVIEW_SMOKE_EXPECTATIONS,
     ...(includeApiHealth ? [{ pathname: "/api/health", status: 200 }] : []),
   ];
 
   console.log(
-    `[cf-preview-smoke] Probing ${baseUrl} (${includeApiHealth ? "strict" : "page"} mode)`,
+    `[${CF_PREVIEW_SMOKE_LOG_TAG}] Probing ${baseUrl} (${includeApiHealth ? "strict" : "page"} mode)`,
   );
 
+  const failures = [];
   const responses = [];
   for (let round = 0; round < rounds; round++) {
     responses.push(
-      ...(await requestSmokeRound(expectations, (pathname) =>
-        requestCloudflarePreviewSmoke(baseUrl, pathname),
+      ...(await probeRound(expectations, (pathname) =>
+        probePathname(baseUrl, pathname, {
+          userAgent: CF_PREVIEW_SMOKE_LOG_TAG,
+        }),
       )),
     );
   }
 
-  for (const response of [...responses]) {
-    pushFailureUnless(
-      response.leakedMiddlewareCookie === null,
-      `Unexpected x-middleware-set-cookie leak on ${response.pathname}`,
-      failures,
-    );
+  // 与旧实现一致：middleware cookie 泄漏先于其余检查整体输出。
+  for (const response of responses) {
+    pushLeakedMiddlewareCookieCheck(response, failures);
   }
-
   for (const [index, response] of responses.entries()) {
     const expectation = expectations[index % expectations.length];
-    pushExpectedStatus(response, expectation.status, failures);
-    if (expectation.robotsTag) {
-      pushFailureUnless(
-        (response.robotsTag ?? "").includes(expectation.robotsTag),
-        `Expected ${response.pathname} to carry X-Robots-Tag: ${expectation.robotsTag}, got ${response.robotsTag ?? "none"}`,
-        failures,
-      );
-    }
-    if (expectation.html) {
-      pushHealthyHtmlResponse(response, failures);
-      pushSecurityHeaderChecks(response, failures);
-    }
+    evaluateProbe(response, expectation, { htmlChecks: true }, failures);
   }
 
   if (!includeApiHealth) {
@@ -359,73 +518,17 @@ async function runCloudflarePreviewSmoke(args = []) {
   }
 
   if (failures.length > 0) {
-    console.error("[cf-preview-smoke] Failures detected:");
-    for (const failure of failures) {
-      console.error(`  - ${failure}`);
-    }
+    printFailures(CF_PREVIEW_SMOKE_LOG_TAG, failures);
     return false;
   }
 
-  console.log("[cf-preview-smoke] All checks passed");
+  console.log(`[${CF_PREVIEW_SMOKE_LOG_TAG}] All checks passed`);
   return true;
-}
-
-function delay(ms) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-function getDeploySmokeRetryDelayMs(attempt) {
-  return DEPLOY_SMOKE_RETRY_DELAY_MS * 2 ** attempt;
-}
-
-function parseDeployedSmokeArgs(args) {
-  const parsed = {
-    baseUrl: DEFAULT_DEPLOY_SMOKE_BASE_URL,
-    headerName: process.env.DEPLOY_SMOKE_HEADER_NAME || "",
-    headerValue: process.env.DEPLOY_SMOKE_HEADER_VALUE || "",
-  };
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
-
-    if (arg === "--") continue;
-
-    if (arg === "--base-url" && i + 1 < args.length) {
-      parsed.baseUrl = args[++i];
-      continue;
-    }
-
-    if (arg === "--header-name" && i + 1 < args.length) {
-      parsed.headerName = args[++i];
-      continue;
-    }
-
-    if (arg === "--header-value" && i + 1 < args.length) {
-      parsed.headerValue = args[++i];
-      continue;
-    }
-
-    throw new Error(`Unknown argument: ${arg}`);
-  }
-
-  if (!parsed.baseUrl) {
-    throw new Error("Missing required --base-url");
-  }
-
-  if (Boolean(parsed.headerName) !== Boolean(parsed.headerValue)) {
-    throw new Error(
-      "Both --header-name and --header-value must be provided together",
-    );
-  }
-
-  return parsed;
 }
 
 function buildDeployedSmokeHeaders(headerName, headerValue) {
   const headers = {
-    "user-agent": "post-deploy-smoke",
+    "user-agent": POST_DEPLOY_SMOKE_LOG_TAG,
   };
 
   if (headerName && headerValue) {
@@ -435,134 +538,43 @@ function buildDeployedSmokeHeaders(headerName, headerValue) {
   return headers;
 }
 
-function isRetriableFetchError(error) {
-  if (error instanceof DOMException && error.name === "TimeoutError") {
-    return true;
-  }
-
-  return (
-    error instanceof Error &&
-    "cause" in error &&
-    typeof error.cause === "object" &&
-    error.cause !== null &&
-    "code" in error.cause &&
-    error.cause.code === "UND_ERR_CONNECT_TIMEOUT"
-  );
-}
-
-async function requestDeployedSmoke(baseUrl, pathname, headers, retryEvents) {
-  const url = new URL(pathname, baseUrl);
-
-  let retries = 0;
-  let lastError;
-
-  for (let attempt = 0; attempt <= DEPLOY_SMOKE_REQUEST_RETRIES; attempt++) {
-    try {
-      const response = await fetch(url, {
-        redirect: "manual",
-        headers,
-        signal: AbortSignal.timeout(DEPLOY_SMOKE_REQUEST_TIMEOUT_MS),
-      });
-      const body = await response.text();
-
-      if (response.status >= 500 && attempt < DEPLOY_SMOKE_REQUEST_RETRIES) {
-        retries += 1;
-        const nextAttempt = attempt + 2;
-        retryEvents.push({
-          pathname,
-          reason: `status ${response.status}`,
-          nextAttempt,
-        });
-        console.warn(
-          `[post-deploy-smoke] ${pathname} returned ${response.status}; retrying attempt ${nextAttempt}/${DEPLOY_SMOKE_REQUEST_RETRIES + 1}`,
-        );
-        await delay(getDeploySmokeRetryDelayMs(attempt));
-        continue;
-      }
-
-      return {
-        pathname,
-        status: response.status,
-        location: response.headers.get("location"),
-        leakedMiddlewareCookie: response.headers.get("x-middleware-set-cookie"),
-        robotsTag: response.headers.get("x-robots-tag"),
-        contentType: response.headers.get("content-type"),
-        frameOptions: response.headers.get("x-frame-options"),
-        nosniff: response.headers.get("x-content-type-options"),
-        referrerPolicy: response.headers.get("referrer-policy"),
-        csp: response.headers.get("content-security-policy"),
-        body,
-        retries,
-      };
-    } catch (error) {
-      lastError = error;
-      if (!isRetriableFetchError(error)) throw error;
-
-      if (attempt < DEPLOY_SMOKE_REQUEST_RETRIES) {
-        retries += 1;
-        const nextAttempt = attempt + 2;
-        retryEvents.push({
-          pathname,
-          reason: error instanceof Error ? error.message : String(error),
-          nextAttempt,
-        });
-        console.warn(
-          `[post-deploy-smoke] ${pathname} request failed; retrying attempt ${nextAttempt}/${DEPLOY_SMOKE_REQUEST_RETRIES + 1}`,
-        );
-        await delay(getDeploySmokeRetryDelayMs(attempt));
-      }
-    }
-  }
-
-  throw new Error("post-deploy-smoke retry loop exited without a response", {
-    cause: lastError,
-  });
-}
-
 async function runDeployedSmoke(args = []) {
   const { baseUrl, headerName, headerValue } = parseDeployedSmokeArgs(args);
-  const headers = buildDeployedSmokeHeaders(headerName, headerValue);
+  // buildDeployedSmokeHeaders 携带的默认 UA 与探针一致；自定义 proof header
+  // 通过展开传入，若显式覆盖 user-agent 也与旧实现一样生效。
+  const extraHeaders = buildDeployedSmokeHeaders(headerName, headerValue);
   const failures = [];
   const retryEvents = [];
 
-  console.log(`[post-deploy-smoke] Probing ${baseUrl}`);
+  console.log(`[${POST_DEPLOY_SMOKE_LOG_TAG}] Probing ${baseUrl}`);
   console.log(
     "[post-deploy-smoke] Scope: deployed routes only; DNS, TLS, and custom-domain confirmation stay manual.",
   );
 
   // One concurrent round so every mandatory route is probed together; per-route
-  // retry state stays local inside requestDeployedSmoke.
-  const responses = await requestSmokeRound(
-    DEPLOYED_SMOKE_EXPECTATIONS,
-    (pathname) => requestDeployedSmoke(baseUrl, pathname, headers, retryEvents),
+  // retry state stays local inside probePathname.
+  const responses = await probeRound(DEPLOYED_SMOKE_EXPECTATIONS, (pathname) =>
+    probePathname(baseUrl, pathname, {
+      userAgent: POST_DEPLOY_SMOKE_LOG_TAG,
+      extraHeaders,
+      retries: DEPLOY_SMOKE_REQUEST_RETRIES,
+      logTag: POST_DEPLOY_SMOKE_LOG_TAG,
+      retryEvents,
+    }),
   );
 
   for (const [index, response] of responses.entries()) {
     const expectation = DEPLOYED_SMOKE_EXPECTATIONS[index];
-    pushExpectedStatus(response, expectation.status, failures);
-    if (expectation.html) {
-      pushHealthyHtmlResponse(response, failures);
-      pushSecurityHeaderChecks(response, failures);
-    }
-    if (expectation.robotsTag) {
-      pushFailureUnless(
-        (response.robotsTag ?? "").includes(expectation.robotsTag),
-        `Expected ${response.pathname} to carry X-Robots-Tag: ${expectation.robotsTag}, got ${response.robotsTag ?? "none"}`,
-        failures,
-      );
-    }
-    pushFailureUnless(
-      response.leakedMiddlewareCookie === null,
-      `Unexpected x-middleware-set-cookie leak on ${response.pathname}`,
+    evaluateProbe(
+      response,
+      expectation,
+      { htmlChecks: true, leakedCookieCheck: true },
       failures,
     );
   }
 
   if (failures.length > 0) {
-    console.error("[post-deploy-smoke] Failures detected:");
-    for (const failure of failures) {
-      console.error(`  - ${failure}`);
-    }
+    printFailures(POST_DEPLOY_SMOKE_LOG_TAG, failures);
     return false;
   }
 
@@ -575,9 +587,13 @@ async function runDeployedSmoke(args = []) {
     }
   }
 
-  console.log("[post-deploy-smoke] All checks passed");
+  console.log(`[${POST_DEPLOY_SMOKE_LOG_TAG}] All checks passed`);
   return true;
 }
+
+// ---------------------------------------------------------------------------
+// Preview deploy proof adapter：编排部署与已部署冒烟，产出结构化 proof。
+// ---------------------------------------------------------------------------
 
 function runChildCommand(command, args) {
   return spawnSync(command, args, {
@@ -630,7 +646,7 @@ function printCloudflarePreviewProofOutput(label, result) {
   );
 }
 
-function runCloudflarePreviewDeployedProof() {
+async function runCloudflarePreviewDeployedProof() {
   const deployResult = runChildCommand("pnpm", CF_PREVIEW_DEPLOY_COMMAND);
   const deployOutput = `${deployResult.stdout ?? ""}\n${deployResult.stderr ?? ""}`;
   printCloudflarePreviewProofOutput("deploy", deployResult);
@@ -680,28 +696,24 @@ function runCloudflarePreviewDeployedProof() {
     return 2;
   }
 
-  const smokeArgs = [
-    "scripts/quality/checks/cloudflare-smoke.js",
-    "deployed-smoke",
-    "--base-url",
-    baseUrl,
-  ];
-  const smokeResult = runChildCommand("node", smokeArgs);
-  printCloudflarePreviewProofOutput("smoke", smokeResult);
+  // Proof adapter 直接调用统一的 deployed 冒烟实现（不再以子进程重启本脚本）。
+  const smokePassed = await runDeployedSmoke(["--base-url", baseUrl]);
+  const smokeExitCode = smokePassed ? 0 : 1;
+  printCloudflarePreviewProofOutput("smoke", { status: smokeExitCode });
 
   const result = {
-    status: smokeResult.status === 0 ? "pass" : "fail",
-    stage: smokeResult.status === 0 ? "complete" : "smoke",
+    status: smokePassed ? "pass" : "fail",
+    stage: smokePassed ? "complete" : "smoke",
     generatedAt: new Date().toISOString(),
     baseUrl,
     discoveredUrls: urls,
     deployCommand,
-    smokeCommand: `node ${smokeArgs.join(" ")}`,
+    smokeCommand: `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url ${baseUrl}`,
   };
   writeCloudflarePreviewProofResult(result);
   console.log(JSON.stringify(result, null, 2));
 
-  return smokeResult.status ?? 1;
+  return smokeExitCode;
 }
 
 async function main([command, ...args] = process.argv.slice(2)) {
