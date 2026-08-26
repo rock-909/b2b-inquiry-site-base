@@ -109,3 +109,48 @@ describe("Playwright CI web server", () => {
     expect(config.testIgnore).toBeUndefined();
   });
 });
+
+// 孤儿 next-server 曾占用端口 3000 超过 20 小时，本地静默复用导致三个契约
+// 用例集体失败且无任何指向真实原因的线索。这三条断言把复用语义钉死。
+describe("Playwright local server reuse contract", () => {
+  async function loadLocalConfig(reuseFlag: string) {
+    vi.stubEnv("CI", "");
+    vi.stubEnv("PLAYWRIGHT_PROFILE_LANE", "default");
+    vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", "");
+    vi.stubEnv("STAGING_URL", "");
+    vi.stubEnv("PLAYWRIGHT_BASE_URL", "");
+    vi.stubEnv("POST_DEPLOY_TEST", "");
+    vi.stubEnv("PLAYWRIGHT_REUSE_EXISTING_SERVER", reuseFlag);
+    vi.resetModules();
+
+    const { default: config } = (await import("../../playwright.config")) as {
+      default: PlaywrightTestConfig;
+    };
+
+    return config;
+  }
+
+  it("defaults to not reusing an already-occupied port locally", async () => {
+    const config = await loadLocalConfig("");
+
+    expect(getWebServer(config).reuseExistingServer).toBe(false);
+  });
+
+  it("reuses only when explicitly opted in", async () => {
+    const config = await loadLocalConfig("true");
+
+    expect(getWebServer(config).reuseExistingServer).toBe(true);
+  });
+
+  it("never reuses on CI even when the opt-in flag is set", async () => {
+    vi.stubEnv("CI", "1");
+    vi.stubEnv("PLAYWRIGHT_REUSE_EXISTING_SERVER", "true");
+    vi.resetModules();
+
+    const { default: config } = (await import("../../playwright.config")) as {
+      default: PlaywrightTestConfig;
+    };
+
+    expect(getWebServer(config).reuseExistingServer).toBe(false);
+  });
+});
