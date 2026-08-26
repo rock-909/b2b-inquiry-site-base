@@ -161,6 +161,8 @@ export function createStaticMarkdownContent(content: string): ReactNode {
             return renderList(block, key);
           case "table":
             return renderTable(block, key);
+          default:
+            return null;
         }
       })}
     </>

@@ -28,12 +28,12 @@ export type StaticMarkdownBlock =
   | {
       kind: "list";
       ordered: boolean;
-      items: string[];
+      items: readonly string[];
     }
   | {
       kind: "table";
-      headers: string[];
-      rows: string[][];
+      headers: readonly string[];
+      rows: readonly (readonly string[])[];
     };
 
 interface ParseState {
@@ -132,13 +132,12 @@ function handleListLine(state: ParseState, trimmed: string): boolean {
 
 function handleHeadingLine(
   state: ParseState,
-  level: "h2" | "h3",
-  prefixLength: number,
   trimmed: string,
+  spec: { level: "h2" | "h3"; prefixLength: number },
 ): void {
-  const raw = trimmed.slice(prefixLength).trim();
+  const raw = trimmed.slice(spec.prefixLength).trim();
   const { displayText, id } = parseHeadingId(raw);
-  state.blocks.push({ kind: "heading", level, displayText, id });
+  state.blocks.push({ kind: "heading", level: spec.level, displayText, id });
 }
 
 function handleTextLine(state: ParseState, trimmed: string): void {
@@ -146,12 +145,12 @@ function handleTextLine(state: ParseState, trimmed: string): void {
   flushTable(state);
 
   if (trimmed.startsWith("## ")) {
-    handleHeadingLine(state, "h2", 3, trimmed);
+    handleHeadingLine(state, trimmed, { level: "h2", prefixLength: 3 });
     return;
   }
 
   if (trimmed.startsWith("### ")) {
-    handleHeadingLine(state, "h3", 4, trimmed);
+    handleHeadingLine(state, trimmed, { level: "h3", prefixLength: 4 });
     return;
   }
 
@@ -167,8 +166,10 @@ function handleTextLine(state: ParseState, trimmed: string): void {
   state.blocks.push({ kind: "paragraph", text: trimmed, emphasized: false });
 }
 
-/** 把静态 markdown 文本解析成不可变的块序列（纯函数，供渲染与 TOC 共用）。 */
-export function parseStaticMarkdownBlocks(content: string): StaticMarkdownBlock[] {
+/** 把静态 markdown 文本解析成块序列（纯函数，供渲染与 TOC 共用）。 */
+export function parseStaticMarkdownBlocks(
+  content: string,
+): readonly StaticMarkdownBlock[] {
   const state: ParseState = {
     blocks: [],
     listItems: [],
