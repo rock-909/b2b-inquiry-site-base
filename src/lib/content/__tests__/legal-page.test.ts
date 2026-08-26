@@ -8,6 +8,21 @@ vi.mock("@/lib/content/static-pages", () => ({
 
 import { extractHeadingsFromContent, loadLegalPage } from "../legal-page";
 
+const SENTINEL_BLOCKS = [
+  { kind: "heading", level: "h2", displayText: "Sentinel Scope", id: "scope" },
+] as never[];
+vi.mock("@/lib/content/static-markdown-blocks", async (importOriginal) => {
+  const actual =
+    await importOriginal<
+      typeof import("@/lib/content/static-markdown-blocks")
+    >();
+  return {
+    ...actual,
+    // 默认转发真实实现；仅单次解析合同测试中覆盖为 sentinel。
+    parseStaticMarkdownBlocks: vi.fn(actual.parseStaticMarkdownBlocks),
+  };
+});
+
 describe("loadLegalPage", () => {
   it("loads and narrows to LegalPageMetadata", async () => {
     mockGetStaticPage.mockReturnValueOnce({
@@ -68,6 +83,36 @@ describe("loadLegalPage", () => {
 
     const result = await loadLegalPage("terms", "en");
     expect(result.metadata.lastReviewed).toBe("2024-01-01");
+  });
+});
+
+describe("single-parse contract", () => {
+  it("parses content once and shares the result between body and TOC", async () => {
+    mockGetStaticPage.mockReturnValueOnce({
+      metadata: {
+        title: "Privacy Policy",
+        slug: "privacy",
+        publishedAt: "2024-01-01",
+      },
+      content: "## Scope\n\nBody text.",
+    });
+
+    // 通过动态导入拿到被 vi.mock 替换后的绑定。
+    const { parseStaticMarkdownBlocks } = await import(
+      "@/lib/content/static-markdown-blocks"
+    );
+    const parseMock = vi.mocked(parseStaticMarkdownBlocks);
+    parseMock.mockClear();
+    parseMock.mockReturnValueOnce(SENTINEL_BLOCKS as never);
+
+    const page = loadLegalPage("privacy", "en");
+
+    // loader 只做一次解析；TOC 与正文消费同一份块序列（identity 级传递）。
+    expect(parseMock).toHaveBeenCalledTimes(1);
+    expect(page.blocks).toBe(SENTINEL_BLOCKS);
+    expect(page.headings).toEqual([
+      { level: 2, text: "Sentinel Scope", id: "scope" },
+    ]);
   });
 });
 

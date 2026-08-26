@@ -1,8 +1,11 @@
 import { readFileSync } from "node:fs";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LegalContentRenderer } from "@/components/content/legal-content-renderer";
-import { createStaticMarkdownContent } from "@/lib/content/render-static-markdown-content";
+import {
+  createStaticMarkdownContent,
+  renderStaticMarkdownBlocks,
+} from "@/lib/content/render-static-markdown-content";
+import { parseStaticMarkdownBlocks } from "@/lib/content/static-markdown-blocks";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -152,27 +155,39 @@ describe("createStaticMarkdownContent", () => {
   });
 });
 
-describe("LegalContentRenderer", () => {
-  it("renders static markdown content through the legal renderer", () => {
-    const { container } = render(<LegalContentRenderer content="## Privacy" />);
+describe("renderStaticMarkdownBlocks", () => {
+  it("renders parsed blocks directly without re-parsing raw markdown", () => {
+    const blocks = parseStaticMarkdownBlocks("## Privacy");
+    const { container } = render(
+      <>{renderStaticMarkdownBlocks(blocks)}</>,
+    );
+
+    expect(container.querySelector("h2")).toHaveTextContent("Privacy");
+  });
+
+  it("keeps createStaticMarkdownContent as the string convenience entry", () => {
+    const { container } = render(
+      <>{createStaticMarkdownContent("## Privacy")}</>,
+    );
 
     expect(container.querySelector("h2")).toHaveTextContent("Privacy");
   });
 });
 
 describe("static markdown renderer ownership", () => {
-  it("keeps the generic renderer independent and the legal renderer as its only consumer", () => {
+  it("keeps the generic renderer independent of the page shell", () => {
     const genericSource = readFileSync(
       "src/lib/content/render-static-markdown-content.tsx",
       "utf8",
     );
-    const rendererSource = readFileSync(
-      "src/components/content/legal-content-renderer.tsx",
+    const shellSource = readFileSync(
+      "src/components/content/legal-page-shell.tsx",
       "utf8",
     );
 
-    expect(genericSource).not.toContain("legal-content-renderer");
-    expect(rendererSource).toContain("render-static-markdown-content");
-    expect(rendererSource).toContain("createStaticMarkdownContent(content)");
+    expect(genericSource).not.toContain("legal-page-shell");
+    // 页面外壳直接消费 blocks 渲染入口，不再有字符串转发 wrapper。
+    expect(shellSource).toContain("renderStaticMarkdownBlocks(blocks)");
+    expect(shellSource).not.toContain("LegalContentRenderer");
   });
 });

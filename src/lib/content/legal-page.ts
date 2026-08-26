@@ -34,6 +34,8 @@ export function extractHeadingsFromContent(content: string): HeadingItem[] {
 interface LegalPageData {
   metadata: LegalPageMetadata;
   content: string;
+  /** 正文渲染与 TOC 共用的同一次解析结果。 */
+  blocks: readonly StaticMarkdownBlock[];
   headings: HeadingItem[];
 }
 
@@ -55,7 +57,13 @@ export function loadLegalPage(
       page.metadata.publishedAt,
   };
 
-  const headings = extractHeadingsFromContent(page.content);
+  // 单次 parse：blocks 直接交给正文渲染，headings 是同一批块的投影。
+  const blocks = parseStaticMarkdownBlocks(page.content);
+  const headings: HeadingItem[] = blocks.filter(isHeading).map((block) => ({
+    level: block.level === "h2" ? (2 as const) : (3 as const),
+    text: block.displayText,
+    id: block.id,
+  }));
 
-  return { metadata, content: page.content, headings };
+  return { metadata, content: page.content, blocks, headings };
 }

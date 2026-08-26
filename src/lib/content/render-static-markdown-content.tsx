@@ -144,10 +144,10 @@ function renderTable(
   );
 }
 
-/** 把块序列映射成 React 元素（无状态、纯渲染）。 */
-export function createStaticMarkdownContent(content: string): ReactNode {
-  const blocks = parseStaticMarkdownBlocks(content);
-
+/** 把块序列映射成 React 元素（无状态、纯渲染）。TOC 与正文共用同一份 blocks。 */
+export function renderStaticMarkdownBlocks(
+  blocks: readonly StaticMarkdownBlock[],
+): ReactNode {
   return (
     <>
       {blocks.map((block, blockIndex) => {
@@ -167,4 +167,9 @@ export function createStaticMarkdownContent(content: string): ReactNode {
       })}
     </>
   );
+}
+
+/** 字符串入口（contact 页面等非 TOC 场景的 convenience API）。 */
+export function createStaticMarkdownContent(content: string): ReactNode {
+  return renderStaticMarkdownBlocks(parseStaticMarkdownBlocks(content));
 }
