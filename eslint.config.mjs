@@ -92,16 +92,9 @@ const eslintConfig = [
     },
   },
 
-  // React hooks call-ordering correctness. exhaustive-deps is upgraded to error
-  // in the progressive block; require-await / no-unused-vars / prefer-const /
-  // no-duplicate-imports are set once in the production-quality block below.
-  {
-    name: "react-hooks-correctness",
-    files: ["**/*.{js,jsx,ts,tsx}"],
-    rules: {
-      "react-hooks/rules-of-hooks": "error",
-    },
-  },
+  // React hooks call-ordering correctness 由 core-web-vitals preset 内置
+  // （react-hooks/rules-of-hooks 已是 error），不再重复声明。
+  // exhaustive-deps 在 project-overrides 中升级为 error。
 
   // Security configuration
   {
@@ -141,21 +134,6 @@ const eslintConfig = [
       "promise/always-return": "off",
       "promise/catch-or-return": ["error", { allowFinally: true }],
       "no-console": ["error", { allow: ["warn", "error"] }],
-    },
-  },
-
-  // 测试目录放宽复杂度。jest 导入禁令统一写在 test-files-final-override，
-  // 那是测试文件这个作用域上唯一设置 no-restricted-imports 的地方。
-  {
-    name: "tests-relaxed",
-    files: [
-      "**/__tests__/**/*.{ts,tsx,js,jsx}",
-      "tests/**/*.{ts,tsx,js,jsx}",
-      "**/*.{test,spec}.{ts,tsx,js,jsx}",
-    ],
-    rules: {
-      complexity: "off",
-      "max-params": "off",
     },
   },
 
@@ -330,84 +308,6 @@ const eslintConfig = [
     rules: {
       // 常量定义文件中的数字是有意义的常量，不应被视为魔法数字
       "no-magic-numbers": "off", // 常量定义文件豁免魔法数字检查
-    },
-  },
-
-  // 测试文件规则。
-  {
-    name: "test-files",
-    files: [
-      "**/*.test.{js,jsx,ts,tsx}",
-      "**/__tests__/**/*.{js,jsx,ts,tsx}",
-      "tests/**/*.{js,jsx,ts,tsx}",
-      "src/test/**/*.{js,jsx,ts,tsx}",
-      "src/testing/**/*.{js,jsx,ts,tsx}",
-      "e2e/**/*.{js,jsx,ts,tsx}",
-      "scripts/__fixtures__/**/*.{js,jsx,ts,tsx}",
-      "**/mocks/**/*.{js,jsx,ts,tsx}",
-    ],
-    plugins: {
-      security,
-    },
-    languageOptions: {
-      globals: {
-        describe: "readonly",
-        it: "readonly",
-        test: "readonly",
-        expect: "readonly",
-        beforeEach: "readonly",
-        afterEach: "readonly",
-        beforeAll: "readonly",
-        afterAll: "readonly",
-        vi: "readonly",
-        vitest: "readonly",
-      },
-    },
-    rules: {
-      // 测试结构仍受宽松阈值约束。
-      "max-lines-per-function": [
-        "warn",
-        { max: 700, skipBlankLines: true, skipComments: true },
-      ],
-      complexity: ["warn", 20],
-      "max-nested-callbacks": ["warn", 6],
-      "max-lines": [
-        "warn",
-        { max: 800, skipBlankLines: true, skipComments: true },
-      ],
-      "max-statements": ["warn", 50],
-      "max-params": ["warn", 8],
-
-      // 测试文件必要的特殊模式（保持不变）
-      "no-magic-numbers": "off", // 测试数据需要具体数值
-      "no-plusplus": "off", // 循环计数器在测试中常见
-      "prefer-arrow-callback": "off", // function表达式在测试中更清晰
-      "no-unused-expressions": "off", // expect().toBe() 断言语句
-      "no-empty-function": "off", // 空mock函数是合理的
-      "prefer-destructuring": "off", // 测试中直接属性访问更直观
-      "no-new": "off", // mock对象创建需要
-      "require-await": "off", // async测试模式
-      "no-throw-literal": "off", // 测试异常抛出
-      "no-underscore-dangle": "off", // 私有属性测试访问
-      // no-restricted-imports 与 @typescript-eslint/no-unused-vars 都由
-      // test-files-final-override 设置（作用域与本块逐字相同），这里不重复。
-
-      "@typescript-eslint/no-explicit-any": "off",
-      "no-unused-vars": [
-        "error", // 保持严格标准，与TypeScript规则一致
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ], // 强制清理未使用变量，保持代码整洁
-      "@typescript-eslint/no-require-imports": "off", // 测试中可能需要require导入
-
-      // detect-object-injection 在 test-files-final-override 里对同一批文件关掉了，
-      // 测试里动态取键是常态；这里不再声明一条永远不生效的 error。
-      "security/detect-unsafe-regex": "warn", // 测试正则表达式
-      "no-script-url": "off", // 测试URL可能需要
-
-      "no-shadow": "off", // 测试文件中Mock变量重复声明是正常模式
-      "no-console": ["warn", { allow: ["warn", "error", "info", "log"] }], // 允许测试调试输出
-
-      "@next/next/no-img-element": "off", // 测试中允许使用原生 img 元素
     },
   },
 
@@ -617,9 +517,11 @@ const eslintConfig = [
     },
   },
 
-  // 测试文件最终覆盖配置 - 确保测试文件规则优先级最高
+  // 测试文件规则（合并了原 tests-relaxed / test-files / test-files-final-override 三层）。
+  // 原第一层在 production-quality 之前声明、其 off 值全数被后续层覆盖，是死配置；
+  // 现将最终生效值收敛为单一作用域层，jest 导入禁令等最终覆盖语义保持不变。
   {
-    name: "test-files-final-override",
+    name: "test-files",
     files: [
       "**/*.test.{js,jsx,ts,tsx}",
       "**/__tests__/**/*.{js,jsx,ts,tsx}",
@@ -633,7 +535,58 @@ const eslintConfig = [
     plugins: {
       security,
     },
+    languageOptions: {
+      globals: {
+        describe: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        vi: "readonly",
+        vitest: "readonly",
+      },
+    },
     rules: {
+      // 测试结构仍受宽松阈值约束。
+      "max-lines-per-function": [
+        "warn",
+        { max: 700, skipBlankLines: true, skipComments: true },
+      ],
+      complexity: ["warn", 20],
+      "max-nested-callbacks": ["warn", 6],
+      "max-lines": [
+        "warn",
+        { max: 800, skipBlankLines: true, skipComments: true },
+      ],
+      "max-statements": ["warn", 50],
+      "max-params": ["warn", 8],
+      "max-depth": ["warn", 5],
+
+      // 测试文件必要的特殊模式。
+      "no-magic-numbers": "off", // 测试数据需要具体数值
+      "no-plusplus": "off", // 循环计数器在测试中常见
+      "prefer-arrow-callback": "off", // function表达式在测试中更清晰
+      "no-unused-expressions": "off", // expect().toBe() 断言语句
+      "no-empty-function": "off", // 空 mock 函数是合理的
+      "prefer-destructuring": "off", // 测试中直接属性访问更直观
+      "no-new": "off", // mock 对象创建需要
+      "require-await": "off", // async 测试模式
+      "no-throw-literal": "off", // 测试异常抛出
+      "no-underscore-dangle": "off", // 私有属性测试访问
+      "@typescript-eslint/no-explicit-any": "off",
+      // 基础 no-unused-vars 不在此设置：TS 文件由 @typescript-eslint/no-unused-vars
+      // 接管（见 ts-core-overrides），JS 文件沿用 production-quality 的严格标准。
+      "@typescript-eslint/no-require-imports": "off", // 测试中可能需要 require 导入
+      "security/detect-unsafe-regex": "warn", // 测试正则表达式
+      "no-script-url": "off", // 测试 URL 可能需要
+      "no-shadow": "off", // Mock 变量重复声明是正常模式
+      "no-console": ["warn", { allow: ["warn", "error", "info", "log"] }],
+      "@next/next/no-img-element": "off", // 测试中允许使用原生 img 元素
+
+      // 最终覆盖层的语义（原样并入本块）：
       // 测试文件可以用相对路径导入，但 jest API 仍然禁止：项目跑的是 Vitest。
       "no-restricted-imports": [
         "error",
@@ -656,18 +609,10 @@ const eslintConfig = [
       "no-restricted-syntax": "off",
       // 安全规则在测试中完全忽略 - 测试文件中的动态对象访问是正常模式
       "security/detect-object-injection": "off",
-      // 允许在测试中动态构建正则（常见于匹配断言）；保持为warn以提示潜在风险
+      // 允许在测试中动态构建正则（常见于匹配断言）；保持为 warn 以提示潜在风险
       "security/detect-non-literal-regexp": "warn",
-      "@typescript-eslint/no-unused-vars": [
-        "error", // 测试文件也保持严格标准
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ],
-      "max-depth": ["warn", 5],
 
-      // 测试文件中的React/Next特定放宽：
-      // - 文本中包含未转义的字符在测试快照/渲染中很常见
-      // - displayName 在内联测试组件中并非必要
-      // - Next.js 链接规则在测试中不强制
+      // 测试文件中的 React/Next 特定放宽：
       "react/no-unescaped-entities": "off",
       "react/display-name": "off",
       "@next/next/no-html-link-for-pages": "off",
