@@ -46,7 +46,7 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
     <div
       aria-label={tAccessibility("themeSelector")}
       className={cn(
-        "relative isolate flex h-8 rounded-full bg-background p-1 ring-1 ring-border",
+        "relative isolate flex h-7 items-center gap-0.5 rounded-md border border-[var(--footer-divider)] bg-transparent p-0.5",
         className,
       )}
       role="group"
@@ -59,7 +59,7 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
           <button
             aria-label={tTheme(labelKey)}
             aria-pressed={isHydrated ? isActive : undefined}
-            className="relative size-6 rounded-full"
+            className="relative flex size-6 items-center justify-center rounded-[calc(var(--control-radius)-0.25rem)] text-[var(--footer-text)] transition-[background-color,color] duration-150 hover:bg-muted hover:text-[var(--footer-heading)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--footer-bg)] focus-visible:outline-none"
             disabled={!isHydrated}
             key={key}
             onClick={() => setTheme(key)}
@@ -67,7 +67,7 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
           >
             {isHydrated && isActive ? (
               <div
-                className="absolute inset-0 rounded-full bg-muted transition-colors duration-150"
+                className="pointer-events-none absolute inset-0 rounded-[calc(var(--control-radius)-0.25rem)] bg-muted transition-colors duration-150"
                 data-testid="theme-switcher-highlight"
                 style={{
                   transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
@@ -76,10 +76,10 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
             ) : null}
             <Icon
               className={cn(
-                "relative z-10 m-auto size-4",
+                "relative z-10 size-3.5",
                 isHydrated && isActive
-                  ? "text-foreground"
-                  : "text-muted-foreground",
+                  ? "text-[var(--footer-heading)]"
+                  : "text-[var(--footer-text)]",
               )}
             />
           </button>

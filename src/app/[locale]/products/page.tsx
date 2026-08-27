@@ -64,7 +64,7 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
       />
       <div className="mx-auto max-w-[1080px] px-6 py-14 md:py-[72px]">
         <header className="max-w-2xl">
-          <p className="text-sm font-semibold tracking-[0.12em] text-primary uppercase">
+          <p className="text-sm font-semibold tracking-[0.12em] text-[var(--primary-text)] uppercase">
             {t("page.eyebrow")}
           </p>
           <h1 className="text-heading mt-3 text-balance">

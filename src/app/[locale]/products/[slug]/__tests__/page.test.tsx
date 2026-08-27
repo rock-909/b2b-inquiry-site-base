@@ -21,7 +21,13 @@ vi.mock("next-intl/server", () => ({
     async () => (key: string, values?: Record<string, string>) => {
       const copy: Record<string, string> = {
         "detail.backToProducts": "Back to products",
-        "detail.highlightsTitle": "Highlights",
+        "detail.factsEyebrow": "Product facts",
+        "detail.applicationsTitle": "Applications and buyer fit",
+        "detail.specificationsTitle": "Technical specifications",
+        "detail.materialsTitle": "Materials and construction",
+        "detail.configurationTitle": "Configuration and selection",
+        "detail.deliveryTitle": "Delivery boundary",
+        "detail.evidenceTitle": "Verifiable evidence",
         "detail.startInquiry": "Get a quote",
         "detail.inquirySectionTitle": "Inquire about {productName}",
         // inquiry.form 命名空间的预填模板（tForm 不带前缀调用）。
@@ -94,6 +100,19 @@ describe("ProductDetailPage", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Sample Offering" }),
     ).toBeInTheDocument();
+    for (const heading of [
+      "Applications and buyer fit",
+      "Technical specifications",
+      "Materials and construction",
+      "Configuration and selection",
+      "Delivery boundary",
+      "Verifiable evidence",
+    ]) {
+      expect(
+        screen.getByRole("heading", { level: 2, name: heading }),
+      ).toBeInTheDocument();
+    }
+    expect(screen.getByText("Dimensions or capacity")).toBeInTheDocument();
     const cta = screen.getByRole("link", { name: "Get a quote" });
     expect(cta).toHaveAttribute("href", "#inquiry");
 
