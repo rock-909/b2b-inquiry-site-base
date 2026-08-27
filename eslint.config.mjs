@@ -27,6 +27,50 @@ const MAGIC_NUMBER_IGNORE_LIST = [
   365, 1000, 1024, 4000, 5000, 60000, 300000,
 ];
 
+// 构建/配置/脚本工具的共享宽松规则与插件（R2-F04）。
+// 这些条目在 config-and-dev-tools 与 scripts 两个 block 中逐字相同；
+// 两个 block 各自的 scope-specific 差异（severity/选项/独有规则）仍留在各自 block 内。
+const sharedToolingPlugins = {
+  security,
+  "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
+};
+
+const sharedToolingRules = {
+  // 配置和脚本使用更宽松的结构阈值。
+  "max-lines-per-function": [
+    "warn",
+    { max: 250, skipBlankLines: true, skipComments: true },
+  ],
+  complexity: ["warn", 18],
+  "max-lines": [
+    "warn",
+    { max: 800, skipBlankLines: true, skipComments: true },
+  ],
+  "max-params": ["warn", 5],
+  "max-statements": ["warn", 35],
+  "max-depth": ["warn", 4],
+  "max-nested-callbacks": ["warn", 4],
+
+  // 构建脚本必要豁免。
+  "no-console": "off", // 构建脚本需要console输出
+  "no-magic-numbers": "off", // 配置文件需要具体数值
+  "no-implicit-coercion": "off", // 配置文件类型转换
+  "no-plusplus": "off", // 脚本中允许++操作符
+  "prefer-template": "warn", // 字符串拼接降级为警告
+  "no-else-return": "warn", // else return降级为警告
+
+  // TypeScript / Node.js 工具规则。
+  "@typescript-eslint/no-explicit-any": "warn",
+  "@typescript-eslint/no-require-imports": "off",
+  "no-undef": ["error", { typeof: true }], // 未定义变量检查
+  "no-restricted-imports": "off",
+  "react/no-unescaped-entities": "off", // 文案允许未转义实体
+  "react-you-might-not-need-an-effect/no-event-handler": "warn",
+  "react-you-might-not-need-an-effect/no-chain-state-updates": "warn",
+  "no-void": "off", // 允许显式丢弃表达式结果
+  "no-empty-function": "warn", // 工具占位符
+};
+
 // 具名再导出：这个文件现在也被 eslint 自己检查（它不再躺在忽略清单里），
 // 匿名默认导出会触发 import/no-anonymous-default-export。
 const eslintConfig = [
@@ -326,67 +370,28 @@ const eslintConfig = [
       "src/app/**/diagnostics/**/*.{ts,tsx}",
       "src/components/examples/ui-showcase/**/*.{ts,tsx}",
     ],
-    plugins: {
-      security,
-      "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
-    },
+    plugins: { ...sharedToolingPlugins },
     rules: {
-      // 配置和开发工具使用更宽松的结构阈值。
-      "max-lines-per-function": [
-        "warn",
-        { max: 250, skipBlankLines: true, skipComments: true },
-      ],
-      complexity: ["warn", 18],
-      "max-lines": [
-        "warn",
-        { max: 800, skipBlankLines: true, skipComments: true },
-      ],
-      "max-params": ["warn", 5],
+      ...sharedToolingRules,
 
-      // 构建脚本必要豁免。
-      "no-console": "off", // 构建脚本需要console输出
-      "no-magic-numbers": "off", // 配置文件需要具体数值
-      "no-implicit-coercion": "off", // 配置文件类型转换
-
-      // TypeScript 规则。
-      "@typescript-eslint/no-explicit-any": "warn", // 开发工具允许适度使用any（全局对象访问）
+      // 开发工具特定但合理的豁免。
       "@typescript-eslint/ban-ts-comment": "warn", // 开发工具允许@ts-nocheck（仅开发环境）
       "@typescript-eslint/no-unused-vars": [
         "error", // 开发工具也保持严格标准
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-
-      // 开发工具特定但合理的豁免
       "no-underscore-dangle": ["error", { allow: ["__DEV__"] }],
       "security/detect-object-injection": "warn", // 开发工具动态访问，降级为警告
-      "react/no-unescaped-entities": "off", // 开发工具文案允许未转义实体
-      "react-you-might-not-need-an-effect/no-event-handler": "warn",
-      "react-you-might-not-need-an-effect/no-chain-state-updates": "warn",
-      "no-void": "off", // 允许显式丢弃表达式结果
-      "no-empty-function": "warn", // 开发工具占位符
       "consistent-return": "warn", // 开发工具复杂逻辑
       "no-param-reassign": "warn", // 开发工具参数修改
       "prefer-destructuring": "warn", // 开发工具属性访问
-
-      // 保持严格的基本语法检查
-      "no-undef": ["error", { typeof: true }], // 未定义变量检查
       "no-unused-vars": "warn", // 清理未使用变量
-
-      // Node.js 工具规则。
-      "@typescript-eslint/no-require-imports": "off",
-      "no-restricted-imports": "off",
       "security/detect-non-literal-fs-filename": "warn", // 文件系统操作降级为警告
       "security/detect-non-literal-regexp": "warn", // 动态正则表达式降级为警告
-      "max-statements": ["warn", 35], // scripts中允许更多语句
-      "max-depth": ["warn", 4], // scripts中允许更深嵌套
-      "max-nested-callbacks": ["warn", 4], // scripts中允许更多回调嵌套
-      "no-plusplus": "off", // scripts中允许++操作符
-      "prefer-template": "warn", // scripts中字符串拼接降级为警告
       radix: "warn", // parseInt缺少radix参数降级为警告
       "no-useless-escape": "warn", // 不必要的转义字符降级为警告
       "require-await": "warn", // async函数无await降级为警告
       "default-case": "warn", // switch缺少default降级为警告
-      "no-else-return": "warn", // else return降级为警告
     },
   },
 
@@ -645,57 +650,29 @@ const eslintConfig = [
   {
     name: "scripts",
     files: ["scripts/**/*.{js,ts,mjs}"],
-    plugins: {
-      security,
-      "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
-    },
+    plugins: { ...sharedToolingPlugins },
     rules: {
-      "max-lines-per-function": [
-        "warn",
-        { max: 250, skipBlankLines: true, skipComments: true },
-      ],
-      complexity: ["warn", 18],
-      "max-lines": [
-        "warn",
-        { max: 800, skipBlankLines: true, skipComments: true },
-      ],
-      "max-params": ["warn", 5],
-      "max-statements": ["warn", 35],
-      "max-depth": ["warn", 4],
-      "max-nested-callbacks": ["warn", 4],
-      "no-console": "off",
-      "no-magic-numbers": "off",
-      "no-implicit-coercion": "off",
-      "no-unused-vars": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-require-imports": "off",
+      ...sharedToolingRules,
+
+      // 脚本 block 独有豁免（比 config-and-dev-tools 更宽松）。
       "@typescript-eslint/ban-ts-comment": "off",
-      "no-undef": ["error", { typeof: true }],
-      "no-restricted-imports": "off",
-      "security/detect-object-injection": "off",
-      "security/detect-non-literal-fs-filename": "off",
-      "security/detect-non-literal-regexp": "off",
-      "security/detect-unsafe-regex": "off",
-      "react/no-unescaped-entities": "off",
-      "react-you-might-not-need-an-effect/no-event-handler": "warn",
-      "react-you-might-not-need-an-effect/no-chain-state-updates": "warn",
-      "no-void": "off",
-      "no-empty-function": "warn",
+      "@typescript-eslint/no-unused-vars": "off",
+      "no-unused-vars": "off",
       "no-underscore-dangle": "off",
       "no-multi-assign": "off",
       "no-loop-func": "off",
       "no-shadow": "off",
-      "require-await": "off",
-      "default-case": "off",
-      radix: "off",
+      "security/detect-object-injection": "off",
+      "security/detect-non-literal-fs-filename": "off",
+      "security/detect-non-literal-regexp": "off",
+      "security/detect-unsafe-regex": "off",
       "consistent-return": "off",
       "no-useless-escape": "off",
       "no-param-reassign": "off",
       "prefer-destructuring": "off",
-      "no-plusplus": "off",
-      "prefer-template": "warn",
-      "no-else-return": "warn",
+      radix: "off",
+      "require-await": "off",
+      "default-case": "off",
       "no-process-exit": "off",
     },
   },
