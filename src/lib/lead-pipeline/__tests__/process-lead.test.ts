@@ -9,9 +9,7 @@ const { mockCreateLead, mockSendProductInquiryEmail } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/airtable/service", () => ({
-  AirtableService: class {
-    public readonly createLead = mockCreateLead;
-  },
+  createAirtableLead: mockCreateLead,
 }));
 vi.mock("@/lib/resend-core", () => ({
   ResendService: class {
