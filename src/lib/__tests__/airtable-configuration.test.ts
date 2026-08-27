@@ -43,8 +43,8 @@ const validLeadData = {
 };
 
 async function createService() {
-  const { AirtableService } = await import("../airtable/service");
-  return new AirtableService();
+  const { createAirtableLead } = await import("../airtable/service");
+  return createAirtableLead;
 }
 
 describe("Airtable Service configuration", () => {
@@ -79,7 +79,7 @@ describe("Airtable Service configuration", () => {
     const service = await createService();
     const { AIRTABLE_REQUEST_TIMEOUT_MS } = await import("../airtable/service");
 
-    await expect(service.createLead(validLeadData)).resolves.toEqual({
+    await expect(service(validLeadData)).resolves.toEqual({
       id: "rec-config",
     });
 
@@ -110,7 +110,7 @@ describe("Airtable Service configuration", () => {
     const service = await createService();
     const { AIRTABLE_REQUEST_TIMEOUT_MS } = await import("../airtable/service");
 
-    const request = service.createLead(validLeadData);
+    const request = service(validLeadData);
     controller.abort(new DOMException("Timed out", "TimeoutError"));
 
     await expect(request).rejects.toThrow("Failed to create lead record");
@@ -122,7 +122,7 @@ describe("Airtable Service configuration", () => {
     mocks.envValues.AIRTABLE_TABLE_NAME = undefined;
     const service = await createService();
 
-    await service.createLead(validLeadData);
+    await service(validLeadData);
 
     expect(mocks.fetch).toHaveBeenCalledWith(
       "https://api.airtable.com/v0/test-base-id/Contacts",
@@ -137,7 +137,7 @@ describe("Airtable Service configuration", () => {
     Object.assign(mocks.envValues, missingConfig);
     const service = await createService();
 
-    await expect(service.createLead(validLeadData)).rejects.toThrow(
+    await expect(service(validLeadData)).rejects.toThrow(
       "Airtable service is not configured",
     );
     expect(mocks.fetch).not.toHaveBeenCalled();
@@ -147,7 +147,7 @@ describe("Airtable Service configuration", () => {
     mocks.fetch.mockRejectedValueOnce(new Error("Network failed"));
     const service = await createService();
 
-    await expect(service.createLead(validLeadData)).rejects.toThrow(
+    await expect(service(validLeadData)).rejects.toThrow(
       "Failed to create lead record",
     );
   });
@@ -162,7 +162,7 @@ describe("Airtable Service configuration", () => {
     mocks.runtimeValues.AIRTABLE_BASE_ID = "runtime-base-id";
     mocks.runtimeValues.AIRTABLE_TABLE_NAME = "Runtime Contacts";
 
-    await service.createLead(validLeadData);
+    await service(validLeadData);
 
     expect(mocks.fetch).toHaveBeenCalledWith(
       "https://api.airtable.com/v0/runtime-base-id/Runtime%20Contacts",

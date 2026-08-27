@@ -88,14 +88,13 @@ describe("Cloudflare runtime env timing", () => {
         value ? "[REDACTED_EMAIL]" : "[NO_EMAIL]",
     }));
 
-    const { AirtableService } = await import("@/lib/airtable/service");
-    const service = new AirtableService();
+    const { createAirtableLead } = await import("@/lib/airtable/service");
 
     runtimeValues.AIRTABLE_API_KEY = "runtime-airtable-key";
     runtimeValues.AIRTABLE_BASE_ID = "appRuntime";
     runtimeValues.AIRTABLE_TABLE_NAME = "Contacts";
 
-    await service.createLead({
+    await createAirtableLead({
       firstName: "Runtime",
       lastName: "Tester",
       email: "runtime@example.com",

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { AirtableService } from "@/lib/airtable/service";
+import { createAirtableLead } from "@/lib/airtable/service";
 import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 import {
   INQUIRY_LEAD_TYPE,
@@ -25,7 +25,6 @@ export interface LeadResult {
 }
 
 const LEAD_DELIVERY_POLICY = "email-primary-airtable-backup" as const;
-const airtableService = new AirtableService();
 const resendService = new ResendService();
 
 // 业主后台的数据，不是网站访客可见文案，不走 i18n 翻译键。
@@ -102,7 +101,7 @@ async function createInquiryLeadRecord(
     : `${OWNER_EMAIL_FAILED_NOTICE}${baseMessage}`;
 
   try {
-    await airtableService.createLead({
+    await createAirtableLead({
       firstName: lead.firstName,
       lastName: lead.lastName,
       email: lead.email,
