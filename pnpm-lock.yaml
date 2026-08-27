@@ -120,8 +120,8 @@ importers:
         specifier: 16.3.3
         version: 16.3.3
       '@opennextjs/cloudflare':
-        specifier: https://pkg.pr.new/@opennextjs/cloudflare@69807b1
-        version: https://pkg.pr.new/@opennextjs/cloudflare@69807b1(patch_hash=c3c7a79303c758de5a2b6b46c21403f414f70fd424c2df3648850705d8f17d64)(next@16.3.3(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@playwright/test@1.62.0)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@10.2.2)(wrangler@4.115.0)
+        specifier: https://pkg.pr.new/@opennextjs/cloudflare@1318
+        version: https://pkg.pr.new/@opennextjs/cloudflare@1318(patch_hash=c3c7a79303c758de5a2b6b46c21403f414f70fd424c2df3648850705d8f17d64)(next@16.3.3(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@playwright/test@1.62.0)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@10.2.2)(wrangler@4.115.0)
       '@playwright/test':
         specifier: ^1.62.0
         version: 1.62.0
@@ -382,6 +382,9 @@ packages:
   '@aws-sdk/core@3.977.2':
     resolution: {integrity: sha512-8sT/M5vDcagx5/iM0Bfx7f6i3mfVOQkA34+GTMwp0lIWZb6ma+bjkzDS/r9yqU2yTPBqqMBFPT3+d9kUuuNDJA==}
     engines: {node: '>=20.0.0'}
+    deprecated: |-
+      Deprecated due to Document number parsing bug in JSON, see
+        https://github.com/aws/aws-sdk-js-v3/issues/8246. Newer version available.
 
   '@aws-sdk/credential-provider-env@3.972.63':
     resolution: {integrity: sha512-VSS9dftt7r7GiZ4gs8z0PNaMLVAaSj/MXVr6WQBtsrQQB9miJo7I6lQuJND1/ugFwK9x7OHCYZDkLSYh0FIZtA==}
@@ -1630,8 +1633,8 @@ packages:
     peerDependencies:
       next: '>=15.5.21 <16 || >=16.2.11'
 
-  '@opennextjs/cloudflare@https://pkg.pr.new/@opennextjs/cloudflare@69807b1':
-    resolution: {integrity: sha512-bFEwzSiIWdyeEaJj869hxDUrE9jeUr/ltdLlvF7Ia2y+TjEghNEa+iV+CavGAnsrEL0UoQTtbRHD/60wCzMLVA==, tarball: https://pkg.pr.new/@opennextjs/cloudflare@69807b1}
+  '@opennextjs/cloudflare@https://pkg.pr.new/@opennextjs/cloudflare@1318':
+    resolution: {integrity: sha512-FMIv/bVG0+l4cLhK2AUZT20pqvpQfZ3O/0fiCBVafbKHwsCBq9XnuoWKJx+QPL1KcNqJ0opnqql9//OUW4KX3g==, tarball: https://pkg.pr.new/@opennextjs/cloudflare@1318}
     version: 1.20.2
     hasBin: true
     peerDependencies:
@@ -8561,7 +8564,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@opennextjs/cloudflare@https://pkg.pr.new/@opennextjs/cloudflare@69807b1(patch_hash=c3c7a79303c758de5a2b6b46c21403f414f70fd424c2df3648850705d8f17d64)(next@16.3.3(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@playwright/test@1.62.0)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@10.2.2)(wrangler@4.115.0)':
+  '@opennextjs/cloudflare@https://pkg.pr.new/@opennextjs/cloudflare@1318(patch_hash=c3c7a79303c758de5a2b6b46c21403f414f70fd424c2df3648850705d8f17d64)(next@16.3.3(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@playwright/test@1.62.0)(@types/node@24.13.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(supports-color@10.2.2)(wrangler@4.115.0)':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@dotenvx/dotenvx': 1.31.0
