@@ -21,7 +21,15 @@ describe("offerings", () => {
         name: expect.any(String) as string,
         summary: expect.any(String) as string,
         description: expect.any(String) as string,
-        highlights: expect.any(Array) as string[],
+        applications: expect.any(Array) as string[],
+        specifications: expect.any(Array) as Array<{
+          label: string;
+          value: string;
+        }>,
+        materials: expect.any(Array) as string[],
+        configuration: expect.any(Array) as string[],
+        delivery: expect.any(Array) as string[],
+        evidence: expect.any(Array) as string[],
         updatedAt: expect.any(String) as string,
       });
       expect(offering.id.trim()).toBe(offering.id);
@@ -32,10 +40,25 @@ describe("offerings", () => {
       expect(offering.description.trim()).toBe(offering.description);
       expect(offering.summary).not.toBe("");
       expect(offering.description).not.toBe("");
-      expect(offering.highlights.length).toBeGreaterThan(0);
-      for (const highlight of offering.highlights) {
-        expect(highlight.trim()).toBe(highlight);
-        expect(highlight).not.toBe("");
+      for (const items of [
+        offering.applications,
+        offering.materials,
+        offering.configuration,
+        offering.delivery,
+        offering.evidence,
+      ]) {
+        expect(items.length).toBeGreaterThan(0);
+        for (const item of items) {
+          expect(item.trim()).toBe(item);
+          expect(item).not.toBe("");
+        }
+      }
+      expect(offering.specifications.length).toBeGreaterThan(0);
+      for (const specification of offering.specifications) {
+        expect(specification.label.trim()).toBe(specification.label);
+        expect(specification.label).not.toBe("");
+        expect(specification.value.trim()).toBe(specification.value);
+        expect(specification.value).not.toBe("");
       }
       expect(Number.isNaN(new Date(offering.updatedAt).getTime())).toBe(false);
       expect(offeringIds.has(offering.id)).toBe(false);

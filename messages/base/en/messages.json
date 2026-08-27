@@ -150,7 +150,13 @@
     },
     "detail": {
       "backToProducts": "Back to products",
-      "highlightsTitle": "Highlights",
+      "factsEyebrow": "Product facts",
+      "applicationsTitle": "Applications and buyer fit",
+      "specificationsTitle": "Technical specifications",
+      "materialsTitle": "Materials and construction",
+      "configurationTitle": "Configuration and selection",
+      "deliveryTitle": "Delivery boundary",
+      "evidenceTitle": "Verifiable evidence",
       "startInquiry": "Get a quote",
       "inquirySectionTitle": "Inquire about {productName}"
     }

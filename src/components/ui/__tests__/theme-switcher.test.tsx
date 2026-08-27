@@ -51,6 +51,10 @@ describe("ThemeSwitcher", () => {
     expect(
       await screen.findByTestId("theme-switcher-highlight"),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("theme-switcher")).toHaveClass(
+      "border-[var(--footer-divider)]",
+      "rounded-md",
+    );
   });
 
   it("uses resolvedTheme for the active highlight before theme is restored after navigation", async () => {
