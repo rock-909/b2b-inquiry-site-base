@@ -21,6 +21,13 @@ function hasNoindexDirective(key: string, value: string): boolean {
 }
 
 describe("next.config contract", () => {
+  it("keeps Cache Components out of the stable OpenNext lane", async () => {
+    const nextConfigModule = await import("../../next.config");
+
+    expect(nextConfigModule.default.cacheComponents).not.toBe(true);
+    expect(nextConfigModule.default.partialPrefetching).not.toBe(true);
+  });
+
   it("uses the native Rust React Compiler for Turbopack builds", async () => {
     const nextConfigModule = await import("../../next.config");
 

@@ -16,8 +16,7 @@ const WRANGLER_REQUIRED_COMPAT_FLAGS = [
   "global_fetch_strictly_public",
 ];
 const REQUIRED_R2_ENVIRONMENTS = ["preview", "production"];
-const OPEN_NEXT_DRAFT_DEPENDENCY =
-  "https://pkg.pr.new/@opennextjs/cloudflare@69807b1";
+const OPEN_NEXT_STABLE_DEPENDENCY = "1.20.4";
 
 // Split-topology surfaces that a passing build + wrangler dry-run would not
 // catch. R2 is intentional; D1/DO/queue expansion still needs a new proof lane.
@@ -264,13 +263,12 @@ function checkPackageScripts(rootDir, failures) {
   const scripts = packageJson.scripts ?? {};
   if (
     packageJson.devDependencies?.["@opennextjs/cloudflare"] !==
-    OPEN_NEXT_DRAFT_DEPENDENCY
+    OPEN_NEXT_STABLE_DEPENDENCY
   ) {
     failures.push({
       file: "package.json",
-      label:
-        "OpenNext Cache Components adapter stays pinned to the reviewed commit",
-      missing: [`@opennextjs/cloudflare: ${OPEN_NEXT_DRAFT_DEPENDENCY}`],
+      label: "OpenNext stays pinned to the reviewed stable release",
+      missing: [`@opennextjs/cloudflare: ${OPEN_NEXT_STABLE_DEPENDENCY}`],
       forbidden: [],
     });
   }
@@ -347,7 +345,7 @@ function runCloudflareConfigCheckCli() {
 
   console.log("cloudflare-config-check: passed");
   console.log(
-    "Verified the pinned OpenNext adapter, R2 source topology, and package build aliases.",
+    "Verified the stable OpenNext release, R2 source topology, and package build aliases.",
   );
 
   return true;

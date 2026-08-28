@@ -6,10 +6,7 @@ export interface SiteMessageValues {
   currentYear: string;
 }
 
-// eslint-disable-next-line require-await -- Next Cache Components 要求 use cache 函数为 async。
-export async function getSiteMessageValues(): Promise<SiteMessageValues> {
-  "use cache";
-
+export function getSiteMessageValues(): SiteMessageValues {
   const currentYear = String(new Date().getUTCFullYear());
 
   return {

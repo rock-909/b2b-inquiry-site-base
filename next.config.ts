@@ -59,11 +59,6 @@ const nextConfig: NextConfig = {
 
   /* config options here */
 
-  // Lab-only: OpenNext PR #1318 plus preview R2 must keep passing runtime proof
-  // before either flag can move to the production dependency lane.
-  cacheComponents: true,
-  partialPrefetching: true,
-
   // Compile all eligible components and hooks; Turbopack runs the native Rust
   // transform selected below instead of the Babel/Node.js implementation.
   reactCompiler: true,

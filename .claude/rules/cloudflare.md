@@ -51,10 +51,10 @@ Never run `pnpm build` and `pnpm website:build:cf` in parallel. They both write 
 Keep `src/proxy.ts` as the runtime entrypoint. Do not restore
 `src/middleware.ts` as cleanup.
 
-The pinned OpenNext package requires the repository patch that bundles the
-Node.js proxy for workerd. Keep the dependency pin, `patchedDependencies`, and
-the patch file in sync until an official release covers Node proxy bundling,
-Cache Components, and the instrumentation fix.
+The exact stable OpenNext dependency owns the Node.js proxy bundling and
+instrumentation compatibility path. Keep `nodejs_compat` enabled, and do not
+replace the stable package with `pkg.pr.new`, a canary, or a local package patch
+without a separate compatibility experiment.
 
 The matcher must remain static string literals.
 
@@ -74,13 +74,12 @@ is unavailable rather than relying on proxy-provided trusted IP headers.
 
 - Do not add `cacheTag()`, `revalidateTag()`, `revalidatePath()`, or
   `updateTag()` to production code without a new Cloudflare proof plan.
-- The runtime uses Cache Components and Partial Prefetching with OpenNext's R2
-  incremental cache. Keep Preview and Production on separate buckets using the
-  `NEXT_INC_CACHE_R2_BUCKET` binding.
-- The temporary OpenNext dependency must stay pinned to the reviewed commit,
-  never the moving PR number.
-- Do not add new production `"use cache"` boundaries without route-level cache
-  behavior and deployed Cloudflare proof.
+- Keep Preview and Production on separate R2 incremental-cache buckets using
+  the `NEXT_INC_CACHE_R2_BUCKET` binding.
+- Cache Components and Partial Prefetching stay off until a formal stable
+  OpenNext release supports them and passes the project runtime proof lanes.
+- Do not add production `"use cache"` boundaries without that stable adapter
+  support, route-level cache behavior, and deployed Cloudflare proof.
 - Content updates flow through rebuild/redeploy.
 - Do not add KV, D1, Durable Objects, tag cache, queue overrides, or split
   functions without a separate production requirement and proof plan.
