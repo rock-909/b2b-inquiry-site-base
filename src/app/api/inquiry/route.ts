@@ -5,8 +5,6 @@
 
 import "server-only";
 
-import { recordInquiryIncident } from "@/lib/observability/inquiry-failure-latch";
-import { scheduleObservabilityWrite } from "@/lib/observability/schedule-observability-write";
 import { NextRequest, type NextResponse } from "next/server";
 import {
   createApiErrorResponse,
@@ -79,12 +77,6 @@ async function validateInquiryTurnstile(
     token,
     clientIP,
   });
-
-  // Cloudflare 侧不可达/5xx/超时属于基础设施事故，不是买家的失败：
-  // 记入事故闩锁让外部监控发现；正常拒绝（token 无效）不触发。
-  if (verificationResult.status === "service-unavailable") {
-    scheduleObservabilityWrite(recordInquiryIncident("turnstile_unavailable"));
-  }
 
   const error = mapLeadTurnstileResultToResponse(verificationResult);
   return error ? createApiErrorResponse(error.errorCode, error.status) : null;
@@ -184,51 +176,6 @@ function createInquiryHoneypotSuccessResponse(
   return createApiSuccessResponse({ referenceId });
 }
 
-type DeliveryOutcome = {
-  success: boolean;
-  emailSent: boolean;
-  recordCreated: boolean;
-};
-
-/**
- * 交付结果的告警分级：部分失败也要让业主知道哪条通道在漏；全部失败是最严重档。
- */
-function incidentKindForDelivery(
-  outcome: DeliveryOutcome,
-):
-  | "delivery_failed"
-  | "email_delivery_failed"
-  | "airtable_delivery_failed"
-  | null {
-  // 注意：任一通道成功时 process-lead 就返回 success=true，所以分级只能看
-  // 真实通道结果——success 提前返回会漏掉全部单通道告警（首轮验收阻塞点）。
-  if (!outcome.emailSent && !outcome.recordCreated) return "delivery_failed";
-  if (!outcome.emailSent) return "email_delivery_failed";
-  if (!outcome.recordCreated) return "airtable_delivery_failed";
-  return null;
-}
-
-/**
- * 交付结果收尾：先按分级写事故闩锁（部分失败/全部失败），再返回对应响应。
- */
-function finalizeInquiryOutcome(
-  result: Awaited<ReturnType<typeof processValidatedInquiry>>,
-  clientIP: string,
-  startTime: number,
-): NextResponse {
-  const incidentKind = incidentKindForDelivery(result);
-
-  if (incidentKind) {
-    scheduleObservabilityWrite(
-      recordInquiryIncident(incidentKind, result.referenceId),
-    );
-  }
-
-  return result.success
-    ? createInquirySuccessResponse(result, clientIP, startTime)
-    : createInquiryFailureResponse(result, clientIP, startTime);
-}
-
 /**
  * POST /api/inquiry
  * Handle inquiry form submission.
@@ -270,7 +217,9 @@ async function handleInquiryPost(request: NextRequest, clientIP: string) {
 
     const result = await processValidatedInquiry(leadValidation.data);
 
-    return finalizeInquiryOutcome(result, clientIP, startTime);
+    return result.success
+      ? createInquirySuccessResponse(result, clientIP, startTime)
+      : createInquiryFailureResponse(result, clientIP, startTime);
   } catch (error) {
     logger.error("Inquiry submission failed unexpectedly", {
       error: error instanceof Error ? error.message : "Unknown error",
@@ -278,10 +227,6 @@ async function handleInquiryPost(request: NextRequest, clientIP: string) {
       ip: sanitizeIP(clientIP),
       processingTime: Date.now() - startTime,
     });
-
-    scheduleObservabilityWrite(
-      recordInquiryIncident("unexpected_inquiry_error"),
-    );
 
     return createApiErrorResponse(
       API_ERROR_CODES.INQUIRY_PROCESSING_ERROR,
@@ -363,13 +308,6 @@ async function handleRateLimitedInquiryPost(request: NextRequest) {
         : HTTP_TOO_MANY_REQUESTS,
     );
 
-    // 存储故障是 fail-closed：所有询盘都会被 503 拦住，属于基础设施事故。
-    if (result.deniedReason === "storage_failure") {
-      scheduleObservabilityWrite(
-        recordInquiryIncident("rate_limit_store_unavailable"),
-      );
-    }
-
     response.headers.set("X-RateLimit-Remaining", String(result.remaining));
     response.headers.set("X-RateLimit-Reset", String(result.resetTime));
     if (result.retryAfter !== null) {
@@ -378,9 +316,6 @@ async function handleRateLimitedInquiryPost(request: NextRequest) {
     return response;
   } catch (error) {
     logger.error("Unexpected rate limit infrastructure failure", { error });
-    scheduleObservabilityWrite(
-      recordInquiryIncident("rate_limit_store_unavailable"),
-    );
     return createApiErrorResponse(
       API_ERROR_CODES.SERVICE_UNAVAILABLE,
       HTTP_SERVICE_UNAVAILABLE,

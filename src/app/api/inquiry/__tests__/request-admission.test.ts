@@ -8,9 +8,6 @@ import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
 import { createInquiryRequest, validInquiryData } from "./route-harness";
 import { OPTIONS, POST } from "../route";
 
-vi.mock("@/lib/observability/inquiry-failure-latch", () => ({
-  recordInquiryIncident: vi.fn(async () => undefined),
-}));
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   sanitizeIP: (ip: string | undefined | null) =>
