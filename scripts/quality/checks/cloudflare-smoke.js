@@ -1,11 +1,6 @@
 const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
-const {
-  OFFERINGS,
-  getOfferingById,
-  getOfferingPath,
-} = require("../../../src/config/offerings.ts");
 
 const ROOT = process.cwd();
 
@@ -17,22 +12,9 @@ const DEPLOY_SMOKE_REQUEST_TIMEOUT_MS = 30000;
 const DEPLOY_SMOKE_REQUEST_RETRIES = 2;
 const DEPLOY_SMOKE_RETRY_DELAY_MS = 1000;
 const MIN_HTML_BODY_LENGTH = 1024;
-const SMOKE_OFFERING = OFFERINGS[0];
-const MISSING_OFFERING_ID = "__smoke-missing-offering__";
-
-if (!SMOKE_OFFERING) {
-  throw new Error("Cloudflare smoke requires at least one configured offering");
-}
-if (getOfferingById(MISSING_OFFERING_ID)) {
-  throw new Error(`${MISSING_OFFERING_ID} must remain an unknown offering id`);
-}
-
-const SMOKE_OFFERING_PATH = getOfferingPath(SMOKE_OFFERING.id);
-const MISSING_OFFERING_PATH = getOfferingPath(MISSING_OFFERING_ID);
 const CORE_PUBLIC_PAGE_PATHS = [
   "/",
   "/products",
-  SMOKE_OFFERING_PATH,
   "/about",
   "/contact",
   "/privacy",
@@ -47,11 +29,11 @@ const CF_PREVIEW_SMOKE_EXPECTATIONS = [
     status: 200,
     html: true,
   })),
-  { pathname: MISSING_OFFERING_PATH, status: 404, html: true },
+  { pathname: "/products/__smoke-missing-offering__", status: 404, html: true },
 ];
 const DEPLOYED_SMOKE_EXPECTATIONS = [
   ...CF_PREVIEW_SMOKE_EXPECTATIONS,
-  { pathname: "/api/health", status: 200 },
+  { pathname: "/api/health", status: 200, cacheControl: "no-store" },
   { pathname: "/.well-known/security.txt", status: 200 },
   { pathname: "/security-policy.txt", status: 404 },
 ];
@@ -218,6 +200,7 @@ function collectProbeFields(pathname, response, body, retries) {
     location: response.headers.get("location"),
     leakedMiddlewareCookie: response.headers.get("x-middleware-set-cookie"),
     robotsTag: response.headers.get("x-robots-tag"),
+    cacheControl: response.headers.get("cache-control"),
     contentType: response.headers.get("content-type"),
     frameOptions: response.headers.get("x-frame-options"),
     nosniff: response.headers.get("x-content-type-options"),
@@ -403,6 +386,17 @@ function pushLeakedMiddlewareCookieCheck(response, failures) {
   );
 }
 
+function pushCacheControlCheck(response, expectation, failures) {
+  if (!expectation.cacheControl) return;
+  pushFailureUnless(
+    (response.cacheControl ?? "")
+      .toLowerCase()
+      .includes(expectation.cacheControl),
+    `Expected ${response.pathname} to carry Cache-Control: ${expectation.cacheControl}, got ${response.cacheControl ?? "none"}`,
+    failures,
+  );
+}
+
 /**
  * 按 lane 能力开关评估单条探针结果。html=true 时隐含 body 错误检查，
  * 与旧实现的检查集合完全一致；bodyErrors 显式开启供 external lane 使用。
@@ -419,6 +413,7 @@ function evaluateProbe(
 ) {
   pushExpectedStatus(response, expectation.status, failures);
   pushRobotsTagCheck(response, expectation, failures);
+  pushCacheControlCheck(response, expectation, failures);
 
   if (expectation.html && htmlChecks) {
     pushHealthyHtmlResponse(response, failures);
@@ -488,7 +483,9 @@ async function runCloudflarePreviewSmoke(args = []) {
     parseCloudflarePreviewSmokeArgs(args);
   const expectations = [
     ...CF_PREVIEW_SMOKE_EXPECTATIONS,
-    ...(includeApiHealth ? [{ pathname: "/api/health", status: 200 }] : []),
+    ...(includeApiHealth
+      ? [{ pathname: "/api/health", status: 200, cacheControl: "no-store" }]
+      : []),
   ];
 
   console.log(

@@ -1,41 +1,33 @@
-# TypeScript 7 / TypeScript 6 双轨迁移
+# TypeScript 7 迁移观察
 
-本文档记录项目为什么同时保留 TypeScript 7 CLI 和 TypeScript 6 工具链、需要关注
-哪些上游变化，以及满足什么条件后可以迁移到单轨 TypeScript 7。代码、lockfile、实时
-package peer range 和实际验证结果优先于本文档中的时间点快照。
+本文档记录主线为什么统一使用 TypeScript 6.0.2、需要关注哪些上游变化，以及满足
+什么条件后才可以单独评估 TypeScript 7。代码、lockfile、实时 package peer range
+和实际验证结果优先于本文档中的时间点快照。
 
 本文档是一份受控临时文档。日期快照只解释
 当前决定，不自动批准未来升级；触发重新检查时必须查询实时来源。
 
 ## 当前决定
 
-项目暂时保留双轨：
+项目主线统一使用 TypeScript 6.0.2：
 
-- `@typescript/native` 提供 TypeScript 7 CLI，供项目 `type-check` 和
-  `type-check:tests` 使用；
-- `typescript` 指向 `@typescript/typescript6`，供 Next.js 的 JavaScript compiler
-  API 路线、ESLint、Storybook 和其他构建工具使用；
-- `next.config.ts` 保持 `experimental.useTypeScriptCli: false`，避免 Next.js 把
-  `typescript` 包误当成 TS7 CLI；
-- `tests/architecture/next-config-contract.test.ts` 锁住上述关系，防止依赖整理时误拆。
+- `typescript@6.0.2` 同时提供 CLI 和 JavaScript compiler API；
+- `type-check`、`type-check:tests`、Next.js、ESLint 和其他工具解析同一版本；
+- `next.config.ts` 保持 `experimental.useTypeScriptCli: false`，继续使用 Next.js
+  默认的 JavaScript compiler API 路线；
+- `tests/architecture/next-config-contract.test.ts` 锁住单一版本，防止依赖整理时
+  重新引入额外 CLI。
 
-这不是运行时双版本，也不会进入浏览器或 Cloudflare Worker。它只影响开发、检查和
-构建工具，因此当前代价主要是依赖管理复杂度，不是生产包体积或线上性能。
+TypeScript 7 不进入主线，也不会进入浏览器或 Cloudflare Worker；如需验证，只能在
+独立实验分支中进行。
 
-## 2026-08-05 状态快照
+## 当前状态
 
-- 项目 CLI 为 TypeScript `7.0.2`；
-- 工具链 `typescript` 为 `@typescript/typescript6@6.0.2`；
-- Next.js 16.3 已支持通过项目本地 `tsc` 使用 TypeScript 7，但
-  `experimental.useTypeScriptCli` 仍是实验配置；
-- TypeScript 7.0 尚未提供第三方工具依赖的 JavaScript compiler API；
-- npm 上最新 `typescript-eslint@8.66.0` 的 TypeScript peer range 仍为
-  `>=4.8.4 <6.1.0`，没有正式支持 TS7；
-- 当前依赖树中的 `typescript-eslint`、`ts-api-utils`、
-  `react-docgen-typescript`、Storybook 和部分配置加载工具仍会使用 `typescript`。
-
-因此现在不能把根 `typescript` 直接替换为 TS7，也不能通过忽略 peer dependency、
-关闭 lint 或关闭 Storybook 检查制造单轨绿灯。
+- 项目 CLI 与工具链均为 TypeScript `6.0.2`；
+- Next.js 16.3 的 TypeScript CLI 入口仍是实验能力，主线保持关闭；
+- TypeScript 7 生态兼容性必须重新以实时 peer range、安装、lint、type-check 和
+  build 结果证明，不能只看 npm 版本号；
+- 不允许通过忽略 peer dependency、关闭 lint 或关闭其他质量门禁制造绿灯。
 
 ## 必须关注的上游入口
 
@@ -63,13 +55,12 @@ package peer range 和实际验证结果优先于本文档中的时间点快照�
 
 ## 实时检查命令
 
-查看本地两个 TypeScript 入口：
+查看本地 TypeScript 基线：
 
 ```bash
 pnpm exec tsc --version
 node -p 'require("typescript/package.json").version'
 pnpm why typescript
-pnpm why @typescript/native
 ```
 
 查看 typescript-eslint 最新支持范围：
@@ -81,41 +72,39 @@ pnpm view @typescript-eslint/parser@latest version peerDependencies --json
 
 不要只看版本号。TypeScript 发布新版本不等于 ESLint、Storybook 和 docgen 已经适配。
 
-## 什么时候可以拆除
+## 什么时候可以重新评估
 
-迁移到单轨 TS7 必须同时满足：
+重新评估 TS7 必须同时满足：
 
 1. `typescript-eslint` 正式支持 TS7，不需要 pnpm override、`--force` 或忽略 warning；
 2. Storybook、react-docgen 和配置加载链可以在根 `typescript@7` 下正常工作；
-3. Next.js 使用 CLI checker 构建成功，且接受原生 `tsc` diagnostics 取代 Next.js
-   特定错误框；
+3. Next.js 使用 CLI checker 构建成功，且接受原生 `tsc` diagnostics；
 4. 干净安装后没有工具要求项目显式提供 TS6；
 5. 完整本地检查、Next/OpenNext 构建、浏览器检查和 PR CI 全绿。
 
-如果根配置不再显式保留 TS6，但某个工具仍自行安装 TS6，只能称为“移除手工双轨”。
-只有 `pnpm why typescript` 和 lockfile 不再出现 TS6，才能称为“纯 TS7 单轨”。
+如果某个工具自行安装其他 TypeScript 版本，仍需单独记录并验证；不能把它描述成
+项目主线的主动基线。
 
-## 单轨迁移步骤
+## 独立实验步骤
 
 在独立小 PR 中执行，不与 Next.js、OpenNext、ESLint 或 Storybook 大版本升级混在一起：
 
-1. 保留当前双轨状态作为可随时恢复的基线；
-2. 在同一个迁移 PR 中，把根 `typescript` 切换为已批准的 TS7 正式版本，
-   同时删除只用于双轨的 `@typescript/native`；
+1. 保留当前 TypeScript 6.0.2 状态作为可随时恢复的基线；
+2. 在同一个实验 PR 中，把根 `typescript` 切换为已批准的 TS7 正式版本；
 3. 将 `experimental.useTypeScriptCli` 显式改为 `true`，迁移验证阶段不依赖
    Next.js 的默认值；
 4. 更新 lockfile，确认没有 peer dependency 强制或 unsupported warning；
-5. 把双轨架构合同改成单轨合同；
+5. 把 TypeScript 6 架构合同改成实验合同；
 6. 顺序执行完整验证；
 7. 验证成功后，再单独决定是否删除显式的 `useTypeScriptCli: true`。
 
-根 `typescript`、`@typescript/native`、`useTypeScriptCli` 和架构合同必须在一个迁移
-PR 中一起切换，不要把任意一项先合并成半完成状态。如果验证失败，整个
-迁移 PR 不合并，主分支继续使用已验证的双轨基线。
+根 `typescript`、`useTypeScriptCli` 和架构合同必须在同一个实验 PR 中一起切换，
+不要把任意一项先合并成半完成状态。如果验证失败，主分支继续使用已验证的
+TypeScript 6.0.2 基线。
 
 ### 本地迁移验证
 
-在 lockfile 更新后，从干净安装开始顺序执行：
+任何实验 PR 都必须从干净安装开始顺序执行：
 
 ```bash
 pnpm install --frozen-lockfile
@@ -164,6 +153,6 @@ Storybook build；`release:verify` 是仓库统一的 release proof 入口。
 - Next/OpenNext build、Playwright 或现有架构合同退化；
 - 只能通过关闭质量门禁、强制 peer dependency 或长期 patch 才能继续。
 
-回滚只需恢复 `@typescript/native`、`@typescript/typescript6`、
-`useTypeScriptCli: false` 和双轨合同，再恢复上一份已验证 lockfile。这个回滚不涉及
+回滚只需恢复 `typescript@6.0.2`、`useTypeScriptCli: false` 和单轨合同，再恢复上一份
+已验证 lockfile。这个回滚不涉及
 Cloudflare 数据、R2、环境变量或线上 Worker。

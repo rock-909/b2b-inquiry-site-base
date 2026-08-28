@@ -4,7 +4,6 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { OFFERINGS, getOfferingPath } from "@/config/offerings";
 import { captureExpectedConsoleErrors } from "@/test/console";
 import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
@@ -22,12 +21,10 @@ const openServers: http.Server[] = [];
 const tempDirs: string[] = [];
 const FIXTURE_PREFIX = "b2b-minimal-cloudflare-smoke-";
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
-const OFFERING_PATH = getOfferingPath(OFFERINGS[0].id);
-const MISSING_OFFERING_PATH = getOfferingPath("__smoke-missing-offering__");
+const MISSING_OFFERING_PATH = "/products/__smoke-missing-offering__";
 const CORE_PUBLIC_PAGE_PATHS = [
   "/",
   "/products",
-  OFFERING_PATH,
   "/about",
   "/contact",
   "/privacy",
@@ -89,6 +86,7 @@ function createPreviewFetchMock() {
       if (pathname === "/api/health") {
         return response(200, '{"status":"ok"}', {
           "content-type": "application/json",
+          "cache-control": "no-store",
         });
       }
 
@@ -152,7 +150,12 @@ function createDeployedFetchMock() {
       }
 
       if (["/api/health", "/.well-known/security.txt"].includes(pathname)) {
-        return response(200, "ok", { "content-type": "text/plain" });
+        return response(200, "ok", {
+          "content-type": "text/plain",
+          ...(pathname === "/api/health"
+            ? { "cache-control": "no-store" }
+            : {}),
+        });
       }
 
       if (pathname === "/security-policy.txt") {
@@ -239,7 +242,12 @@ function listenForDeployedSmoke(): Promise<{
       }
 
       if (["/api/health", "/.well-known/security.txt"].includes(pathname)) {
-        serverResponse.writeHead(200, { "content-type": "text/plain" });
+        serverResponse.writeHead(200, {
+          "content-type": "text/plain",
+          ...(pathname === "/api/health"
+            ? { "cache-control": "no-store" }
+            : {}),
+        });
         serverResponse.end("ok");
         return;
       }
@@ -275,18 +283,11 @@ function listenForDeployedSmoke(): Promise<{
 function createMinimalCloudflareSmokeFixture(): string {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   const focusedChecksDir = path.join(rootDir, "scripts", "quality", "checks");
-  const configDir = path.join(rootDir, "src", "config");
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
   mkdirSync(focusedChecksDir, { recursive: true });
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
-  mkdirSync(configDir, { recursive: true });
   copyFileSync(
     path.resolve("scripts/quality/checks/cloudflare-smoke.js"),
     path.join(focusedChecksDir, "cloudflare-smoke.js"),
-  );
-  copyFileSync(
-    path.resolve("src/config/offerings.ts"),
-    path.join(configDir, "offerings.ts"),
   );
   tempDirs.push(rootDir);
   return rootDir;
@@ -568,6 +569,41 @@ describe("cloudflare preview smoke", () => {
 });
 
 describe("deployed smoke", () => {
+  it("rejects a cacheable api-health response", async () => {
+    const expectedFailure =
+      "  - Expected /api/health to carry Cache-Control: no-store, got public, max-age=60";
+    captureExpectedConsoleErrors(
+      "[post-deploy-smoke] Failures detected:",
+      expectedFailure,
+    );
+
+    const deployedFetchMock = createDeployedFetchMock();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (getRequestPath(input) === "/api/health") {
+          return response(200, '{"status":"ok"}', {
+            "content-type": "application/json",
+            "cache-control": "public, max-age=60",
+          });
+        }
+
+        return deployedFetchMock(input, init);
+      }),
+    );
+
+    await expect(
+      runDeployedSmoke([
+        "--base-url",
+        "https://deployed.example",
+        "--header-name",
+        "x-smoke-secret",
+        "--header-value",
+        "proof",
+      ]),
+    ).resolves.toBe(false);
+  });
+
   it("passes proof headers through every deployed route probe", async () => {
     const fetchMock = createDeployedFetchMock();
     vi.stubGlobal("fetch", fetchMock);

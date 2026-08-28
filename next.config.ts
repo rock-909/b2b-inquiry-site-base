@@ -59,11 +59,6 @@ const nextConfig: NextConfig = {
 
   /* config options here */
 
-  // Lab-only: OpenNext PR #1318 plus preview R2 must keep passing runtime proof
-  // before either flag can move to the production dependency lane.
-  cacheComponents: true,
-  partialPrefetching: true,
-
   // Compile all eligible components and hooks; Turbopack runs the native Rust
   // transform selected below instead of the Babel/Node.js implementation.
   reactCompiler: true,
@@ -101,9 +96,8 @@ const nextConfig: NextConfig = {
 
   experimental: {
     turbopackRustReactCompiler: true,
-    // The TS7 CLI is exposed by a side-by-side package alias. Next only looks
-    // for `typescript/bin/tsc`, so its internal checker must keep using TS6.
-    // Project type-check scripts still run the TS7 `tsc` binary explicitly.
+    // Keep Next.js on its JavaScript compiler API path. The project uses the
+    // same TypeScript 6.0.2 package for CLI checks and tooling.
     useTypeScriptCli: false,
     // Next.js 16 已移除 testProxy 配置 - 使用 next/experimental/testing/server 替代
     // 旧配置: testProxy: process.env.CI === 'true',

@@ -47,9 +47,6 @@ overrides:
   tmp@<0.2.6: '>=0.2.6'
   undici@>=7.0.0 <7.29.0: 7.29.0
   uuid: '>=14.0.0'
-packageManager: pnpm@11.18.0
-patchedDependencies:
-  "@opennextjs/cloudflare@1.20.2": patches/@opennextjs__cloudflare@1.20.2.patch
 peerDependencyRules:
   allowedVersions:
     '@tailwindcss/typography>tailwindcss': '4'

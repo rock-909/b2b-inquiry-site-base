@@ -3,7 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
-const PINNED_REACT_DOCTOR_VERSION = "0.9.11";
+const PINNED_REACT_DOCTOR_VERSION = "0.9.12";
 
 function readRepoFile(relativePath: string) {
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- test reads fixed repo fixture files by relative path

@@ -20,8 +20,7 @@ const CANONICAL_CLOUDFLARE_BUILD_SCRIPTS = {
   "website:build:cf:debug":
     "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
 };
-const PINNED_OPEN_NEXT_DEPENDENCY =
-  "https://pkg.pr.new/@opennextjs/cloudflare@69807b1";
+const STABLE_OPEN_NEXT_DEPENDENCY = "1.20.4";
 const PREVIEW_R2_BUCKET = "derived-site-next-cache-preview";
 const PRODUCTION_R2_BUCKET = "derived-site-next-cache-production";
 
@@ -69,7 +68,7 @@ function writePassingSideFiles(rootDir: string): void {
     JSON.stringify({
       scripts: CANONICAL_CLOUDFLARE_BUILD_SCRIPTS,
       devDependencies: {
-        "@opennextjs/cloudflare": PINNED_OPEN_NEXT_DEPENDENCY,
+        "@opennextjs/cloudflare": STABLE_OPEN_NEXT_DEPENDENCY,
       },
     }),
   );
@@ -312,7 +311,7 @@ describe("Cloudflare config source contract", () => {
     expect(failures).toEqual([
       expect.objectContaining({
         file: "package.json",
-        missing: [`@opennextjs/cloudflare: ${PINNED_OPEN_NEXT_DEPENDENCY}`],
+        missing: [`@opennextjs/cloudflare: ${STABLE_OPEN_NEXT_DEPENDENCY}`],
       }),
     ]);
   });
@@ -331,7 +330,7 @@ describe("Cloudflare config source contract", () => {
             "DEPLOYMENT_PLATFORM=vercel NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
         },
         devDependencies: {
-          "@opennextjs/cloudflare": PINNED_OPEN_NEXT_DEPENDENCY,
+          "@opennextjs/cloudflare": STABLE_OPEN_NEXT_DEPENDENCY,
         },
       }),
     );
@@ -357,7 +356,7 @@ describe("Cloudflare config source contract", () => {
             "NODE_OPTIONS=--inspect DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
         },
         devDependencies: {
-          "@opennextjs/cloudflare": PINNED_OPEN_NEXT_DEPENDENCY,
+          "@opennextjs/cloudflare": STABLE_OPEN_NEXT_DEPENDENCY,
         },
       }),
     );

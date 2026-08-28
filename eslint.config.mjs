@@ -42,10 +42,7 @@ const sharedToolingRules = {
     { max: 250, skipBlankLines: true, skipComments: true },
   ],
   complexity: ["warn", 18],
-  "max-lines": [
-    "warn",
-    { max: 800, skipBlankLines: true, skipComments: true },
-  ],
+  "max-lines": ["warn", { max: 800, skipBlankLines: true, skipComments: true }],
   "max-params": ["warn", 5],
   "max-statements": ["warn", 35],
   "max-depth": ["warn", 4],

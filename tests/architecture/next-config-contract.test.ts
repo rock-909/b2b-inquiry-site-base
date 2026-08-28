@@ -21,6 +21,13 @@ function hasNoindexDirective(key: string, value: string): boolean {
 }
 
 describe("next.config contract", () => {
+  it("keeps Cache Components out of the stable OpenNext lane", async () => {
+    const nextConfigModule = await import("../../next.config");
+
+    expect(nextConfigModule.default.cacheComponents).not.toBe(true);
+    expect(nextConfigModule.default.partialPrefetching).not.toBe(true);
+  });
+
   it("uses the native Rust React Compiler for Turbopack builds", async () => {
     const nextConfigModule = await import("../../next.config");
 
@@ -63,7 +70,7 @@ describe("next.config contract", () => {
     expect(await readDerivedLabel(undefined)).toBe("local");
   });
 
-  it("keeps the TS7 project CLI isolated from Next's TS6 dependency", async () => {
+  it("keeps one TypeScript 6.0.2 CLI and tooling baseline", async () => {
     const nextConfigModule = await import("../../next.config");
     const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
       scripts?: Record<string, string>;
@@ -71,18 +78,14 @@ describe("next.config contract", () => {
     };
 
     expect(nextConfigModule.default.experimental?.useTypeScriptCli).toBe(false);
-    expect(packageJson.devDependencies?.["@typescript/native"]).toBe(
-      "npm:typescript@7.0.2",
-    );
-    expect(packageJson.devDependencies?.typescript).toBe(
-      "npm:@typescript/typescript6@6.0.2",
-    );
+    expect(packageJson.devDependencies?.["@typescript/native"]).toBeUndefined();
+    expect(packageJson.devDependencies?.typescript).toBe("6.0.2");
     expect(packageJson.scripts?.["type-check"]).toBe(
       "next typegen && tsc --noEmit",
     );
     expect(
       execSync("pnpm exec tsc --version", { encoding: "utf8" }).trim(),
-    ).toBe("Version 7.0.2");
+    ).toBe("Version 6.0.2");
   });
 
   // 原来是在源码里找三个字符串：APP_ENV 判断、source: "/:path*"、

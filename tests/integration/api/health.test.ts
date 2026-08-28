@@ -1,4 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const latchState = vi.hoisted(() => ({
+  configured: true,
+  recentFailure: false as boolean | null,
+}));
+
+vi.mock("@/lib/observability/inquiry-failure-latch", () => ({
+  isInquiryObservabilityConfigured: () => latchState.configured,
+  hasRecentInquiryFailure: () => Promise.resolve(latchState.recentFailure),
+}));
+
 import * as route from "@/app/api/health/route";
 
 async function expectMinimalHealthResponse(response: Response) {
@@ -19,20 +30,13 @@ describe("api/health", () => {
 });
 
 describe("api/health?scope=inquiry readiness", () => {
-  const latchState = vi.hoisted(() => ({
-    configured: true,
-    recentFailure: false as boolean | null,
-  }));
-
-  vi.mock("@/lib/observability/inquiry-failure-latch", () => ({
-    isInquiryObservabilityConfigured: () => latchState.configured,
-    hasRecentInquiryFailure: () => Promise.resolve(latchState.recentFailure),
-  }));
+  beforeEach(() => {
+    latchState.configured = true;
+    latchState.recentFailure = false;
+  });
 
   async function getScoped(): Promise<Response> {
-    return route.GET(
-      new Request("http://localhost/api/health?scope=inquiry"),
-    );
+    return route.GET(new Request("http://localhost/api/health?scope=inquiry"));
   }
 
   it("returns ok when configured and no recent failure", async () => {

@@ -55,6 +55,18 @@ describe("release verify runner", () => {
     expect(testTypeCheck).toBeGreaterThan(productionTypeCheck);
   });
 
+  it("checks whole-repository formatting before tests", () => {
+    const formatCheck = RELEASE_VERIFY_COMMANDS.findIndex(
+      (step) => step.id === "format-check",
+    );
+    const tests = RELEASE_VERIFY_COMMANDS.findIndex(
+      (step) => step.id === "tests",
+    );
+
+    expect(formatCheck).toBeGreaterThanOrEqual(0);
+    expect(tests).toBeGreaterThan(formatCheck);
+  });
+
   it("detects an occupied local port", async () => {
     const { port } = await listenOnLoopback();
 
