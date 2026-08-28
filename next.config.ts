@@ -101,9 +101,8 @@ const nextConfig: NextConfig = {
 
   experimental: {
     turbopackRustReactCompiler: true,
-    // The TS7 CLI is exposed by a side-by-side package alias. Next only looks
-    // for `typescript/bin/tsc`, so its internal checker must keep using TS6.
-    // Project type-check scripts still run the TS7 `tsc` binary explicitly.
+    // Keep Next.js on its JavaScript compiler API path. The project uses the
+    // same TypeScript 6.0.2 package for CLI checks and tooling.
     useTypeScriptCli: false,
     // Next.js 16 已移除 testProxy 配置 - 使用 next/experimental/testing/server 替代
     // 旧配置: testProxy: process.env.CI === 'true',
