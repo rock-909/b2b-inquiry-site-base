@@ -1,14 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const latchState = vi.hoisted(() => ({
-  configured: true,
-  recentFailure: false as boolean | null,
-}));
-
-vi.mock("@/lib/observability/inquiry-failure-latch", () => ({
-  isInquiryObservabilityConfigured: () => latchState.configured,
-  hasRecentInquiryFailure: () => Promise.resolve(latchState.recentFailure),
-}));
+import { describe, expect, it } from "vitest";
 
 import * as route from "@/app/api/health/route";
 
@@ -23,47 +13,8 @@ async function expectMinimalHealthResponse(response: Response) {
 
 describe("api/health", () => {
   it("returns a minimal no-store health response", async () => {
-    const res = await route.GET(new Request("http://localhost/api/health"));
+    const res = route.GET();
 
     await expectMinimalHealthResponse(res);
-  });
-});
-
-describe("api/health?scope=inquiry readiness", () => {
-  beforeEach(() => {
-    latchState.configured = true;
-    latchState.recentFailure = false;
-  });
-
-  async function getScoped(): Promise<Response> {
-    return route.GET(new Request("http://localhost/api/health?scope=inquiry"));
-  }
-
-  it("returns ok when configured and no recent failure", async () => {
-    const res = await getScoped();
-    expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ status: "ok" });
-  });
-
-  it("returns degraded while a recent incident latch exists", async () => {
-    latchState.recentFailure = true;
-
-    const res = await getScoped();
-    expect(res.status).toBe(503);
-    await expect(res.json()).resolves.toEqual({ status: "degraded" });
-  });
-
-  it("returns degraded when the latch cannot be assessed (unreadable)", async () => {
-    latchState.recentFailure = null;
-
-    const res = await getScoped();
-    expect(res.status).toBe(503);
-  });
-
-  it("returns degraded when observability is not configured", async () => {
-    latchState.configured = false;
-
-    const res = await getScoped();
-    expect(res.status).toBe(503);
   });
 });
