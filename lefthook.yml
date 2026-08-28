@@ -1,4 +1,6 @@
 # 本地 Git 质量门禁。
+assert_lefthook_installed: false
+
 pre-commit:
   parallel: true
   commands:
@@ -7,6 +9,11 @@ pre-commit:
       glob: "*.{js,jsx,ts,tsx,json,md,mdx,yml,yaml,css,scss,html}"
       run: pnpm exec prettier --check {staged_files}
       fail_text: '代码格式检查失败 - 请运行 pnpm exec prettier --write <files> 修复格式问题'
+
+    eslint-check:
+      glob: "*.{js,jsx,ts,tsx}"
+      run: pnpm exec eslint --config eslint.config.mjs --max-warnings 0 {staged_files}
+      fail_text: '暂存文件 ESLint 检查失败 - 请修复 lint 问题后再提交'
 
     # 多语言同步检查
     i18n-sync:
@@ -29,6 +36,10 @@ commit-msg:
 pre-push:
   parallel: false
   commands:
+    guard-main-push:
+      run: node scripts/git/pre-push-guard.js {1}
+      fail_text: '禁止直接推送 origin/main - 请推送 feature branch 并通过 CI 合并'
+
     type-check:
       run: pnpm type-check && pnpm type-check:tests
       fail_text: '类型检查失败 - 请修复生产代码或测试类型错误后再推送'

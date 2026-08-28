@@ -21,6 +21,7 @@
     "react:doctor:report": "pnpm exec react-doctor --json --no-score --blocking none",
     "canary:airtable": "node scripts/quality/checks/airtable-canary.js",
     "release:verify": "node scripts/quality/checks/release-verify.js",
+    "hooks:install": "node scripts/git/install-hooks.js",
     "website:check": "pnpm type-check && pnpm type-check:tests && pnpm lint:check && pnpm format:check && pnpm test && pnpm build",
     "website:build:cf": "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
     "website:build:cf:debug": "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",

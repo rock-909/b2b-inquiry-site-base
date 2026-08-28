@@ -233,12 +233,18 @@ describe("CI workflow contract", () => {
     ).toContain("pnpm exec prettier --check");
     expect(preCommit["format-check"]?.run).toContain("{staged_files}");
     expect(
+      preCommit["eslint-check"]?.run,
+      "eslint-check must inspect staged JavaScript and TypeScript files",
+    ).toContain("{staged_files}");
+    expect(preCommit["eslint-check"]?.run).toContain("--max-warnings 0");
+    expect(
       preCommit["i18n-sync"]?.run,
       "i18n-sync must invoke the translation checker",
     ).toContain("translations.js");
     for (const key of ["type-check", "tests", "build-check"]) {
       expect(prePush[key], `pre-push.${key} should stay`).toBeDefined();
     }
+    expect(prePush["guard-main-push"]?.run).toContain("pre-push-guard.js {1}");
     // token 边界不能用 \b："type-check:tests" 在 check 和冒号之间也成立
     // \b，会把删掉真实 pnpm type-check 的配置漏放进来。
     expect(prePush["type-check"]?.run).toMatch(
