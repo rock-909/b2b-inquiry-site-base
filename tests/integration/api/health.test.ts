@@ -30,9 +30,7 @@ describe("api/health?scope=inquiry readiness", () => {
   }));
 
   async function getScoped(): Promise<Response> {
-    return route.GET(
-      new Request("http://localhost/api/health?scope=inquiry"),
-    );
+    return route.GET(new Request("http://localhost/api/health?scope=inquiry"));
   }
 
   it("returns ok when configured and no recent failure", async () => {

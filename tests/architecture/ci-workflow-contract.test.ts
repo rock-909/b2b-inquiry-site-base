@@ -141,6 +141,20 @@ describe("CI workflow contract", () => {
     expect(escapes).toEqual([]);
   });
 
+  it("runs the whole-repository Prettier gate in CI", () => {
+    const packageJson = JSON.parse(readRepoFile("package.json")) as {
+      scripts?: Record<string, string>;
+    };
+    const qualitySteps = readCiWorkflowConfig().jobs?.quality?.steps ?? [];
+
+    expect(packageJson.scripts?.["format:check"]).toBe("prettier --check .");
+    expect(
+      qualitySteps.some((step) =>
+        executableLines(step.run ?? "").includes("pnpm format:check"),
+      ),
+    ).toBe(true);
+  });
+
   // 安全扫描必须覆盖整个仓库，包括执行中的脚本和根配置。
   it("scans the whole repository, not a hand-picked subset", () => {
     const command = readCiWorkflow()

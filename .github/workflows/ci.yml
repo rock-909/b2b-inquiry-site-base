@@ -41,6 +41,9 @@ jobs:
       - name: ESLint 检查
         run: pnpm lint:check
 
+      - name: Prettier 检查
+        run: pnpm format:check
+
       - name: React Doctor
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then

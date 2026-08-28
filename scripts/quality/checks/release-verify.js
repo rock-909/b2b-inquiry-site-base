@@ -25,6 +25,7 @@ const RELEASE_VERIFY_COMMANDS = [
   { id: "type-check", command: "pnpm", args: ["type-check"] },
   { id: "test-type-check", command: "pnpm", args: ["type-check:tests"] },
   { id: "lint-check", command: "pnpm", args: ["lint:check"] },
+  { id: "format-check", command: "pnpm", args: ["format:check"] },
   { id: "tests", command: "pnpm", args: ["test"] },
   {
     id: "translations",
