@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_FACTS } from "@/config/single-site";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
@@ -33,6 +34,11 @@ describe("single-site", () => {
 
   it("keeps the current reference OG image explicit until asset cutover", () => {
     expect(SINGLE_SITE_FACTS.brandAssets.ogImage).toBe(REFERENCE_OG_IMAGE);
+    expect(existsSync(`public${REFERENCE_OG_IMAGE}`)).toBe(true);
+
+    // A root App Router metadata file also applies to Next's root 404, which
+    // sits above the locale layout's metadataBase and falls back to localhost.
+    expect(existsSync(`src/app${REFERENCE_OG_IMAGE}`)).toBe(false);
 
     const metadata = generateMetadataForPath({
       locale: "en",
