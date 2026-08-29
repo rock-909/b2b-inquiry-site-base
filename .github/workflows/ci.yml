@@ -209,6 +209,8 @@ jobs:
 
       - name: Localized prerender behavior check
         run: node scripts/quality/checks/prerender-static.js
+        env:
+          NEXT_PUBLIC_SITE_URL: ${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://reference-site-preview.faints-pudgier-9r.workers.dev' }}
 
       - name: Cloudflare/OpenNext 构建
         run: pnpm website:build:cf
