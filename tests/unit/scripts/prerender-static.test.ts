@@ -7,6 +7,16 @@ import { collectPrerenderStaticFindings } from "../../../scripts/quality/checks/
 
 const tempDirs: string[] = [];
 const FIXTURE_PREFIX = "prerender-static-";
+const EXPECTED_OG_IMAGE_URL = "https://example.invalid/opengraph-image.png";
+
+function collectFindings(
+  options: Parameters<typeof collectPrerenderStaticFindings>[0],
+) {
+  return collectPrerenderStaticFindings({
+    ...options,
+    expectedOgImageUrl: EXPECTED_OG_IMAGE_URL,
+  });
+}
 
 function writeJson(rootDir: string, relativePath: string, value: unknown) {
   const filePath = path.join(rootDir, relativePath);
@@ -14,6 +24,39 @@ function writeJson(rootDir: string, relativePath: string, value: unknown) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- fixture path stays inside the test-owned temp directory
   fs.writeFileSync(filePath, JSON.stringify(value));
+}
+
+function writeText(rootDir: string, relativePath: string, value: string) {
+  const filePath = path.join(rootDir, relativePath);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- fixture path stays inside the test-owned temp directory
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- fixture path stays inside the test-owned temp directory
+  fs.writeFileSync(filePath, value);
+}
+
+function writeMetadataArtifacts({
+  rootDir,
+  rootNotFoundOgImage,
+  homeOgImage = EXPECTED_OG_IMAGE_URL,
+}: {
+  rootDir: string;
+  rootNotFoundOgImage?: string;
+  homeOgImage?: string;
+}) {
+  writeText(
+    rootDir,
+    ".next/server/app/_not-found.html",
+    `<html><head>${
+      rootNotFoundOgImage
+        ? `<meta property="og:image" content="${rootNotFoundOgImage}"/>`
+        : ""
+    }</head></html>`,
+  );
+  writeText(
+    rootDir,
+    ".next/server/app/en.html",
+    `<html><head><meta property="og:image" content="${homeOgImage}"/></head></html>`,
+  );
 }
 
 function createBuildFixture({
@@ -67,6 +110,7 @@ function createBuildFixture({
       ...(contactPostponed ? { postponed: "search params" } : {}),
     });
   }
+  writeMetadataArtifacts({ rootDir });
   return rootDir;
 }
 
@@ -95,6 +139,7 @@ function createStaticBuildWithoutTemplateShellsFixture({
   writeJson(rootDir, ".next/server/app/en/contact.meta", {
     headers: { "x-nextjs-prerender": "1" },
   });
+  writeMetadataArtifacts({ rootDir });
   return rootDir;
 }
 
@@ -107,7 +152,7 @@ afterEach(() => {
 describe("prerender static behavior gate", () => {
   it("accepts fully prerendered locale templates without postponed exemptions", () => {
     expect(
-      collectPrerenderStaticFindings({
+      collectFindings({
         rootDir: createBuildFixture({ contactPostponed: false }),
         dynamicRouteExemptions: new Map(),
       }),
@@ -115,7 +160,7 @@ describe("prerender static behavior gate", () => {
   });
 
   it("rejects a localized page template without a prerender shell", () => {
-    const findings = collectPrerenderStaticFindings({
+    const findings = collectFindings({
       rootDir: createBuildFixture({ includeAboutTemplateMeta: false }),
     });
     expect(findings).toContainEqual({
@@ -126,7 +171,7 @@ describe("prerender static behavior gate", () => {
   });
 
   it("rejects a localized page template without a concrete locale route", () => {
-    const findings = collectPrerenderStaticFindings({
+    const findings = collectFindings({
       rootDir: createBuildFixture({ includeAboutRoute: false }),
     });
     expect(findings).toContainEqual({
@@ -137,7 +182,7 @@ describe("prerender static behavior gate", () => {
   });
 
   it("rejects postponed rendering outside the explicit route exemption", () => {
-    const findings = collectPrerenderStaticFindings({
+    const findings = collectFindings({
       rootDir: createBuildFixture({ aboutPostponed: true }),
     });
     expect(findings).toContainEqual({
@@ -148,7 +193,7 @@ describe("prerender static behavior gate", () => {
   });
 
   it("checks every configured locale instead of only the default locale", () => {
-    const findings = collectPrerenderStaticFindings({
+    const findings = collectFindings({
       rootDir: createBuildFixture({
         locales: ["en", "fr"],
         secondaryAboutPrerendered: false,
@@ -167,7 +212,7 @@ describe("prerender static behavior gate", () => {
   });
 
   it("rejects stale route exemptions after the page becomes fully prerendered", () => {
-    const findings = collectPrerenderStaticFindings({
+    const findings = collectFindings({
       rootDir: createBuildFixture({ contactPostponed: false }),
       dynamicRouteExemptions: new Map([
         ["/en/contact", "contact search-param island; remove in M3-D2"],
@@ -183,7 +228,7 @@ describe("prerender static behavior gate", () => {
 
   it("still rejects a missing concrete static route without PPR template shells", () => {
     expect(
-      collectPrerenderStaticFindings({
+      collectFindings({
         rootDir: createStaticBuildWithoutTemplateShellsFixture({
           includeAboutRoute: false,
         }),
@@ -192,6 +237,41 @@ describe("prerender static behavior gate", () => {
       file: "prerender-manifest.json",
       error:
         'localized route template has no prerender output for locale "en" "/[locale]/about"',
+    });
+  });
+
+  it("rejects the root 404 localhost Open Graph fallback", () => {
+    const rootDir = createStaticBuildWithoutTemplateShellsFixture();
+    writeMetadataArtifacts({
+      rootDir,
+      rootNotFoundOgImage:
+        "http://localhost:3000/opengraph-image.png?opengraph-image.123.png",
+    });
+
+    expect(
+      collectFindings({
+        rootDir,
+      }),
+    ).toContainEqual({
+      file: "server/app/_not-found.html",
+      error: "root 404 metadata contains the localhost Open Graph fallback",
+    });
+  });
+
+  it("rejects a localized home without the configured Open Graph image", () => {
+    const rootDir = createStaticBuildWithoutTemplateShellsFixture();
+    writeMetadataArtifacts({
+      rootDir,
+      homeOgImage: "https://wrong.example/opengraph-image.png",
+    });
+
+    expect(
+      collectFindings({
+        rootDir,
+      }),
+    ).toContainEqual({
+      file: "server/app/en.html",
+      error: `localized home metadata is missing configured Open Graph image "${EXPECTED_OG_IMAGE_URL}"`,
     });
   });
 });

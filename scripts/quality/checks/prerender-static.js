@@ -2,8 +2,14 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = process.cwd();
-const { locales: CONFIGURED_LOCALES } = require("../../../i18n-locales.config");
+const {
+  locales: CONFIGURED_LOCALES,
+  defaultLocale: DEFAULT_LOCALE,
+} = require("../../../i18n-locales.config");
 const DEFAULT_BUILD_DIR = ".next";
+const DEFAULT_SITE_URL = "https://example.invalid";
+const OG_IMAGE_PATH = "/opengraph-image.png";
+const LOCALHOST_OG_IMAGE_PREFIX = "http://localhost:3000/opengraph-image";
 
 // 报价页已移除：当前没有需要豁免整页预渲染检查的动态路由。
 // 机制保留给未来真实需要的路由，测试用合成 Map 覆盖。
@@ -133,11 +139,76 @@ function collectStaleExemptionFindings(dynamicRouteExemptions, usedExemptions) {
     }));
 }
 
+function loadExpectedOgImageUrl() {
+  const configuredSiteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    process.env.NEXT_PUBLIC_BASE_URL?.trim();
+  const baseUrl =
+    configuredSiteUrl && configuredSiteUrl !== "http://localhost:3000"
+      ? configuredSiteUrl
+      : DEFAULT_SITE_URL;
+
+  return new URL(OG_IMAGE_PATH, baseUrl).toString();
+}
+
+function hasMetaContent(html, attribute, name, expectedContent) {
+  return [...html.matchAll(/<meta\b[^>]*>/giu)].some(
+    ([tag]) =>
+      tag.includes(`${attribute}="${name}"`) &&
+      tag.includes(`content="${expectedContent}"`),
+  );
+}
+
+function collectMetadataFindings(
+  buildRoot,
+  metadataLocale,
+  expectedOgImageUrl,
+) {
+  const findings = [];
+  const notFoundRelativePath = "server/app/_not-found.html";
+  const homeRelativePath = `server/app/${metadataLocale}.html`;
+  const notFoundPath = path.join(buildRoot, notFoundRelativePath);
+  const homePath = path.join(buildRoot, homeRelativePath);
+
+  for (const [relativePath, filePath] of [
+    [notFoundRelativePath, notFoundPath],
+    [homeRelativePath, homePath],
+  ]) {
+    if (!fs.existsSync(filePath)) {
+      findings.push({
+        file: relativePath,
+        error: "missing prerendered HTML metadata artifact",
+      });
+    }
+  }
+  if (findings.length > 0) return findings;
+
+  const notFoundHtml = fs.readFileSync(notFoundPath, "utf8");
+  if (notFoundHtml.includes(LOCALHOST_OG_IMAGE_PREFIX)) {
+    findings.push({
+      file: notFoundRelativePath,
+      error: "root 404 metadata contains the localhost Open Graph fallback",
+    });
+  }
+
+  const homeHtml = fs.readFileSync(homePath, "utf8");
+  if (!hasMetaContent(homeHtml, "property", "og:image", expectedOgImageUrl)) {
+    findings.push({
+      file: homeRelativePath,
+      error: `localized home metadata is missing configured Open Graph image "${expectedOgImageUrl}"`,
+    });
+  }
+
+  return findings;
+}
+
 /**
  * @param {{
  *   rootDir?: string,
  *   buildDir?: string,
  *   configuredLocales?: string[],
+ *   metadataLocale?: string,
+ *   expectedOgImageUrl?: string,
  *   dynamicRouteExemptions?: Map<string, string>,
  * }=} options
  */
@@ -145,6 +216,8 @@ function collectPrerenderStaticFindings({
   rootDir = ROOT,
   buildDir = DEFAULT_BUILD_DIR,
   configuredLocales = CONFIGURED_LOCALES,
+  metadataLocale = DEFAULT_LOCALE,
+  expectedOgImageUrl = loadExpectedOgImageUrl(),
   dynamicRouteExemptions,
 } = {}) {
   const effectiveDynamicRouteExemptions =
@@ -207,6 +280,7 @@ function collectPrerenderStaticFindings({
       effectiveDynamicRouteExemptions,
       usedExemptions,
     ),
+    ...collectMetadataFindings(buildRoot, metadataLocale, expectedOgImageUrl),
   ];
 }
 

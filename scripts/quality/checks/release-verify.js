@@ -40,6 +40,11 @@ const RELEASE_VERIFY_COMMANDS = [
     requiresFreePort: 3000,
   },
   { id: "next-build", command: "pnpm", args: ["build"] },
+  {
+    id: "prerender-static",
+    command: "node",
+    args: ["scripts/quality/checks/prerender-static.js"],
+  },
   { id: "cloudflare-build", command: "pnpm", args: ["website:build:cf"] },
   {
     id: "cloudflare-artifact-config",
