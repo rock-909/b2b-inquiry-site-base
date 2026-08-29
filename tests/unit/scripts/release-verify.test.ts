@@ -67,6 +67,21 @@ describe("release verify runner", () => {
     expect(tests).toBeGreaterThan(formatCheck);
   });
 
+  it("checks prerendered metadata after Next build and before OpenNext build", () => {
+    const nextBuild = RELEASE_VERIFY_COMMANDS.findIndex(
+      (step) => step.id === "next-build",
+    );
+    const prerenderStatic = RELEASE_VERIFY_COMMANDS.findIndex(
+      (step) => step.id === "prerender-static",
+    );
+    const cloudflareBuild = RELEASE_VERIFY_COMMANDS.findIndex(
+      (step) => step.id === "cloudflare-build",
+    );
+
+    expect(prerenderStatic).toBeGreaterThan(nextBuild);
+    expect(prerenderStatic).toBeLessThan(cloudflareBuild);
+  });
+
   it("detects an occupied local port", async () => {
     const { port } = await listenOnLoopback();
 

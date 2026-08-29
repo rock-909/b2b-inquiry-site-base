@@ -76,14 +76,23 @@ describe("CI preview environment contract", () => {
         candidate.run ===
         "node scripts/quality/checks/client-boundary.js --build-artifacts",
     );
+    const prerenderStepIndex = cloudflareBuildSteps.findIndex(
+      (candidate) =>
+        candidate.run === "node scripts/quality/checks/prerender-static.js",
+    );
     const cloudflareBuildStepIndex = cloudflareBuildSteps.findIndex(
       (candidate) => candidate.run === "pnpm website:build:cf",
     );
     const analysisStep = cloudflareBuildSteps[analysisStepIndex];
+    const prerenderStep = cloudflareBuildSteps[prerenderStepIndex];
 
     expect(analysisStep?.env?.DEPLOYMENT_PLATFORM).toBeUndefined();
     expect(clientBoundaryStepIndex).toBe(analysisStepIndex + 1);
-    expect(clientBoundaryStepIndex).toBeLessThan(cloudflareBuildStepIndex);
+    expect(prerenderStepIndex).toBe(clientBoundaryStepIndex + 1);
+    expect(prerenderStep?.env?.NEXT_PUBLIC_SITE_URL).toBe(
+      analysisStep?.env?.NEXT_PUBLIC_SITE_URL,
+    );
+    expect(prerenderStepIndex).toBeLessThan(cloudflareBuildStepIndex);
   });
 
   it("runs canonical Cloudflare build proof against a public preview URL", () => {
