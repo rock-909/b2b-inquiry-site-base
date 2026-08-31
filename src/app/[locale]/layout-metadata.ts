@@ -45,7 +45,7 @@ export async function generateLocaleMetadata({
   // matcher 排除，原样落到 `[locale]` 上，某个页面的 generateMetadata 拿它去查
   // 路径表，直接 `throw new Error("Unknown locale")`，返回 500。
   // 同一句校验放在最早的入口这里，非法 locale 走正常的 404 兜底，而不是异常。
-  // 见 docs/架构与行为.md 的路由行为契约
+  // 见 docs/项目.md 的路由行为契约
   const { locale } = await params;
   if (!isLocale(locale)) {
     notFound();

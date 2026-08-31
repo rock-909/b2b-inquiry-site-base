@@ -111,13 +111,13 @@ buyer's decision.
 - `README.md`
 - `docs/项目.md`
 - `docs/技术栈.md`
-- `docs/架构与行为.md`
+- `docs/质量门禁.md`
+- `docs/派生站工作流.md`
 - `docs/派生项目交接.md`
 
-设计与组件治理：
+设计：
 
 - `DESIGN.md`
 - `docs/design/设计真相.md`
-- `docs/design/组件治理.md`
 
 派生、验证和上线统一从 `docs/派生项目交接.md` 进入。

@@ -10,7 +10,7 @@
 - 页面：Home、Products、About、Contact、Privacy、Terms。
 - 业务身份、offering 和页面内容必须由派生站 owner 在公开上线前替换确认。
 
-模板内置的是询盘、安全和交付基础能力。产品目录、服务目录或混合 offering 页面属于派生站的业务内容层：多数 B2B 站都会增加这些页面，但不需要在模板核心里预置固定目录模型或运行时 mode。
+模板默认包含基础产品目录、产品详情和询盘链路。派生站可以保留、扩展，或在完成依赖清理和门禁验证后移除，不预先增加产品/服务运行时 mode。
 
 ## 快速开始
 
@@ -41,12 +41,13 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 ## 主要维护入口
 
 1. `docs/项目.md`
-2. `docs/架构与行为.md`
-3. `docs/派生项目交接.md`
-4. `docs/技术栈.md`
-5. `docs/design/设计真相.md`
+2. `docs/技术栈.md`
+3. `docs/质量门禁.md`
+4. `docs/派生站工作流.md`
+5. `docs/派生项目交接.md`
+6. `docs/design/设计真相.md`
 
-派生站整体换肤从 `src/app/theme.css` 开始；组件结构和 variant 看 `docs/design/组件治理.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
+派生站研究从 `docs/派生站工作流.md` 开始；整体换肤从 `src/app/theme.css` 开始；组件结构和 variant 看 `.claude/rules/ui.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
 
 创建、fork 或接手派生站时，从 `docs/派生项目交接.md` 开始；不要继承模板或另一个站点的 provider、部署和 Owner 证据。
 

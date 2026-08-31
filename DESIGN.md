@@ -8,7 +8,7 @@ description: Entry point for the current reference design system.
 This file is an entry point, not a separate design specification.
 
 - Current design direction and decisions: `docs/design/设计真相.md`
-- Component boundaries and governance: `docs/design/组件治理.md`
+- Component boundaries and implementation rules: `.claude/rules/ui.md`
 - Website theme entry: `src/app/theme.css`
 - Tailwind adapter and global behavior: `src/app/globals.css`
 
