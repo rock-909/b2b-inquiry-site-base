@@ -91,8 +91,8 @@ describe("i18n Routing Configuration", () => {
     expect(Object.keys(config.pathnames).sort()).toEqual(expectedPaths);
   });
 
-  // Shared pathnames：key 和 value 相同意味着所有语言共用同一个 URL。写成对象形式
-  // 就是给每种语言配不同 URL，那和 `localePrefix: "never"` 的单语言站点自相矛盾。
+  // Shared pathnames：key 和 value 相同意味着不同语言共用同一条逻辑路径；
+  // 非默认 locale 的实际 URL 前缀由 localePrefix 统一生成。
   it("keeps pathnames in shared form", async () => {
     const config = await getRoutingDefinition();
 
@@ -102,9 +102,8 @@ describe("i18n Routing Configuration", () => {
     });
   });
 
-  // 这两个开关必须关着。localeDetection 打开会让浏览器语言把英文买家重定向到一个
-  // 不存在的语言路由；alternateLinks 在 `localePrefix: "never"` 下不生成任何东西，
-  // hreflang/canonical 归 metadata 层。
+  // localeDetection 必须关着，避免浏览器语言把买家强制重定向到不可预期的版本；
+  // hreflang/canonical 归 metadata 层，避免路由和 sitemap 产生两套 URL 真相。
   it("keeps locale detection and alternate links off", async () => {
     const config = await getRoutingDefinition();
 

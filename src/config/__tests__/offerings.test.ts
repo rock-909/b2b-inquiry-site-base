@@ -12,11 +12,13 @@ describe("offerings", () => {
     expect(Object.keys(offeringsModule).sort()).toEqual([
       "OFFERINGS",
       "getOfferingById",
+      "getOfferingForLocale",
       "getOfferingPath",
+      "getOfferingsForLocale",
     ]);
     const offeringIds = new Set<string>();
     for (const offering of offeringsModule.OFFERINGS) {
-      expect(offering).toEqual({
+      expect(offering).toMatchObject({
         id: expect.any(String) as string,
         name: expect.any(String) as string,
         summary: expect.any(String) as string,
@@ -31,6 +33,7 @@ describe("offerings", () => {
         delivery: expect.any(Array) as string[],
         evidence: expect.any(Array) as string[],
         updatedAt: expect.any(String) as string,
+        translations: expect.objectContaining({ es: expect.any(Object) }),
       });
       expect(offering.id.trim()).toBe(offering.id);
       expect(offering.id).toMatch(/^[a-z0-9-]+$/u);
@@ -78,5 +81,15 @@ describe("offerings", () => {
     );
 
     expect(offeringsModule.getOfferingById("unknown-product")).toBeUndefined();
+
+    const spanish = offeringsModule.getOfferingForLocale(
+      "sample-offering",
+      "es",
+    );
+    expect(spanish.name).toBe("Oferta de ejemplo");
+    expect(spanish.summary).toContain("catálogo");
+    expect(offeringsModule.getOfferingsForLocale("es")[0]?.name).toBe(
+      "Oferta de ejemplo",
+    );
   });
 });

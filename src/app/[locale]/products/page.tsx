@@ -7,8 +7,8 @@ import {
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Card } from "@/components/ui/card";
-import { OFFERINGS, getOfferingPath } from "@/config/offerings";
-import { getLocalizedPath } from "@/config/paths";
+import { getOfferingsForLocale, getOfferingPath } from "@/config/offerings";
+import { getCanonicalPath, getLocalePath } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
@@ -32,7 +32,7 @@ export async function generateMetadata({
   return generateMetadataForPath({
     locale,
     pageType: "products",
-    path: getLocalizedPath("products", locale),
+    path: getCanonicalPath("products"),
     config: {
       title: t("title"),
       description: t("description"),
@@ -47,7 +47,8 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
     getTranslations({ locale, namespace: "products" }),
     getTranslations({ locale, namespace: "products.metadata" }),
   ]);
-  const pagePath = getLocalizedPath("products", locale);
+  const offerings = getOfferingsForLocale(locale);
+  const pagePath = getCanonicalPath("products");
 
   return (
     <>
@@ -58,7 +59,10 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
             locale,
             name: tMetadata("title"),
             description: tMetadata("description"),
-            url: new URL(pagePath, SINGLE_SITE_CONFIG.baseUrl).toString(),
+            url: new URL(
+              getLocalePath(locale, pagePath),
+              SINGLE_SITE_CONFIG.baseUrl,
+            ).toString(),
           }),
         ]}
       />
@@ -76,7 +80,7 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
         </header>
 
         <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {OFFERINGS.map((offering) => (
+          {offerings.map((offering) => (
             <Card key={offering.id} className="flex flex-col p-6">
               <h2 className="text-section">{offering.name}</h2>
               <p className="mt-3 flex-1 text-pretty text-muted-foreground">

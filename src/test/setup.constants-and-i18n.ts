@@ -1,5 +1,7 @@
 import React from "react";
 import { vi } from "vitest";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
+import { PATHNAMES } from "@/config/paths/utils";
 
 // Mock unified constants entry point - 使用importOriginal保留所有原始常量
 vi.mock("@/constants", async (importOriginal) => {
@@ -71,16 +73,10 @@ vi.mock("next-intl/server", async () => {
 // Mock @/i18n/routing - 提供完整的路由Mock配置
 vi.mock("@/i18n/routing", () => ({
   routing: {
-    locales: ["en"],
-    defaultLocale: "en",
-    localePrefix: "never",
-    pathnames: {
-      "/": "/",
-      "/about": "/about",
-      "/contact": "/contact",
-      "/privacy": "/privacy",
-      "/terms": "/terms",
-    },
+    locales: LOCALES_CONFIG.locales,
+    defaultLocale: LOCALES_CONFIG.defaultLocale,
+    localePrefix: LOCALES_CONFIG.localePrefix,
+    pathnames: PATHNAMES,
   },
   Link: ({ children, href, prefetch: _prefetch, ...props }: any) => {
     const resolvedHref =

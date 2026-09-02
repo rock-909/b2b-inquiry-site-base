@@ -27,6 +27,11 @@ Every content field has one authoring source.
 | Shared labels/nav/buttons/form chrome | `messages/base/{locale}/messages.json` | Page metadata |
 | Offering names and reviewed offering copy | `src/config/offerings.ts` and active content | Component literals or translation JSON |
 
+When a locale is configured, offering pages must render that locale's reviewed
+copy through the offering locale helper. Do not silently render the default
+language's product name, summary, specifications or evidence on a localized
+route.
+
 ## Page content
 
 - Page titles, descriptions, FAQ items, and legal/About prose live in the

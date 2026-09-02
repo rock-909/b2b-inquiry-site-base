@@ -118,6 +118,44 @@ describe("InquiryForm contract", () => {
     expect(message).toHaveValue("A".repeat(2000));
   });
 
+  it("restores the current-tab inquiry draft after the form remounts", () => {
+    const firstRender = renderInquiryForm();
+    const firstControls = getFormControls(firstRender.container);
+
+    fireEvent.input(firstControls.fullName, {
+      target: { value: "Ada Buyer" },
+    });
+    fireEvent.input(firstControls.email, {
+      target: { value: "ada@example.com" },
+    });
+    fireEvent.input(firstControls.message, {
+      target: { value: "Keep this inquiry while switching languages" },
+    });
+
+    firstRender.unmount();
+    const secondRender = renderInquiryForm();
+    const restored = getFormControls(secondRender.container);
+
+    expect(restored.fullName).toHaveValue("Ada Buyer");
+    expect(restored.email).toHaveValue("ada@example.com");
+    expect(restored.message).toHaveValue(
+      "Keep this inquiry while switching languages",
+    );
+  });
+
+  it("ignores invalid inquiry draft data", () => {
+    window.sessionStorage.setItem("inquiry-draft", "not-json");
+
+    const { container } = renderInquiryForm({
+      initialMessage: "Initial product inquiry",
+    });
+    const controls = getFormControls(container);
+
+    expect(controls.fullName).toHaveValue("");
+    expect(controls.email).toHaveValue("");
+    expect(controls.message).toHaveValue("Initial product inquiry");
+  });
+
   it("serializes a filled website honeypot into the inquiry payload", async () => {
     const { container } = renderInquiryForm();
     const { fullName, email, form } = getFormControls(container);
@@ -343,6 +381,9 @@ describe("InquiryForm contract", () => {
     fireEvent.change(message, {
       target: { value: "Need sample offering specs" },
     });
+    fireEvent.input(form);
+
+    expect(window.sessionStorage.getItem("inquiry-draft")).not.toBeNull();
 
     await act(async () => {
       fireEvent.submit(form);
@@ -354,6 +395,7 @@ describe("InquiryForm contract", () => {
     expect(fullName).toHaveValue("");
     expect(email).toHaveValue("");
     expect(message).toHaveValue("");
+    expect(window.sessionStorage.getItem("inquiry-draft")).toBeNull();
   });
 
   it("preserves filled fields after validation failure", async () => {

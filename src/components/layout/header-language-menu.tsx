@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, Globe } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { usePathname, Link } from "@/i18n/routing";
+import { FinalUrlLink, usePathname } from "@/i18n/routing";
 import {
   LOCALES_CONFIG,
   type ConfiguredLocale,
 } from "@/config/paths/locales-config";
 import { cn } from "@/lib/utils";
+import { useLocaleSwitchHref } from "@/components/layout/use-locale-switch-href";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,8 +36,10 @@ export function HeaderLanguageMenu({
 }: HeaderLanguageMenuProps) {
   const pathname = usePathname();
   const tAccessibility = useTranslations("accessibility");
+  const tNavigation = useTranslations("navigation");
   const currentLocale = locale;
   const currentLanguageLabel = LOCALES_CONFIG.displayNames[currentLocale];
+  const localeSwitchHref = useLocaleSwitchHref(pathname);
   const [open, setOpen] = useState(initialOpen);
   const previousPathname = useRef(pathname);
 
@@ -59,8 +62,8 @@ export function HeaderLanguageMenu({
           language: currentLanguageLabel,
         })}
         className={cn(
-          "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted-foreground",
-          "transition-colors hover:bg-accent hover:text-foreground",
+          "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground",
+          "transition-colors duration-100 ease-out hover:bg-accent hover:text-foreground",
           "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none",
         )}
       >
@@ -70,13 +73,19 @@ export function HeaderLanguageMenu({
         </span>
         <ChevronDown
           aria-hidden="true"
-          className={cn("size-3.5 transition-transform", open && "rotate-180")}
+          className={cn(
+            "size-3.5 transition-transform duration-150 ease-out motion-reduce:transition-none",
+            open && "rotate-180",
+          )}
         />
       </DropdownMenuTrigger>
 
       <DropdownMenuPortal>
         <DropdownMenuPositioner sideOffset={6} align="end">
-          <DropdownMenuContent data-testid="language-dropdown-content">
+          <DropdownMenuContent
+            aria-label={tNavigation("language")}
+            data-testid="language-dropdown-content"
+          >
             <div className="space-y-0.5">
               {LANGUAGE_OPTIONS.map((option) => {
                 const isCurrent = option.locale === currentLocale;
@@ -99,10 +108,10 @@ export function HeaderLanguageMenu({
                     <DropdownMenuItem
                       key={option.locale}
                       aria-current="true"
-                      className="text-foreground data-[highlighted]:bg-transparent data-[highlighted]:text-foreground"
+                      className="text-foreground data-[disabled]:opacity-100"
                       data-locale={option.locale}
                       data-testid={`language-option-${option.locale}`}
-                      closeOnClick
+                      disabled
                     >
                       {optionContent}
                     </DropdownMenuItem>
@@ -115,16 +124,15 @@ export function HeaderLanguageMenu({
                     data-locale={option.locale}
                     data-testid={`language-option-${option.locale}`}
                     render={
-                      <Link
-                        href={pathname as "/"}
-                        locale={option.locale}
-                        prefetch={false}
+                      <FinalUrlLink
+                        href={localeSwitchHref(option.locale)}
+                        hrefLang={option.locale}
                         translate="no"
-                      />
+                      >
+                        {optionContent}
+                      </FinalUrlLink>
                     }
-                  >
-                    {optionContent}
-                  </DropdownMenuLinkItem>
+                  />
                 );
               })}
             </div>

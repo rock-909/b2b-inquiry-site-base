@@ -19,8 +19,8 @@ export const routing = defineRouting({
   // 注意：仅包含已实现的页面路径，避免 404 错误
   pathnames: PATHNAMES,
 
-  // localePrefix 'never' disables next-intl alternate links (no-op here);
-  // canonical/hreflang is handled by the metadata layer.
+  // canonical/hreflang is handled by the metadata layer so head and sitemap
+  // alternates share one URL contract.
 
   localeDetection: false,
 

@@ -56,8 +56,8 @@ function LanguageToggleTrigger({
       aria-expanded="false"
       aria-haspopup="menu"
       className={cn(
-        "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-medium text-muted-foreground",
-        "transition-colors hover:bg-accent hover:text-foreground",
+        "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground",
+        "transition-colors duration-100 ease-out hover:bg-accent hover:text-foreground",
         "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none",
       )}
       onClick={onClick}

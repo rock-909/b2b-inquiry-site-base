@@ -18,11 +18,11 @@ const CORE_PATHS = {
 } as const;
 
 describe("paths", () => {
-  it("keeps the single-locale route contract", () => {
+  it("keeps the configured locale route contract", () => {
     expect(LOCALES_CONFIG).toMatchObject({
-      locales: ["en"],
+      locales: ["en", "es"],
       defaultLocale: "en",
-      localePrefix: "never",
+      localePrefix: "as-needed",
     });
   });
 
@@ -46,5 +46,10 @@ describe("paths", () => {
 
   it("returns null for an unknown path", () => {
     expect(getPageTypeFromPath("/unknown", "en")).toBeNull();
+  });
+
+  it("builds and resolves the Spanish locale prefix", () => {
+    expect(getLocalizedPath("about", "es")).toBe("/es/about");
+    expect(getPageTypeFromPath("/es/about", "es")).toBe("about");
   });
 });

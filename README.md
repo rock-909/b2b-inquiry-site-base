@@ -1,12 +1,12 @@
 # B2B Inquiry Site Base
 
-英文 B2B 询盘站模板，面向 offering 介绍、联系和报价询盘转化。
+B2B 询盘站模板，面向 offering 介绍、联系和报价询盘转化，内置英语/西班牙语多语言示例。
 
 当前业务真相以本仓页面、内容、配置和上线证明为准。多 profile runtime 和 materialize 工具已经退役；旧说明需要追溯时看 Git 历史。
 
 ## 当前站点范围
 
-- 单语言：English only，公开 URL 不带 `/en` 前缀。
+- 多语言示例：英语为默认语言，公开 URL 不带 `/en` 前缀；西班牙语使用 `/es/` 前缀。
 - 页面：Home、Products、About、Contact、Privacy、Terms。
 - 业务身份、offering 和页面内容必须由派生站 owner 在公开上线前替换确认。
 
@@ -60,11 +60,11 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 - 品牌事实：`src/config/single-site.ts`
 - SEO / crawl：`src/config/single-site-seo.ts`
 - 导航和链接：`src/config/single-site-navigation.ts`、`src/config/single-site-links.ts`
-- 页面正文：`src/content/pages/en/*.ts`
+- 页面正文：`src/content/pages/{locale}/*.ts`
 - Offering 数据：`src/config/offerings.ts`
-- UI 文案 authoring truth：`messages/base/**`、`messages/profiles/b2b-lead/**`
+- UI 文案 authoring truth：`messages/base/{locale}/messages.json`
 
-message graph 固定为 `base -> b2b-lead`。修改 physical packs 后运行 `pnpm content:check`。
+修改 locale message pack 后运行 `pnpm content:check`。
 
 ## AI 协作入口
 

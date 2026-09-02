@@ -45,10 +45,11 @@ function DropdownMenuContent({
       data-slot="dropdown-menu-content"
       className={cn(
         "min-w-40 origin-[var(--transform-origin)] rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none",
-        "transition-[opacity,transform] duration-150 ease-out",
-        "data-[starting-style]:scale-95 data-[starting-style]:opacity-0",
-        "data-[ending-style]:scale-95 data-[ending-style]:opacity-0",
+        "transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]",
+        "data-[starting-style]:translate-y-1 data-[starting-style]:scale-[0.98] data-[starting-style]:opacity-0",
+        "data-[ending-style]:translate-y-0.5 data-[ending-style]:opacity-0 data-[ending-style]:duration-100",
         "data-[instant]:transition-none",
+        "motion-reduce:transform-none motion-reduce:transition-none",
         className,
       )}
       {...props}
@@ -82,7 +83,7 @@ function DropdownMenuLinkItem({
     <MenuPrimitive.LinkItem
       data-slot="dropdown-menu-link-item"
       className={cn(
-        "flex min-h-9 w-full cursor-default items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground outline-none",
+        "flex min-h-9 w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground outline-none",
         "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
         className,
       )}

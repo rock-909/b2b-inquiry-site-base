@@ -7,6 +7,7 @@
 import { type Locale } from "@/i18n/routing-config";
 import { coerceLocale } from "@/i18n/locale-utils";
 import enMessages from "@messages/base/en/messages.json";
+import esMessages from "@messages/base/es/messages.json";
 import {
   getSiteMessageValues,
   type SiteMessageValues,
@@ -14,7 +15,10 @@ import {
 
 type Messages = Record<string, unknown>;
 
-const SOURCE_MESSAGES: Record<Locale, Messages> = { en: enMessages };
+const SOURCE_MESSAGES: Record<Locale, Messages> = {
+  en: enMessages,
+  es: esMessages,
+};
 
 function interpolateSiteMessageString(
   value: string,

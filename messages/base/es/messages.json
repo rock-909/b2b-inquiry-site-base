@@ -1,0 +1,257 @@
+{
+  "theme": {
+    "switchToLight": "Cambiar al tema claro",
+    "switchToDark": "Cambiar al tema oscuro",
+    "switchToSystem": "Usar el tema del sistema"
+  },
+  "accessibility": {
+    "skipToContent": "Ir al contenido principal",
+    "openMenu": "Abrir menú de navegación",
+    "closeMenu": "Cerrar menú de navegación",
+    "mainNavigation": "Navegación principal",
+    "mobileNavigation": "Menú de navegación móvil",
+    "language": "Idiomas: {language}",
+    "themeSelector": "Selector de tema",
+    "footerNavigation": "Navegación del pie de página"
+  },
+  "cookie": {
+    "title": "Cookies de análisis",
+    "description": "Permite cookies de análisis opcionales para ayudarnos a entender el tráfico del sitio.",
+    "learnMore": "Política de privacidad",
+    "acceptAll": "Permitir análisis",
+    "rejectAll": "No, gracias"
+  },
+  "structured-data": {
+    "organization": {
+      "name": "{companyName}",
+      "description": "Sitio de referencia para consultas B2B",
+      "social": {
+        "twitter": "",
+        "linkedin": ""
+      }
+    },
+    "website": {
+      "name": "{siteName}",
+      "description": "Sitio de referencia para consultas B2B"
+    },
+    "article": {
+      "defaultAuthor": "{companyName}"
+    }
+  },
+  "apiErrors": {
+    "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
+    "SERVICE_UNAVAILABLE": "El servicio no está disponible temporalmente. Inténtalo de nuevo más tarde.",
+    "INVALID_JSON_BODY": "Formato de solicitud no válido.",
+    "PAYLOAD_TOO_LARGE": "La solicitud es demasiado grande.",
+    "TURNSTILE_REQUIRED": "Se requiere una verificación de seguridad.",
+    "TURNSTILE_REJECTED": "La verificación de seguridad ha fallado. Inténtalo de nuevo.",
+    "TURNSTILE_UNAVAILABLE": "La verificación de seguridad no está disponible temporalmente. Inténtalo de nuevo más tarde.",
+    "UNKNOWN_ERROR": "Se ha producido un error desconocido.",
+    "INTERNAL_SERVER_ERROR": "Se ha producido un error inesperado. Inténtalo de nuevo más tarde.",
+    "INVALID_REQUEST": "Faltan algunos campos obligatorios o no son válidos.",
+    "UNSUPPORTED_MEDIA_TYPE": "Tipo de contenido no compatible.",
+    "INQUIRY_VALIDATION_FAILED": "Revisa los datos de tu consulta e inténtalo de nuevo.",
+    "INQUIRY_PROCESSING_ERROR": "No hemos podido enviar tu consulta ahora. Inténtalo de nuevo más tarde."
+  },
+  "errors": {
+    "contact": {
+      "title": "El formulario de contacto no está disponible temporalmente",
+      "description": "Nuestro equipo revisará este problema de inmediato. Puedes volver a intentarlo más tarde o contactarnos por otros medios.",
+      "tryAgain": "Volver a intentar",
+      "goHome": "Volver al inicio"
+    },
+    "notFound": {
+      "title": "Página no encontrada",
+      "description": "La página que buscas no existe o se ha movido.",
+      "goHome": "Volver al inicio"
+    }
+  },
+  "legal": {
+    "effectiveDate": "Fecha de entrada en vigor",
+    "lastUpdated": "Última actualización",
+    "tableOfContents": "Índice",
+    "articleAuthorLine": "Redactado por la empresa responsable de esta página."
+  },
+  "emailTemplates": {
+    "common": {
+      "fields": {
+        "contactName": "Nombre de contacto",
+        "email": "Correo electrónico",
+        "interest": "Interés",
+        "offering": "Oferta",
+        "offeringId": "ID de la oferta",
+        "reference": "Referencia",
+        "requirements": "Requisitos"
+      }
+    },
+    "inquiry": {
+      "title": "Nueva consulta",
+      "preview": "Se ha recibido una nueva consulta.",
+      "footer": "Esta consulta se ha enviado a través del sitio web.",
+      "subject": "Consulta desde el sitio web"
+    }
+  },
+  "navigation": {
+    "home": "Inicio",
+    "products": "Productos",
+    "about": "Sobre nosotros",
+    "contactSales": "Iniciar una consulta",
+    "language": "Idiomas",
+    "siteName": "{siteName}",
+    "siteDescription": "Sitio de referencia neutral para consultas B2B."
+  },
+  "footer": {
+    "sections": {
+      "navigation": {
+        "title": "Navegación",
+        "home": "Inicio",
+        "products": "Productos",
+        "about": "Sobre nosotros",
+        "contact": "Contacto"
+      },
+      "support": {
+        "title": "Ayuda",
+        "privacy": "Política de privacidad",
+        "terms": "Condiciones del servicio"
+      }
+    },
+    "copyright": "© {currentYear} {siteName}. Todos los derechos reservados.",
+    "description": "Sitio de referencia neutral para consultas B2B."
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Referencia de consultas B2B",
+      "title": "Convierte el interés cualificado en una conversación útil.",
+      "subtitle": "Un punto de partida neutral para empresas que necesitan una oferta clara, pruebas fiables y un proceso de consulta enfocado.",
+      "cta": {
+        "primary": "Iniciar una consulta",
+        "secondary": "Conocer el sitio"
+      }
+    },
+    "value": {
+      "title": "Un sitio pequeño con lo que realmente importa",
+      "description": "Usa esta estructura y sustituye después la identidad, la oferta, las pruebas y el contenido para el siguiente negocio."
+    },
+    "finalCta": {
+      "title": "¿Tienes un requisito que comentar?",
+      "description": "Comparte lo esencial y el equipo podrá responder con la siguiente pregunta útil."
+    }
+  },
+  "products": {
+    "metadata": {
+      "title": "Productos",
+      "description": "Consulta la gama de productos configurada y continúa con el proceso de consulta usando el contexto del producto relevante."
+    },
+    "page": {
+      "eyebrow": "Catálogo de productos",
+      "heading": "Productos basados en requisitos reales de los compradores",
+      "description": "Sustituye la entrada de referencia por datos de producto verificados antes del lanzamiento.",
+      "viewDetails": "Ver detalles"
+    },
+    "detail": {
+      "backToProducts": "Volver a productos",
+      "factsEyebrow": "Datos del producto",
+      "applicationsTitle": "Aplicaciones y adecuación",
+      "specificationsTitle": "Especificaciones técnicas",
+      "materialsTitle": "Materiales y construcción",
+      "configurationTitle": "Configuración y selección",
+      "deliveryTitle": "Alcance de la entrega",
+      "evidenceTitle": "Pruebas verificables",
+      "startInquiry": "Solicitar presupuesto",
+      "inquirySectionTitle": "Consultar sobre {productName}"
+    }
+  },
+  "contact": {
+    "title": "Contacto",
+    "description": "Comparte lo esencial para que la empresa pueda identificar el siguiente paso útil.",
+    "inquiryHandoff": {
+      "title": "Empieza por lo esencial",
+      "description": "Una consulta enfocada proporciona el contexto necesario para responder con un siguiente paso útil.",
+      "items": {
+        "need": {
+          "title": "Qué necesitas",
+          "description": "El producto, servicio, aplicación o problema que quieres comentar."
+        },
+        "context": {
+          "title": "Alcance y cantidad",
+          "description": "Cantidad, dimensiones, especificaciones, ubicación o alcance del proyecto, además de fotos o planos cuando sean útiles."
+        },
+        "timing": {
+          "title": "Plazos y destino",
+          "description": "Fecha prevista, mercado de destino y cualquier limitación de entrega o implementación."
+        }
+      }
+    },
+    "panel": {
+      "contactTitle": "Correo y consulta",
+      "email": "Correo electrónico",
+      "emailUnavailable": "Usa el formulario de consulta si el correo no está disponible.",
+      "phone": "Teléfono",
+      "hoursTitle": "Horario comercial",
+      "weekdays": "Días laborables",
+      "saturday": "Sábado",
+      "sunday": "Domingo",
+      "closed": "Definir antes del lanzamiento",
+      "responseTitle": "Qué ocurre después",
+      "responseTimeLabel": "Objetivo de respuesta",
+      "responseTimeValue": "Definir antes del lanzamiento",
+      "bestForLabel": "Primera respuesta útil",
+      "bestForValue": "El siguiente paso confirmado",
+      "prepareLabel": "Ayuda al equipo a responder",
+      "prepareValue": "Comparte el requisito, el alcance, los plazos y el destino."
+    }
+  },
+  "inquiry": {
+    "form": {
+      "optional": "opcional",
+      "fullName": "Nombre completo",
+      "email": "Dirección de correo electrónico",
+      "message": "Mensaje",
+      "messageHint": "Opcional: comparte tus requisitos, plazos, mercado o cualquier contexto útil.",
+      "submit": "Enviar consulta",
+      "submitting": "Enviando...",
+      "success": "Recibido. El equipo puede revisar tu consulta y responder con el siguiente paso útil o con los datos que aún falten.",
+      "referenceLabel": "Referencia",
+      "privacyNotice": "Al enviar este formulario, aceptas nuestra Política de privacidad y las Condiciones del servicio.",
+      "noJsExplanation": "El formulario seguro necesita JavaScript porque la verificación contra bots no puede ejecutarse sin él.",
+      "noJsEmailPrefix": "Escríbenos directamente a",
+      "contactAriaLabel": "Consulta de contacto",
+      "turnstile": {
+        "unavailable": "La verificación de seguridad no está disponible temporalmente.",
+        "loadFailed": "No se ha podido cargar la verificación de seguridad.",
+        "devBypass": "Modo de desarrollo: verificación Turnstile omitida",
+        "testMode": "Protección contra bots desactivada en modo de prueba",
+        "expired": "La verificación de seguridad ha caducado. Complétala de nuevo.",
+        "rescueBeforeEmail": "Escríbenos por correo: ",
+        "rescueAfterEmail": "Incluye tus requisitos y datos de contacto.",
+        "rescueSubject": "Consulta"
+      },
+      "errors": {
+        "fieldSummary": "Revisa los campos resaltados e inténtalo de nuevo.",
+        "securitySummary": "La verificación de seguridad no se ha completado. Inténtalo de nuevo.",
+        "serverSummary": "No hemos podido enviar tu consulta ahora. Inténtalo de nuevo en unos instantes.",
+        "fullName": {
+          "required": "El nombre completo es obligatorio",
+          "invalid": "El nombre completo contiene caracteres no válidos",
+          "tooLong": "El nombre completo debe tener 100 caracteres o menos"
+        },
+        "email": {
+          "required": "La dirección de correo es obligatoria",
+          "invalid": "Introduce una dirección de correo válida",
+          "tooLong": "El correo debe tener 254 caracteres o menos"
+        },
+        "message": {
+          "invalid": "El mensaje contiene caracteres no válidos",
+          "tooLong": "El mensaje debe tener 2000 caracteres o menos"
+        },
+        "rateLimitSummary": "Demasiados intentos. Espera antes de volver a enviar la consulta.",
+        "rateLimitReady": "Ya puedes volver a enviar la consulta."
+      },
+      "productInterestTemplate": "Me interesa {productName}."
+    }
+  },
+  "faq": {
+    "sectionTitle": "Preguntas frecuentes",
+    "items": {}
+  }
+}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import type { LocaleParam } from "@/app/[locale]/generate-static-params";
 import { LegalPageShell } from "@/components/content/legal-page-shell";
-import { getLocalizedPath, type PageType } from "@/config/paths";
+import { getCanonicalPath, type PageType } from "@/config/paths";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { loadLegalPage } from "@/lib/content/legal-page";
 import {
@@ -31,7 +31,7 @@ export async function generateStaticContentPageMetadata(
   return generateMetadataForPath({
     locale,
     pageType: config.pageType,
-    path: getLocalizedPath(config.pageType, locale),
+    path: getCanonicalPath(config.pageType),
     config: createStaticPageMetadataConfig(metadata, {
       includeEmptyDescription: true,
       includeImage: true,
@@ -52,7 +52,7 @@ export async function StaticContentPage({
     config.slug,
     locale,
   );
-  const pagePath = getLocalizedPath(config.pageType, locale);
+  const pagePath = getCanonicalPath(config.pageType);
 
   return (
     <LegalPageShell

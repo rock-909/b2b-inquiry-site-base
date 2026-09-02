@@ -13,6 +13,7 @@ export { LOCALES_CONFIG } from "@/config/paths/locales-config";
 // 重新导出工具函数
 export {
   getCanonicalPath,
+  getLocalePath,
   getLocalizedPath,
   getPageTypeFromPath,
   PATHNAMES,

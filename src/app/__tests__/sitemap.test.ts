@@ -15,6 +15,13 @@ describe("sitemap", () => {
       "/contact",
       "/privacy",
       "/terms",
+      "/es",
+      "/es/products",
+      "/es/products/sample-offering",
+      "/es/about",
+      "/es/contact",
+      "/es/privacy",
+      "/es/terms",
     ]);
     expect(new Set(paths).size).toBe(paths.length);
   });
@@ -28,6 +35,7 @@ describe("sitemap", () => {
     for (const entry of entries) {
       expect(entry.priority).toBeGreaterThan(0);
       expect(entry.alternates?.languages).toHaveProperty("en");
+      expect(entry.alternates?.languages).toHaveProperty("es");
       expect(entry.alternates?.languages).toHaveProperty("x-default");
     }
 

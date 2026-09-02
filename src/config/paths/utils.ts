@@ -14,6 +14,27 @@ function getCanonicalPathValue(path: string): string {
   return path === "" ? "/" : path;
 }
 
+export function getLocalePath(locale: Locale, path: string): string {
+  if (!LOCALES_CONFIG.locales.includes(locale)) {
+    throw new Error(`Unknown locale: ${locale}`);
+  }
+
+  const canonicalPath = getCanonicalPathValue(path);
+  if (locale === LOCALES_CONFIG.defaultLocale) return canonicalPath;
+
+  return canonicalPath === "/" ? `/${locale}` : `/${locale}${canonicalPath}`;
+}
+
+function stripLocalePath(locale: Locale, path: string): string {
+  const normalizedPath = getCanonicalPathValue(path);
+  if (locale === LOCALES_CONFIG.defaultLocale) return normalizedPath;
+
+  const prefix = `/${locale}`;
+  return normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
+    ? normalizedPath.slice(prefix.length) || "/"
+    : normalizedPath;
+}
+
 function createPathnames(): Readonly<PathnameMap> {
   const staticPathnames = Object.values(PATHS_CONFIG).map((configuredPath) => {
     const path = getCanonicalPathValue(configuredPath);
@@ -38,10 +59,7 @@ export function getLocalizedPath(pageType: PageType, locale: Locale): string {
   if (!Object.prototype.hasOwnProperty.call(PATHS_CONFIG, pageType)) {
     throw new Error(`Unknown page type: ${pageType}`);
   }
-  if (locale !== LOCALES_CONFIG.defaultLocale) {
-    throw new Error(`Unknown locale: ${locale}`);
-  }
-  return PATHS_CONFIG[pageType];
+  return getLocalePath(locale, PATHS_CONFIG[pageType]);
 }
 
 export function getCanonicalPath<T extends PageType>(
@@ -73,18 +91,15 @@ export function getPageTypeFromPath(
     throw new Error("Locale cannot be null or undefined");
   }
 
+  const canonicalPath = stripLocalePath(locale, path);
+
   // 处理根路径
-  if (path === "/" || path === "") {
+  if (canonicalPath === "/" || canonicalPath === "") {
     return "home";
   }
 
-  // 查找匹配的页面类型
-  if (locale !== LOCALES_CONFIG.defaultLocale) {
-    throw new Error(`Unknown locale: ${locale}`);
-  }
-
   for (const [pageType, configuredPath] of Object.entries(PATHS_CONFIG)) {
-    if (configuredPath === path) {
+    if (configuredPath === canonicalPath) {
       return pageType as PageType;
     }
   }

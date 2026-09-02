@@ -5,7 +5,7 @@ import {
   type LocaleParam,
 } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
-import { getLocalizedPath } from "@/config/paths";
+import { getCanonicalPath } from "@/config/paths";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { createStaticMarkdownContent } from "@/lib/content/render-static-markdown-content";
 import {
@@ -42,7 +42,7 @@ export async function generateMetadata({
   return generateMetadataForPath({
     locale,
     pageType: "contact",
-    path: getLocalizedPath("contact", locale),
+    path: getCanonicalPath("contact"),
     config: createStaticPageMetadataConfig(page.metadata),
   });
 }

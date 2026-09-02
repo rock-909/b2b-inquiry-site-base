@@ -21,6 +21,11 @@ import {
   type InquirySubmitState,
 } from "@/components/forms/inquiry-response";
 import { TurnstileWidget } from "@/components/security/turnstile";
+import {
+  MAX_LEAD_EMAIL_LENGTH,
+  MAX_LEAD_MESSAGE_LENGTH,
+  MAX_LEAD_NAME_LENGTH,
+} from "@/constants/validation-limits";
 import { trackGenerateLead } from "@/lib/marketing/lead-event";
 import { appendAttributionToFormData } from "@/lib/marketing/utm";
 
@@ -44,7 +49,102 @@ const getClientHydrationSnapshot = () => true;
 const getServerHydrationSnapshot = () => false;
 
 const INQUIRY_ENDPOINT = "/api/inquiry";
+const INQUIRY_DRAFT_STORAGE_KEY = "inquiry-draft";
 const JSON_HEADERS = { "Content-Type": "application/json" } as const;
+
+interface InquiryDraft {
+  email: string;
+  fullName: string;
+  message: string;
+}
+
+function getDraftString(value: unknown, maxLength: number): string {
+  return typeof value === "string" ? value.slice(0, maxLength) : "";
+}
+
+function readInquiryDraft(): InquiryDraft | null {
+  try {
+    const stored = window.sessionStorage.getItem(INQUIRY_DRAFT_STORAGE_KEY);
+    if (!stored) return null;
+
+    const parsed: unknown = JSON.parse(stored);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return null;
+    }
+
+    const draftRecord = parsed as Record<string, unknown>;
+    const draft = {
+      fullName: getDraftString(draftRecord.fullName, MAX_LEAD_NAME_LENGTH),
+      email: getDraftString(draftRecord.email, MAX_LEAD_EMAIL_LENGTH),
+      message: getDraftString(draftRecord.message, MAX_LEAD_MESSAGE_LENGTH),
+    };
+
+    return draft.fullName || draft.email || draft.message ? draft : null;
+  } catch {
+    return null;
+  }
+}
+
+function getVisibleFormValue(
+  form: HTMLFormElement,
+  name: keyof InquiryDraft,
+  maxLength: number,
+): string {
+  const control = form.elements.namedItem(name);
+  return control instanceof HTMLInputElement ||
+    control instanceof HTMLTextAreaElement
+    ? control.value.slice(0, maxLength)
+    : "";
+}
+
+function saveInquiryDraft(form: HTMLFormElement) {
+  const draft = {
+    fullName: getVisibleFormValue(form, "fullName", MAX_LEAD_NAME_LENGTH),
+    email: getVisibleFormValue(form, "email", MAX_LEAD_EMAIL_LENGTH),
+    message: getVisibleFormValue(form, "message", MAX_LEAD_MESSAGE_LENGTH),
+  };
+
+  try {
+    if (!draft.fullName && !draft.email && !draft.message) {
+      window.sessionStorage.removeItem(INQUIRY_DRAFT_STORAGE_KEY);
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      INQUIRY_DRAFT_STORAGE_KEY,
+      JSON.stringify(draft),
+    );
+  } catch {
+    // 存储不可用时静默降级，表单本身仍可使用。
+  }
+}
+
+function restoreInquiryDraft(form: HTMLFormElement | null) {
+  const draft = readInquiryDraft();
+  if (!form || !draft) return;
+
+  for (const name of ["fullName", "email", "message"] as const) {
+    const control = form.elements.namedItem(name);
+    if (
+      control instanceof HTMLInputElement ||
+      control instanceof HTMLTextAreaElement
+    ) {
+      control.value = draft[name];
+    }
+  }
+}
+
+function clearInquiryDraft() {
+  try {
+    window.sessionStorage.removeItem(INQUIRY_DRAFT_STORAGE_KEY);
+  } catch {
+    // 存储被禁用不能影响已经成功的询盘提交。
+  }
+}
 
 /** 错误焦点等一帧再执行（布局稳定后 scrollIntoView 才准确）；无 rAF 环境同步执行。 */
 function runAfterPaint(callback: () => void): () => void {
@@ -287,6 +387,10 @@ function InquiryFormLive({
 
   useSubmitErrorFocus(displayState, formRef, errorSummaryRef);
 
+  useEffect(() => {
+    restoreInquiryDraft(formRef.current);
+  }, []);
+
   const submit = async (formData: FormData) => {
     // 请求进行中忽略重复提交：按钮是禁用的，但回车照样能提交表单。
     if (isSubmittingRef.current) {
@@ -313,6 +417,7 @@ function InquiryFormLive({
       if (decoded.status === "success") {
         trackGenerateLead();
         clearSubmittedFields(formRef.current);
+        clearInquiryDraft();
       }
     } catch {
       setDisplayState({ status: "error", errorKind: "server" });
@@ -355,6 +460,7 @@ function InquiryFormLive({
         data-analytics-event="contact_submit"
         data-lead-path="api-inquiry"
         data-testid="inquiry-form"
+        onInput={(event) => saveInquiryDraft(event.currentTarget)}
         onSubmit={handleSubmit}
       >
         <InquiryFormFields
