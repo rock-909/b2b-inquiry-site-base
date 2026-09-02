@@ -8,7 +8,7 @@ const ROOT = process.cwd();
 // Required real config, checked against parsed structure (not raw text) so that
 // comments can neither satisfy a required value nor trip a forbidden one.
 const WRANGLER_REQUIRED_FIELDS = [
-  { path: ["main"], expected: ".open-next/worker.js" },
+  { path: ["main"], expected: "open-next-worker.js" },
   { path: ["assets", "binding"], expected: "ASSETS" },
 ];
 const WRANGLER_REQUIRED_COMPAT_FLAGS = [

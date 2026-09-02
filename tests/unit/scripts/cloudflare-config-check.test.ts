@@ -85,7 +85,7 @@ function writePassingWranglerConfig(
     "wrangler.jsonc",
     [
       "{",
-      '  "main": ".open-next/worker.js",',
+      '  "main": "open-next-worker.js",',
       '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
       '  "assets": { "binding": "ASSETS" },',
       '  "env": {',
@@ -119,7 +119,7 @@ describe("Cloudflare config source contract", () => {
       "wrangler.jsonc",
       [
         "{",
-        '  // "main": ".open-next/worker.js", "binding": "ASSETS",',
+        '  // "main": "open-next-worker.js", "binding": "ASSETS",',
         '  // "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"]',
         '  "name": "fixture"',
         "}",
@@ -142,7 +142,7 @@ describe("Cloudflare config source contract", () => {
       "wrangler.jsonc",
       [
         "{",
-        '  "main": ".open-next/worker.js",',
+        '  "main": "open-next-worker.js",',
         '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
         "  // historical note: r2_buckets and d1_databases were never added",
         '  "assets": { "binding": "ASSETS" },',
@@ -232,7 +232,7 @@ describe("Cloudflare config source contract", () => {
       "wrangler.jsonc",
       [
         "{",
-        '  "main": ".open-next/worker.js",',
+        '  "main": "open-next-worker.js",',
         '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
         '  "assets": { "binding": "ASSETS" },',
         '  "env": {',
