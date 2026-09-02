@@ -44,8 +44,8 @@ vi.mock("next-intl/server", () => ({
 }));
 
 // 产品页内嵌表单区块 mock（行为证明在组件测试与 e2e）。
-vi.mock("@/components/sections/inquiry-form-embed", () => ({
-  EmbeddedInquiryFormSection: (props: Record<string, unknown>) => (
+vi.mock("@/components/sections/immediate-inquiry-form-section", () => ({
+  ImmediateInquiryFormSection: (props: Record<string, unknown>) => (
     <section
       data-testid="embedded-inquiry-section"
       data-id={props.id as string | undefined}

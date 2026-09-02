@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { generateLocaleStaticParams } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
-import { EmbeddedInquiryFormSection } from "@/components/sections/inquiry-form-embed";
+import { ImmediateInquiryFormSection } from "@/components/sections/immediate-inquiry-form-section";
 import { buttonVariants } from "@/components/ui/button-variants";
 import {
   OFFERINGS,
@@ -207,7 +207,7 @@ export default async function ProductDetailPage({
           {t("detail.startInquiry")}
         </a>
 
-        <EmbeddedInquiryFormSection
+        <ImmediateInquiryFormSection
           id="inquiry"
           title={t("detail.inquirySectionTitle", {
             productName: offering.name,

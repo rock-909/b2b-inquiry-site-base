@@ -72,20 +72,25 @@ test("home content section embeds a working inquiry form", async ({ page }) => {
   );
   await page.goto("/");
 
+  const sectionHeading = page.getByRole("heading", {
+    name: "Have a requirement to discuss?",
+  });
+  await expect(sectionHeading).toBeVisible();
+
+  const deferredForm = page.locator("[data-inquiry-form-deferred]");
   await expect(
-    page.getByRole("heading", {
-      name: "Have a requirement to discuss?",
-    }),
+    deferredForm.getByTestId("inquiry-form-static-fallback"),
   ).toBeVisible();
+  await deferredForm.scrollIntoViewIfNeeded();
 
   // 首页无产品语境：message 必须为空，不得误带预填。
-  const message = page.locator('textarea[name="message"]');
-  await expect(message).toHaveValue("");
+  const message = deferredForm.locator('textarea[name="message"]');
+  await expect(message).toHaveValue("", { timeout: 15_000 });
 
-  const fullName = page.locator('input[name="fullName"]');
+  const fullName = deferredForm.locator('input[name="fullName"]');
   await expect(fullName).toBeEditable({ timeout: 15_000 });
   await fullName.fill("Home Buyer");
-  await page.locator('input[name="email"]').fill("home@example.com");
+  await deferredForm.locator('input[name="email"]').fill("home@example.com");
   await message.fill("General inquiry from the homepage.");
 
   await expect(page.getByTestId("turnstile-mock")).toBeVisible({
