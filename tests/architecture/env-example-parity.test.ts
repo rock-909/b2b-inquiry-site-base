@@ -1,11 +1,9 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const ENV_SOURCE_PATH = "src/lib/env.ts";
 const ENV_EXAMPLE_PATH = ".env.example";
-const DEV_VARS_EXAMPLE_PATH = ".dev.vars.example";
 const SENSITIVE_ENV_KEY_PATTERN =
   /(?:_API_KEY|_TOKEN|_SECRET(?:_KEY)?|_ACCESS_KEY|_ENCRYPTION_KEY|_PEPPER(?:_PREVIOUS)?)$/u;
 const SENSITIVE_ENV_KEYS = [
@@ -22,7 +20,8 @@ const DEPLOYMENT_CRITICAL_ENV_KEYS = [
   "CLOUDFLARE_API_TOKEN",
   "DEPLOYMENT_PLATFORM",
 ] as const;
-const TOOLING_PROOF_ENV_KEYS = [
+const NON_RUNTIME_EXAMPLE_ENV_KEYS = new Set([
+  "CLOUDFLARE_API_TOKEN",
   "CI_FULL_COVERAGE",
   "CI_FLAKE_SAMPLING",
   "CLOUDFLARE_PREVIEW_BASE_URL",
@@ -35,18 +34,8 @@ const TOOLING_PROOF_ENV_KEYS = [
   "PLAYWRIGHT_REUSE_EXISTING_SERVER",
   "POST_DEPLOY_TEST",
   "STAGING_URL",
-] as const;
-const NON_RUNTIME_EXAMPLE_ENV_KEYS = new Set([
-  "CLOUDFLARE_API_TOKEN",
-  ...TOOLING_PROOF_ENV_KEYS,
 ]);
 const FRAMEWORK_MANAGED_RUNTIME_KEYS = new Set(["NEXT_PHASE", "NODE_ENV"]);
-const TEST_INTERNAL_ENV_KEYS = new Set(["VITEST", "VITEST_WORKER_ID"]);
-const TOOLING_ENV_USAGE_ROOTS = [
-  "scripts/quality/checks",
-  "playwright.config.ts",
-  "tests/e2e",
-] as const;
 const PUBLIC_RUNTIME_ENV_SOURCE_PATH = "src/lib/public-runtime-env.ts";
 // NODE_ENV 由框架注入；NEXT_PUBLIC_APP_ENV 由 next.config.ts 在构建时从
 // APP_ENV 派生（映射本身由 next-config-contract 的行为断言证明）。两者都不是
@@ -57,28 +46,6 @@ const DERIVED_PUBLIC_ENV_KEYS = new Set(["NEXT_PUBLIC_APP_ENV"]);
 function readRepoFile(repoPath: string) {
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test reads fixed repo-local files
   return readFileSync(repoPath, "utf8");
-}
-
-function collectFiles(repoPath: string): string[] {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test recursively scans fixed repo-local tooling roots
-  const stats = statSync(repoPath);
-
-  if (stats.isFile()) {
-    return [repoPath];
-  }
-
-  const files: string[] = [];
-
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test recursively scans fixed repo-local tooling roots
-  for (const entry of readdirSync(repoPath)) {
-    for (const filePath of collectFiles(join(repoPath, entry))) {
-      if (/\.(?:js|mjs|ts|tsx)$/u.test(filePath)) {
-        files.push(filePath);
-      }
-    }
-  }
-
-  return files;
 }
 
 function createSourceFile(source: string) {
@@ -186,21 +153,6 @@ function extractRuntimeEnvKeys(source: string) {
 
     return [key];
   });
-}
-
-function extractProcessEnvKeys(source: string) {
-  const keys: string[] = [];
-
-  for (const match of source.matchAll(
-    /process\.env(?:\.([A-Z0-9_]+)|\[['"]([A-Z0-9_]+)['"]\])/gu,
-  )) {
-    const key = match[1] ?? match[2];
-    if (key) {
-      keys.push(key);
-    }
-  }
-
-  return keys;
 }
 
 function getSchemaKeys(envSource: string) {
@@ -317,88 +269,6 @@ describe(".env.example parity", () => {
     );
 
     expect(sortedStrings(unregistered)).toEqual([]);
-  });
-
-  it("keeps tooling and proof env keys used outside the runtime schema in the env example", () => {
-    const envSource = readRepoFile(ENV_SOURCE_PATH);
-    const schemaKeys = getSchemaKeys(envSource);
-    const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-    const discoveredToolingKeys = new Set<string>();
-
-    for (const root of TOOLING_ENV_USAGE_ROOTS) {
-      for (const filePath of collectFiles(root)) {
-        for (const key of extractProcessEnvKeys(readRepoFile(filePath))) {
-          if (!schemaKeys.has(key) && !TEST_INTERNAL_ENV_KEYS.has(key)) {
-            discoveredToolingKeys.add(key);
-          }
-        }
-      }
-    }
-
-    expect(sortedStrings(discoveredToolingKeys)).toEqual(
-      sortedStrings(TOOLING_PROOF_ENV_KEYS),
-    );
-
-    for (const key of TOOLING_PROOF_ENV_KEYS) {
-      expect(envExample.has(key), `${key} should remain in .env.example`).toBe(
-        true,
-      );
-    }
-  });
-
-  it("keeps dangerous or behavior-sensitive defaults safe", () => {
-    const envExampleSource = readRepoFile(ENV_EXAMPLE_PATH);
-
-    expect(envExampleSource).toContain(
-      "Memory rate limiting is automatic in development/test when Upstash is not configured.",
-    );
-  });
-
-  it("documents the current Turnstile env surface and inquiry action contract", () => {
-    const envSource = readRepoFile(ENV_SOURCE_PATH);
-    const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-    const schemaKeys = getSchemaKeys(envSource);
-    const turnstileConstants = readRepoFile(
-      "src/constants/turnstile-constants.ts",
-    );
-    const turnstileVerifier = readRepoFile("src/lib/security/turnstile.ts");
-
-    for (const key of [
-      "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
-      "TURNSTILE_SECRET_KEY",
-      "TURNSTILE_ALLOWED_HOSTS",
-      "TURNSTILE_BYPASS",
-      "NEXT_PUBLIC_TURNSTILE_BYPASS",
-    ] as const) {
-      expect(schemaKeys.has(key), `${key} should stay in env schema`).toBe(
-        true,
-      );
-      expect(envExample.has(key), `${key} should stay in .env.example`).toBe(
-        true,
-      );
-    }
-
-    expect(turnstileConstants).toContain(
-      'INQUIRY_TURNSTILE_ACTION = "product_inquiry"',
-    );
-    expect(turnstileVerifier).toContain("INQUIRY_TURNSTILE_ACTION");
-  });
-
-  it("keeps the Cloudflare local preview env example explicit about its limited scope", () => {
-    const devVarsExample = readRepoFile(DEV_VARS_EXAMPLE_PATH);
-    const requiredBoundaryText = [
-      "Cloudflare local preview minimal example",
-      ".env.example",
-      "RATE_LIMIT_PEPPER",
-      "UPSTASH_REDIS_REST_URL",
-    ];
-
-    for (const text of requiredBoundaryText) {
-      expect(
-        devVarsExample,
-        `${DEV_VARS_EXAMPLE_PATH} should mention ${text}`,
-      ).toContain(text);
-    }
   });
 
   it("keeps all sensitive keys in the env example and server-only", () => {

@@ -68,6 +68,34 @@ const sharedToolingRules = {
   "no-empty-function": "warn", // 工具占位符
 };
 
+const zodProductionRestrictedSyntax = [
+  {
+    selector:
+      "CallExpression[callee.object.name='z'][callee.property.name='any']",
+    message: "🚫 生产 schema 不得使用 z.any()，请声明真实输入类型。",
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='email'][callee.object.type='CallExpression'][callee.object.callee.object.name='z'][callee.object.callee.property.name='string']",
+    message: "🚫 Zod 4 使用 z.email()，不要重新引入 z.string().email()。",
+  },
+];
+
+const zodTestRestrictedSyntax = [
+  {
+    selector:
+      "CallExpression[callee.object.name='vi'][callee.property.name='mock'] > Literal.arguments[value='zod']",
+    message:
+      "🚫 Schema rejection tests 必须使用真实 Zod，不得 vi.mock('zod')。",
+  },
+  {
+    selector:
+      "CallExpression[callee.object.name='vi'][callee.property.name='doMock'] > Literal.arguments[value='zod']",
+    message:
+      "🚫 Schema rejection tests 必须使用真实 Zod，不得 vi.doMock('zod')。",
+  },
+];
+
 const architectureRestrictedImports = {
   paths: [
     {
@@ -469,6 +497,7 @@ const eslintConfig = [
           message:
             '🚫 禁止新增 export * 重新导出。请使用命名导出：export { specificExport } from "./module"',
         },
+        ...zodProductionRestrictedSyntax,
       ],
 
       // 禁止相对路径导入（强制使用@/别名）+ 禁止直接使用 next/link
@@ -679,7 +708,7 @@ const eslintConfig = [
           ],
         },
       ],
-      "no-restricted-syntax": "off",
+      "no-restricted-syntax": ["error", ...zodTestRestrictedSyntax],
       // 安全规则在测试中完全忽略 - 测试文件中的动态对象访问是正常模式
       "security/detect-object-injection": "off",
       // 允许在测试中动态构建正则（常见于匹配断言）；保持为 warn 以提示潜在风险
