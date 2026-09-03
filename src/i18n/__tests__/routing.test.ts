@@ -64,8 +64,7 @@ describe("i18n Routing Configuration", () => {
     return config;
   }
 
-  // 名字只承诺「值一致」。要证明它确实读的是 `LOCALES_CONFIG`，靠的是
-  // `tests/architecture/locale-source-boundary.test.ts` 那道来源约束，不是这里。
+  // 这条只承诺运行值一致；Locale 的退休来源由 ESLint import 边界约束。
   it("matches the canonical locale configuration", async () => {
     const config = await getRoutingDefinition();
 

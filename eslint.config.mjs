@@ -68,6 +68,56 @@ const sharedToolingRules = {
   "no-empty-function": "warn", // 工具占位符
 };
 
+const architectureRestrictedImports = {
+  paths: [
+    {
+      name: "next/link",
+      message:
+        '🚫 Use { Link } from "@/i18n/routing" for locale-aware navigation.',
+    },
+    {
+      name: "@/lib/structured-data-types",
+      importNames: ["Locale"],
+      message: "🚫 Locale 必须从 canonical i18n/path 类型入口导入。",
+    },
+    {
+      name: "@/lib/structured-data",
+      importNames: ["Locale"],
+      message: "🚫 Locale 必须从 canonical i18n/path 类型入口导入。",
+    },
+  ],
+  patterns: [
+    {
+      group: ["../*"],
+      message:
+        '🚫 请使用 @/ 路径别名替代跨目录相对路径导入，例如：import { something } from "@/lib/module"',
+    },
+  ],
+};
+
+const appRestrictedImports = {
+  paths: architectureRestrictedImports.paths,
+  patterns: [
+    ...architectureRestrictedImports.patterns,
+    {
+      group: ["@/config/paths/*"],
+      message:
+        '🚫 App routes must import from the public "@/config/paths" facade.',
+    },
+  ],
+};
+
+const criticalRouteRestrictedImports = {
+  paths: [
+    ...appRestrictedImports.paths,
+    {
+      name: "next/cache",
+      message: "🚫 询盘、健康检查和联系页不得引入运行时缓存 API。",
+    },
+  ],
+  patterns: appRestrictedImports.patterns,
+};
+
 // 具名再导出：这个文件现在也被 eslint 自己检查（它不再躺在忽略清单里），
 // 匿名默认导出会触发 import/no-anonymous-default-export。
 const eslintConfig = [
@@ -422,25 +472,46 @@ const eslintConfig = [
       ],
 
       // 禁止相对路径导入（强制使用@/别名）+ 禁止直接使用 next/link
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            {
-              name: "next/link",
-              message:
-                '🚫 Use { Link } from "@/i18n/routing" for locale-aware navigation.',
-            },
-          ],
-          patterns: [
-            {
-              group: ["../*"],
-              message:
-                '🚫 请使用 @/ 路径别名替代跨目录相对路径导入，例如：import { something } from "@/lib/module"',
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": ["error", architectureRestrictedImports],
+    },
+  },
+
+  {
+    name: "app-path-facade-boundary",
+    files: ["src/app/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**", "**/*.{test,spec}.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", appRestrictedImports],
+    },
+  },
+
+  {
+    name: "critical-route-cache-boundary",
+    files: [
+      "src/app/api/inquiry/route.ts",
+      "src/app/api/health/route.ts",
+      "src/app/[locale]/contact/page.tsx",
+      "src/app/[locale]/contact/contact-page-data.ts",
+    ],
+    rules: {
+      "no-restricted-imports": ["error", criticalRouteRestrictedImports],
+    },
+  },
+
+  {
+    name: "production-env-facade-boundary",
+    files: ["src/**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      "src/lib/env.ts",
+      "src/lib/public-runtime-env.ts",
+      "src/lib/logger.ts",
+      "src/test/**",
+      "src/testing/**",
+      "**/__tests__/**",
+      "**/*.{test,spec}.{js,jsx,ts,tsx}",
+    ],
+    rules: {
+      "no-process-env": "error",
     },
   },
 
