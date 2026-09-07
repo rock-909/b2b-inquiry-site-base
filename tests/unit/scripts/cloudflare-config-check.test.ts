@@ -20,7 +20,7 @@ const CANONICAL_CLOUDFLARE_BUILD_SCRIPTS = {
   "website:build:cf:debug":
     "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
 };
-const STABLE_OPEN_NEXT_DEPENDENCY = "1.20.4";
+const STABLE_OPEN_NEXT_DEPENDENCY = "1.20.6";
 const PREVIEW_R2_BUCKET = "derived-site-next-cache-preview";
 const PRODUCTION_R2_BUCKET = "derived-site-next-cache-production";
 

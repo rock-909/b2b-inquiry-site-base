@@ -16,7 +16,7 @@ const WRANGLER_REQUIRED_COMPAT_FLAGS = [
   "global_fetch_strictly_public",
 ];
 const REQUIRED_R2_ENVIRONMENTS = ["preview", "production"];
-const OPEN_NEXT_STABLE_DEPENDENCY = "1.20.4";
+const OPEN_NEXT_STABLE_DEPENDENCY = "1.20.6";
 
 // Split-topology surfaces that a passing build + wrangler dry-run would not
 // catch. R2 is intentional; D1/DO/queue expansion still needs a new proof lane.
