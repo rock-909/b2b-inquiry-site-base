@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@base-ui/react": "1.8.0",
-    "@marsidev/react-turnstile": "^1.5.4",
+    "@marsidev/react-turnstile": "^1.6.1",
     "@t3-oss/env-nextjs": "^0.13.11",
     "@tailwindcss/typography": "^0.5.20",
     "clsx": "^2.1.1",
