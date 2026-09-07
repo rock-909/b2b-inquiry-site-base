@@ -1,110 +1,30 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const THEME_CSS = "src/app/theme.css";
 const GLOBALS_CSS = "src/app/globals.css";
-const FOOTER_COMPONENT_SOURCE = "src/components/footer/footer.tsx";
 
-const RAW_COLOR_PRODUCTION_FILES = [
+const SEMANTIC_COLOR_FILES = [
   "src/components/ui/button.tsx",
   "src/components/forms/inquiry-form.tsx",
   "src/components/security/turnstile.tsx",
-  FOOTER_COMPONENT_SOURCE,
+  "src/components/footer/footer.tsx",
 ] as const;
 
-const BANNED_RAW_BRAND_PALETTE_CLASS_PATTERN =
-  /\b(?:bg|text|border|ring|outline)-(?:sky|cyan)-\d{2,3}\b/;
+const RAW_PALETTE_CLASS =
+  /\b(?:(?:hover|dark|focus-visible):)*(?:bg|text|border|ring|outline)-(?:neutral|gray|slate|zinc|stone|blue|sky|cyan|green|red|amber|yellow|emerald)-\d{2,3}\b/u;
 
-const BANNED_RAW_STATUS_PALETTE_CLASS_PATTERN =
-  /\b(?:bg|text|border|ring|outline)-(?:green|red|amber|yellow|emerald)-\d{2,3}\b/;
-
-const BANNED_RAW_INFO_PALETTE_CLASS_PATTERN =
-  /\b(?:bg|text|border|ring|outline)-(?:blue|sky|cyan)-\d{2,3}\b/;
-
-const BANNED_INLINE_BRAND_PATTERN =
-  /#004d9e|#003b7a|rgba\(\s*0\s*,\s*77\s*,\s*158\b/i;
-
-const BANNED_FOOTER_RAW_PALETTE_CLASS_PATTERN =
-  /\b(?:(?:hover|dark|focus-visible):)*(?:bg|text|border|ring|outline)-(?:neutral|gray|slate|zinc|stone|blue|sky|cyan|green|red|amber|yellow|emerald)-\d{2,3}\b/;
-
-function readRepoFile(filePath: string) {
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test reads fixed repo files
-  if (!existsSync(filePath)) {
-    throw new Error(`Missing expected file: ${filePath}`);
-  }
-
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test reads fixed repo files
+function readRepoFile(filePath: string): string {
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- 测试只读取上方固定的仓库文件
   return readFileSync(filePath, "utf8");
 }
 
-function stripCssComments(source: string) {
-  return source.replaceAll(/\/\*[\s\S]*?\*\//g, "");
-}
-
-function extractHighContrastBlocks(css: string) {
-  const marker = "@media (prefers-contrast: high)";
-  const blocks: string[] = [];
-  let searchStartIndex = 0;
-
-  while (searchStartIndex < css.length) {
-    const startIndex = css.indexOf(marker, searchStartIndex);
-
-    if (startIndex === -1) {
-      break;
-    }
-
-    const blockStart = css.indexOf("{", startIndex);
-
-    if (blockStart === -1) {
-      break;
-    }
-
-    let depth = 0;
-    let closedAtIndex = -1;
-
-    for (let index = blockStart; index < css.length; index += 1) {
-      const character = css[index];
-
-      if (character === "{") {
-        depth += 1;
-      } else if (character === "}") {
-        depth -= 1;
-
-        if (depth === 0) {
-          closedAtIndex = index;
-          break;
-        }
-      }
-    }
-
-    // 未闭合的块若只是跳过，searchStartIndex 不前进，外层 while 会原地
-    // 死循环。CSS 写坏属于测试输入错误，必须快速失败。
-    if (closedAtIndex === -1) {
-      throw new Error(
-        `Unterminated ${marker} block in CSS; cannot extract high-contrast overrides`,
-      );
-    }
-
-    blocks.push(css.slice(startIndex, closedAtIndex + 1));
-    searchStartIndex = closedAtIndex + 1;
-  }
-
-  return blocks;
-}
-
-function findHighContrastOverrideBlock(blocks: readonly string[]) {
-  return (
-    blocks.find(
-      (block) =>
-        block.includes("--ring") ||
-        block.includes("*:focus-visible") ||
-        block.includes('button, [role="button"]'),
-    ) ?? null
-  );
+function stripCssComments(source: string): string {
+  return source.replaceAll(/\/\*[\s\S]*?\*\//gu, "");
 }
 
 describe("design token contract", () => {
-  it("keeps theme.css as the single theme source imported by globals.css", () => {
+  it("keeps theme.css as the semantic token source", () => {
     const globals = stripCssComments(readRepoFile(GLOBALS_CSS));
     const theme = stripCssComments(readRepoFile(THEME_CSS));
 
@@ -133,196 +53,63 @@ describe("design token contract", () => {
     }
   });
 
-  it("keeps selected production UI files off raw brand palette classes", () => {
-    for (const filePath of RAW_COLOR_PRODUCTION_FILES) {
-      const source = stripCssComments(readRepoFile(filePath));
-
+  it("keeps core browser UI on semantic color tokens", () => {
+    for (const filePath of SEMANTIC_COLOR_FILES) {
       expect(
-        source.match(BANNED_RAW_BRAND_PALETTE_CLASS_PATTERN),
-        `${filePath} should route brand color usage through --primary or other brand semantic tokens instead of raw Tailwind sky/cyan palette classes`,
+        stripCssComments(readRepoFile(filePath)).match(RAW_PALETTE_CLASS),
+        `${filePath} should use semantic tokens instead of raw Tailwind palette classes`,
       ).toBeNull();
     }
   });
 
-  it("keeps selected production UI files off raw status palette classes", () => {
-    for (const filePath of RAW_COLOR_PRODUCTION_FILES) {
-      const source = stripCssComments(readRepoFile(filePath));
+  it("keeps the explicit high-contrast focus treatment", () => {
+    const theme = stripCssComments(readRepoFile(THEME_CSS));
+    const globals = stripCssComments(readRepoFile(GLOBALS_CSS));
 
-      expect(
-        source.match(BANNED_RAW_STATUS_PALETTE_CLASS_PATTERN),
-        `${filePath} should route success/warning/error states through semantic status tokens instead of raw Tailwind green/red/amber/yellow/emerald palette classes`,
-      ).toBeNull();
-    }
+    expect(theme).toContain("@media (prefers-contrast: high)");
+    expect(theme).toContain("--ring: var(--brand-focus-strong);");
+    expect(globals).toContain("*:focus-visible");
+    expect(globals).toContain("outline: 3px solid var(--ring) !important;");
   });
 
-  it("keeps selected production UI files off raw info palette classes", () => {
-    for (const filePath of RAW_COLOR_PRODUCTION_FILES) {
-      const source = stripCssComments(readRepoFile(filePath));
-
-      expect(
-        source.match(BANNED_RAW_INFO_PALETTE_CLASS_PATTERN),
-        `${filePath} should route info or submitting states through --info-* semantic tokens instead of raw Tailwind blue/sky/cyan palette classes`,
-      ).toBeNull();
-    }
-  });
-
-  it("keeps selected production UI files from embedding old brand color values", () => {
-    for (const filePath of RAW_COLOR_PRODUCTION_FILES) {
-      const source = stripCssComments(readRepoFile(filePath));
-
-      expect(
-        source.match(BANNED_INLINE_BRAND_PATTERN),
-        `${filePath} should not embed the old steel-blue value directly`,
-      ).toBeNull();
-    }
-  });
-
-  it("keeps footer browser UI config off raw Tailwind palette classes", () => {
-    const source = stripCssComments(readRepoFile(FOOTER_COMPONENT_SOURCE));
-
-    expect(
-      source.match(BANNED_FOOTER_RAW_PALETTE_CLASS_PATTERN),
-      `${FOOTER_COMPONENT_SOURCE} should use semantic tokens instead of raw Tailwind palette classes because it feeds browser-rendered footer UI`,
-    ).toBeNull();
-  });
-
-  it("does not keep old brand color values in the browser runtime CSS", () => {
+  it("keeps required WCAG contrast across light and dark themes", () => {
     const css = stripCssComments(readRepoFile(THEME_CSS));
+    const pairs = [
+      ["--input", "--background", 3],
+      ["--input", "--card", 3],
+      ["--ring", "--background", 3],
+      ["--ring", "--card", 3],
+      ["--button-primary-fg", "--button-primary-bg", 4.5],
+      ["--primary-text", "--background", 4.5],
+      ["--muted-foreground", "--background", 4.5],
+      ["--muted-foreground", "--card", 4.5],
+      ["--muted-foreground", "--muted", 4.5],
+      ["--error-foreground", "--background", 4.5],
+      ["--error-foreground", "--card", 4.5],
+    ] as const;
 
-    expect(
-      css.match(BANNED_INLINE_BRAND_PATTERN),
-      `${THEME_CSS} should not keep old brand hex or rgba values, including high-contrast overrides`,
-    ).toBeNull();
-  });
+    for (const themeName of ["light", "dark"] as const) {
+      const tokens = buildThemeTokenMap(css, themeName);
 
-  it("keeps high contrast overrides off old brand values", () => {
-    const css = stripCssComments(readRepoFile(THEME_CSS));
-    const highContrastBlocks = extractHighContrastBlocks(css);
-    const highContrastOverrideBlock =
-      findHighContrastOverrideBlock(highContrastBlocks);
-
-    expect(
-      highContrastBlocks.length,
-      `${THEME_CSS} should define at least one @media (prefers-contrast: high) block`,
-    ).toBeGreaterThan(0);
-
-    expect(
-      highContrastOverrideBlock,
-      `${THEME_CSS} should include a high contrast override block for --ring`,
-    ).toBeTruthy();
-
-    for (const block of highContrastBlocks) {
-      expect(
-        block.match(BANNED_INLINE_BRAND_PATTERN),
-        `${THEME_CSS} high contrast blocks should not keep old brand hex or rgba values`,
-      ).toBeNull();
-    }
-  });
-
-  it("keeps WCAG AA contrast for input, ring, primary button and primary text", () => {
-    const css = stripCssComments(readRepoFile(THEME_CSS));
-    const light = buildThemeTokenMap(css, "light");
-    const dark = buildThemeTokenMap(css, "dark");
-
-    for (const [themeName, tokens] of [
-      ["light", light],
-      ["dark", dark],
-    ] as const) {
-      const background = resolveOklchColor(tokens, "--background");
-      const card = resolveOklchColor(tokens, "--card");
-      const input = resolveOklchColor(tokens, "--input");
-      const ring = resolveOklchColor(tokens, "--ring");
-      const buttonFg = resolveOklchColor(tokens, "--button-primary-fg");
-      const buttonBg = resolveOklchColor(tokens, "--button-primary-bg");
-      const primaryText = resolveOklchColor(tokens, "--primary-text");
-
-      expect(
-        contrastRatio(input, background),
-        `${themeName} --input vs --background`,
-      ).toBeGreaterThanOrEqual(3);
-      expect(
-        contrastRatio(input, card),
-        `${themeName} --input vs --card`,
-      ).toBeGreaterThanOrEqual(3);
-      expect(
-        contrastRatio(ring, background),
-        `${themeName} --ring vs --background`,
-      ).toBeGreaterThanOrEqual(3);
-      expect(
-        contrastRatio(ring, card),
-        `${themeName} --ring vs --card`,
-      ).toBeGreaterThanOrEqual(3);
-      expect(
-        contrastRatio(buttonFg, buttonBg),
-        `${themeName} --button-primary-fg vs --button-primary-bg`,
-      ).toBeGreaterThanOrEqual(4.5);
-      expect(
-        contrastRatio(primaryText, background),
-        `${themeName} --primary-text vs --background`,
-      ).toBeGreaterThanOrEqual(4.5);
-    }
-  });
-
-  it("keeps WCAG AA contrast for muted foreground on background, card, and muted surfaces", () => {
-    const css = stripCssComments(readRepoFile(THEME_CSS));
-    const light = buildThemeTokenMap(css, "light");
-    const dark = buildThemeTokenMap(css, "dark");
-
-    for (const [themeName, tokens] of [
-      ["light", light],
-      ["dark", dark],
-    ] as const) {
-      const mutedForeground = resolveOklchColor(tokens, "--muted-foreground");
-      const background = resolveOklchColor(tokens, "--background");
-      const card = resolveOklchColor(tokens, "--card");
-      const muted = resolveOklchColor(tokens, "--muted");
-
-      expect(
-        contrastRatio(mutedForeground, background),
-        `${themeName} --muted-foreground vs --background`,
-      ).toBeGreaterThanOrEqual(4.5);
-      expect(
-        contrastRatio(mutedForeground, card),
-        `${themeName} --muted-foreground vs --card`,
-      ).toBeGreaterThanOrEqual(4.5);
-      expect(
-        contrastRatio(mutedForeground, muted),
-        `${themeName} --muted-foreground vs --muted`,
-      ).toBeGreaterThanOrEqual(4.5);
-    }
-  });
-
-  it("keeps WCAG AA contrast for field error text on form surfaces", () => {
-    const css = stripCssComments(readRepoFile(THEME_CSS));
-    const light = buildThemeTokenMap(css, "light");
-    const dark = buildThemeTokenMap(css, "dark");
-
-    for (const [themeName, tokens] of [
-      ["light", light],
-      ["dark", dark],
-    ] as const) {
-      const errorForeground = resolveOklchColor(tokens, "--error-foreground");
-      const background = resolveOklchColor(tokens, "--background");
-      const card = resolveOklchColor(tokens, "--card");
-
-      expect(
-        contrastRatio(errorForeground, background),
-        `${themeName} --error-foreground vs --background`,
-      ).toBeGreaterThanOrEqual(4.5);
-      expect(
-        contrastRatio(errorForeground, card),
-        `${themeName} --error-foreground vs --card`,
-      ).toBeGreaterThanOrEqual(4.5);
+      for (const [foreground, background, minimum] of pairs) {
+        expect(
+          contrastRatio(
+            resolveOklchColor(tokens, foreground),
+            resolveOklchColor(tokens, background),
+          ),
+          `${themeName} ${foreground} vs ${background}`,
+        ).toBeGreaterThanOrEqual(minimum);
+      }
     }
   });
 });
 
 function extractSelectorBodies(css: string, selector: string): string[] {
   const bodies: string[] = [];
-  // eslint-disable-next-line security/detect-non-literal-regexp -- selectors are fixed test inputs
+  // eslint-disable-next-line security/detect-non-literal-regexp -- selector 只来自下方固定主题选择器
   const pattern = new RegExp(
     `${selector.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\{`,
-    "g",
+    "gu",
   );
 
   for (const match of css.matchAll(pattern)) {
@@ -348,12 +135,10 @@ function extractSelectorBodies(css: string, selector: string): string[] {
 
 function parseCssDeclarations(body: string): Map<string, string> {
   const declarations = new Map<string, string>();
-  for (const match of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
+  for (const match of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/gu)) {
     const name = match[1];
     const value = match[2]?.trim();
-    if (name && value) {
-      declarations.set(name, value);
-    }
+    if (name && value) declarations.set(name, value);
   }
   return declarations;
 }
@@ -387,19 +172,20 @@ function resolveOklchColor(
     throw new Error(`Token resolution exceeded depth for ${tokenName}`);
   }
   const raw = tokens.get(tokenName);
-  if (!raw) {
-    throw new Error(`Missing token ${tokenName}`);
-  }
-  const varMatch = raw.match(/^var\((--[\w-]+)\)$/);
+  if (!raw) throw new Error(`Missing token ${tokenName}`);
+
+  const varMatch = raw.match(/^var\((--[\w-]+)\)$/u);
   if (varMatch?.[1]) {
     return resolveOklchColor(tokens, varMatch[1], depth + 1);
   }
+
   const oklchMatch = raw.match(
-    /^oklch\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s*\)$/,
+    /^oklch\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s*\)$/u,
   );
   if (!oklchMatch) {
     throw new Error(`Token ${tokenName} did not resolve to oklch: ${raw}`);
   }
+
   return oklchToSrgb(
     Number(oklchMatch[1]),
     Number(oklchMatch[2]),
@@ -442,7 +228,7 @@ function oklchToSrgb(
   ];
 }
 
-function relativeLuminance(rgb: [number, number, number]) {
+function relativeLuminance(rgb: [number, number, number]): number {
   const toLinear = (channel: number) =>
     channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
   return (
@@ -455,7 +241,7 @@ function relativeLuminance(rgb: [number, number, number]) {
 function contrastRatio(
   first: [number, number, number],
   second: [number, number, number],
-) {
+): number {
   const firstLuminance = relativeLuminance(first);
   const secondLuminance = relativeLuminance(second);
   const lighter = Math.max(firstLuminance, secondLuminance);

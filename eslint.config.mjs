@@ -68,6 +68,103 @@ const sharedToolingRules = {
   "no-empty-function": "warn", // 工具占位符
 };
 
+const zodProductionRestrictedSyntax = [
+  {
+    selector:
+      "CallExpression[callee.object.name='z'][callee.property.name='any']",
+    message: "🚫 生产 schema 不得使用 z.any()，请声明真实输入类型。",
+  },
+  {
+    selector:
+      "CallExpression[callee.property.name='email'][callee.object.type='CallExpression'][callee.object.callee.object.name='z'][callee.object.callee.property.name='string']",
+    message: "🚫 Zod 4 使用 z.email()，不要重新引入 z.string().email()。",
+  },
+];
+
+const zodTestRestrictedSyntax = [
+  {
+    selector:
+      "CallExpression[callee.object.name='vi'][callee.property.name='mock'] > Literal.arguments[value='zod']",
+    message:
+      "🚫 Schema rejection tests 必须使用真实 Zod，不得 vi.mock('zod')。",
+  },
+  {
+    selector:
+      "CallExpression[callee.object.name='vi'][callee.property.name='doMock'] > Literal.arguments[value='zod']",
+    message:
+      "🚫 Schema rejection tests 必须使用真实 Zod，不得 vi.doMock('zod')。",
+  },
+];
+
+const architectureRestrictedSyntax = [
+  {
+    selector: "ExportAllDeclaration",
+    message:
+      '🚫 禁止新增 export * 重新导出。请使用命名导出：export { specificExport } from "./module"',
+  },
+  ...zodProductionRestrictedSyntax,
+];
+
+const appRestrictedSyntax = [
+  ...architectureRestrictedSyntax,
+  {
+    selector:
+      "ImportExpression > Literal.source[value=/^@\\/config\\/paths\\//]",
+    message:
+      '🚫 App routes must import from the public "@/config/paths" facade.',
+  },
+];
+
+const architectureRestrictedImports = {
+  paths: [
+    {
+      name: "next/link",
+      message:
+        '🚫 Use { Link } from "@/i18n/routing" for locale-aware navigation.',
+    },
+    {
+      name: "@/lib/structured-data-types",
+      importNames: ["Locale"],
+      message: "🚫 Locale 必须从 canonical i18n/path 类型入口导入。",
+    },
+    {
+      name: "@/lib/structured-data",
+      importNames: ["Locale"],
+      message: "🚫 Locale 必须从 canonical i18n/path 类型入口导入。",
+    },
+  ],
+  patterns: [
+    {
+      group: ["../*"],
+      message:
+        '🚫 请使用 @/ 路径别名替代跨目录相对路径导入，例如：import { something } from "@/lib/module"',
+    },
+  ],
+};
+
+const appRestrictedImports = {
+  paths: architectureRestrictedImports.paths,
+  patterns: [
+    ...architectureRestrictedImports.patterns,
+    {
+      group: ["@/config/paths/*"],
+      message:
+        '🚫 App routes must import from the public "@/config/paths" facade.',
+    },
+  ],
+};
+
+const criticalRouteRestrictedImports = {
+  paths: [
+    ...appRestrictedImports.paths,
+    {
+      name: "next/cache",
+      message: "🚫 询盘、健康检查和联系页不得引入运行时缓存 API。",
+    },
+  ],
+  patterns: appRestrictedImports.patterns,
+};
+
 // 具名再导出：这个文件现在也被 eslint 自己检查（它不再躺在忽略清单里），
 // 匿名默认导出会触发 import/no-anonymous-default-export。
 const eslintConfig = [
@@ -412,35 +509,50 @@ const eslintConfig = [
     ],
     rules: {
       // 使用命名导出，避免新增不透明的 barrel 边界。
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "ExportAllDeclaration",
-          message:
-            '🚫 禁止新增 export * 重新导出。请使用命名导出：export { specificExport } from "./module"',
-        },
-      ],
+      "no-restricted-syntax": ["error", ...architectureRestrictedSyntax],
 
       // 禁止相对路径导入（强制使用@/别名）+ 禁止直接使用 next/link
-      "no-restricted-imports": [
-        "error",
-        {
-          paths: [
-            {
-              name: "next/link",
-              message:
-                '🚫 Use { Link } from "@/i18n/routing" for locale-aware navigation.',
-            },
-          ],
-          patterns: [
-            {
-              group: ["../*"],
-              message:
-                '🚫 请使用 @/ 路径别名替代跨目录相对路径导入，例如：import { something } from "@/lib/module"',
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": ["error", architectureRestrictedImports],
+    },
+  },
+
+  {
+    name: "app-path-facade-boundary",
+    files: ["src/app/**/*.{ts,tsx}"],
+    ignores: ["**/__tests__/**", "**/*.{test,spec}.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", appRestrictedImports],
+      "no-restricted-syntax": ["error", ...appRestrictedSyntax],
+    },
+  },
+
+  {
+    name: "critical-route-cache-boundary",
+    files: [
+      "src/app/api/inquiry/route.ts",
+      "src/app/api/health/route.ts",
+      "src/app/[locale]/contact/page.tsx",
+      "src/app/[locale]/contact/contact-page-data.ts",
+    ],
+    rules: {
+      "no-restricted-imports": ["error", criticalRouteRestrictedImports],
+    },
+  },
+
+  {
+    name: "production-env-facade-boundary",
+    files: ["src/**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      "src/lib/env.ts",
+      "src/lib/public-runtime-env.ts",
+      "src/lib/logger.ts",
+      "src/test/**",
+      "src/testing/**",
+      "**/__tests__/**",
+      "**/*.{test,spec}.{js,jsx,ts,tsx}",
+    ],
+    rules: {
+      "no-process-env": "error",
     },
   },
 
@@ -608,7 +720,7 @@ const eslintConfig = [
           ],
         },
       ],
-      "no-restricted-syntax": "off",
+      "no-restricted-syntax": ["error", ...zodTestRestrictedSyntax],
       // 安全规则在测试中完全忽略 - 测试文件中的动态对象访问是正常模式
       "security/detect-object-injection": "off",
       // 允许在测试中动态构建正则（常见于匹配断言）；保持为 warn 以提示潜在风险

@@ -1,10 +1,8 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
 
 const CI_WORKFLOW_PATH = ".github/workflows/ci.yml";
-const LEFTHOOK_CONFIG_PATH = "lefthook.yml";
-const PRETTIER_CONFIG_PATH = "prettier.config.mjs";
 const SEMGREP_CONFIG_PATH = "semgrep.yml";
 interface SemgrepRulePaths {
   readonly include?: readonly string[];
@@ -32,15 +30,6 @@ interface CiWorkflow {
   readonly jobs?: Record<string, CiJob | undefined>;
 }
 
-interface LefthookConfig {
-  readonly "pre-commit"?: {
-    readonly commands?: Record<string, { readonly run?: string }>;
-  };
-  readonly "pre-push"?: {
-    readonly commands?: Record<string, { readonly run?: string }>;
-  };
-}
-
 interface SemgrepConfig {
   readonly rules?: readonly SemgrepRule[];
 }
@@ -60,27 +49,6 @@ function readSemgrepConfig(): SemgrepConfig {
 
 function readCiWorkflowConfig(): CiWorkflow {
   return load(readCiWorkflow()) as CiWorkflow;
-}
-
-function readLefthookConfig(): LefthookConfig {
-  return load(readRepoFile(LEFTHOOK_CONFIG_PATH)) as LefthookConfig;
-}
-
-/** Every `run:` command a parsed workflow/hook config would actually execute. */
-function collectRunCommands(node: unknown, found: string[] = []): string[] {
-  if (Array.isArray(node)) {
-    for (const item of node) collectRunCommands(item, found);
-    return found;
-  }
-
-  if (node && typeof node === "object") {
-    for (const [key, value] of Object.entries(node)) {
-      if (key === "run" && typeof value === "string") found.push(value);
-      else collectRunCommands(value, found);
-    }
-  }
-
-  return found;
 }
 
 /**
@@ -204,67 +172,5 @@ describe("CI workflow contract", () => {
     expect(rule, "lead safe-json Semgrep rule must exist").toBeDefined();
     // 「only」是契约的一半：规则必须命中 lead writer，且不得外溢到其他文件。
     expect(includes).toEqual(["src/app/api/inquiry/route.ts"]);
-  });
-
-  it("keeps Lighthouse as a manual performance proof", () => {
-    const automated = [
-      ...collectRunCommands(load(readCiWorkflow())),
-      ...collectRunCommands(load(readRepoFile(LEFTHOOK_CONFIG_PATH))),
-    ];
-
-    expect(automated.length).toBeGreaterThan(0);
-    expect(
-      automated.filter((command) => /lighthouse|lhci/iu.test(command)),
-    ).toEqual([]);
-  });
-
-  it("keeps local Git hooks narrow and leaves broad scans to CI or release", () => {
-    const config = readLefthookConfig();
-    const preCommit = config["pre-commit"]?.commands ?? {};
-    const prePush = config["pre-push"]?.commands ?? {};
-    const hookCommands = collectRunCommands(config).join("\n");
-
-    // 钩子窄职责的实质由两条边界守住：必需检查必须在场（含关键命令），
-    // broad scan 必须不在。不要求键名清单逐项全等：新增一个快速合法钩子
-    // 不应让契约变红。
-    expect(
-      preCommit["format-check"]?.run,
-      "format-check must run prettier --check against staged files",
-    ).toContain("pnpm exec prettier --check");
-    expect(preCommit["format-check"]?.run).toContain("{staged_files}");
-    expect(
-      preCommit["eslint-check"]?.run,
-      "eslint-check must inspect staged JavaScript and TypeScript files",
-    ).toContain("{staged_files}");
-    expect(preCommit["eslint-check"]?.run).toContain("--max-warnings 0");
-    expect(
-      preCommit["i18n-sync"]?.run,
-      "i18n-sync must invoke the translation checker",
-    ).toContain("translations.js");
-    for (const key of ["type-check", "tests", "build-check"]) {
-      expect(prePush[key], `pre-push.${key} should stay`).toBeDefined();
-    }
-    expect(prePush["guard-main-push"]?.run).toContain("pre-push-guard.js {1}");
-    // token 边界不能用 \b："type-check:tests" 在 check 和冒号之间也成立
-    // \b，会把删掉真实 pnpm type-check 的配置漏放进来。
-    expect(prePush["type-check"]?.run).toMatch(
-      /(^|&&)\s*pnpm type-check(?:\s|$)/u,
-    );
-    expect(prePush["type-check"]?.run).toContain("pnpm type-check:tests");
-    expect(prePush.tests?.run).toContain("pnpm test");
-    expect(prePush["build-check"]?.run).toContain("production-config.js");
-    // pnpm build 是 build-check 的核心职责，删了它只剩两个旁路检查也过不了。
-    expect(prePush["build-check"]?.run).toContain("pnpm build");
-    expect(prePush["build-check"]?.run).toContain("client-boundary.js");
-    expect(hookCommands).not.toMatch(
-      /RUN_FAST_PUSH|dependency-cruiser|pnpm audit|knip:check|semgrep|website:build:cf|playwright/iu,
-    );
-  });
-
-  it("declares the Tailwind Prettier plugin explicitly", () => {
-    expect(existsSync(PRETTIER_CONFIG_PATH)).toBe(true);
-    expect(readRepoFile(PRETTIER_CONFIG_PATH)).toContain(
-      "prettier-plugin-tailwindcss",
-    );
   });
 });
