@@ -4,7 +4,7 @@ node_modules/
 
 # Build outputs
 .next/
-.next-lighthouse/
+.next-*/
 next-env.d.ts
 
 # Cache
@@ -39,6 +39,13 @@ test-results/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Local agent planning and profiling
+.planning/
+/task_plan.md
+/findings.md
+/progress.md
+*.cpuprofile
 
 # Cloudflare
 .open-next/

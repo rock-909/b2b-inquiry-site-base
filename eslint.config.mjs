@@ -77,7 +77,7 @@ const eslintConfig = [
       "performance-audit/**",
       "reports/**",
       ".next/**",
-      ".next-lighthouse/**",
+      ".next-*/**",
       ".trash-next-artifacts/**",
       ".context/**",
       ".stryker-tmp/**",

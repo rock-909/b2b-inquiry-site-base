@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
   // output tree. Only `website:lighthouse` does that today: a measurement that
   // takes 20+ minutes must not race a build, an E2E sweep, or another agent
   // session rebuilding underneath it — see
-  // docs/架构与行为.md.
+  // docs/项目.md.
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
 
   // Expose only the non-secret deployment label so Client Components can

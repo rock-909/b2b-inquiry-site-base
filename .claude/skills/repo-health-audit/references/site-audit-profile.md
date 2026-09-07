@@ -26,7 +26,7 @@ legacy starter profiles that do not describe this repository.
   - `.claude/rules/i18n.md`
 - Launch/release proof:
   - `docs/派生项目交接.md`
-  - `docs/架构与行为.md`
+  - `docs/质量门禁.md`
 - Canonical offering and route truth:
   - `src/config/pages.config.ts`
   - `src/config/single-site*.ts`
