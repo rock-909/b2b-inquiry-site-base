@@ -93,6 +93,21 @@ test.describe("Spanish locale contract", () => {
       }
     });
   }
+
+  test("/es/contact localizes unconfigured business hours", async ({
+    page,
+  }) => {
+    await page.goto("/es/contact", { waitUntil: "domcontentloaded" });
+
+    const hours = page
+      .getByRole("heading", { name: "Horario comercial" })
+      .locator("..");
+
+    await expect(hours).toContainText("Días laborables");
+    await expect(hours).toContainText("Sábado");
+    await expect(hours).toContainText("Definir antes del lanzamiento");
+    await expect(hours).not.toContainText("Replace before launch");
+  });
 });
 
 test.describe("Language switcher journey", () => {
