@@ -96,6 +96,25 @@ const zodTestRestrictedSyntax = [
   },
 ];
 
+const architectureRestrictedSyntax = [
+  {
+    selector: "ExportAllDeclaration",
+    message:
+      '🚫 禁止新增 export * 重新导出。请使用命名导出：export { specificExport } from "./module"',
+  },
+  ...zodProductionRestrictedSyntax,
+];
+
+const appRestrictedSyntax = [
+  ...architectureRestrictedSyntax,
+  {
+    selector:
+      "ImportExpression > Literal.source[value=/^@\\/config\\/paths\\//]",
+    message:
+      '🚫 App routes must import from the public "@/config/paths" facade.',
+  },
+];
+
 const architectureRestrictedImports = {
   paths: [
     {
@@ -490,15 +509,7 @@ const eslintConfig = [
     ],
     rules: {
       // 使用命名导出，避免新增不透明的 barrel 边界。
-      "no-restricted-syntax": [
-        "error",
-        {
-          selector: "ExportAllDeclaration",
-          message:
-            '🚫 禁止新增 export * 重新导出。请使用命名导出：export { specificExport } from "./module"',
-        },
-        ...zodProductionRestrictedSyntax,
-      ],
+      "no-restricted-syntax": ["error", ...architectureRestrictedSyntax],
 
       // 禁止相对路径导入（强制使用@/别名）+ 禁止直接使用 next/link
       "no-restricted-imports": ["error", architectureRestrictedImports],
@@ -511,6 +522,7 @@ const eslintConfig = [
     ignores: ["**/__tests__/**", "**/*.{test,spec}.{ts,tsx}"],
     rules: {
       "no-restricted-imports": ["error", appRestrictedImports],
+      "no-restricted-syntax": ["error", ...appRestrictedSyntax],
     },
   },
 

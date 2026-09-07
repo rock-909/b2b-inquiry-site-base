@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
+import ts from "typescript";
 
 const ENV_FACADE = "src/lib/env.ts";
 const PUBLIC_RUNTIME_ENV = "src/lib/public-runtime-env.ts";
@@ -35,6 +36,64 @@ function sourceFiles(dir: string, results: string[] = []): string[] {
   return results;
 }
 
+function isClientComponent(source: string): boolean {
+  const sourceFile = ts.createSourceFile(
+    "client-boundary.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  const [firstStatement] = sourceFile.statements;
+
+  return Boolean(
+    firstStatement &&
+    ts.isExpressionStatement(firstStatement) &&
+    ts.isStringLiteral(firstStatement.expression) &&
+    firstStatement.expression.text === "use client",
+  );
+}
+
+function referencesServerEnvFacade(source: string): boolean {
+  const sourceFile = ts.createSourceFile(
+    "env-boundary.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
+  let found = false;
+
+  function visit(node: ts.Node): void {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text.startsWith("@/lib/env")
+    ) {
+      found = true;
+      return;
+    }
+
+    if (ts.isCallExpression(node)) {
+      const [firstArgument] = node.arguments;
+      if (
+        node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+        firstArgument &&
+        ts.isStringLiteral(firstArgument) &&
+        firstArgument.text.startsWith("@/lib/env")
+      ) {
+        found = true;
+        return;
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+  return found;
+}
+
 describe("env module boundaries", () => {
   it("keeps public runtime env client-safe and allowlisted", () => {
     const source = read(PUBLIC_RUNTIME_ENV);
@@ -55,16 +114,23 @@ describe("env module boundaries", () => {
   it('keeps "use client" files off server env and PII helpers', () => {
     const offenders = sourceFiles("src").filter((repoPath) => {
       const source = read(repoPath);
-      const isClientComponent = /^\s*["']use client["'];/u.test(source);
 
       return (
-        isClientComponent &&
-        (/@\/lib\/env(?:\.ts)?["']/u.test(source) ||
+        isClientComponent(source) &&
+        (referencesServerEnvFacade(source) ||
           /\b(?:sanitizeEmail|sanitizeIP)\b/u.test(source))
       );
     });
 
     expect(offenders).toEqual([]);
+  });
+
+  it.each([
+    '// component\n"use client";\nimport { env } from "@/lib/env";',
+    '"use client";\nconst env = await import("@/lib/env");',
+  ])("detects client imports of the server env facade", (source) => {
+    expect(isClientComponent(source)).toBe(true);
+    expect(referencesServerEnvFacade(source)).toBe(true);
   });
 
   it("keeps sensitive nonce and server keys out of public env contracts", () => {
