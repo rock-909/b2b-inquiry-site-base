@@ -14,6 +14,18 @@ import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-stati
 import type { ContactPageData } from "@/app/[locale]/contact/contact-page-data";
 
 const CONTACT_HANDOFF_ITEM_KEYS = ["need", "context", "timing"] as const;
+const UNCONFIGURED_BUSINESS_HOURS = "Replace before launch";
+
+function getBusinessHoursValue(
+  value: string | undefined,
+  fallback: string,
+): string {
+  const trimmed = value?.trim();
+
+  return trimmed && trimmed !== UNCONFIGURED_BUSINESS_HOURS
+    ? trimmed
+    : fallback;
+}
 
 export function ContactInquiryHandoff({
   messages,
@@ -141,6 +153,8 @@ export function ResponseExpectationsCard({
   responseCopy: ContactPageData["copy"]["panel"]["response"];
   hoursCopy: ContactPageData["copy"]["panel"]["hours"];
 }) {
+  const { businessHours } = SINGLE_SITE_FACTS.contact;
+
   return (
     <Card className="gap-0 p-0 shadow-[var(--surface-shadow)]">
       <div className="border-b border-border px-6 py-5">
@@ -176,13 +190,19 @@ export function ResponseExpectationsCard({
             <div className="flex min-w-0 justify-between gap-4">
               <span>{hoursCopy.weekdaysLabel}</span>
               <span className="text-muted-foreground">
-                {SINGLE_SITE_FACTS.contact.businessHours?.weekdays}
+                {getBusinessHoursValue(
+                  businessHours?.weekdays,
+                  hoursCopy.closedLabel,
+                )}
               </span>
             </div>
             <div className="flex min-w-0 justify-between gap-4">
               <span>{hoursCopy.saturdayLabel}</span>
               <span className="text-muted-foreground">
-                {SINGLE_SITE_FACTS.contact.businessHours?.saturday}
+                {getBusinessHoursValue(
+                  businessHours?.saturday,
+                  hoursCopy.closedLabel,
+                )}
               </span>
             </div>
             <div className="flex min-w-0 justify-between gap-4">

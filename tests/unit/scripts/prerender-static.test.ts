@@ -62,7 +62,7 @@ function writeMetadataArtifacts({
 function createBuildFixture({
   aboutPostponed = false,
   contactPostponed = true,
-  locales = ["en"],
+  locales = ["en", "es"],
   secondaryAboutPrerendered = true,
   includeAboutRoute = true,
   includeAboutTemplateMeta = true,

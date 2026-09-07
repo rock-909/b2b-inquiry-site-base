@@ -3,6 +3,7 @@ import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const INQUIRY_FORM_MODULE = "@/components/forms/inquiry-form";
+const DEFERRED_INQUIRY_FORM_MODULE = "@/components/forms/deferred-inquiry-form";
 
 function read(repoPath: string): string {
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test reads fixed repo-local files.
@@ -75,24 +76,63 @@ describe("contact entry boundary", () => {
     // 出的请求地址。源码文本断言换不来这个：把地址提成常量就会让它假报警。
     // 「中间没有第二层封装」这半条目前不设门禁——请求地址一样的话，重新引入一个
     // 抽象层也不会有任何断言变红。旧的源码文本断言同样守不住，这里不是回退。
-    // 三个表单入口（/contact、首页内容区、产品详情页）都必须直接渲染
-    // InquiryForm——嵌入区块组件不算中间抽象，它不碰请求地址。
-    for (const filePath of [
-      "src/app/[locale]/contact/contact-page-sections.tsx",
-      "src/components/sections/inquiry-form-embed.tsx",
-    ]) {
-      const source = read(filePath);
-      const sourceFile = createSourceFile(filePath, source);
-      const importedNames = collectNamedImports(
-        sourceFile,
-        INQUIRY_FORM_MODULE,
-      );
+    const contactPath = "src/app/[locale]/contact/contact-page-sections.tsx";
+    const contactSource = read(contactPath);
+    const contactSourceFile = createSourceFile(contactPath, contactSource);
+    expect(
+      collectNamedImports(contactSourceFile, INQUIRY_FORM_MODULE),
+      contactPath,
+    ).toContain("InquiryForm");
+    expect(
+      rendersImportedJsxIdentifier(contactSourceFile, "InquiryForm"),
+      contactPath,
+    ).toBe(true);
 
-      expect(importedNames, filePath).toContain("InquiryForm");
-      expect(
-        rendersImportedJsxIdentifier(sourceFile, "InquiryForm"),
-        filePath,
-      ).toBe(true);
-    }
+    const embedPath = "src/components/sections/inquiry-form-embed.tsx";
+    const embedSource = read(embedPath);
+    const embedSourceFile = createSourceFile(embedPath, embedSource);
+    expect(
+      collectNamedImports(embedSourceFile, DEFERRED_INQUIRY_FORM_MODULE),
+      embedPath,
+    ).toContain("DeferredInquiryForm");
+    expect(
+      collectNamedImports(embedSourceFile, INQUIRY_FORM_MODULE),
+      embedPath,
+    ).not.toContain("InquiryForm");
+    expect(
+      rendersImportedJsxIdentifier(embedSourceFile, "DeferredInquiryForm"),
+      embedPath,
+    ).toBe(true);
+    expect(
+      rendersImportedJsxIdentifier(embedSourceFile, "InquiryForm"),
+      embedPath,
+    ).toBe(false);
+
+    const immediatePath =
+      "src/components/sections/immediate-inquiry-form-section.tsx";
+    const immediateSource = read(immediatePath);
+    const immediateSourceFile = createSourceFile(
+      immediatePath,
+      immediateSource,
+    );
+    expect(
+      collectNamedImports(immediateSourceFile, INQUIRY_FORM_MODULE),
+      immediatePath,
+    ).toContain("InquiryForm");
+    expect(
+      collectNamedImports(immediateSourceFile, DEFERRED_INQUIRY_FORM_MODULE),
+      immediatePath,
+    ).not.toContain("DeferredInquiryForm");
+    expect(
+      rendersImportedJsxIdentifier(immediateSourceFile, "InquiryForm"),
+      immediatePath,
+    ).toBe(true);
+
+    const deferredPath = "src/components/forms/deferred-inquiry-form.tsx";
+    const deferredSource = read(deferredPath);
+    expect(deferredSource).toContain(
+      'import("@/components/forms/inquiry-form")',
+    );
+    expect(deferredSource).toContain("module.InquiryForm");
   });
 });

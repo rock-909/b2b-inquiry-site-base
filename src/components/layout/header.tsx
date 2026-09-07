@@ -187,8 +187,7 @@ function HeaderUtilityControls({
               </Link>
             </div>
           ) : null}
-          {/* 单语言站点没有可切换目标：不渲染语言控件，避免 false affordance
-              与无效键盘停靠点（perf/ux 深审双重实证）。多语言时自动恢复。 */}
+          {/* 单语言配置没有可切换目标；多语言时由配置长度自动恢复。 */}
           {LOCALES_CONFIG.locales.length > 1 ? (
             <div className="header-full-desktop-only h-10 items-center">
               <LanguageToggleIsland

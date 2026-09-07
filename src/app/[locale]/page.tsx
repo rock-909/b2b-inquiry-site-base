@@ -8,7 +8,7 @@ import {
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { HeroSection } from "@/components/sections/hero-section";
 import { EmbeddedInquiryFormSection } from "@/components/sections/inquiry-form-embed";
-import { getLocalizedPath } from "@/config/paths";
+import { getCanonicalPath } from "@/config/paths";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
@@ -28,7 +28,7 @@ export async function generateMetadata({
   return generateMetadataForPath({
     locale,
     pageType: "home",
-    path: getLocalizedPath("home", locale),
+    path: getCanonicalPath("home"),
   });
 }
 

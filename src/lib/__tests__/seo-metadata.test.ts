@@ -116,9 +116,24 @@ describe("SEO Metadata", () => {
       expect(metadata.alternates?.canonical).toBe("https://example.com/about");
       expect(metadata.alternates?.languages).toEqual({
         en: "https://example.com/about",
+        es: "https://example.com/es/about",
         "x-default": "https://example.com/about",
       });
       expect(metadata.openGraph?.url).toBe("https://example.com/about");
+    });
+
+    it("builds locale-specific canonical and alternate URLs", () => {
+      const metadata = generateMetadataForPath({
+        locale: "es",
+        pageType: "about",
+        path: "/about",
+      });
+
+      expect(metadata.alternates?.canonical).toBe(
+        "https://example.com/es/about",
+      );
+      expect(metadata.openGraph?.url).toBe("https://example.com/es/about");
+      expect(metadata.openGraph?.locale).toBe("es");
     });
 
     it("noindexes active public pages outside production", () => {

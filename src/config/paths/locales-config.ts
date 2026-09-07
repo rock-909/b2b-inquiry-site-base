@@ -3,20 +3,24 @@
  */
 
 export const LOCALES_CONFIG = Object.freeze({
-  locales: Object.freeze(["en"] as const),
+  locales: Object.freeze(["en", "es"] as const),
   defaultLocale: "en" as const,
-  localePrefix: "never" as const,
+  localePrefix: "as-needed" as const,
   displayNames: Object.freeze({
     en: "English",
+    es: "Español",
   }),
   triggerLabels: Object.freeze({
     en: "English",
+    es: "Español",
   }),
   timeZones: Object.freeze({
     en: "UTC",
+    es: "Europe/Madrid",
   }),
   currencies: Object.freeze({
     en: "USD",
+    es: "EUR",
   }),
 } as const);
 

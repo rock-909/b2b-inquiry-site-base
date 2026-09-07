@@ -3,7 +3,7 @@ import {
   getStaticContentPageLastModified,
   isStaticContentPage,
 } from "@/lib/content/page-dates";
-import { LOCALES_CONFIG } from "@/config/paths";
+import { getLocalePath, LOCALES_CONFIG } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { OFFERINGS, getOfferingPath } from "@/config/offerings";
 import {
@@ -23,17 +23,17 @@ function getPageConfig(path: string): PageConfig {
   return getSingleSiteSitemapPageConfig(path);
 }
 
-function buildLocalePath(locale: string, path: string): string {
-  const normalizedPath = path === "" ? "/" : path;
-
-  if (LOCALES_CONFIG.localePrefix === "never") {
-    return normalizedPath;
-  }
-
-  return normalizedPath === "/" ? `/${locale}` : `/${locale}${normalizedPath}`;
+function buildLocalePath(
+  locale: (typeof LOCALES_CONFIG.locales)[number],
+  path: string,
+): string {
+  return getLocalePath(locale, path);
 }
 
-function buildAbsoluteUrl(locale: string, path: string): string {
+function buildAbsoluteUrl(
+  locale: (typeof LOCALES_CONFIG.locales)[number],
+  path: string,
+): string {
   return new URL(buildLocalePath(locale, path), BASE_URL).toString();
 }
 
@@ -71,7 +71,7 @@ function createSitemapEntry(
 }
 
 function createProductEntries(
-  locale: string,
+  locale: (typeof LOCALES_CONFIG.locales)[number],
   config: PageConfig,
 ): MetadataRoute.Sitemap {
   return OFFERINGS.map((offering) => {

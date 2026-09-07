@@ -185,9 +185,11 @@ describe("MobileNavigationIsland", () => {
 
 describe("LanguageToggleIsland", () => {
   it("renders the localized fallback trigger before loading the menu", () => {
-    render(<LanguageToggleIsland ariaLabel="Language: English" locale="en" />);
+    render(<LanguageToggleIsland ariaLabel="Languages: English" locale="en" />);
 
-    const trigger = screen.getByRole("button", { name: "Language: English" });
+    const trigger = screen.getByRole("button", {
+      name: "Languages: English",
+    });
     expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     expect(trigger).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByTestId("language-current-label")).toHaveTextContent(
@@ -200,13 +202,13 @@ describe("LanguageToggleIsland", () => {
 
   it("loads the menu after user intent without claiming it opened on another route", async () => {
     const { rerender } = render(
-      <LanguageToggleIsland ariaLabel="Language: English" locale="en" />,
+      <LanguageToggleIsland ariaLabel="Languages: English" locale="en" />,
     );
 
     fireEvent.click(screen.getByTestId("language-toggle-button"));
     mockPathname.current = "/about";
     rerender(
-      <LanguageToggleIsland ariaLabel="Language: English" locale="en" />,
+      <LanguageToggleIsland ariaLabel="Languages: English" locale="en" />,
     );
 
     await act(async () => {
@@ -220,7 +222,7 @@ describe("LanguageToggleIsland", () => {
   });
 
   it("activates the lazy menu when the command area is hovered", async () => {
-    render(<LanguageToggleIsland ariaLabel="Language: English" locale="en" />);
+    render(<LanguageToggleIsland ariaLabel="Languages: English" locale="en" />);
 
     fireEvent.pointerEnter(screen.getByTestId("language-toggle-button"));
 

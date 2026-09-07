@@ -1,20 +1,20 @@
 import { createInquiryFormCopyFromMessages } from "@/components/forms/inquiry-form-copy";
-import { DeferredInquiryForm } from "@/components/forms/deferred-inquiry-form";
+import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
 import { InquiryFormSectionShell } from "@/components/sections/inquiry-form-section-shell";
 import { SINGLE_SITE_FACTS } from "@/config/single-site";
 
-/**
- * 首页首屏下方的询盘区块。该模块不得静态引入 InquiryForm，否则
- * Turbopack 会把完整表单重新加入首页首载 client graph。
- */
-export function EmbeddedInquiryFormSection({
+export function ImmediateInquiryFormSection({
+  id,
   title,
   description,
+  initialMessage,
   messages,
 }: {
+  id?: string;
   title: string;
   description?: string;
+  initialMessage?: string;
   messages: Record<string, unknown>;
 }) {
   const inquiryCopy = createInquiryFormCopyFromMessages(
@@ -26,9 +26,14 @@ export function EmbeddedInquiryFormSection({
   return (
     <InquiryFormSectionShell
       title={title}
+      {...(id ? { id } : {})}
       {...(description ? { description } : {})}
     >
-      <DeferredInquiryForm copy={inquiryCopy} fallback={inquiryFallback} />
+      <InquiryForm
+        copy={inquiryCopy}
+        fallback={inquiryFallback}
+        {...(initialMessage ? { initialMessage } : {})}
+      />
     </InquiryFormSectionShell>
   );
 }

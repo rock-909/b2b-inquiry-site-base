@@ -68,7 +68,7 @@ async function expectNoReservedGap(page: import("@playwright/test").Page) {
   expect(minHeight, "noscript must zero the reserved height").toBe("0px");
 }
 
-test.describe("No-JS HTML contract (English-only)", () => {
+test.describe("No-JS HTML contract (default locale)", () => {
   test.use({ javaScriptEnabled: false });
 
   test("homepage keeps meaningful structure without client boot", async ({
@@ -108,7 +108,7 @@ test.describe("No-JS HTML contract (English-only)", () => {
     await expectBodyRenderedOnce(page);
   });
 
-  test("mobile homepage exposes English-only navigation fallback without JavaScript", async ({
+  test("mobile homepage exposes the default-locale navigation fallback without JavaScript", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });

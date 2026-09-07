@@ -18,6 +18,10 @@ guidance.
 - Locale routes live under `/[locale]`; configured locales and the default are
   defined by `LOCALES_CONFIG`. Add languages there and provide their message
   packs; do not scatter locale literals through routes or headers.
+- Keep the default locale at the unprefixed URL and use the configured prefix
+  for non-default locales. Canonical, Open Graph and JSON-LD URLs must match
+  the rendered locale URL; do not hard-code the English path in localized
+  metadata or structured data.
 - Keep layouts and non-interactive sections as Server Components.
 - Push `"use client"` down to interactive leaf components.
 

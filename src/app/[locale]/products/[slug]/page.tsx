@@ -3,14 +3,16 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { generateLocaleStaticParams } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
-import { EmbeddedInquiryFormSection } from "@/components/sections/inquiry-form-embed";
+import { ImmediateInquiryFormSection } from "@/components/sections/immediate-inquiry-form-section";
 import { buttonVariants } from "@/components/ui/button-variants";
 import {
   OFFERINGS,
   getOfferingById,
+  getOfferingForLocale,
   getOfferingPath,
   type Offering,
 } from "@/config/offerings";
+import { getLocalePath, type Locale } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
@@ -43,15 +45,19 @@ export function generateStaticParams() {
   );
 }
 
-function resolveOffering(slug: string) {
+function resolveOffering(slug: string, locale?: Locale) {
   const offering = getOfferingById(slug);
   if (!offering) notFound();
-  return offering;
+  return locale ? getOfferingForLocale(offering.id, locale) : offering;
 }
 
-function buildProductStructuredData(offering: Offering) {
+function buildProductStructuredData(
+  offering: Offering,
+  locale: Locale,
+  breadcrumbNames: { home: string; products: string },
+) {
   const productUrl = new URL(
-    getOfferingPath(offering.id),
+    getLocalePath(locale, getOfferingPath(offering.id)),
     SINGLE_SITE_CONFIG.baseUrl,
   ).toString();
 
@@ -63,10 +69,19 @@ function buildProductStructuredData(offering: Offering) {
       brand: SINGLE_SITE_CONFIG.name,
     }),
     buildBreadcrumbListSchema([
-      { name: "Home", url: SINGLE_SITE_CONFIG.baseUrl },
       {
-        name: "Products",
-        url: new URL("/products", SINGLE_SITE_CONFIG.baseUrl).toString(),
+        name: breadcrumbNames.home,
+        url: new URL(
+          getLocalePath(locale, "/"),
+          SINGLE_SITE_CONFIG.baseUrl,
+        ).toString(),
+      },
+      {
+        name: breadcrumbNames.products,
+        url: new URL(
+          getLocalePath(locale, "/products"),
+          SINGLE_SITE_CONFIG.baseUrl,
+        ).toString(),
       },
       { name: offering.name, url: productUrl },
     ]),
@@ -78,7 +93,7 @@ export async function generateMetadata({
 }: ProductDetailPageProps): Promise<Metadata> {
   const { locale: localeParam, slug } = await params;
   const locale = resolveLocaleParam({ locale: localeParam });
-  const offering = resolveOffering(slug);
+  const offering = resolveOffering(slug, locale);
 
   return generateMetadataForPath({
     locale,
@@ -97,16 +112,22 @@ export default async function ProductDetailPage({
 }: ProductDetailPageProps) {
   const { locale: localeParam, slug } = await params;
   const locale = resolveLocaleParam({ locale: localeParam });
-  const offering = resolveOffering(slug);
+  const offering = resolveOffering(slug, locale);
   setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "products" });
-  const tForm = await getTranslations({ locale, namespace: "inquiry.form" });
+  const [t, tForm, tNavigation] = await Promise.all([
+    getTranslations({ locale, namespace: "products" }),
+    getTranslations({ locale, namespace: "inquiry.form" }),
+    getTranslations({ locale, namespace: "navigation" }),
+  ]);
   const messages = getSourceMessages(locale);
   return (
     <>
       <JsonLdGraphScript
         locale={locale}
-        data={buildProductStructuredData(offering)}
+        data={buildProductStructuredData(offering, locale, {
+          home: tNavigation("home"),
+          products: tNavigation("products"),
+        })}
       />
       <article className="mx-auto max-w-[880px] px-6 py-14 md:py-[72px]">
         <Link
@@ -186,7 +207,7 @@ export default async function ProductDetailPage({
           {t("detail.startInquiry")}
         </a>
 
-        <EmbeddedInquiryFormSection
+        <ImmediateInquiryFormSection
           id="inquiry"
           title={t("detail.inquirySectionTitle", {
             productName: offering.name,

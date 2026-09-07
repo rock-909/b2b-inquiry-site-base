@@ -168,6 +168,33 @@ describe("ContactPage static content", () => {
     expect(screen.getAllByText("Set before launch").length).toBeGreaterThan(0);
   });
 
+  it("localizes unconfigured Spanish business hours", async () => {
+    const actualContactCopy = await vi.importActual<
+      typeof import("@/lib/contact/getContactCopy")
+    >("@/lib/contact/getContactCopy");
+    mockGetContactCopyFromMessages.mockImplementation(
+      actualContactCopy.getContactCopyFromMessages,
+    );
+
+    const page = await ContactPage({
+      params: Promise.resolve({ locale: "es" }),
+    });
+
+    await renderAsyncPage(page as React.JSX.Element);
+
+    const hours = screen.getByRole("heading", {
+      name: "Horario comercial",
+    }).parentElement;
+
+    expect(hours).not.toBeNull();
+    expect(within(hours!).getByText("Días laborables")).toBeInTheDocument();
+    expect(within(hours!).getByText("Sábado")).toBeInTheDocument();
+    expect(
+      within(hours!).getAllByText("Definir antes del lanzamiento"),
+    ).toHaveLength(3);
+    expect(within(hours!).queryByText("Replace before launch")).toBeNull();
+  });
+
   it("renders the public email and hides the owner TODO phone", async () => {
     const { ContactMethodsCard } = await import("../contact-page-sections");
 

@@ -4,6 +4,7 @@ import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { shouldIndexPublicPage } from "@/config/single-site-seo";
 import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import { routing } from "@/i18n/routing-config";
+import { getLocalePath } from "@/config/paths/utils";
 import { getRuntimeAppEnv, getRuntimeEnvString } from "@/lib/env";
 import { interpolate } from "@/lib/interpolate";
 
@@ -35,13 +36,10 @@ interface StaticPageMetadataConfigOptions {
   readonly includeEmptyDescription?: boolean;
 }
 
-// SEO 的 locale 回退与路由共用同一真相源：单语言站上非默认 locale 一律
-// 归一到 defaultLocale，避免「页面是新语言、OG locale 仍是旧值」的半完成态。
-const FALLBACK_LOCALE: Locale = LOCALES_CONFIG.defaultLocale;
 const DEFAULT_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
 
 function resolveLocale(locale: Locale): Locale {
-  return locale === FALLBACK_LOCALE ? locale : FALLBACK_LOCALE;
+  return locale;
 }
 
 /** Replace ICU-style {placeholders} with SINGLE_SITE_FACTS values in SEO strings. */
@@ -61,10 +59,13 @@ function normalizePath(path: string): string {
   return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
 }
 
-function buildCanonicalForPath(path: string): string {
+function buildCanonicalForPath(
+  path: string,
+  locale: Locale = LOCALES_CONFIG.defaultLocale,
+): string {
   const normalizedPath = normalizePath(path);
   return new URL(
-    normalizedPath === "" ? "/" : normalizedPath,
+    getLocalePath(locale, normalizedPath),
     SINGLE_SITE_CONFIG.baseUrl,
   ).toString();
 }
@@ -77,14 +78,14 @@ function buildLanguagesForPath(path: string): Record<string, string> {
   const entries: Array<[string, string]> = routing.locales.map((locale) => [
     locale,
     new URL(
-      normalizedPath === "" ? "/" : normalizedPath,
+      getLocalePath(locale, normalizedPath),
       SINGLE_SITE_CONFIG.baseUrl,
     ).toString(),
   ]);
   entries.push([
     "x-default",
     new URL(
-      normalizedPath === "" ? "/" : normalizedPath,
+      getLocalePath(routing.defaultLocale, normalizedPath),
       SINGLE_SITE_CONFIG.baseUrl,
     ).toString(),
   ]);
@@ -154,7 +155,7 @@ export function generateMetadataForPath(
   const { locale, pageType, path, config } = params;
   const seoConfig = { ...STATIC_PAGE_SEO_DEFAULTS, ...config };
   const safeLocale = resolveLocale(locale);
-  const canonical = buildCanonicalForPath(path);
+  const canonical = buildCanonicalForPath(path, safeLocale);
   const languages = buildLanguagesForPath(path);
   const title = resolveMetadataTitle(seoConfig);
   const description = resolveMetadataDescription(seoConfig);
