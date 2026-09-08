@@ -10,11 +10,7 @@ import {
   createApiErrorResponse,
   createApiSuccessResponse,
 } from "@/lib/api/api-response";
-import {
-  applyCorsHeaders,
-  createCorsPreflightResponse,
-} from "@/lib/api/cors-utils";
-import { isAllowedOrigin, isSameOrigin } from "@/lib/security/origin-policy";
+import { isSameOrigin } from "@/lib/security/origin-policy";
 import { mapInquiryValidationDetails } from "@/lib/api/inquiry-validation-details";
 import { safeParseJson } from "@/lib/api/safe-parse-json";
 import { isRuntimeProduction } from "@/lib/env";
@@ -238,7 +234,7 @@ async function handleInquiryPost(request: NextRequest, clientIP: string) {
 /**
  * S-F01 请求闸门：在触碰限流存储之前丢弃不可能来自本站前端的请求。
  *
- * 跨站表单（text/plain）和伪造 Origin 的 POST 不可能是合法买家流量，
+ * 跨站表单（text/plain）和跨站 Origin 的 POST 不可能是合法买家流量，
  * 却会消耗真实 IP 的限流配额把正常买家挤出窗口——所以这两类检查必须
  * 排在 checkInquiryRateLimit 之前。没有 Origin 的请求放行：CSRF 需要
  * 浏览器才成立，curl/监控类客户端不带 Origin 属于正常形态。
@@ -262,11 +258,7 @@ function rejectPlausiblyIllegitimateRequest(
 
   const origin = request.headers.get("origin");
 
-  if (
-    origin !== null &&
-    !isSameOrigin(origin, request.headers.get("host")) &&
-    !isAllowedOrigin(origin)
-  ) {
+  if (!isSameOrigin(origin, request.url)) {
     logger.warn("Inquiry request rejected by origin gate", {
       ip: sanitizeIP(getClientIP(request)),
     });
@@ -323,13 +315,6 @@ async function handleRateLimitedInquiryPost(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  return applyCorsHeaders({
-    request,
-    response: await handleRateLimitedInquiryPost(request),
-  });
-}
-
-export function OPTIONS(request: NextRequest) {
-  return createCorsPreflightResponse(request);
+export function POST(request: NextRequest) {
+  return handleRateLimitedInquiryPost(request);
 }

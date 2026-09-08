@@ -15,14 +15,12 @@ export {
   getCanonicalPath,
   getLocalePath,
   getLocalizedPath,
-  getPageTypeFromPath,
   PATHNAMES,
 } from "@/config/paths/utils";
 
 // 重新导出类型
 export type { PathsConfig } from "@/config/paths/paths-config";
 export type {
-  ConfiguredCurrency,
   ConfiguredLocale,
   LocalesConfig,
 } from "@/config/paths/locales-config";

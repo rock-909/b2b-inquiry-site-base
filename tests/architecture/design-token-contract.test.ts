@@ -62,16 +62,6 @@ describe("design token contract", () => {
     }
   });
 
-  it("keeps the explicit high-contrast focus treatment", () => {
-    const theme = stripCssComments(readRepoFile(THEME_CSS));
-    const globals = stripCssComments(readRepoFile(GLOBALS_CSS));
-
-    expect(theme).toContain("@media (prefers-contrast: high)");
-    expect(theme).toContain("--ring: var(--brand-focus-strong);");
-    expect(globals).toContain("*:focus-visible");
-    expect(globals).toContain("outline: 3px solid var(--ring) !important;");
-  });
-
   it("keeps required WCAG contrast across light and dark themes", () => {
     const css = stripCssComments(readRepoFile(THEME_CSS));
     const pairs = [

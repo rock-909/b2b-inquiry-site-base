@@ -38,7 +38,6 @@ export interface CompanyInfo {
     country: string;
     city: string;
     address?: string;
-    coordinates?: { lat: number; lng: number };
   };
 }
 
@@ -51,7 +50,6 @@ export interface BusinessHours {
 export interface ContactInfo {
   phone: string;
   email: string;
-  wechat?: string;
   businessHours?: BusinessHours;
 }
 
@@ -69,8 +67,6 @@ export interface BrandAssets {
   logo: {
     status: PublicAssetStatus;
     horizontal: string;
-    horizontalPng: string;
-    square: string;
     width: number;
     height: number;
   };

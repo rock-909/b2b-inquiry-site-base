@@ -358,7 +358,7 @@ describe("InquiryForm contract", () => {
 
     // 焦点管理合同（组件层证明接线；真实视口滚动由 E2E 证明）：
     // 第一个无效字段获得焦点。
-    expect(document.activeElement).toBe(fullName);
+    await waitFor(() => expect(document.activeElement).toBe(fullName));
 
     // 错误摘要走程序化聚焦单通道：不得保留 role="alert"/aria-live，
     // 否则与焦点播报形成双重朗读。role/aria-live 挂在 callout 根元素，
@@ -581,7 +581,7 @@ describe("InquiryForm contract", () => {
     const summaryCallout = screen
       .getByText(copy.errors.fieldSummary)
       .closest('[data-slot="status-callout"]');
-    expect(document.activeElement).toBe(summaryCallout);
+    await waitFor(() => expect(document.activeElement).toBe(summaryCallout));
   });
 });
 

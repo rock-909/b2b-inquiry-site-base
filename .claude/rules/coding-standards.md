@@ -90,8 +90,7 @@ script, or test utility.
   browser code.
 - Node-only APIs belong behind explicit server/runtime boundaries.
 - Do not add webpack-only behavior to application code. The current Next.js path
-  is Turbopack-first; webpack configuration is a fallback boundary, not the
-  source of truth for normal app behavior.
+  uses Turbopack and TypeScript path aliases; no custom webpack fallback is maintained.
 
 ## User-facing text
 

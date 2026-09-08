@@ -11,8 +11,6 @@ export default defineConfig({
       jsdom: {
         url: "http://localhost:3000",
         pretendToBeVisual: true,
-        resources: "usable",
-        runScripts: "dangerously",
       },
     },
 
@@ -120,13 +118,8 @@ export default defineConfig({
   define: {
     "process.env.NODE_ENV": '"test"',
     // React 19 并发特性支持
-    "global.window": "globalThis",
-    "typeof window": '"object"',
-    __DEV__: true,
-    __EXPERIMENTAL__: true,
     // React 19 兼容性：在模块加载前预设全局变量
     "globalThis.IS_REACT_ACT_ENVIRONMENT": "true",
     // 确保 React DOM 能够正确初始化
-    "globalThis.window": "globalThis",
   },
 });

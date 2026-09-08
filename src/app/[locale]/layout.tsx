@@ -1,6 +1,6 @@
 import { generateLocaleMetadata } from "@/app/[locale]/layout-metadata";
 import "@/app/globals.css";
-import { type ReactNode, Suspense } from "react";
+import { type ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
@@ -11,7 +11,6 @@ import { AttributionBootstrap } from "@/components/attribution-bootstrap";
 import { CookieConsentIsland } from "@/components/cookie/cookie-consent-island";
 import { Footer } from "@/components/footer/footer";
 import { Header } from "@/components/layout/header";
-import { NavigationProgressBar } from "@/components/navigation/navigation-progress-bar";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { coerceLocale, isLocale } from "@/i18n/locale-utils";
 import { loadClientMessages } from "@/lib/i18n/client-messages";
@@ -71,9 +70,6 @@ async function AsyncLocaleLayoutContent({
       </a>
       <NextIntlClientProvider locale={locale} messages={clientMessages}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          <Suspense fallback={null}>
-            <NavigationProgressBar />
-          </Suspense>
           {/* P1-1 Fix: Single attribution initialization for UTM tracking */}
           <AttributionBootstrap />
 

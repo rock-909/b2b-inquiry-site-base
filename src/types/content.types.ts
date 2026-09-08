@@ -25,8 +25,6 @@ export interface ContentMetadata {
 
 // Page specific metadata
 export interface PageMetadata extends ContentMetadata {
-  layout?: "default" | "landing" | "docs" | "legal";
-  showToc?: boolean;
   lastReviewed?: string;
   faq?: FaqItem[];
 }
@@ -38,8 +36,6 @@ export interface FaqItem {
 }
 
 export interface LegalPageMetadata extends PageMetadata {
-  layout: "legal";
-  showToc: true;
   lastReviewed: string;
 }
 

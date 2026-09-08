@@ -18,10 +18,6 @@ export const LOCALES_CONFIG = Object.freeze({
     en: "UTC",
     es: "Europe/Madrid",
   }),
-  currencies: Object.freeze({
-    en: "USD",
-    es: "EUR",
-  }),
 } as const);
 
 /**
@@ -29,15 +25,7 @@ export const LOCALES_CONFIG = Object.freeze({
  */
 export type LocalesConfig = typeof LOCALES_CONFIG;
 export type ConfiguredLocale = (typeof LOCALES_CONFIG.locales)[number];
-export type ConfiguredCurrency =
-  (typeof LOCALES_CONFIG.currencies)[ConfiguredLocale];
 
 export function getLocaleTimeZone(locale: ConfiguredLocale): string {
   return LOCALES_CONFIG.timeZones[locale];
-}
-
-export function getLocaleCurrency(
-  locale: ConfiguredLocale,
-): ConfiguredCurrency {
-  return LOCALES_CONFIG.currencies[locale];
 }

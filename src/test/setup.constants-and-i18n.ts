@@ -3,14 +3,6 @@ import { vi } from "vitest";
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { PATHNAMES } from "@/config/paths/utils";
 
-// Mock unified constants entry point - 使用importOriginal保留所有原始常量
-vi.mock("@/constants", async (importOriginal) => {
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-  };
-});
-
 // Mock next-intl —— 翻译来自真实合成消息包，不是手写清单。这里曾经写死七条
 // 导航文案，其中 navigation.services 和 navigation.contact 在三个真实消息包里
 // 都不存在：任何断言它们的测试证明的是虚构文案。

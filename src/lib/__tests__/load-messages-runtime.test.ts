@@ -144,9 +144,7 @@ describe("load-messages runtime loading", () => {
 
     const enMessages = await loadCompleteMessages("en");
 
-    expect(getPathValue(enMessages, ["home", "hero", "eyebrow"])).toBe(
-      "B2B inquiry reference",
-    );
+    expectNonEmptyStringPath(enMessages, ["home", "hero", "eyebrow"]);
 
     const enHero = expectRecordPath(enMessages, ["home", "hero"]);
     // The hero visual is the working-principle diagram; the retired

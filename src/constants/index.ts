@@ -33,7 +33,6 @@ export { HEX_RADIX } from "./count";
 // ============================================================================
 export {
   HTTP_OK,
-  HTTP_NO_CONTENT,
   HTTP_BAD_REQUEST,
   HTTP_FORBIDDEN,
   HTTP_PAYLOAD_TOO_LARGE,

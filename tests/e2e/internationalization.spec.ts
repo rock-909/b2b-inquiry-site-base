@@ -1,3 +1,8 @@
+import { getSitePageCases } from "./site-page-cases";
+import {
+  getOfferingPath,
+  getOfferingsForLocale,
+} from "../../src/config/offerings";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import {
   expectHtmlLang,
@@ -5,14 +10,12 @@ import {
 } from "./helpers/navigation";
 
 const SPANISH_PAGES = [
-  ["/es", /Convierte el interés cualificado/i],
-  ["/es/products", /Productos basados en requisitos reales/i],
-  ["/es/products/sample-offering", /Oferta de ejemplo/i],
-  ["/es/about", /Sobre este sitio de referencia/i],
-  ["/es/contact", /Contacto/i],
-  ["/es/privacy", /Referencia de política de privacidad/i],
-  ["/es/terms", /Referencia de condiciones del sitio web/i],
-] as const;
+  ...getSitePageCases("es"),
+  ...getOfferingsForLocale("es").map(
+    (offering) =>
+      [`/es${getOfferingPath(offering.id)}`, offering.name] as const,
+  ),
+];
 
 const INQUIRY_DRAFT = {
   fullName: "Language Switch Buyer",
@@ -111,11 +114,10 @@ test.describe("Spanish locale contract", () => {
 });
 
 test.describe("Language switcher journey", () => {
-  test.describe.configure({ mode: "serial" });
-
   test("desktop switch preserves the URL, inquiry draft, and keyboard lifecycle", async ({
     page,
   }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
     await page.goto("/contact?source=language-e2e&tag=one&tag=two#inquiry", {

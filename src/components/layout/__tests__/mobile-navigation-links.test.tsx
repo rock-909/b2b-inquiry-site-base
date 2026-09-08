@@ -146,7 +146,7 @@ describe("MobileNavigationLinks", () => {
 
     expect(
       screen.getAllByRole("link", { name: CTA_LABEL }).at(-1),
-    ).toHaveAttribute("href", "/contact?source=mobile_nav_cta");
+    ).toHaveAttribute("href", "/contact");
   });
 
   it("omits the drawer CTA when the active profile has no contact route", () => {
@@ -156,7 +156,6 @@ describe("MobileNavigationLinks", () => {
       <MobileNavigationLinks contactSalesLabel="Contact sales" />,
     );
 
-    expect(html).not.toContain("mobile_nav_cta");
     expect(html).not.toContain("Contact sales");
   });
 

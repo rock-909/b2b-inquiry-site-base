@@ -245,18 +245,9 @@ function useRateLimitCooldown() {
 /**
  * 一次提交的请求预算。
  *
- * 服务端串行执行，已知最坏耗时加总为 20 秒：
- * 限流查询 2 秒（`src/lib/security/stores/rate-limit-store.ts` 的
- * `UPSTASH_OPERATION_TIMEOUT_MS`，串在整条链路最前面）
- * + Turnstile 校验 5 秒（`src/lib/security/turnstile.ts` 的
- * `TURNSTILE_VERIFY_TIMEOUT_MS`）
- * + 业主邮件 5 秒（`src/lib/email/resend-http-client.ts` 的
- * `DEFAULT_RESEND_TIMEOUT_MS`）
- * + Airtable 8 秒（`src/lib/airtable/service.ts` 的
- * `AIRTABLE_REQUEST_TIMEOUT_MS`）。
- *
- * 30 秒把这 20 秒整个包住，另留约 10 秒给 Worker 冷启动和网络往返。不设上限则更糟：
- * 连接被中间盒吞掉时 fetch 既不 resolve 也不 reject，表单会永远停在「提交中」。
+ * 服务端先执行限流和 Turnstile，再并行交付邮件与 Airtable。
+ * 各段预算为 2 秒、5 秒、max(5 秒, 8 秒)，另留网络及冷启动余量。
+ * 30 秒浏览器预算防止连接无响应时表单永久停在提交中。
  *
  * 超时只意味着「浏览器不再等了」，不意味着服务端停下了。这里不传幂等键，邮件和
  * Airtable 也没有绑定这条 abort 信号（Cloudflare 要靠 request-signal 兼容标志才会

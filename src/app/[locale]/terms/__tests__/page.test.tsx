@@ -21,19 +21,11 @@ vi.mock("@/lib/seo-metadata", async (importOriginal) => {
 });
 
 vi.mock("@/components/content/legal-page-shell", () => ({
-  LegalPageShell: vi.fn(
-    ({
-      metadata,
-      schemaType,
-    }: {
-      metadata: { title: string };
-      schemaType: string;
-    }) => (
-      <div data-schema-type={schemaType}>
-        <h1>{metadata.title}</h1>
-      </div>
-    ),
-  ),
+  LegalPageShell: vi.fn(({ metadata }: { metadata: { title: string } }) => (
+    <div>
+      <h1>{metadata.title}</h1>
+    </div>
+  )),
 }));
 
 vi.mock("next-intl/server", () => ({
@@ -49,8 +41,6 @@ const mockLegalPage = {
     slug: "terms",
     publishedAt: "2024-01-01",
     updatedAt: "2024-06-01",
-    layout: "legal" as const,
-    showToc: true as const,
     lastReviewed: "2024-06-01",
     seo: {
       title: "Terms SEO",

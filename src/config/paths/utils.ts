@@ -25,16 +25,6 @@ export function getLocalePath(locale: Locale, path: string): string {
   return canonicalPath === "/" ? `/${locale}` : `/${locale}${canonicalPath}`;
 }
 
-function stripLocalePath(locale: Locale, path: string): string {
-  const normalizedPath = getCanonicalPathValue(path);
-  if (locale === LOCALES_CONFIG.defaultLocale) return normalizedPath;
-
-  const prefix = `/${locale}`;
-  return normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`)
-    ? normalizedPath.slice(prefix.length) || "/"
-    : normalizedPath;
-}
-
 function createPathnames(): Readonly<PathnameMap> {
   const staticPathnames = Object.values(PATHS_CONFIG).map((configuredPath) => {
     const path = getCanonicalPathValue(configuredPath);
@@ -75,34 +65,3 @@ export function getCanonicalPath<T extends PageType>(
  * 包含静态路径和动态路由模式
  */
 export const PATHNAMES = createPathnames();
-
-/**
- * 获取页面类型（根据路径反向查找）
- */
-export function getPageTypeFromPath(
-  path: string,
-  locale: Locale,
-): PageType | null {
-  // 严格验证输入参数
-  if (path === null || path === undefined) {
-    throw new Error("Path cannot be null or undefined");
-  }
-  if (locale === null || locale === undefined) {
-    throw new Error("Locale cannot be null or undefined");
-  }
-
-  const canonicalPath = stripLocalePath(locale, path);
-
-  // 处理根路径
-  if (canonicalPath === "/" || canonicalPath === "") {
-    return "home";
-  }
-
-  for (const [pageType, configuredPath] of Object.entries(PATHS_CONFIG)) {
-    if (configuredPath === canonicalPath) {
-      return pageType as PageType;
-    }
-  }
-
-  return null;
-}

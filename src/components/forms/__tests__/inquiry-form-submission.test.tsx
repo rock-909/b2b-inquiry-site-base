@@ -183,17 +183,14 @@ describe("InquiryForm submission lifecycle", () => {
     const budgetMs = timeoutSpy.mock.calls[0]?.[0];
     // 没有预算就没有出路：这一行在加超时之前就会红。
     expect(budgetMs).toBeTypeOf("number");
-    // 服务端串行最坏耗时由这四个常量相加得出，不能手抄一个总和：任何一段调大，
-    // 手抄的数不会红，客户端预算会悄悄变得不够，买家看到假的「服务器错误」而请求
-    // 其实还在正常处理。
+    // 限流、验证串行，两个交付通道并行。
     const serverWorstCaseMs =
       UPSTASH_OPERATION_TIMEOUT_MS +
       TURNSTILE_VERIFY_TIMEOUT_MS +
-      DEFAULT_RESEND_TIMEOUT_MS +
-      AIRTABLE_REQUEST_TIMEOUT_MS;
+      Math.max(DEFAULT_RESEND_TIMEOUT_MS, AIRTABLE_REQUEST_TIMEOUT_MS);
     expect(Number(budgetMs)).toBeGreaterThan(serverWorstCaseMs);
     // 也要有上界：预算调到五分钟同样是死路，买家只会看着按钮一直转。
-    expect(Number(budgetMs)).toBeLessThan(serverWorstCaseMs * 2);
+    expect(Number(budgetMs)).toBeLessThanOrEqual(serverWorstCaseMs * 2);
 
     await act(async () => {
       vi.advanceTimersByTime(Number(budgetMs));

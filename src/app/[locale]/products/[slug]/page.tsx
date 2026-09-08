@@ -1,3 +1,4 @@
+import { NavigationPending } from "@/components/navigation/navigation-pending";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
@@ -136,6 +137,7 @@ export default async function ProductDetailPage({
           className="text-sm font-medium text-[var(--primary-text)] hover:underline"
         >
           {t("detail.backToProducts")}
+          <NavigationPending />
         </Link>
         <header className="mt-8 max-w-3xl">
           <p className="text-sm font-semibold tracking-[0.12em] text-[var(--primary-text)] uppercase">

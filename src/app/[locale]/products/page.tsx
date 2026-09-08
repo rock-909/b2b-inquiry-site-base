@@ -1,3 +1,4 @@
+import { NavigationPending } from "@/components/navigation/navigation-pending";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import {
@@ -92,6 +93,7 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
                 className={buttonVariants({ className: "mt-6 self-start" })}
               >
                 {t("page.viewDetails")}
+                <NavigationPending />
               </Link>
             </Card>
           ))}

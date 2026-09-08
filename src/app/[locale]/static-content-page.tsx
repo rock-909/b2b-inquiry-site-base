@@ -13,8 +13,6 @@ import {
 export interface StaticContentPageConfig {
   pageType: PageType;
   slug: string;
-  /** Structured-data type for the page body; defaults to WebPage. */
-  schemaType?: "WebPage" | "Article";
 }
 
 export interface StaticContentPageProps {
@@ -60,7 +58,6 @@ export async function StaticContentPage({
       blocks={blocks}
       headings={headings}
       locale={locale}
-      schemaType={config.schemaType ?? "WebPage"}
       pagePath={pagePath}
     />
   );

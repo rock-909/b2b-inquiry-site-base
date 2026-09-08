@@ -1,19 +1,5 @@
 import { vi } from "vitest";
 
-// Mock environment variables - use Object.defineProperty for read-only properties
-try {
-  if (!process.env.NODE_ENV) {
-    Object.defineProperty(process.env, "NODE_ENV", {
-      value: "test",
-      writable: false,
-      enumerable: true,
-      configurable: true,
-    });
-  }
-} catch {
-  // Environment variable already set, ignore
-}
-
 // Mock environment variables - 使用vi.stubEnv而不是直接修改process.env
 vi.stubEnv("NODE_ENV", "test");
 vi.stubEnv("APP_ENV", "local");
@@ -33,7 +19,6 @@ vi.stubEnv("AIRTABLE_BASE_ID", "test-base-id");
 vi.stubEnv("AIRTABLE_TABLE_NAME", "test-table");
 vi.stubEnv("EMAIL_FROM", "test@example.com");
 vi.stubEnv("INQUIRY_RECIPIENT_EMAIL", "reply@example.com");
-vi.stubEnv("ADMIN_API_TOKEN", "test-admin-token");
 vi.stubEnv("TURNSTILE_BYPASS", "false");
 vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "test-account-id");
 
@@ -49,7 +34,6 @@ vi.mock("@t3-oss/env-nextjs", () => ({
     AIRTABLE_TABLE_NAME: "test-table",
     EMAIL_FROM: "test@example.com",
     INQUIRY_RECIPIENT_EMAIL: "reply@example.com",
-    ADMIN_API_TOKEN: "test-admin-token",
     TURNSTILE_BYPASS: false,
     CLOUDFLARE_ACCOUNT_ID: "test-account-id",
     NEXT_PUBLIC_BASE_URL: "https://example.com",
@@ -68,7 +52,6 @@ vi.mock("@/lib/env", () => {
     AIRTABLE_TABLE_NAME: "test-table",
     EMAIL_FROM: "test@example.com",
     INQUIRY_RECIPIENT_EMAIL: "reply@example.com",
-    ADMIN_API_TOKEN: "test-admin-token",
     CLOUDFLARE_ACCOUNT_ID: "test-account-id",
     NEXT_PUBLIC_BASE_URL: "https://example.com",
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: "test-site-key-12345",

@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import type {
-  ArticleData,
   BreadcrumbData,
   OrganizationData,
   WebSiteData,
@@ -10,7 +9,7 @@ import {
   getPublicContactPhone,
   getPublicLogoPath,
 } from "@/config/public-trust";
-import { routing, type Locale } from "@/i18n/routing";
+import { routing } from "@/i18n/routing";
 
 const FALLBACK_BASE_URL = SINGLE_SITE_CONFIG.baseUrl;
 type StructuredDataTranslator = Awaited<
@@ -124,58 +123,6 @@ export function generateWebSiteData(
       "@id": organizationStructuredDataId(baseUrl),
     },
     inLanguage: routing.locales,
-  };
-}
-
-/**
- * 生成文章结构化数据
- */
-export function generateArticleData(
-  t: StructuredDataTranslator,
-  locale: Locale,
-  data: ArticleData,
-) {
-  const logoPath = getPublicLogoPath();
-  const organizationId = organizationStructuredDataId(FALLBACK_BASE_URL);
-
-  return {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: data.title,
-    description: data.description,
-    author: {
-      "@type": "Organization",
-      "@id": organizationId,
-      name:
-        data.author ?? t("article.defaultAuthor") ?? SINGLE_SITE_CONFIG.name,
-    },
-    publisher: {
-      "@type": "Organization",
-      "@id": organizationId,
-      name: t("organization.name") ?? SINGLE_SITE_CONFIG.name,
-      ...(logoPath
-        ? {
-            logo: {
-              "@type": "ImageObject",
-              url: new URL(logoPath, FALLBACK_BASE_URL).toString(),
-            },
-          }
-        : {}),
-    },
-    datePublished: data.publishedTime,
-    dateModified: data.modifiedTime || data.publishedTime,
-    mainEntityOfPage: {
-      "@type": "WebPage",
-      "@id": data.url,
-    },
-    image: data.image
-      ? {
-          "@type": "ImageObject",
-          url: data.image,
-        }
-      : undefined,
-    inLanguage: locale,
-    section: data.section,
   };
 }
 

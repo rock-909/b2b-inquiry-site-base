@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
 import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
 import { createInquiryRequest, validInquiryData } from "./route-harness";
-import { OPTIONS, POST } from "../route";
+import { POST } from "../route";
 
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
@@ -89,17 +89,24 @@ describe("/api/inquiry request admission", () => {
     expect(checkInquiryRateLimit).not.toHaveBeenCalled();
   });
 
-  it("rejects cross-site Origin with 403 before consuming rate-limit quota", async () => {
-    const response = await POST(
-      createInquiryRequest(JSON.stringify(validInquiryData), {
-        Origin: "https://evil.example",
-      }),
-    );
+  it.each([
+    "https://evil.example",
+    "https://localhost:3000",
+    "http://localhost:3001",
+  ])(
+    "rejects mismatched Origin %s before consuming rate-limit quota",
+    async (origin) => {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify(validInquiryData), {
+          Origin: origin,
+        }),
+      );
 
-    expect(response.status).toBe(403);
-    expect(checkInquiryRateLimit).not.toHaveBeenCalled();
-    expect(processValidatedInquiry).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(403);
+      expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+      expect(processValidatedInquiry).not.toHaveBeenCalled();
+    },
+  );
 
   it("accepts same-origin Origin and proceeds to normal flow", async () => {
     const response = await POST(
@@ -110,39 +117,5 @@ describe("/api/inquiry request admission", () => {
 
     expect(response.status).toBe(200);
     expect(checkInquiryRateLimit).toHaveBeenCalledTimes(1);
-  });
-
-  describe("OPTIONS", () => {
-    it("should return 200 with CORS headers for allowed origin", async () => {
-      const request = new NextRequest("http://localhost:3000/api/inquiry", {
-        method: "OPTIONS",
-        headers: {
-          Origin: "http://localhost:3000",
-          Host: "localhost:3000",
-        },
-      });
-
-      const response = OPTIONS(request);
-
-      expect(response.status).toBe(200);
-      expect(response.headers.get("Access-Control-Allow-Origin")).toBe(
-        "http://localhost:3000",
-      );
-      expect(response.headers.get("Access-Control-Allow-Methods")).toContain(
-        "POST",
-      );
-    });
-
-    it("should return empty body", async () => {
-      const request = new NextRequest("http://localhost:3000/api/inquiry", {
-        method: "OPTIONS",
-        headers: { Host: "localhost:3000" },
-      });
-
-      const response = OPTIONS(request);
-      const body = await response.text();
-
-      expect(body).toBe("");
-    });
   });
 });

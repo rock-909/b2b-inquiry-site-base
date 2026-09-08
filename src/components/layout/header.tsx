@@ -1,3 +1,4 @@
+import { NavigationPending } from "@/components/navigation/navigation-pending";
 /**
  * Header Component (Server)
  *
@@ -33,7 +34,7 @@ interface HeaderNavItem {
 
 interface HeaderProps {
   className?: string;
-  locale?: Locale;
+  locale: Locale;
   contactSalesLabel: string;
   openMenuLabel: string;
   closeMenuLabel: string;
@@ -54,8 +55,6 @@ export function Header({
   mainNavigationLabel,
   mainNavItems = EMPTY_MAIN_NAV_ITEMS,
 }: HeaderProps) {
-  const showTestIds = !locale;
-
   return (
     <header
       className={cn(
@@ -67,16 +66,12 @@ export function Header({
       <div className="mx-auto max-w-[1080px] px-6">
         <div className="header-nav-layout">
           {/* Left section: Logo */}
-          <div
-            className="header-nav-left"
-            {...(showTestIds ? { "data-testid": "mobile-navigation" } : {})}
-          >
+          <div className="header-nav-left">
             <Logo locale={locale} />
           </div>
 
           {/* Center section: Main Navigation (Desktop) */}
           <CenterNav
-            locale={locale}
             mainNavItems={mainNavItems}
             mainNavigationLabel={mainNavigationLabel}
           />
@@ -95,11 +90,9 @@ export function Header({
 }
 
 function CenterNav({
-  locale,
   mainNavItems,
   mainNavigationLabel,
 }: {
-  locale?: Locale | undefined;
   mainNavItems: Array<{
     key: string;
     href: string;
@@ -107,7 +100,7 @@ function CenterNav({
   }>;
   mainNavigationLabel: string;
 }) {
-  if (!locale || mainNavItems.length === 0) return null;
+  if (mainNavItems.length === 0) return null;
 
   return (
     <nav
@@ -131,6 +124,7 @@ function CenterNav({
               <span data-testid={`header-nav-label-${item.key}`} translate="no">
                 {item.label}
               </span>
+              <NavigationPending />
             </Link>
           </li>
         ))}
@@ -147,7 +141,7 @@ function HeaderUtilityControls({
   closeMenuLabel,
 }: {
   contactSalesLabel: string;
-  locale: Locale | undefined;
+  locale: Locale;
   languageAriaLabel: string;
   openMenuLabel: string;
   closeMenuLabel: string;
@@ -156,7 +150,7 @@ function HeaderUtilityControls({
 
   return (
     <div className="header-nav-right" data-testid="header-utility-controls">
-      {locale ? (
+      {
         <>
           {contactHref ? (
             <Link
@@ -168,6 +162,7 @@ function HeaderUtilityControls({
               <span data-testid="header-contact-sales-label" translate="no">
                 {contactSalesLabel}
               </span>
+              <NavigationPending />
             </Link>
           ) : null}
           {contactHref ? (
@@ -184,6 +179,7 @@ function HeaderUtilityControls({
                 <span data-testid="header-mobile-contact-label" translate="no">
                   {contactSalesLabel}
                 </span>
+                <NavigationPending />
               </Link>
             </div>
           ) : null}
@@ -218,7 +214,7 @@ function HeaderUtilityControls({
             </MobileNavigationIsland>
           </div>
         </>
-      ) : null}
+      }
     </div>
   );
 }

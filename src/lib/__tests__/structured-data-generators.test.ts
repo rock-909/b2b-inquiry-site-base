@@ -5,14 +5,12 @@ import {
 } from "@/config/single-site";
 import {
   buildWebPageSchema,
-  generateArticleData,
   generateOrganizationData,
   generateProductData,
   generateWebSiteData,
   organizationStructuredDataId,
   websiteStructuredDataId,
 } from "@/lib/structured-data-generators";
-import type { Locale } from "@/i18n/routing";
 
 const mockTranslator = ((key: string) => {
   const values: Record<string, string> = {
@@ -96,23 +94,6 @@ describe("structured-data generators", () => {
   });
 
   describe("Given Article pages publish under the company brand", () => {
-    it("When generating Article schema, Then author is Organization not Person", () => {
-      const schema = generateArticleData(mockTranslator, "en" as Locale, {
-        title: "Materials Guide",
-        description: "Material overview.",
-        publishedTime: "2026-01-01",
-        url: `${SITE_CONFIG.baseUrl}/materials-guide`,
-      });
-
-      expect(schema.author).toMatchObject({
-        "@type": "Organization",
-        "@id": organizationStructuredDataId(SITE_CONFIG.baseUrl),
-      });
-      expect(schema.author).not.toMatchObject({ "@type": "Person" });
-    });
-  });
-
-  describe("Given site identity nodes are shared across the graph", () => {
     it("When generating Organization data, Then real contact facts and stable @id are present", () => {
       const schema = generateOrganizationData(mockTranslator, {});
 

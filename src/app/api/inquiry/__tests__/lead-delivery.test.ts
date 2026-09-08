@@ -82,17 +82,6 @@ describe("/api/inquiry lead delivery", () => {
     );
   });
 
-  it("should apply CORS headers on POST response when Origin is present", async () => {
-    const origin = "http://localhost:3000";
-    const request = createInquiryRequest(JSON.stringify(validInquiryData), {
-      origin,
-    });
-
-    const response = await POST(request);
-
-    expect(response.headers.get("Access-Control-Allow-Origin")).toBe(origin);
-  });
-
   it("should process valid inquiry without a replay key", async () => {
     const request = createInquiryRequest(JSON.stringify(validInquiryData));
 

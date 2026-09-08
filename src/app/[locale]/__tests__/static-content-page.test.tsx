@@ -4,7 +4,7 @@ import { StaticContentPage } from "@/app/[locale]/static-content-page";
 import type { Locale } from "@/types/content.types";
 
 /**
- * 共享静态内容页在这里选择页面 shell 和 schemaType。
+ * 共享静态内容页传入正文和当前页面路径。
  */
 
 const { mockLoadLegalPage } = vi.hoisted(() => ({
@@ -16,16 +16,8 @@ vi.mock("@/lib/content/legal-page", () => ({
 }));
 
 vi.mock("@/components/content/legal-page-shell", () => ({
-  LegalPageShell: ({
-    schemaType,
-    pagePath,
-  }: {
-    schemaType: string;
-    pagePath: string;
-  }) => (
-    <div data-testid="legal-shell" data-schema-type={schemaType}>
-      {pagePath}
-    </div>
+  LegalPageShell: ({ pagePath }: { pagePath: string }) => (
+    <div data-testid="legal-shell">{pagePath}</div>
   ),
 }));
 
@@ -39,11 +31,7 @@ const legalPage = {
   headings: [{ id: "a", text: "A" }],
 };
 
-async function renderPage(config: {
-  pageType: "terms";
-  slug: string;
-  schemaType?: "WebPage" | "Article";
-}) {
+async function renderPage(config: { pageType: "terms"; slug: string }) {
   const element = await StaticContentPage({
     params: Promise.resolve({ locale: "en" as Locale }),
     config,
@@ -62,28 +50,6 @@ describe("StaticContentPage", () => {
     await renderPage({ pageType: "terms", slug: "terms" });
 
     expect(screen.getByTestId("legal-shell")).toBeInTheDocument();
-  });
-
-  it("defaults the structured-data type to WebPage", async () => {
-    await renderPage({ pageType: "terms", slug: "terms" });
-
-    expect(screen.getByTestId("legal-shell")).toHaveAttribute(
-      "data-schema-type",
-      "WebPage",
-    );
-  });
-
-  it("honours a structured-data type override", async () => {
-    await renderPage({
-      pageType: "terms",
-      slug: "terms",
-      schemaType: "Article",
-    });
-
-    expect(screen.getByTestId("legal-shell")).toHaveAttribute(
-      "data-schema-type",
-      "Article",
-    );
   });
 
   it("passes the localized path of the configured page type", async () => {

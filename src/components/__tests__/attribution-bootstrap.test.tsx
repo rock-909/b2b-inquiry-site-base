@@ -1,5 +1,5 @@
 import { render, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { AttributionBootstrap } from "@/components/attribution-bootstrap";
 import { shouldLoadAttribution } from "@/components/attribution-bootstrap-utils";
 
@@ -12,11 +12,12 @@ describe("AttributionBootstrap", () => {
 
   it("stores first-touch attribution when a UTM parameter is present", async () => {
     window.history.replaceState({}, "", "/?utm_source=google");
-    const storeAttributionData = vi.fn();
-    const loadModule = vi.fn(async () => ({ storeAttributionData }));
+    render(<AttributionBootstrap />);
 
-    render(<AttributionBootstrap loadModule={loadModule} />);
-
-    await waitFor(() => expect(storeAttributionData).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(
+        JSON.parse(sessionStorage.getItem("inquiry_attribution") ?? "{}"),
+      ).toMatchObject({ utmSource: "google" }),
+    );
   });
 });

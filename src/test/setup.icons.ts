@@ -2,12 +2,7 @@ import React from "react";
 import { vi } from "vitest";
 
 // Mock lucide-react icons - 返回真正的React元素而不是字符串
-// Browser Mode（BROWSER_TEST=true）下回退到真实模块，避免 v4 Browser 手动 mock 解析冲突
 vi.mock("lucide-react", async () => {
-  if (process.env.BROWSER_TEST === "true") {
-    return vi.importActual<typeof import("lucide-react")>("lucide-react");
-  }
-
   // 在 factory 内定义 MockIcon，避免 Vitest v4 hoist 导致的未定义错误
   const MockIcon = ({ className, ...props }: any) =>
     React.createElement("svg", {

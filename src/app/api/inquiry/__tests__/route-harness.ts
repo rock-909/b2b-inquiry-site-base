@@ -4,8 +4,8 @@
  * 每个 lane 测试文件通过这里的同一组 mock 实例驱动路由，避免各自复制一套
  * mock universe；lane 之间唯一的差别是需要覆写的 Once 行为。
  *
- * 注意：CORS 工具（cors-utils / origin-policy）不再被 mock——route 合同
- * 直接走真实实现，防止测试悄悄重写出第二套 CORS 语义。
+ * 注意：Origin 检查不再被 mock——route 合同
+ * 直接走真实实现，防止测试悄悄重写出第二套准入语义。
  */
 
 import { NextRequest } from "next/server";

@@ -8,7 +8,6 @@ import "@testing-library/jest-dom/vitest";
 import "./setup.console";
 
 import "./setup.base-mocks";
-import "./setup.fetch";
 import "./setup.next";
 import "./setup.icons";
 import "./setup.constants-and-i18n";

@@ -3,6 +3,8 @@ import { render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setRequestLocale } from "next-intl/server";
 import ContactPage, { generateMetadata } from "@/app/[locale]/contact/page";
+import { getStaticContactPage } from "@/app/[locale]/contact/contact-page-data";
+import * as staticPages from "@/lib/content/static-pages";
 import { renderAsyncPage } from "@/test/render-async-page";
 
 const { mockGetContactCopyFromMessages } = vi.hoisted(() => ({
@@ -88,6 +90,7 @@ vi.mock("@/lib/contact/getContactCopy", () => ({
 describe("ContactPage static content", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
   beforeEach(() => {
@@ -109,6 +112,17 @@ describe("ContactPage static content", () => {
     ).toHaveTextContent("Contact");
     expect(screen.getByTestId("content-body")).toBeInTheDocument();
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
+  });
+
+  it("rejects invalid contact metadata before exposing page data", () => {
+    const page = staticPages.getStaticPage("contact", "en");
+    vi.spyOn(staticPages, "getStaticPage").mockReturnValue({
+      ...page,
+      metadata: { ...page.metadata, title: " " },
+    });
+    expect(() => getStaticContactPage("en")).toThrow(
+      "Static contact page metadata missing title for locale: en",
+    );
   });
 
   it("keeps the no-JS inquiry fallback inside the form column", async () => {

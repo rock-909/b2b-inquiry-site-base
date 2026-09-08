@@ -27,11 +27,6 @@ export interface LeadResult {
 const LEAD_DELIVERY_POLICY = "email-primary-airtable-backup" as const;
 const resendService = new ResendService();
 
-// 业主后台的数据，不是网站访客可见文案，不走 i18n 翻译键。
-const OWNER_EMAIL_FAILED_NOTICE =
-  "⚠️ NOTE: the notification email for this inquiry FAILED to send.\n" +
-  "You are seeing this lead only because it was saved here.\n\n";
-
 function normalizeErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
@@ -86,19 +81,8 @@ async function sendOwnerEmail(lead: OwnerLead): Promise<boolean> {
   }
 }
 
-async function createInquiryLeadRecord(
-  lead: OwnerLead,
-  emailSent: boolean,
-): Promise<boolean> {
-  const baseMessage = generateInquiryMessage({
-    requirements: lead.requirements,
-  });
-  // 邮件没发出去时，业主唯一能看到这条线索的地方就是这条记录。
-  // 提示写进自由文本的 Message 字段：写什么都不会被 Airtable 拒收，
-  // 换成 Status 单选列的话，选项不存在会让整条记录被拒，反而丢线索。
-  const message = emailSent
-    ? baseMessage
-    : `${OWNER_EMAIL_FAILED_NOTICE}${baseMessage}`;
+async function createInquiryLeadRecord(lead: OwnerLead): Promise<boolean> {
+  const message = generateInquiryMessage({ requirements: lead.requirements });
 
   try {
     await createAirtableLead({
@@ -137,11 +121,12 @@ export async function processValidatedInquiry(
       referenceId,
     });
 
-    // 邮件结果必须先落定，记录才能准确写入通知失败提示。
-    // 代价：最坏耗时是邮件预算加 Airtable 的 8 秒中止预算。
     const ownerLead = createOwnerLead(input, referenceId);
-    const emailSent = await sendOwnerEmail(ownerLead);
-    const recordCreated = await createInquiryLeadRecord(ownerLead, emailSent);
+    // 两个独立收件通道共享引用号，不让邮件故障阻塞备份写入。
+    const [emailSent, recordCreated] = await Promise.all([
+      sendOwnerEmail(ownerLead),
+      createInquiryLeadRecord(ownerLead),
+    ]);
 
     if (!emailSent && !recordCreated) {
       return createProcessingFailureResult(referenceId);

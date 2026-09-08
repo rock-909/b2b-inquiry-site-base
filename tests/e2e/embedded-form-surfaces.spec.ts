@@ -1,3 +1,5 @@
+import { getOfferingPath, OFFERINGS } from "../../src/config/offerings";
+import messages from "../../messages/base/en/messages.json";
 import { expect, test } from "@playwright/test";
 import { buildCanarySelectors } from "./smoke/canary-selectors";
 
@@ -21,7 +23,8 @@ test("product page CTA anchors to #inquiry with prefilled product context", asyn
       }),
     }),
   );
-  await page.goto("/products/sample-offering");
+  const offering = OFFERINGS[0]!;
+  await page.goto(getOfferingPath(offering.id));
 
   // SSR 外层 section 携带锚点 id：无 JS 也能定位。
   const section = page.locator("section#inquiry");
@@ -35,13 +38,23 @@ test("product page CTA anchors to #inquiry with prefilled product context", asyn
 
   // 区块标题带产品语境；message 已按模板预填且可修改。
   await expect(
-    section.getByRole("heading", { name: "Inquire about Sample Offering" }),
+    section.getByRole("heading", {
+      name: messages.products.detail.inquirySectionTitle.replace(
+        "{productName}",
+        offering.name,
+      ),
+    }),
   ).toBeVisible();
 
   const fullName = page.locator('input[name="fullName"]');
   const message = page.locator('textarea[name="message"]');
   await expect(fullName).toBeEditable({ timeout: 15_000 });
-  await expect(message).toHaveValue("I'm interested in Sample Offering.");
+  await expect(message).toHaveValue(
+    messages.inquiry.form.productInterestTemplate.replace(
+      "{productName}",
+      offering.name,
+    ),
+  );
 
   // 预填可被买家改写：清空后照常提交成功。
   await message.fill("");
@@ -73,7 +86,7 @@ test("home content section embeds a working inquiry form", async ({ page }) => {
   await page.goto("/");
 
   const sectionHeading = page.getByRole("heading", {
-    name: "Have a requirement to discuss?",
+    name: messages.home.finalCta.title,
   });
   await expect(sectionHeading).toBeVisible();
 

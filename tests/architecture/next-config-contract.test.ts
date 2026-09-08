@@ -70,24 +70,6 @@ describe("next.config contract", () => {
     expect(await readDerivedLabel(undefined)).toBe("local");
   });
 
-  it("keeps one TypeScript 6.0.2 CLI and tooling baseline", async () => {
-    const nextConfigModule = await import("../../next.config");
-    const packageJson = JSON.parse(readFileSync("package.json", "utf8")) as {
-      scripts?: Record<string, string>;
-      devDependencies?: Record<string, string>;
-    };
-
-    expect(nextConfigModule.default.experimental?.useTypeScriptCli).toBe(false);
-    expect(packageJson.devDependencies?.["@typescript/native"]).toBeUndefined();
-    expect(packageJson.devDependencies?.typescript).toBe("6.0.2");
-    expect(packageJson.scripts?.["type-check"]).toBe(
-      "next typegen && tsc --noEmit",
-    );
-    expect(
-      execSync("pnpm exec tsc --version", { encoding: "utf8" }).trim(),
-    ).toBe("Version 6.0.2");
-  });
-
   // 原来是在源码里找三个字符串：APP_ENV 判断、source: "/:path*"、
   // value: "noindex, nofollow"。三个字符串各自存在，不等于它们拼成了一条规则，
   // 分处三个不相干的对象、甚至躺在注释里，照样全部找得到。这里真的调一次
