@@ -61,11 +61,10 @@ function writeMetadataArtifacts({
 
 function createBuildFixture({
   aboutPostponed = false,
-  contactPostponed = true,
+  contactPostponed = false,
   locales = ["en", "es"],
   secondaryAboutPrerendered = true,
   includeAboutRoute = true,
-  includeAboutTemplateMeta = true,
 } = {}) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   tempDirs.push(rootDir);
@@ -82,16 +81,6 @@ function createBuildFixture({
         [`/${locale}/contact`, { srcRoute: "/[locale]/contact" }],
       ]),
     ),
-  });
-  if (includeAboutTemplateMeta) {
-    writeJson(rootDir, ".next/server/app/[locale]/about.meta", {
-      headers: { "x-nextjs-prerender": "1" },
-      postponed: "template shell",
-    });
-  }
-  writeJson(rootDir, ".next/server/app/[locale]/contact.meta", {
-    headers: { "x-nextjs-prerender": "1" },
-    postponed: "template shell",
   });
   writeJson(rootDir, ".next/server/app/en/about.meta", {
     headers: { "x-nextjs-prerender": "1" },
@@ -150,24 +139,12 @@ afterEach(() => {
 });
 
 describe("prerender static behavior gate", () => {
-  it("accepts fully prerendered locale templates without postponed exemptions", () => {
+  it("accepts fully prerendered locale routes", () => {
     expect(
       collectFindings({
         rootDir: createBuildFixture({ contactPostponed: false }),
-        dynamicRouteExemptions: new Map(),
       }),
     ).toEqual([]);
-  });
-
-  it("rejects a localized page template without a prerender shell", () => {
-    const findings = collectFindings({
-      rootDir: createBuildFixture({ includeAboutTemplateMeta: false }),
-    });
-    expect(findings).toContainEqual({
-      file: "server/app/[locale]/about.meta",
-      error:
-        'localized route template has no prerender shell "/[locale]/about"',
-    });
   });
 
   it("rejects a localized page template without a concrete locale route", () => {
@@ -181,7 +158,7 @@ describe("prerender static behavior gate", () => {
     });
   });
 
-  it("rejects postponed rendering outside the explicit route exemption", () => {
+  it("rejects postponed rendering", () => {
     const findings = collectFindings({
       rootDir: createBuildFixture({ aboutPostponed: true }),
     });
@@ -199,30 +176,11 @@ describe("prerender static behavior gate", () => {
         secondaryAboutPrerendered: false,
       }),
       configuredLocales: ["en", "fr"],
-      dynamicRouteExemptions: new Map([
-        ["/en/contact", "contact search-param island"],
-        ["/fr/contact", "contact search-param island"],
-      ]),
     });
 
     expect(findings).toContainEqual({
       file: "server/app/fr/about.meta",
       error: 'localized route is not marked prerendered "/fr/about"',
-    });
-  });
-
-  it("rejects stale route exemptions after the page becomes fully prerendered", () => {
-    const findings = collectFindings({
-      rootDir: createBuildFixture({ contactPostponed: false }),
-      dynamicRouteExemptions: new Map([
-        ["/en/contact", "contact search-param island; remove in M3-D2"],
-      ]),
-    });
-    expect(findings).toContainEqual({
-      file: "scripts/quality/checks/prerender-static.js",
-      error: expect.stringContaining(
-        'stale dynamic-route exemption "/en/contact"',
-      ),
     });
   });
 

@@ -40,19 +40,6 @@ function normalizeNeeds(
 }
 
 describe("Cloudflare deploy workflow contract", () => {
-  it("guards production deployment to the main branch", () => {
-    const workflow = loadDeployWorkflow();
-    const guard = workflow.jobs?.["build-and-deploy"]?.steps?.find(
-      (step) =>
-        step.run?.includes("GITHUB_REF_NAME") && step.run.includes('"main"'),
-    );
-
-    expect(guard?.run).toMatch(/GITHUB_REF_NAME[^\n]+!=[^\n]+main/u);
-    // 拦截必须真的拦：报错后要 exit 1，否则只是打印警告然后继续部署。
-    expect(guard?.run).toContain("exit 1");
-    expect(guard?.if).toContain("inputs.environment == 'production'");
-  });
-
   it("runs strict production gates before deployment", () => {
     const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
     const configGateIndex = findStepIndex(
@@ -83,7 +70,7 @@ describe("Cloudflare deploy workflow contract", () => {
     );
 
     expect(releaseProof?.run).toContain(
-      "pnpm release:verify 2>&1 | tee cf_build.log",
+      "pnpm release:verify --env production 2>&1 | tee cf_build.log",
     );
     // 单次构建是全 workflow 的约束，不只是 build-and-deploy 这个 job——
     // 别的 job 里偷偕再建一次也要红。

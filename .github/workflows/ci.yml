@@ -7,6 +7,9 @@ on:
     branches: [main, "pr/**"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -150,6 +153,19 @@ jobs:
       - name: 运行 E2E
         run: pnpm exec playwright test
 
+      - name: 上传 Playwright 失败诊断
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-artifacts
+          path: |
+            reports/playwright-report
+            reports/playwright-results.json
+            reports/playwright-results.xml
+            test-results
+          if-no-files-found: ignore
+          retention-days: 7
+
   semgrep:
     name: L1/L2 Semgrep 安全扫描
     runs-on: ubuntu-latest
@@ -231,7 +247,6 @@ jobs:
         run: node scripts/quality/checks/cloudflare-static-asset-headers.js
 
       - name: Cloudflare/Wrangler dry-run
-        if: ${{ github.event_name != 'pull_request' }}
         run: pnpm exec wrangler deploy --dry-run --env preview
         env:
           NODE_ENV: production
@@ -242,19 +257,6 @@ jobs:
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
           GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION || secrets.GOOGLE_SITE_VERIFICATION }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-
-      - name: Cloudflare Free budget note
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          {
-            echo "## Cloudflare Free budget"
-            echo
-            echo "Pull request CI does not prove the Cloudflare Free gzip budget."
-            echo "This run proves the Next.js and Cloudflare/OpenNext build path only."
-            echo "Before merge, record a workflow_dispatch CI run or pnpm release:verify result on the exact head SHA."
-          } >> "$GITHUB_STEP_SUMMARY"
 
   ci-summary:
     name: CI 汇总

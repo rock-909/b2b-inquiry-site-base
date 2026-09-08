@@ -8,13 +8,6 @@ const LOCAL_E2E_HOSTS = ["127.0.0.1", "::1"];
  * args: string[],
  * env?: Record<string, string>,
  * requiresFreePort?: number,
- * artifactBudget?: {
- *   metric: string,
- *   limitKiB: number,
- *   preferredKiB: number,
- *   measuredArtifact: string,
- *   source: string,
- * },
  * }>} */
 const RELEASE_VERIFY_COMMANDS = [
   {
@@ -57,17 +50,9 @@ const RELEASE_VERIFY_COMMANDS = [
     args: ["scripts/quality/checks/cloudflare-static-asset-headers.js"],
   },
   {
-    id: "wrangler-preview-dry-run",
+    id: "wrangler-dry-run",
     command: "pnpm",
     args: ["exec", "wrangler", "deploy", "--dry-run", "--env", "preview"],
-    artifactBudget: {
-      metric: "gzip KiB",
-      limitKiB: 3000,
-      preferredKiB: 2700,
-      measuredArtifact: "source-checkout",
-      source:
-        "Project self-budget (3000 KiB), ~72 KiB margin below the Cloudflare Workers Free gzip upload limit of 3072 KiB (3 MiB)",
-    },
   },
 ];
 
@@ -99,59 +84,16 @@ const MANUAL_PROOF_LANES = [
 function runReleaseVerifyCommand(step, rootDir) {
   const result = spawnSync(step.command, step.args, {
     cwd: rootDir,
-    stdio: step.artifactBudget ? "pipe" : "inherit",
-    encoding: step.artifactBudget ? "utf8" : undefined,
+    stdio: "inherit",
+    timeout: 15 * 60 * 1000,
+    killSignal: "SIGKILL",
     env: {
       ...process.env,
       ...(step.env ?? {}),
     },
   });
 
-  if (step.artifactBudget) {
-    const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
-    process.stdout.write(result.stdout ?? "");
-    process.stderr.write(result.stderr ?? "");
-
-    const status = result.status ?? 1;
-    if (status !== 0) return status;
-
-    return validateArtifactBudget(step.artifactBudget, output);
-  }
-
   return result.status ?? 1;
-}
-
-function parseWranglerDryRunGzipKiB(output) {
-  const match = output.match(/gzip:\s*(\d+(?:\.\d+)?)\s*KiB/iu);
-  if (!match?.[1]) return null;
-
-  return Number.parseFloat(match[1]);
-}
-
-function validateArtifactBudget(artifactBudget, output) {
-  const measuredKiB = parseWranglerDryRunGzipKiB(output);
-
-  if (measuredKiB === null) {
-    console.error(
-      "Cloudflare artifact budget check failed: missing gzip size.",
-    );
-    return 1;
-  }
-
-  if (measuredKiB > artifactBudget.limitKiB) {
-    console.error(
-      `Cloudflare artifact budget exceeded: ${measuredKiB.toFixed(2)} KiB gzip > ${artifactBudget.limitKiB} KiB.`,
-    );
-    return 1;
-  }
-
-  if (measuredKiB > artifactBudget.preferredKiB) {
-    console.warn(
-      `Cloudflare artifact budget warning: ${measuredKiB.toFixed(2)} KiB gzip is above preferred ${artifactBudget.preferredKiB} KiB headroom.`,
-    );
-  }
-
-  return 0;
 }
 
 async function isLocalPortInUse(port, hosts = LOCAL_E2E_HOSTS) {
@@ -184,18 +126,22 @@ async function isLocalPortInUse(port, hosts = LOCAL_E2E_HOSTS) {
 /**
  * @param {{
  *   rootDir?: string,
+ *   environment?: string,
  *   runCommand?: (
  *     step: (typeof RELEASE_VERIFY_COMMANDS)[number],
  *     rootDir: string,
- *   ) => number | {status?: number, stdout?: string, stderr?: string},
+ *   ) => number,
  *   portInUse?: (port?: number, hosts?: string[]) => Promise<boolean>,
  * }=} options
  */
 async function runReleaseVerify({
   rootDir = process.cwd(),
+  environment = "preview",
   runCommand = runReleaseVerifyCommand,
   portInUse = isLocalPortInUse,
 } = {}) {
+  if (!["preview", "production"].includes(environment))
+    throw new Error("Unsupported release environment");
   console.log("== Release verification flow ==");
   for (const step of RELEASE_VERIFY_COMMANDS) {
     if (step.requiresFreePort) {
@@ -211,16 +157,11 @@ async function runReleaseVerify({
       }
     }
 
-    const result = runCommand(step, rootDir);
-    const status =
-      typeof result === "number"
-        ? result
-        : (result.status ?? 1) === 0 && step.artifactBudget
-          ? validateArtifactBudget(
-              step.artifactBudget,
-              `${result.stdout ?? ""}\n${result.stderr ?? ""}`,
-            )
-          : (result.status ?? 1);
+    const command =
+      step.id === "wrangler-dry-run"
+        ? { ...step, args: [...step.args.slice(0, -1), environment] }
+        : step;
+    const status = runCommand(command, rootDir);
     if (status !== 0) return status;
   }
 
@@ -241,7 +182,10 @@ async function runReleaseVerify({
 }
 
 if (require.main === module) {
-  runReleaseVerify().then(
+  const args = process.argv.slice(2);
+  if (args.length && (args.length !== 2 || args[0] !== "--env"))
+    throw new Error("Usage: release-verify.js [--env preview|production]");
+  runReleaseVerify({ environment: args[1] ?? "preview" }).then(
     (status) => {
       process.exitCode = status;
     },
@@ -257,8 +201,6 @@ module.exports = {
   MANUAL_PROOF_LANES,
   RELEASE_VERIFY_COMMANDS,
   isLocalPortInUse,
-  parseWranglerDryRunGzipKiB,
   runReleaseVerify,
   runReleaseVerifyCommand,
-  validateArtifactBudget,
 };

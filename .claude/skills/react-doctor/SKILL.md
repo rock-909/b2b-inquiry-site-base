@@ -1,6 +1,6 @@
 ---
 name: react-doctor
-description: Use before completing React or Next.js code changes, before committing UI/form/client-component work, or when improving code quality. Runs the project React Doctor gate used by CI.
+description: Run the project CI gate after React/Next.js code changes, or triage React Doctor diagnostics. Not for unrelated scripts, configuration, or documentation cleanup.
 ---
 
 # React Doctor for Claude Code

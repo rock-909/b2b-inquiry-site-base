@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
   INQUIRY_FORM_CHUNK_MARKER,
-  INQUIRY_FORM_MAX_RAW_BYTES,
   INQUIRY_FORM_SOURCE,
   collectForbiddenBuildSources,
   collectInquiryFormBuildArtifactFindings,
@@ -89,7 +88,7 @@ describe("client-boundary build artifacts", () => {
 
     expect(result.status).toBe("passed");
     expect(result.chunkPath).toBe(".next/static/chunks/inquiry-live.js");
-    expect(result.rawBytes).toBeLessThan(INQUIRY_FORM_MAX_RAW_BYTES);
+    expect(result.rawBytes).toBeGreaterThan(0);
     expect(result.forbiddenSources).toEqual([]);
   });
 

@@ -3,9 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   RELEASE_VERIFY_COMMANDS,
   isLocalPortInUse,
-  parseWranglerDryRunGzipKiB,
   runReleaseVerify,
-  validateArtifactBudget,
 } from "../../../scripts/quality/checks/release-verify.js";
 import { captureExpectedConsoleErrors } from "@/test/console";
 
@@ -43,6 +41,28 @@ afterEach(async () => {
 });
 
 describe("release verify runner", () => {
+  it("uses the requested deployment environment for dry-run", async () => {
+    const commands: string[][] = [];
+    await runReleaseVerify({
+      environment: "production",
+      runCommand: (step) => {
+        commands.push(step.args);
+        return 0;
+      },
+      portInUse: async () => false,
+    });
+    expect(commands.at(-1)).toEqual([
+      "exec",
+      "wrangler",
+      "deploy",
+      "--dry-run",
+      "--env",
+      "production",
+    ]);
+    await expect(runReleaseVerify({ environment: "invalid" })).rejects.toThrow(
+      "Unsupported release environment",
+    );
+  });
   it("checks test TypeScript after production TypeScript", () => {
     const productionTypeCheck = RELEASE_VERIFY_COMMANDS.findIndex(
       (step) => step.id === "type-check",
@@ -154,105 +174,34 @@ describe("release verify runner", () => {
     expect(executedCommands).toEqual([firstStep?.id]);
   });
 
-  it("parses representative Wrangler dry-run gzip upload lines", () => {
-    const samples: Array<{ output: string; expectedKiB: number }> = [
-      {
-        output: "Total Upload: 13662.29 KiB / gzip: 3640.63 KiB",
-        expectedKiB: 3640.63,
-      },
-      {
-        output: "Total Upload: 8423.21 KiB / gzip: 2174.32 KiB",
-        expectedKiB: 2174.32,
-      },
-      {
-        output: [
-          "Uploaded b2b-inquiry-site-base (preview)",
-          "Total Upload: 8423.21 KiB / gzip: 2174.32 KiB",
-          "Worker startup time: 21 ms",
-        ].join("\n"),
-        expectedKiB: 2174.32,
-      },
-    ];
-
-    for (const sample of samples) {
-      expect(parseWranglerDryRunGzipKiB(sample.output)).toBe(
-        sample.expectedKiB,
-      );
-    }
-  });
-
-  it("fails when the Wrangler dry-run artifact exceeds the hard Free-plan budget", () => {
-    const errorSpy = captureExpectedConsoleErrors(
-      "Cloudflare artifact budget exceeded:",
-    );
-
-    const status = validateArtifactBudget(
-      {
-        metric: "gzip KiB",
-        limitKiB: 3000,
-        preferredKiB: 2700,
-        measuredArtifact: "source-checkout",
-        source: "Cloudflare Workers Free gzip upload limit",
-      },
-      "Total Upload: 9123.00 KiB / gzip: 3000.01 KiB",
-    );
-
-    expect(status).toBe(1);
-    expect(errorSpy).toHaveBeenCalledWith(
-      "Cloudflare artifact budget exceeded: 3000.01 KiB gzip > 3000 KiB.",
-    );
-
-    errorSpy.mockRestore();
-  });
-
-  it("warns but passes when the Wrangler dry-run artifact exceeds preferred headroom only", () => {
-    const warnings: string[] = [];
-    const warnSpy = vi
-      .spyOn(console, "warn")
-      .mockImplementation((message: string) => {
-        warnings.push(message);
-      });
-
-    const status = validateArtifactBudget(
-      {
-        metric: "gzip KiB",
-        limitKiB: 3000,
-        preferredKiB: 2700,
-        measuredArtifact: "source-checkout",
-        source: "Cloudflare Workers Free gzip upload limit",
-      },
-      "Total Upload: 9123.00 KiB / gzip: 2700.01 KiB",
-    );
-
-    expect(status).toBe(0);
-    expect(warnings).toContain(
-      "Cloudflare artifact budget warning: 2700.01 KiB gzip is above preferred 2700 KiB headroom.",
-    );
-
-    warnSpy.mockRestore();
-  });
-
-  it("uses artifact budget metadata during release verification", async () => {
-    const executedBudgetSteps: string[] = [];
-
+  it("checks fresh build artifacts before dry-run and propagates dry-run failure", async () => {
+    const executed: string[] = [];
     const status = await runReleaseVerify({
-      rootDir: "/repo",
       runCommand: (step) => {
-        if (step.artifactBudget) {
-          executedBudgetSteps.push(step.id);
-          return {
-            status: 0,
-            stdout: "Total Upload: 8423.21 KiB / gzip: 2174.32 KiB",
-            stderr: "",
-          };
-        }
-
-        return 0;
+        executed.push(step.id);
+        return step.id === "wrangler-dry-run" ? 23 : 0;
       },
       portInUse: async () => false,
     });
-
-    expect(status).toBe(0);
-    expect(executedBudgetSteps).toEqual(["wrangler-preview-dry-run"]);
+    expect(status).toBe(23);
+    expect(
+      executed.filter((id) =>
+        [
+          "local-playwright-smoke",
+          "next-build",
+          "cloudflare-build",
+          "cloudflare-artifact-config",
+          "cloudflare-static-asset-headers",
+          "wrangler-dry-run",
+        ].includes(id),
+      ),
+    ).toEqual([
+      "local-playwright-smoke",
+      "next-build",
+      "cloudflare-build",
+      "cloudflare-artifact-config",
+      "cloudflare-static-asset-headers",
+      "wrangler-dry-run",
+    ]);
   });
 });

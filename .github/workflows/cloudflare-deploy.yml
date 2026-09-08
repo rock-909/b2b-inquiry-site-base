@@ -21,6 +21,10 @@ on:
         required: false
         type: string
 
+permissions:
+  contents: read
+  actions: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ inputs.environment }}
   # Preview may cancel a superseded run; production never cancels so an
@@ -42,16 +46,45 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: 阻断：production 只能从 main 部署
+        if: ${{ inputs.environment == 'production' }}
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "❌ production 部署只能从 main 分支触发，当前分支: ${GITHUB_REF_NAME}" >&2
+            exit 1
+          fi
+        env:
+          GITHUB_REF: ${{ github.ref }}
+
+      - name: 阻断：当前提交必须通过 main CI
+        if: ${{ inputs.environment == 'production' }}
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const {data} = await github.rest.actions.listWorkflowRuns({
+              owner: context.repo.owner, repo: context.repo.repo,
+              workflow_id: "ci.yml", head_sha: context.sha,
+              branch: "main", event: "push", per_page: 1,
+            });
+            const run = data.workflow_runs[0];
+            if (!run || run.head_sha !== context.sha || run.conclusion !== "success") {
+              core.setFailed("This exact main commit has not passed its latest push CI run.");
+            }
+
       - name: 检查 Cloudflare 凭据
         if: ${{ inputs.environment == 'production' }}
         run: |
           set -euo pipefail
-          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
             echo "❌ Cloudflare secrets 未配置"
             echo "需要: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID"
             exit 1
           fi
           echo "✅ Cloudflare 凭据已配置"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: 设置 pnpm
         uses: pnpm/action-setup@v5
@@ -72,17 +105,6 @@ jobs:
       - name: 安装 Playwright Chromium
         if: ${{ inputs.environment == 'production' }}
         run: pnpm exec playwright install --with-deps chromium
-
-      - name: 阻断：production 只能从 main 部署
-        if: ${{ inputs.environment == 'production' }}
-        run: |
-          set -euo pipefail
-          if [ "${GITHUB_REF_NAME}" != "main" ]; then
-            echo "❌ production 部署只能从 main 分支触发，当前分支: ${GITHUB_REF_NAME}" >&2
-            exit 1
-          fi
-        env:
-          GITHUB_REF_NAME: ${{ github.ref_name }}
 
       - name: 导出 production public vars（wrangler）
         if: ${{ inputs.environment == 'production' }}
@@ -155,6 +177,26 @@ jobs:
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
           GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION || secrets.GOOGLE_SITE_VERIFICATION }}
 
+      - name: 阻断：Worker production secret 名称齐备
+        if: ${{ inputs.environment == 'production' }}
+        run: |
+          set -euo pipefail
+          pnpm exec wrangler secret list --env production --format json > "$RUNNER_TEMP/worker-secrets.json"
+          node <<'NODE'
+          const fs = require("node:fs");
+          const secrets = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/worker-secrets.json", "utf8"));
+          const names = new Set(secrets.map((secret) => secret.name));
+          const required = ["RATE_LIMIT_PEPPER", "TURNSTILE_SECRET_KEY", "EMAIL_FROM",
+            "INQUIRY_RECIPIENT_EMAIL", "RESEND_API_KEY", "AIRTABLE_API_KEY",
+            "AIRTABLE_BASE_ID", "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"];
+          const missing = required.filter((name) => !names.has(name));
+          if (missing.length) throw new Error("Missing Worker secrets: " + missing.join(", "));
+          console.log("Worker secret names verified; values and provider delivery remain separate proof.");
+          NODE
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: 外部 URL smoke（preview 输入）
         if: ${{ inputs.environment == 'preview' }}
         run: |
@@ -174,7 +216,7 @@ jobs:
         if: ${{ inputs.environment == 'production' }}
         run: |
           set -euo pipefail
-          pnpm release:verify 2>&1 | tee cf_build.log
+          pnpm release:verify --env production 2>&1 | tee cf_build.log
         env:
           CI: true
           NODE_ENV: production
@@ -304,9 +346,9 @@ jobs:
           delay=5
 
           for i in $(seq 1 $max_tries); do
-            status=$(curl -s -o /dev/null -w "%{http_code}" -I "$url" || echo "000")
+            status=$(curl --connect-timeout 5 --max-time 10 -s -o /dev/null -w "%{http_code}" -I "$url" || true)
             if [ "$status" = "000" ]; then
-              status=$(curl -s -o /dev/null -w "%{http_code}" "$url" || echo "000")
+              status=$(curl --connect-timeout 5 --max-time 10 -s -o /dev/null -w "%{http_code}" "$url" || true)
             fi
 
             echo "第 $i 次探测: $status"

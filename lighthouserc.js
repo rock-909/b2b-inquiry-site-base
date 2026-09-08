@@ -29,7 +29,7 @@
 // Lighthouse 是手动性能证明，不接入默认 CI 或 git hook。
 const isFullCoverage = process.env.CI_FULL_COVERAGE === "true";
 
-// 本站 localePrefix 为 'never'（src/config/paths/locales-config.ts），正式 URL
+// 本站 localePrefix 为 'as-needed'（src/config/paths/locales-config.ts），正式 URL
 // 不带 locale 段：`/en/x` 会 302 到 `/x`。直接请求无前缀地址，才不会把每一页都
 // 变成一次重定向测量。owner 确认后续加语种时，再按当时的前缀策略调整。
 
@@ -72,7 +72,7 @@ const sharedLighthouseAssertions = {
   // 这不是最终目标值，后续性能收口后仍应重新抬回 0.82+。
   "categories:performance": [
     "error",
-    { minScore: 0.78, aggregationMethod: "optimistic" },
+    { minScore: 0.78, aggregationMethod: "median" },
   ],
   "categories:accessibility": ["error", { minScore: 0.9 }],
   "categories:best-practices": ["error", { minScore: 0.9 }],
@@ -84,10 +84,10 @@ const sharedLighthouseAssertions = {
   // GitHub runner 下 /en 页当前 best-run TBT 已实测到 259.5ms / 341ms。
   // 250ms 继续作为硬门槛会把 CI 抖动放大成系统性红灯。
   // 暂时放宽到 350ms，仍明显低于真正的坏值（>500ms），
-  // 并继续使用 optimistic 聚合降低冷启动噪声。
+  // 并继续使用 median 聚合降低冷启动噪声。
   "total-blocking-time": [
     "error",
-    { maxNumericValue: 350, aggregationMethod: "optimistic" },
+    { maxNumericValue: 350, aggregationMethod: "median" },
   ],
   "speed-index": ["error", { maxNumericValue: 3000 }],
   // 'first-meaningful-paint' 已废弃，Lighthouse 不再产出该数值，移除以避免 NaN 断言
@@ -139,7 +139,7 @@ module.exports = {
         `--port ${LIGHTHOUSE_PORT}`,
       startServerReadyPattern: "Local:",
       startServerReadyTimeout: 60000,
-      // 使用 3 次运行配合 optimistic 聚合，更好地过滤 CI 冷启动噪声
+      // 使用 3 次运行配合 median 聚合，更好地过滤 CI 冷启动噪声
       numberOfRuns: 3,
     },
     assert: {
@@ -151,7 +151,8 @@ module.exports = {
       ],
     },
     upload: {
-      target: "temporary-public-storage",
+      target: "filesystem",
+      outputDir: "reports/lighthouse",
     },
   },
 };

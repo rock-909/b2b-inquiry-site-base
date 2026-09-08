@@ -1,41 +1,21 @@
 import { spawnSync } from "node:child_process";
-import path from "node:path";
-
 import { describe, expect, it } from "vitest";
 
-const REPO_ROOT = path.resolve(__dirname, "../../..");
-const SCRIPT_PATH = path.join(REPO_ROOT, "scripts/git/pre-push-guard.js");
-
-function runGuard(remoteName: string, input: string) {
-  return spawnSync(process.execPath, [SCRIPT_PATH, remoteName], {
-    cwd: REPO_ROOT,
-    input,
-    encoding: "utf8",
-  });
-}
-
-describe("pre-push main branch guard", () => {
-  it("blocks pushes to origin/main", () => {
-    const result = runGuard(
-      "origin",
-      "refs/heads/topic 1111111111111111111111111111111111111111 refs/heads/main 2222222222222222222222222222222222222222\n",
-    );
-
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("Direct push to origin/main is blocked");
-  });
-
-  it("allows feature branches and non-origin remotes", () => {
-    const feature = runGuard(
-      "origin",
-      "refs/heads/topic 1111111111111111111111111111111111111111 refs/heads/topic 2222222222222222222222222222222222222222\n",
-    );
-    const otherRemote = runGuard(
-      "upstream",
-      "refs/heads/topic 1111111111111111111111111111111111111111 refs/heads/main 2222222222222222222222222222222222222222\n",
-    );
-
-    expect(feature.status).toBe(0);
-    expect(otherRemote.status).toBe(0);
+describe("actual pre-push hook", () => {
+  it("rejects main even with no changed files and accepts a feature ref", () => {
+    for (const [remote, branch] of [
+      ["origin", "main"],
+      ["origin", "feature"],
+      ["upstream", "main"],
+    ]) {
+      const result = spawnSync("sh", [".githooks/pre-push", remote!], {
+        input: `refs/heads/topic ${"a".repeat(40)} refs/heads/${branch} ${"a".repeat(40)}\n`,
+        encoding: "utf8",
+        timeout: 5000,
+      });
+      expect(result.status).toBe(
+        remote === "origin" && branch === "main" ? 1 : 0,
+      );
+    }
   });
 });
