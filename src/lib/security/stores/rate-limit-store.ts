@@ -48,7 +48,7 @@ function getUpstashPipelineResults(payload: unknown): unknown[] {
 
 function parseStrictNumber(value: unknown, label: string): number {
   const parsed = unwrapUpstashResult(value);
-  if (!Number.isFinite(parsed as number)) {
+  if (!Number.isSafeInteger(parsed) || (parsed as number) < 0) {
     throw new Error(
       `[Rate Limit] Invalid Upstash response: expected numeric ${label}`,
     );
@@ -127,9 +127,17 @@ export class RedisRateLimitStore {
       }
       const [countResult, _expireResult, ttlResult] = results;
       const count = parseStrictNumber(countResult, "count");
-      const ttlMs = Number(unwrapUpstashResult(ttlResult));
+      if (count === 0)
+        throw new Error(
+          "[Rate Limit] Invalid Upstash response: expected numeric count above zero",
+        );
+      const ttlMs = unwrapUpstashResult(ttlResult);
 
-      if (!Number.isFinite(ttlMs) || ttlMs < 0) {
+      if (
+        typeof ttlMs !== "number" ||
+        !Number.isSafeInteger(ttlMs) ||
+        ttlMs < 0
+      ) {
         logger.error("[Rate Limit] Upstash transaction returned invalid TTL");
         throw new Error("Upstash rate limit operation returned invalid TTL");
       }

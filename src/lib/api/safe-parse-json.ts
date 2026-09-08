@@ -140,7 +140,8 @@ export async function safeParseJson<T>(
   } catch (error: unknown) {
     logger.warn("Failed to parse JSON body", {
       route,
-      error: error instanceof Error ? error.message : String(error),
+      errorType:
+        error instanceof SyntaxError ? "invalid-json" : "body-read-failed",
     });
 
     return createInvalidJsonFailure();

@@ -1,13 +1,33 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { captureExpectedConsoleErrors } from "@/test/console";
+import { logger } from "@/lib/logger";
 import {
   TURNSTILE_VERIFY_TIMEOUT_MS,
   verifyTurnstileDetailed,
 } from "@/lib/security/turnstile";
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
+});
+
+it("does not log malformed verification response bodies", async () => {
+  const log = vi.spyOn(logger, "error").mockImplementation(() => undefined);
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(new Response("PRIVATE_TOKEN", { status: 200 })),
+  );
+  await expect(
+    verifyTurnstileDetailed("test-token", "127.0.0.1"),
+  ).resolves.toEqual({
+    success: false,
+    errorCodes: ["network-error"],
+  });
+  expect(log).toHaveBeenCalledWith("Turnstile verification network failure", {
+    errorCode: "network-error",
+    ip: expect.any(String),
+  });
 });
 
 it("aborts a stalled response body after receiving successful headers", async () => {

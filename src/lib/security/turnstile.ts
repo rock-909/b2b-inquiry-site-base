@@ -212,7 +212,6 @@ export async function verifyTurnstileDetailed(
     logger.error("Turnstile verification network failure", {
       errorCode,
       ip: sanitizeIP(ip),
-      error,
     });
     return { success: false, errorCodes: [errorCode] };
   }

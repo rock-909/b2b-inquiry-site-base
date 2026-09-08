@@ -96,7 +96,12 @@ function buildCreateLeadRecordLogContext(
   }
 
   if (error instanceof Error) {
-    return { error: error.message };
+    return {
+      error:
+        error instanceof SyntaxError
+          ? "Invalid Airtable JSON response"
+          : error.message,
+    };
   }
 
   return { error: "Unknown error" };

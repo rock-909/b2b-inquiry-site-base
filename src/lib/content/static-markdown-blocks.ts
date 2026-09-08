@@ -76,9 +76,9 @@ function flushTable(state: ParseState): void {
       headers: state.tableHeaders,
       rows: state.tableRows,
     });
-    state.tableHeaders = [];
-    state.tableRows = [];
   }
+  state.tableHeaders = [];
+  state.tableRows = [];
   state.inTable = false;
 }
 

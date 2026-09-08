@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -139,6 +140,36 @@ afterEach(() => {
 });
 
 describe("prerender static behavior gate", () => {
+  it("accepts the sharing image selected by a derived site", () => {
+    const rootDir = createBuildFixture();
+    writeMetadataArtifacts({
+      rootDir,
+      homeOgImage: "https://example.invalid/derived-share.png",
+    });
+    const output = execFileSync(
+      process.execPath,
+      [
+        "-e",
+        `
+      require("tsx/cjs");
+      require("./src/config/single-site").SINGLE_SITE_FACTS.brandAssets.ogImage = "/derived-share.png";
+      const { collectPrerenderStaticFindings } = require("./scripts/quality/checks/prerender-static");
+      console.log(JSON.stringify(collectPrerenderStaticFindings({ rootDir: process.argv[1] })));
+    `,
+        rootDir,
+      ],
+      {
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          NEXT_PUBLIC_SITE_URL: "https://example.invalid",
+        },
+        timeout: 10_000,
+      },
+    );
+    expect(JSON.parse(output)).toEqual([]);
+  });
+
   it("accepts fully prerendered locale routes", () => {
     expect(
       collectFindings({

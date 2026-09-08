@@ -40,6 +40,23 @@ function createParams(data: InquiryLeadData = validInquiryLeadData) {
 }
 
 describe("createLeadRecord", () => {
+  it("does not log response text when success JSON is malformed", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response("PRIVATE_BUYER_MESSAGE", { status: 200 }),
+        ),
+    );
+    await expect(createLeadRecord(createParams())).rejects.toThrow(
+      "Failed to create lead record",
+    );
+    expect(JSON.stringify(vi.mocked(logger.error).mock.calls)).not.toContain(
+      "PRIVATE_BU",
+    );
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();

@@ -75,10 +75,23 @@ export function getAttributionSnapshot(): AttributionData {
   if (typeof window === "undefined") return {};
 
   try {
-    const stored = sessionStorage.getItem(UTM_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored) as AttributionData;
+    const parsed: unknown = JSON.parse(
+      sessionStorage.getItem(UTM_STORAGE_KEY) ?? "null",
+    );
+    if (
+      parsed === null ||
+      typeof parsed !== "object" ||
+      Array.isArray(parsed)
+    ) {
+      return captureUtmParams();
     }
+    const result: AttributionData = {};
+    for (const fieldName of ATTRIBUTION_FIELD_NAMES) {
+      const value = (parsed as Record<string, unknown>)[fieldName];
+      const sanitized = sanitizeParam(typeof value === "string" ? value : null);
+      if (sanitized) result[fieldName] = sanitized;
+    }
+    return result;
   } catch {
     // Ignore parse errors
   }

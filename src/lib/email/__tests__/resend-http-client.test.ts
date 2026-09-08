@@ -105,29 +105,32 @@ describe("ResendHttpEmailClient", () => {
     });
   });
 
-  it("returns nested Resend API error messages", async () => {
+  it("keeps status but does not propagate reflected recipient data", async () => {
     const fetchFn: typeof fetch = async () =>
-      createJsonResponse({ error: { message: "Invalid recipient" } }, 422);
+      createJsonResponse(
+        { error: { message: "Invalid recipient buyer-private@example.com" } },
+        422,
+      );
     const client = new ResendHttpEmailClient("test-api-key", fetchFn);
 
     const result = await client.send(SAMPLE_PAYLOAD);
 
     expect(result).toEqual({
       data: null,
-      error: { message: "Invalid recipient" },
+      error: { message: "Resend API request failed with status 422" },
     });
   });
 
-  it("uses the response text when an error body is not JSON", async () => {
+  it("does not propagate a non-JSON provider body into downstream logs", async () => {
     const fetchFn: typeof fetch = async () =>
-      new Response("upstream unavailable", { status: 503 });
+      new Response("PRIVATE_BUYER_MESSAGE", { status: 503 });
     const client = new ResendHttpEmailClient("test-api-key", fetchFn);
 
     const result = await client.send(SAMPLE_PAYLOAD);
 
     expect(result).toEqual({
       data: null,
-      error: { message: "upstream unavailable" },
+      error: { message: "Resend API request failed with status 503" },
     });
   });
 

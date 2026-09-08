@@ -8,7 +8,6 @@ const {
 } = require("../../../i18n-locales.config");
 const DEFAULT_BUILD_DIR = ".next";
 const DEFAULT_SITE_URL = "https://example.invalid";
-const OG_IMAGE_PATH = "/opengraph-image.png";
 const LOCALHOST_OG_IMAGE_PREFIX = "http://localhost:3000/opengraph-image";
 
 function readJson(filePath) {
@@ -91,6 +90,8 @@ function collectLocalizedRouteFindings({ buildRoot, localizedRoutes }) {
 }
 
 function loadExpectedOgImageUrl() {
+  require("tsx/cjs");
+  const { SINGLE_SITE_FACTS } = require("../../../src/config/single-site");
   const configuredSiteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
     process.env.NEXT_PUBLIC_BASE_URL?.trim();
@@ -99,7 +100,7 @@ function loadExpectedOgImageUrl() {
       ? configuredSiteUrl
       : DEFAULT_SITE_URL;
 
-  return new URL(OG_IMAGE_PATH, baseUrl).toString();
+  return new URL(SINGLE_SITE_FACTS.brandAssets.ogImage, baseUrl).toString();
 }
 
 function hasMetaContent(html, attribute, name, expectedContent) {

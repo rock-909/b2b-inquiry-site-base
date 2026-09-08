@@ -15,13 +15,8 @@ guidance.
 
 - This repo uses the installed Next.js App Router.
 - Use the installed async request API shape for page/layout request props.
-- Locale routes live under `/[locale]`; configured locales and the default are
-  defined by `LOCALES_CONFIG`. Add languages there and provide their message
-  packs; do not scatter locale literals through routes or headers.
-- Keep the default locale at the unprefixed URL and use the configured prefix
-  for non-default locales. Canonical, Open Graph and JSON-LD URLs must match
-  the rendered locale URL; do not hard-code the English path in localized
-  metadata or structured data.
+- Locale URL, metadata and language-addition contracts are owned by `i18n.md`;
+  do not maintain a second routing policy here.
 - Keep layouts and non-interactive sections as Server Components.
 - Push `"use client"` down to interactive leaf components.
 
@@ -59,12 +54,10 @@ and only auto-open when the current pathname still matches.
 
 ## Error boundaries
 
-Use route-level `error.tsx` for buyer-facing flows that depend on dynamic data,
-form/runtime services, or route parameters. Current examples: `contact` and
-`products`.
-
-Static content/legal/about pages can rely on layout/global fallback until they gain
-external fetches, user actions, or dynamic route params.
+Add route-level `error.tsx` when a route needs its own recovery UI. Currently
+`contact` has one; product and static content pages rely on the global fallback.
+The inquiry form handles expected validation and provider failures locally.
+Do not add another boundary solely because a route has parameters or a form.
 
 ## Cache
 

@@ -3,9 +3,23 @@ import {
   appendAttributionToFormData,
   captureUtmParams,
   storeAttributionData,
+  getAttributionAsObject,
 } from "@/lib/marketing/utm";
 
 describe("UTM attribution", () => {
+  it.each([
+    "null",
+    "[]",
+    '{"utmSource":42}',
+    '{"utmSource":{"private":"data"}}',
+  ])(
+    "does not let malformed optional storage block submission: %s",
+    (stored) => {
+      sessionStorage.setItem("inquiry_attribution", stored);
+      expect(() => appendAttributionToFormData(new FormData())).not.toThrow();
+      expect(getAttributionAsObject()).toEqual({});
+    },
+  );
   beforeEach(() => {
     sessionStorage.clear();
     window.history.replaceState({}, "", "/");
