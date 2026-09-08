@@ -104,10 +104,16 @@ function loadExpectedOgImageUrl() {
 }
 
 function hasMetaContent(html, attribute, name, expectedContent) {
+  const encodedContent = expectedContent
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
   return [...html.matchAll(/<meta\b[^>]*>/giu)].some(
     ([tag]) =>
       tag.includes(`${attribute}="${name}"`) &&
-      tag.includes(`content="${expectedContent}"`),
+      tag.includes(`content="${encodedContent}"`),
   );
 }
 

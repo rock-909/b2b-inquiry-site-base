@@ -78,6 +78,21 @@ describe("distributed-rate-limit", () => {
     );
   });
 
+  it("denies malformed provider JSON without logging its body", async () => {
+    setEnv("UPSTASH_REDIS_REST_URL", "https://fixture.invalid");
+    setEnv("UPSTASH_REDIS_REST_TOKEN", "fixture-token");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("PRIVATE_FIXTURE_VALUE")),
+    );
+    await expect(checkInquiryRateLimit("fixture-key")).resolves.toMatchObject({
+      allowed: false,
+      deniedReason: "storage_failure",
+    });
+    const context = mockLoggerError.mock.calls.at(-1)?.[1];
+    expect(context).toEqual({ error: "Invalid rate limit JSON response" });
+  });
+
   it("keeps identifiers separate and warns once for the local store", async () => {
     await checkInquiryRateLimit("user-a");
     await checkInquiryRateLimit("user-b");

@@ -77,7 +77,26 @@ async function requestTurnstileVerification(
       );
     }
 
-    return (await response.json()) as TurnstileVerificationResult;
+    const result: unknown = await response.json();
+    if (
+      result === null ||
+      typeof result !== "object" ||
+      !("success" in result) ||
+      typeof result.success !== "boolean"
+    ) {
+      throw new Error("Invalid Turnstile response");
+    }
+    const fields = result as Record<string, unknown>;
+    if (
+      (fields.hostname !== undefined && typeof fields.hostname !== "string") ||
+      (fields.action !== undefined && typeof fields.action !== "string") ||
+      (fields["error-codes"] !== undefined &&
+        (!Array.isArray(fields["error-codes"]) ||
+          !fields["error-codes"].every((code) => typeof code === "string")))
+    ) {
+      throw new Error("Invalid Turnstile response");
+    }
+    return result as TurnstileVerificationResult;
   } finally {
     clearTimeout(timeout);
   }

@@ -2,6 +2,8 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
 import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import { collectPrerenderStaticFindings } from "../../../scripts/quality/checks/prerender-static.js";
@@ -140,6 +142,31 @@ afterEach(() => {
 });
 
 describe("prerender static behavior gate", () => {
+  it("accepts a configured image URL escaped by React SSR", () => {
+    const rootDir = createBuildFixture();
+    const expectedOgImageUrl =
+      "https://cdn.example.invalid/share.png?width=1200&height=630";
+    writeText(
+      rootDir,
+      ".next/server/app/en.html",
+      renderToStaticMarkup(
+        createElement("meta", {
+          property: "og:image",
+          content: expectedOgImageUrl,
+        }),
+      ),
+    );
+    expect(
+      collectPrerenderStaticFindings({ rootDir, expectedOgImageUrl }),
+    ).toEqual([]);
+    expect(
+      collectPrerenderStaticFindings({
+        rootDir,
+        expectedOgImageUrl: `${expectedOgImageUrl}0`,
+      }),
+    ).not.toEqual([]);
+  });
+
   it("accepts the sharing image selected by a derived site", () => {
     const rootDir = createBuildFixture();
     writeMetadataArtifacts({
