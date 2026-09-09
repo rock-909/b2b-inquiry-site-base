@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CONSENT_STORAGE_KEY,
   CONSENT_VERSION,
@@ -15,6 +15,7 @@ const CONSENT = {
 } as const;
 
 describe("cookie consent storage", () => {
+  afterEach(() => vi.restoreAllMocks());
   beforeEach(() => {
     window.localStorage.clear();
   });
@@ -30,6 +31,18 @@ describe("cookie consent storage", () => {
     );
 
     expect(loadConsent()?.consent).toEqual(CONSENT);
+  });
+
+  it("returns no consent when storage becomes unavailable after the probe", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new DOMException("Access denied", "SecurityError");
+    });
+    vi.spyOn(Storage.prototype, "removeItem")
+      .mockImplementationOnce(() => undefined)
+      .mockImplementation(() => {
+        throw new DOMException("Access denied", "SecurityError");
+      });
+    expect(loadConsent()).toBeNull();
   });
 
   it("drops unsupported versions instead of pretending to migrate them", () => {

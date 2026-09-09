@@ -17,7 +17,7 @@
     "lint:check": "eslint . --ext .js,.jsx,.ts,.tsx --config eslint.config.mjs --cache --cache-location .eslintcache --max-warnings 0",
     "format:check": "prettier --check .",
     "knip:check": "knip",
-    "react:doctor": "pnpm exec react-doctor --verbose --scope changed --include-untracked --blocking warning",
+    "react:doctor": "node scripts/quality/checks/react-doctor.js --scope changed --include-untracked",
     "react:doctor:report": "pnpm exec react-doctor --json --no-score --blocking none",
     "canary:airtable": "node scripts/quality/checks/airtable-canary.js",
     "release:verify": "node scripts/quality/checks/release-verify.js",

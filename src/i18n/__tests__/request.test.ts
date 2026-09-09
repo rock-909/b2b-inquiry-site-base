@@ -9,13 +9,6 @@ const EN_LOCALE = "en" satisfies ConfiguredLocale;
 interface RequestConfigResult {
   locale: ConfiguredLocale;
   timeZone: string;
-  formats: {
-    number: {
-      currency: {
-        currency: string;
-      };
-    };
-  };
   strictMessageTypeSafety: boolean;
   messages: unknown;
 }
@@ -79,7 +72,6 @@ describe("i18n Request Configuration", () => {
 
     expect(result.locale).toBe(EN_LOCALE);
     expect(result.timeZone).toBe("UTC");
-    expect(result.formats.number.currency.currency).toBe("USD");
     expect(result.strictMessageTypeSafety).toBe(true);
     expect(result.messages).toBeDefined();
   });

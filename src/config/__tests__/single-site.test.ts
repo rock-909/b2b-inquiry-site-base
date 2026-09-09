@@ -4,7 +4,6 @@ import { SINGLE_SITE_FACTS } from "@/config/single-site";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
 
 const TEMPLATE_BASE_URL = "https://example.invalid";
-const REFERENCE_OG_IMAGE = "/opengraph-image.png";
 
 describe("single-site", () => {
   afterEach(() => {
@@ -32,12 +31,14 @@ describe("single-site", () => {
     expect(SINGLE_SITE_CONFIG.baseUrl).toBe(TEMPLATE_BASE_URL);
   });
 
-  it("keeps the current reference OG image explicit until asset cutover", () => {
-    expect(SINGLE_SITE_FACTS.brandAssets.ogImage).toBe(REFERENCE_OG_IMAGE);
+  it("publishes the configured OG image from a real public asset", () => {
+    const REFERENCE_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Checked-in asset configuration, not request input.
     expect(existsSync(`public${REFERENCE_OG_IMAGE}`)).toBe(true);
 
     // A root App Router metadata file also applies to Next's root 404, which
     // sits above the locale layout's metadataBase and falls back to localhost.
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Checked-in asset configuration, not request input.
     expect(existsSync(`src/app${REFERENCE_OG_IMAGE}`)).toBe(false);
 
     const metadata = generateMetadataForPath({
@@ -77,9 +78,19 @@ describe("single-site", () => {
     expect(getPublicContactPhone("+86-138-0013-8000")).toBe(
       "+86-138-0013-8000",
     );
-    expect(SINGLE_SITE_FACTS.brandAssets.logo.status).toBe("pending");
     expect(
-      getPublicLogoPath(SINGLE_SITE_FACTS.brandAssets.logo),
+      getPublicLogoPath({
+        ...SINGLE_SITE_FACTS.brandAssets.logo,
+        horizontal: "/logo.svg",
+        status: "pending",
+      }),
     ).toBeUndefined();
+    expect(
+      getPublicLogoPath({
+        ...SINGLE_SITE_FACTS.brandAssets.logo,
+        horizontal: "/logo.svg",
+        status: "ready",
+      }),
+    ).toBe("/logo.svg");
   });
 });

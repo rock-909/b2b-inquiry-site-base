@@ -8,7 +8,6 @@ import type { HeadingItem } from "@/lib/content/legal-page";
 import {
   buildBreadcrumbListSchema,
   buildWebPageSchema,
-  generateArticleData,
 } from "@/lib/structured-data-generators";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import type { StaticMarkdownBlock } from "@/lib/content/static-markdown-blocks";
@@ -20,7 +19,6 @@ interface LegalPageShellProps {
   blocks: readonly StaticMarkdownBlock[];
   headings: HeadingItem[];
   locale: Locale;
-  schemaType: "WebPage" | "Article";
   /** Site-relative path (e.g. "/privacy"); enables BreadcrumbList output. */
   pagePath: string;
 }
@@ -28,38 +26,13 @@ interface LegalPageShellProps {
 export interface ShellSchemaInput {
   metadata: LegalPageMetadata;
   locale: Locale;
-  schemaType: LegalPageShellProps["schemaType"];
   pageUrl: string;
-}
-
-async function buildShellArticleSchema(
-  input: ShellSchemaInput,
-): Promise<Record<string, unknown>> {
-  const { metadata, locale, pageUrl } = input;
-  const tSchema = await getTranslations({
-    locale,
-    namespace: "structured-data",
-  });
-  const modifiedAt = metadata.updatedAt ?? metadata.lastReviewed;
-
-  return generateArticleData(tSchema, locale, {
-    title: metadata.seo?.title ?? metadata.title,
-    description: metadata.seo?.description ?? metadata.description ?? "",
-    ...(metadata.author ? { author: metadata.author } : {}),
-    publishedTime: metadata.publishedAt ?? "",
-    ...(modifiedAt ? { modifiedTime: modifiedAt } : {}),
-    url: pageUrl,
-  }) as Record<string, unknown>;
 }
 
 export function buildShellPageSchema(
   input: ShellSchemaInput,
-): Promise<Record<string, unknown>> | Record<string, unknown> {
-  const { metadata, locale, schemaType, pageUrl } = input;
-
-  if (schemaType === "Article") {
-    return buildShellArticleSchema(input);
-  }
+): Record<string, unknown> {
+  const { metadata, locale, pageUrl } = input;
 
   const description = metadata.seo?.description ?? metadata.description;
   const modifiedAt =
@@ -80,7 +53,6 @@ export async function LegalPageShell({
   blocks,
   headings,
   locale,
-  schemaType,
   pagePath,
 }: LegalPageShellProps): Promise<ReactNode> {
   const t = await getTranslations({ locale, namespace: "legal" });
@@ -90,7 +62,6 @@ export async function LegalPageShell({
   const schema = await buildShellPageSchema({
     metadata,
     locale,
-    schemaType,
     pageUrl,
   });
 
@@ -112,13 +83,7 @@ export async function LegalPageShell({
     <>
       <JsonLdGraphScript locale={locale} data={schemas} />
 
-      <div
-        className={
-          schemaType === "Article"
-            ? "mx-auto max-w-[1080px] px-6 py-8 md:py-12"
-            : "mx-auto max-w-[720px] px-6 py-8 md:py-12"
-        }
-      >
+      <div className="mx-auto max-w-[720px] px-6 py-8 md:py-12">
         <header className="mb-6 md:mb-8">
           <h1 className="text-heading mb-4">{metadata.title}</h1>
           {metadata.description && (
@@ -152,13 +117,6 @@ export async function LegalPageShell({
         >
           <article className="min-w-0">
             {renderStaticMarkdownBlocks(blocks)}
-            {schemaType === "Article" ? (
-              <footer className="border-border mt-10 border-t pt-4">
-                <p className="text-muted-foreground text-sm leading-6">
-                  {t("articleAuthorLine")}
-                </p>
-              </footer>
-            ) : null}
           </article>
 
           {hasToc && (

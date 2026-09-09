@@ -68,14 +68,12 @@ export const serverEnvSchema = {
   SECURITY_HEADERS_ENABLED: string()
     .default("true")
     .transform((val) => val === "true"),
-  CORS_ALLOWED_ORIGINS: string().optional(),
 };
 
 export const clientEnvSchema = {
   // Base Configuration
   NEXT_PUBLIC_BASE_URL: url().default("http://localhost:3000"),
   NEXT_PUBLIC_SITE_URL: url().optional(),
-  NEXT_PUBLIC_APP_VERSION: string().default("1.0.0"),
 
   // Analytics & Monitoring
   NEXT_PUBLIC_GA_MEASUREMENT_ID: string().optional(),
@@ -129,12 +127,10 @@ export const runtimeEnv = {
   PLAYWRIGHT_TEST: process.env.PLAYWRIGHT_TEST,
   SKIP_ENV_VALIDATION: process.env.SKIP_ENV_VALIDATION,
   SECURITY_HEADERS_ENABLED: process.env.SECURITY_HEADERS_ENABLED,
-  CORS_ALLOWED_ORIGINS: process.env.CORS_ALLOWED_ORIGINS,
 
   // Client
   NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
-  NEXT_PUBLIC_APP_VERSION: process.env.NEXT_PUBLIC_APP_VERSION,
   NEXT_PUBLIC_GA_MEASUREMENT_ID: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
   NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   NEXT_PUBLIC_TURNSTILE_BYPASS: process.env.NEXT_PUBLIC_TURNSTILE_BYPASS,

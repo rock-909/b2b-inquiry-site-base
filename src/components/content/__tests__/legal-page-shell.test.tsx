@@ -34,8 +34,6 @@ vi.mock("next-intl/server", () => ({
 }));
 
 const REQUIRED_LEGAL_METADATA = {
-  layout: "legal",
-  showToc: true,
   lastReviewed: "2024-01-01",
 } as const;
 
@@ -54,7 +52,6 @@ describe("LegalPageShell structured data", () => {
         },
       },
       locale: "en",
-      schemaType: "WebPage",
       pageUrl,
     });
 
@@ -84,7 +81,6 @@ describe("LegalPageShell structured data", () => {
         },
       },
       locale: "en",
-      schemaType: "WebPage",
       pageUrl,
     });
 
@@ -96,26 +92,4 @@ describe("LegalPageShell structured data", () => {
     expect(schema).not.toHaveProperty("additionalType");
   });
 
-  it("Given article metadata, When the shell renders, Then author is Organization", async () => {
-    const schema = await buildShellPageSchema({
-      metadata: {
-        ...REQUIRED_LEGAL_METADATA,
-        title: "Materials Guide",
-        slug: "materials-guide",
-        publishedAt: "2026-01-01",
-        author: "Reference Industries",
-        seo: {
-          title: "Materials Guide",
-          description: "Guide description",
-        },
-      },
-      locale: "en",
-      schemaType: "Article",
-      pageUrl: "https://www.example.com/materials-guide",
-    });
-
-    expect(schema.author).toMatchObject({
-      "@type": "Organization",
-    });
-  });
 });

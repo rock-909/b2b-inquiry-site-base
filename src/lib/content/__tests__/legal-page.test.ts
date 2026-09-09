@@ -32,8 +32,6 @@ describe("loadLegalPage", () => {
         publishedAt: "2024-01-01",
         updatedAt: "2024-04-01",
         lastReviewed: "2024-04-01",
-        layout: "legal",
-        showToc: true,
         seo: {
           title: "Privacy Policy | Data Protection",
           description: "Our privacy policy.",
@@ -47,8 +45,6 @@ describe("loadLegalPage", () => {
 
     const result = await loadLegalPage("privacy", "en");
     expect(result.metadata.title).toBe("Privacy Policy");
-    expect(result.metadata.layout).toBe("legal");
-    expect(result.metadata.showToc).toBe(true);
     expect(result.metadata.lastReviewed).toBe("2024-04-01");
   });
 

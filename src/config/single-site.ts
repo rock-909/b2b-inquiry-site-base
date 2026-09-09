@@ -161,8 +161,6 @@ export const SINGLE_SITE_DEFINITION = {
       logo: {
         status: "pending",
         horizontal: "/icon.svg",
-        horizontalPng: "/icon.svg",
-        square: "/icon.svg",
         width: 240,
         height: 72,
       },

@@ -45,14 +45,12 @@ classification logic unless the route has a documented business reason.
 Canonical behavior for contact and inquiry:
 
 ```text
-browser form -> route handler -> Zod -> Turnstile -> process lead -> owner email, then Airtable record
+browser form -> route handler -> Zod -> Turnstile -> process lead -> owner email + Airtable record (parallel)
 ```
 
-- Owner email is sent first; the Airtable record is created afterwards with the
-  email outcome baked into its free-text `Message` field. Sequential, not
-  parallel: the record and the fact that its
-  notification failed have to be born together, or a saved lead sits in the CRM
-  looking identical to one the owner was actually told about.
+- Owner email and Airtable are independent parallel deliveries sharing one reference ID.
+  Airtable does not claim whether the email arrived. The owner must periodically
+  review backup records, not only records marked as notification failures.
 - Resend is the daily primary channel; Airtable is the structured backup.
 - Either channel succeeding is still the user-facing success condition: a lead
   must never be rejected while at least one delivery channel works.

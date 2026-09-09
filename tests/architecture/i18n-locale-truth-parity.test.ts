@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
@@ -17,9 +16,8 @@ describe("i18n locale truth parity", () => {
     );
   });
 
-  it("documents the tooling locale config as a mirror, not the runtime truth", () => {
-    const configSource = readFileSync("i18n-locales.config.js", "utf8");
-
-    expect(configSource).toContain("LOCALES_CONFIG");
+  it("uses the runtime configuration directly rather than a copied list", () => {
+    const runtimeConfig = require("../../src/config/paths/locales-config.ts");
+    expect(translationCheckConfig).toBe(runtimeConfig.LOCALES_CONFIG);
   });
 });

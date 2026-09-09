@@ -1,4 +1,3 @@
-import path from "path";
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 import createNextIntlPlugin from "next-intl/plugin";
@@ -24,24 +23,6 @@ const nextConfig: NextConfig = {
   // distinguish a production build from an actual production deployment.
   env: {
     NEXT_PUBLIC_APP_ENV: process.env.APP_ENV ?? "local",
-  },
-
-  // Keep the same build ID across containers serving the same commit, but do
-  // not reuse one fixed ID across releases. This avoids stale _next asset
-  // confusion while preserving deterministic multi-container deploys.
-  generateBuildId: async () => {
-    const { execSync } = await import("child_process");
-    try {
-      return execSync("git rev-parse --short HEAD", {
-        encoding: "utf-8",
-      }).trim();
-    } catch {
-      return (
-        process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7) ??
-        process.env.GITHUB_SHA?.slice(0, 7) ??
-        "local-dev"
-      );
-    }
   },
 
   // Exclude test/report artifacts from OpenNext bundle
@@ -111,19 +92,6 @@ const nextConfig: NextConfig = {
   // 这些包已经在 Next.js 15 的默认外部包列表中
   // 但 Turbopack 在处理它们时遇到问题，所以我们暂时移除这个配置
   // 让 Next.js 使用默认的外部包处理方式
-
-  // Webpack 配置 - 仅用于 resolve.alias
-  // Next.js 16 默认使用 Turbopack，此配置仅在 build:webpack 兜底时生效
-  webpack: (config) => {
-    // Path alias configuration for @/ -> src/
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@": path.resolve(__dirname, "src"),
-      "@messages": path.resolve(__dirname, "messages"),
-    };
-
-    return config;
-  },
 
   headers() {
     const securityHeaders = getSecurityHeaders();

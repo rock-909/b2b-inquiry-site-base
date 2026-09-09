@@ -1,3 +1,4 @@
+import { NavigationPending } from "@/components/navigation/navigation-pending";
 import type { ComponentProps } from "react";
 
 import { HeroGuideOverlay } from "@/components/grid/hero-guide-overlay";
@@ -54,6 +55,7 @@ export function HeroSectionView({ content }: HeroSectionViewProps) {
               className={buttonVariants()}
             >
               {content.primaryCta.label}
+              <NavigationPending />
             </Link>
             <Link
               href={content.secondaryCta.href}
@@ -61,6 +63,7 @@ export function HeroSectionView({ content }: HeroSectionViewProps) {
               className={buttonVariants({ variant: "outline" })}
             >
               {content.secondaryCta.label}
+              <NavigationPending />
             </Link>
           </div>
         </div>

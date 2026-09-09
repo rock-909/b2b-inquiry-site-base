@@ -15,17 +15,6 @@ export interface WebSiteData {
   url?: string;
 }
 
-export interface ArticleData {
-  title: string;
-  description: string;
-  author?: string;
-  publishedTime: string;
-  modifiedTime?: string;
-  url: string;
-  image?: string;
-  section?: string;
-}
-
 export interface BreadcrumbData {
   items: Array<{
     name: string;

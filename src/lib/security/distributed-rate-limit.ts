@@ -78,7 +78,12 @@ export async function checkInquiryRateLimit(
     };
   } catch (error) {
     logger.warn("[Rate Limit] Storage failure — fail-closed, denying request");
-    logger.error("[Rate Limit] Storage backend error details", { error });
+    logger.error("[Rate Limit] Storage backend error details", {
+      error:
+        error instanceof SyntaxError
+          ? "Invalid rate limit JSON response"
+          : error,
+    });
     return {
       allowed: false,
       remaining: 0,

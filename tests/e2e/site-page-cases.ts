@@ -1,19 +1,21 @@
-/**
- * Every canonical public route the smoke run visits, with the H1 it must show.
- *
- * Kept out of the spec file so a Vitest contract test can read it without
- * pulling in `@playwright/test`. The list is written by hand on purpose: the
- * headings are the actual proof, and deriving the paths from the page registry
- * would turn "every page renders" into a statement about itself. What is
- * derived instead is the *comparison* —
- * `tests/unit/routes/site-smoke-route-contract.test.ts` fails when the registry
- * ships a route this list does not cover.
- */
-export const SITE_PAGE_CASES = [
-  ["/", /Turn qualified interest into a useful conversation/i],
-  ["/products", /Products built around real buyer requirements/i],
-  ["/about", /About This Reference Site/i],
-  ["/contact", /Contact/i],
-  ["/privacy", /Privacy Policy Reference/i],
-  ["/terms", /Website Terms Reference/i],
-] as const satisfies readonly (readonly [string, RegExp])[];
+import en from "../../messages/base/en/messages.json";
+import es from "../../messages/base/es/messages.json";
+import { getStaticPage } from "../../src/lib/content/static-pages";
+
+export function getSitePageCases(locale: "en" | "es") {
+  const messages = locale === "es" ? es : en;
+  const prefix = locale === "es" ? "/es" : "";
+  return [
+    [prefix || "/", messages.home.hero.title],
+    [`${prefix}/products`, messages.products.page.heading],
+    ...(["about", "contact", "privacy", "terms"] as const).map(
+      (slug) =>
+        [
+          `${prefix}/${slug}`,
+          getStaticPage(slug, locale).metadata.title,
+        ] as const,
+    ),
+  ] as const;
+}
+
+export const SITE_PAGE_CASES = getSitePageCases("en");

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   getCanonicalPath,
   getLocalizedPath,
-  getPageTypeFromPath,
   LOCALES_CONFIG,
   PATHNAMES,
   PATHS_CONFIG,
@@ -33,7 +32,6 @@ describe("paths", () => {
       expect(getLocalizedPath(pageType as keyof typeof CORE_PATHS, "en")).toBe(
         path,
       );
-      expect(getPageTypeFromPath(path, "en")).toBe(pageType);
     }
   });
 
@@ -44,12 +42,7 @@ describe("paths", () => {
     expect(PATHNAMES).toEqual(expected);
   });
 
-  it("returns null for an unknown path", () => {
-    expect(getPageTypeFromPath("/unknown", "en")).toBeNull();
-  });
-
   it("builds and resolves the Spanish locale prefix", () => {
     expect(getLocalizedPath("about", "es")).toBe("/es/about");
-    expect(getPageTypeFromPath("/es/about", "es")).toBe("about");
   });
 });

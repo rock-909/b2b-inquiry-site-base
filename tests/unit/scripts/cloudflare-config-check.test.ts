@@ -99,6 +99,12 @@ function writePassingWranglerConfig(
 
 function createFixture(): string {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- 仅把仓库依赖暴露给受控的临时 fixture
+  fs.symlinkSync(
+    path.join(REPO_ROOT, "node_modules"),
+    path.join(rootDir, "node_modules"),
+    process.platform === "win32" ? "junction" : "dir",
+  );
   tempDirs.push(rootDir);
   return rootDir;
 }
@@ -368,44 +374,15 @@ describe("Cloudflare config source contract", () => {
     ]);
   });
 
-  describe("open-next wiring harness", () => {
+  describe("open-next wiring check", () => {
     function writeWiredConfig(rootDir: string, body: readonly string[]) {
       writePassingSideFiles(rootDir);
       writeFixtureFile(rootDir, "open-next.config.ts", body.join("\n"));
       writePassingWranglerConfig(rootDir);
     }
 
-    it("rejects multiple defineCloudflareConfig calls", () => {
-      const rootDir = createFixture();
-      writePassingSideFiles(rootDir);
-      writePassingWranglerConfig(rootDir);
-      writeFixtureFile(
-        rootDir,
-        "open-next.config.ts",
-        [
-          'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
-          'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
-          "export default defineCloudflareConfig({ incrementalCache: r2IncrementalCache });",
-          "export const second = defineCloudflareConfig({ incrementalCache: r2IncrementalCache });",
-          "",
-        ].join("\n"),
-      );
-
-      const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
-
-      expect(failures).toEqual([
-        expect.objectContaining({
-          file: "open-next.config.ts",
-          missing: expect.arrayContaining([
-            "incrementalCache: r2IncrementalCache",
-          ]),
-        }),
-      ]);
-    });
-
     it("rejects an extra config key alongside the R2 wiring", () => {
       const rootDir = createFixture();
-      writePassingWranglerConfig(rootDir);
       writeWiredConfig(rootDir, [
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
         'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
@@ -420,7 +397,28 @@ describe("Cloudflare config source contract", () => {
         expect.objectContaining({
           file: "open-next.config.ts",
           missing: expect.arrayContaining([
-            "incrementalCache: r2IncrementalCache",
+            "only the approved R2 incremental cache override is allowed",
+          ]),
+        }),
+      ]);
+    });
+
+    it("rejects changed route preloading behavior", () => {
+      const rootDir = createFixture();
+      writeWiredConfig(rootDir, [
+        'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
+        'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
+        'export default defineCloudflareConfig({ incrementalCache: r2IncrementalCache, routePreloadingBehavior: "blocking" });',
+        "",
+      ]);
+
+      const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
+
+      expect(failures).toEqual([
+        expect.objectContaining({
+          file: "open-next.config.ts",
+          missing: expect.arrayContaining([
+            "only the approved R2 incremental cache override is allowed",
           ]),
         }),
       ]);
@@ -428,7 +426,6 @@ describe("Cloudflare config source contract", () => {
 
     it("rejects a non-sentinel incremental cache value", () => {
       const rootDir = createFixture();
-      writePassingWranglerConfig(rootDir);
       writeWiredConfig(rootDir, [
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
         "const myOwnCache = {};",
@@ -448,32 +445,8 @@ describe("Cloudflare config source contract", () => {
       ]);
     });
 
-    it("rejects an export that is not the defineCloudflareConfig result", () => {
-      const rootDir = createFixture();
-      writePassingWranglerConfig(rootDir);
-      writeWiredConfig(rootDir, [
-        'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
-        'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
-        "const config = defineCloudflareConfig({ incrementalCache: r2IncrementalCache });",
-        "export default { ...config };",
-        "",
-      ]);
-
-      const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
-
-      expect(failures).toEqual([
-        expect.objectContaining({
-          file: "open-next.config.ts",
-          missing: expect.arrayContaining([
-            "exported default must be the object returned by defineCloudflareConfig",
-          ]),
-        }),
-      ]);
-    });
-
     it("rejects a mutated override carrying an extra key", () => {
       const rootDir = createFixture();
-      writePassingWranglerConfig(rootDir);
       writeWiredConfig(rootDir, [
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
         'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
@@ -489,7 +462,7 @@ describe("Cloudflare config source contract", () => {
         expect.objectContaining({
           file: "open-next.config.ts",
           missing: expect.arrayContaining([
-            "incrementalCache: r2IncrementalCache",
+            "only the approved R2 incremental cache override is allowed",
           ]),
         }),
       ]);
@@ -523,7 +496,6 @@ describe("Cloudflare config source contract", () => {
 
     it("does not trip on donor forbidden tokens inside comments or longer identifiers", () => {
       const rootDir = createFixture();
-      writePassingWranglerConfig(rootDir);
       writeWiredConfig(rootDir, [
         "// historical note: apiLead, apiOps and /api/cache/invalidate were never wired here",
         'const myapiLeadNote = "mentions /api/cache/invalidation in prose";',

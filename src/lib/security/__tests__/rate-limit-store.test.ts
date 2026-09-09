@@ -143,6 +143,12 @@ describe("rate-limit-store", () => {
         [{ result: "NaN" }, { result: 1 }, { result: 60_000 }],
       ],
       ["negative ttl", [{ result: 1 }, { result: 1 }, { result: -1 }]],
+      ["negative count", [{ result: -1 }, { result: 1 }, { result: 60_000 }]],
+      [
+        "fractional count",
+        [{ result: 1.5 }, { result: 1 }, { result: 60_000 }],
+      ],
+      ["null ttl", [{ result: 1 }, { result: 1 }, { result: null }]],
     ])("rejects a malformed %s response", async (_name, payload) => {
       vi.stubGlobal(
         "fetch",

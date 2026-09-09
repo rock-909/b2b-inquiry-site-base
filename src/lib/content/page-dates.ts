@@ -27,12 +27,12 @@ export function getStaticContentPageLastModified(path: string): Promise<Date> {
           updatedAt?: unknown;
         };
         const dateStr = metadata.updatedAt ?? metadata.publishedAt;
-        if (typeof dateStr !== "string") {
+        if (typeof dateStr !== "string" || Number.isNaN(Date.parse(dateStr))) {
           throw new Error(`No valid date found for slug: ${slug}`);
         }
         return new Date(dateStr);
       } catch (error) {
-        logger.warn("Static content page missing for locale", {
+        logger.warn("Static content page missing or invalid for locale", {
           slug,
           locale,
           error,

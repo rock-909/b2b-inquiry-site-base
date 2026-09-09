@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { logger } from "@/lib/logger";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { safeParseJson } from "../safe-parse-json";
 
@@ -12,6 +13,13 @@ function createRequest(body: BodyInit | null, headers: HeadersInit = {}) {
 }
 
 describe("safeParseJson", () => {
+  it("does not log rejected buyer body fragments", async () => {
+    const warn = vi.spyOn(logger, "warn").mockImplementation(() => undefined);
+    await safeParseJson(createRequest("PRIVATE_BUYER_MESSAGE"));
+    expect(warn).toHaveBeenCalled();
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("PRIVATE_BU");
+    warn.mockRestore();
+  });
   it("keeps empty body mapped to INVALID_JSON_BODY by default", async () => {
     const result = await safeParseJson(createRequest(""));
 

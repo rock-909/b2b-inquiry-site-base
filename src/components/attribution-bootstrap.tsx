@@ -4,23 +4,16 @@ import { useEffect } from "react";
 import {
   loadAttributionModule,
   shouldLoadAttribution,
-  type AttributionModuleLoader,
 } from "@/components/attribution-bootstrap-utils";
 
-interface AttributionBootstrapProps {
-  loadModule?: AttributionModuleLoader;
-}
-
-export function AttributionBootstrap({
-  loadModule = loadAttributionModule,
-}: AttributionBootstrapProps) {
+export function AttributionBootstrap() {
   useEffect(() => {
     if (!shouldLoadAttribution(window.location.search)) {
       return undefined;
     }
 
     let cancelled = false;
-    loadModule()
+    loadAttributionModule()
       .then(({ storeAttributionData }) => {
         if (!cancelled) {
           storeAttributionData();
@@ -31,7 +24,7 @@ export function AttributionBootstrap({
     return () => {
       cancelled = true;
     };
-  }, [loadModule]);
+  }, []);
 
   return null;
 }

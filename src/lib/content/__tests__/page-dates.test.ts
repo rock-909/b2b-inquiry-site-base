@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { getStaticPage } from "@/lib/content/static-pages";
 import { getCanonicalPath } from "@/config/paths/utils";
 import {
   SINGLE_SITE_PUBLIC_STATIC_PAGE_ROUTES,
@@ -9,6 +10,20 @@ import {
   isStaticContentPage,
 } from "@/lib/content/page-dates";
 describe("page-dates", () => {
+  it("does not let an invalid locale date poison the sitemap date", async () => {
+    const metadata = getStaticPage("about", "es").metadata;
+    const original = metadata.updatedAt;
+    try {
+      metadata.updatedAt = "not-a-date";
+      await expect(getStaticContentPageLastModified("/about")).resolves.toEqual(
+        new Date("2026-08-06T00:00:00Z"),
+      );
+    } finally {
+      if (original === undefined) delete metadata.updatedAt;
+      else metadata.updatedAt = original;
+    }
+  });
+
   it("keeps sitemap content page detection aligned with public static routes", () => {
     const pagesWithoutStaticContent = new Set([
       "",

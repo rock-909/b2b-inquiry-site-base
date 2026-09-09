@@ -1,3 +1,4 @@
+import { NavigationPending } from "@/components/navigation/navigation-pending";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
@@ -56,6 +57,7 @@ export function MobileNavigationLinks({
                 onClick={onNavigate}
               >
                 {t(item.messageKey)}
+                <NavigationPending />
               </Link>
             </li>
           );
@@ -63,15 +65,13 @@ export function MobileNavigationLinks({
         {contactHref ? (
           <li className="pt-4">
             <Link
-              href={{
-                pathname: contactHref,
-                query: { source: "mobile_nav_cta" },
-              }}
+              href={contactHref}
               prefetch={false}
               className="flex items-center rounded-md bg-[var(--button-primary-bg)] px-3 py-2 text-sm font-medium text-[var(--button-primary-fg)] transition-colors duration-200 hover:bg-[var(--button-primary-hover-bg)]"
               onClick={onNavigate}
             >
               {resolvedContactSalesLabel}
+              <NavigationPending />
             </Link>
           </li>
         ) : null}

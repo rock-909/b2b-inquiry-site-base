@@ -33,18 +33,6 @@ function isJsonObject(value: unknown): value is JsonObject {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function getErrorMessage(payload: unknown, status: number): string {
-  if (isJsonObject(payload)) {
-    const { error, message } = payload;
-    if (isJsonObject(error) && typeof error.message === "string") {
-      return error.message;
-    }
-    if (typeof message === "string") return message;
-  }
-
-  return `Resend API request failed with status ${status}`;
-}
-
 function getSuccessData(payload: unknown): { id: string } | null {
   if (!isJsonObject(payload) || typeof payload.id !== "string") return null;
 
@@ -116,7 +104,9 @@ export class ResendHttpEmailClient {
       if (!response.ok) {
         return {
           data: null,
-          error: { message: getErrorMessage(responsePayload, response.status) },
+          error: {
+            message: `Resend API request failed with status ${response.status}`,
+          },
         };
       }
 

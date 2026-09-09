@@ -8,12 +8,7 @@ const {
 } = require("../../../i18n-locales.config");
 const DEFAULT_BUILD_DIR = ".next";
 const DEFAULT_SITE_URL = "https://example.invalid";
-const OG_IMAGE_PATH = "/opengraph-image.png";
 const LOCALHOST_OG_IMAGE_PREFIX = "http://localhost:3000/opengraph-image";
-
-// 报价页已移除：当前没有需要豁免整页预渲染检查的动态路由。
-// 机制保留给未来真实需要的路由，测试用合成 Map 覆盖。
-const DYNAMIC_ROUTE_EXEMPTIONS = new Map();
 
 function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
@@ -37,28 +32,6 @@ function collectMissingManifestFindings(rootDir, requiredPaths) {
     }));
 }
 
-function collectTemplateFindings(buildRoot, localizedPageTemplates) {
-  const findings = [];
-  for (const route of localizedPageTemplates) {
-    const metaRelativePath = getMetaRelativePath(route);
-    const metaPath = path.join(buildRoot, metaRelativePath);
-    if (!fs.existsSync(metaPath)) {
-      findings.push({
-        file: metaRelativePath,
-        error: `localized route template has no prerender shell "${route}"`,
-      });
-      continue;
-    }
-    if (!isPrerenderedMeta(readJson(metaPath))) {
-      findings.push({
-        file: metaRelativePath,
-        error: `localized route template is not marked prerendered "${route}"`,
-      });
-    }
-  }
-  return findings;
-}
-
 function routeUsesLocale(route, locale) {
   return route === `/${locale}` || route.startsWith(`/${locale}/`);
 }
@@ -67,10 +40,8 @@ function collectTemplateRouteFindings(
   localizedPageTemplates,
   localizedRoutes,
   configuredLocales,
-  dynamicRouteExemptions,
 ) {
   const findings = [];
-  const usedExemptions = new Set();
   for (const locale of configuredLocales) {
     const prerenderedTemplates = new Set(
       localizedRoutes
@@ -79,27 +50,17 @@ function collectTemplateRouteFindings(
     );
     for (const route of localizedPageTemplates) {
       if (prerenderedTemplates.has(route)) continue;
-      const localizedRoute = route.replace("[locale]", locale);
-      if (dynamicRouteExemptions.has(localizedRoute)) {
-        usedExemptions.add(localizedRoute);
-        continue;
-      }
       findings.push({
         file: "prerender-manifest.json",
         error: `localized route template has no prerender output for locale "${locale}" "${route}"`,
       });
     }
   }
-  return { findings, usedExemptions };
+  return findings;
 }
 
-function collectLocalizedRouteFindings({
-  buildRoot,
-  localizedRoutes,
-  dynamicRouteExemptions,
-}) {
+function collectLocalizedRouteFindings({ buildRoot, localizedRoutes }) {
   const findings = [];
-  const usedExemptions = new Set();
   for (const [route] of localizedRoutes) {
     const metaRelativePath = getMetaRelativePath(route);
     const metaPath = path.join(buildRoot, metaRelativePath);
@@ -119,27 +80,18 @@ function collectLocalizedRouteFindings({
       });
     }
     if (typeof meta.postponed !== "string") continue;
-    if (dynamicRouteExemptions.has(route)) usedExemptions.add(route);
-    else {
-      findings.push({
-        file: metaRelativePath,
-        error: `localized route unexpectedly keeps postponed rendering "${route}"`,
-      });
-    }
-  }
-  return { findings, usedExemptions };
-}
 
-function collectStaleExemptionFindings(dynamicRouteExemptions, usedExemptions) {
-  return [...dynamicRouteExemptions]
-    .filter(([route]) => !usedExemptions.has(route))
-    .map(([route, reason]) => ({
-      file: "scripts/quality/checks/prerender-static.js",
-      error: `stale dynamic-route exemption "${route}": ${reason}`,
-    }));
+    findings.push({
+      file: metaRelativePath,
+      error: `localized route unexpectedly keeps postponed rendering "${route}"`,
+    });
+  }
+  return findings;
 }
 
 function loadExpectedOgImageUrl() {
+  require("tsx/cjs");
+  const { SINGLE_SITE_FACTS } = require("../../../src/config/single-site");
   const configuredSiteUrl =
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
     process.env.NEXT_PUBLIC_BASE_URL?.trim();
@@ -148,14 +100,20 @@ function loadExpectedOgImageUrl() {
       ? configuredSiteUrl
       : DEFAULT_SITE_URL;
 
-  return new URL(OG_IMAGE_PATH, baseUrl).toString();
+  return new URL(SINGLE_SITE_FACTS.brandAssets.ogImage, baseUrl).toString();
 }
 
 function hasMetaContent(html, attribute, name, expectedContent) {
+  const encodedContent = expectedContent
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#x27;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
   return [...html.matchAll(/<meta\b[^>]*>/giu)].some(
     ([tag]) =>
       tag.includes(`${attribute}="${name}"`) &&
-      tag.includes(`content="${expectedContent}"`),
+      tag.includes(`content="${encodedContent}"`),
   );
 }
 
@@ -209,7 +167,6 @@ function collectMetadataFindings(
  *   configuredLocales?: string[],
  *   metadataLocale?: string,
  *   expectedOgImageUrl?: string,
- *   dynamicRouteExemptions?: Map<string, string>,
  * }=} options
  */
 function collectPrerenderStaticFindings({
@@ -218,10 +175,7 @@ function collectPrerenderStaticFindings({
   configuredLocales = CONFIGURED_LOCALES,
   metadataLocale = DEFAULT_LOCALE,
   expectedOgImageUrl = loadExpectedOgImageUrl(),
-  dynamicRouteExemptions,
 } = {}) {
-  const effectiveDynamicRouteExemptions =
-    dynamicRouteExemptions ?? DYNAMIC_ROUTE_EXEMPTIONS;
   const buildRoot = path.join(rootDir, buildDir);
   const appPathsPath = path.join(buildRoot, "server/app-paths-manifest.json");
   const prerenderPath = path.join(buildRoot, "prerender-manifest.json");
@@ -246,75 +200,27 @@ function collectPrerenderStaticFindings({
         config.srcRoute.startsWith("/[locale]"),
     )
     .sort(([left], [right]) => left.localeCompare(right));
-  const hasTemplateShells = localizedPageTemplates.some((route) =>
-    fs.existsSync(path.join(buildRoot, getMetaRelativePath(route))),
-  );
   const templateRouteUsage = collectTemplateRouteFindings(
     localizedPageTemplates,
     localizedRoutes,
     configuredLocales,
-    effectiveDynamicRouteExemptions,
   );
   const routeUsage = collectLocalizedRouteFindings({
     buildRoot,
     localizedRoutes,
-    dynamicRouteExemptions: effectiveDynamicRouteExemptions,
   });
-  const usedExemptions = new Set([
-    ...templateRouteUsage.usedExemptions,
-    ...routeUsage.usedExemptions,
-  ]);
 
   return [
-    // Template shells only exist with Cache Components on, which this runtime
-    // keeps off, so this collector currently sits out every real build. The
-    // routes it would cover are still checked through prerender-manifest by
-    // the two collectors below. runPrerenderStaticCheck reports the skip so
-    // "passed" cannot be read as "all three collectors ran".
-    ...(hasTemplateShells
-      ? collectTemplateFindings(buildRoot, localizedPageTemplates)
-      : []),
-    ...templateRouteUsage.findings,
-    ...routeUsage.findings,
-    ...collectStaleExemptionFindings(
-      effectiveDynamicRouteExemptions,
-      usedExemptions,
-    ),
+    ...templateRouteUsage,
+    ...routeUsage,
     ...collectMetadataFindings(buildRoot, metadataLocale, expectedOgImageUrl),
   ];
-}
-
-function describePrerenderStaticCoverage(
-  rootDir = ROOT,
-  buildDir = DEFAULT_BUILD_DIR,
-) {
-  const buildRoot = path.join(rootDir, buildDir);
-  const appPathsPath = path.join(buildRoot, "server/app-paths-manifest.json");
-  if (!fs.existsSync(appPathsPath)) return "";
-
-  const templates = Object.keys(readJson(appPathsPath)).filter(
-    (route) => route.startsWith("/[locale]") && route.endsWith("/page"),
-  );
-  const shells = templates.filter((route) =>
-    fs.existsSync(
-      path.join(
-        buildRoot,
-        getMetaRelativePath(route.slice(0, -"/page".length)),
-      ),
-    ),
-  );
-
-  return ` (${templates.length} localized template(s); template shells ${
-    shells.length > 0
-      ? `checked: ${shells.length}`
-      : "not emitted, shell check skipped"
-  })`;
 }
 
 function runPrerenderStaticCheck() {
   const findings = collectPrerenderStaticFindings();
   if (findings.length === 0) {
-    console.log(`prerender-static: passed${describePrerenderStaticCoverage()}`);
+    console.log("prerender-static: passed");
     return true;
   }
 
@@ -330,7 +236,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  DYNAMIC_ROUTE_EXEMPTIONS,
   collectPrerenderStaticFindings,
   runPrerenderStaticCheck,
 };

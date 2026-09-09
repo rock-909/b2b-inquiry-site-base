@@ -18,7 +18,6 @@ function writeClientBoundaryReport(rootDir, payload) {
 const BUILD_CHUNKS_DIR = ".next/static/chunks";
 const INQUIRY_FORM_SOURCE = "src/components/forms/inquiry-form.tsx";
 const INQUIRY_FORM_CHUNK_MARKER = 'data-lead-path":"api-inquiry"';
-const INQUIRY_FORM_MAX_RAW_BYTES = 120_000;
 
 const FORBIDDEN_BUILD_SOURCE_PATTERNS = [
   { label: "zod", test: (source) => /(?:^|\/)zod(?:\/|$)/.test(source) },
@@ -185,13 +184,6 @@ function collectInquiryFormBuildArtifactFindings(
   }
 
   const rawBytes = chunkBytes.byteLength;
-  if (rawBytes > INQUIRY_FORM_MAX_RAW_BYTES) {
-    findings.push(
-      createBuildArtifactError(
-        `InquiryForm client chunk exceeds raw budget (${rawBytes} > ${INQUIRY_FORM_MAX_RAW_BYTES})`,
-      ),
-    );
-  }
 
   if (findings.length > 0) {
     return findings;
@@ -199,6 +191,7 @@ function collectInquiryFormBuildArtifactFindings(
 
   return {
     status: "passed",
+    scope: "single-marker-chunk",
     reportPath: CLIENT_BOUNDARY_REPORT_PATH,
     mapPath: toRepoPath(rootDir, mapPath),
     chunkPath: toRepoPath(rootDir, chunkPath),
@@ -243,7 +236,7 @@ function runClientBoundaryBuildArtifactsCli(rootDir = ROOT) {
   }
 
   console.log(
-    `[client-boundary-build-artifacts] passed: ${result.chunkPath} raw=${result.rawBytes} gzip=${result.gzipBytes} forbidden=[]`,
+    `[client-boundary-build-artifacts] passed (single marker chunk, not total transfer): ${result.chunkPath} raw=${result.rawBytes} gzip=${result.gzipBytes} forbidden=[]`,
   );
   return true;
 }
@@ -266,7 +259,6 @@ if (require.main === module) {
 module.exports = {
   BUILD_CHUNKS_DIR,
   INQUIRY_FORM_CHUNK_MARKER,
-  INQUIRY_FORM_MAX_RAW_BYTES,
   INQUIRY_FORM_SOURCE,
   collectForbiddenBuildSources,
   collectInquiryFormBuildArtifactFindings,

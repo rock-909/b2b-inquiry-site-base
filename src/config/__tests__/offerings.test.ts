@@ -9,13 +9,6 @@ describe("offerings", () => {
     expect("error" in offeringsModule).toBe(false);
     if ("error" in offeringsModule) return;
 
-    expect(Object.keys(offeringsModule).sort()).toEqual([
-      "OFFERINGS",
-      "getOfferingById",
-      "getOfferingForLocale",
-      "getOfferingPath",
-      "getOfferingsForLocale",
-    ]);
     const offeringIds = new Set<string>();
     for (const offering of offeringsModule.OFFERINGS) {
       expect(offering).toMatchObject({
@@ -72,24 +65,24 @@ describe("offerings", () => {
     }
 
     const [firstOffering] = offeringsModule.OFFERINGS;
-    expect(firstOffering?.id).toBe("sample-offering");
-    expect(offeringsModule.getOfferingById("sample-offering")).toBe(
+    expect(firstOffering).toBeDefined();
+    expect(offeringsModule.getOfferingById(firstOffering!.id)).toBe(
       firstOffering,
     );
-    expect(offeringsModule.getOfferingPath("sample-offering")).toBe(
-      "/products/sample-offering",
+    expect(offeringsModule.getOfferingPath(firstOffering!.id)).toBe(
+      `/products/${firstOffering!.id}`,
     );
 
     expect(offeringsModule.getOfferingById("unknown-product")).toBeUndefined();
 
     const spanish = offeringsModule.getOfferingForLocale(
-      "sample-offering",
+      firstOffering!.id,
       "es",
     );
-    expect(spanish.name).toBe("Oferta de ejemplo");
-    expect(spanish.summary).toContain("catálogo");
+    expect(spanish.name).toBe(firstOffering!.translations.es.name);
+    expect(spanish.summary).toBe(firstOffering!.translations.es.summary);
     expect(offeringsModule.getOfferingsForLocale("es")[0]?.name).toBe(
-      "Oferta de ejemplo",
+      spanish.name,
     );
   });
 });

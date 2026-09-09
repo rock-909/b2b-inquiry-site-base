@@ -45,7 +45,7 @@ function buildTurnstilePayload(
  * 向 Cloudflare 校验一次令牌的硬超时。
  *
  * 具名并导出，是为了让浏览器那侧的提交预算能跟它对账：预算必须盖住服务端
- * 串行最坏耗时，而那个和是这个数加上邮件与 Airtable 的预算。
+ * 验证预算，加上限流预算和两个并行交付通道中较长的预算。
  */
 export const TURNSTILE_VERIFY_TIMEOUT_MS = FIVE_SECONDS_MS;
 
@@ -77,7 +77,26 @@ async function requestTurnstileVerification(
       );
     }
 
-    return response.json() as Promise<TurnstileVerificationResult>;
+    const result: unknown = await response.json();
+    if (
+      result === null ||
+      typeof result !== "object" ||
+      !("success" in result) ||
+      typeof result.success !== "boolean"
+    ) {
+      throw new Error("Invalid Turnstile response");
+    }
+    const fields = result as Record<string, unknown>;
+    if (
+      (fields.hostname !== undefined && typeof fields.hostname !== "string") ||
+      (fields.action !== undefined && typeof fields.action !== "string") ||
+      (fields["error-codes"] !== undefined &&
+        (!Array.isArray(fields["error-codes"]) ||
+          !fields["error-codes"].every((code) => typeof code === "string")))
+    ) {
+      throw new Error("Invalid Turnstile response");
+    }
+    return result as TurnstileVerificationResult;
   } finally {
     clearTimeout(timeout);
   }
@@ -212,7 +231,6 @@ export async function verifyTurnstileDetailed(
     logger.error("Turnstile verification network failure", {
       errorCode,
       ip: sanitizeIP(ip),
-      error,
     });
     return { success: false, errorCodes: [errorCode] };
   }

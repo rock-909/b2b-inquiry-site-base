@@ -77,6 +77,13 @@ export async function decodeInquirySubmitState(
   }
 
   if (payload.errorCode === API_ERROR_CODES.INQUIRY_VALIDATION_FAILED) {
+    if (
+      payload.details !== undefined &&
+      (!Array.isArray(payload.details) ||
+        !payload.details.every((detail) => typeof detail === "string"))
+    ) {
+      return { status: "error", errorKind: "server" };
+    }
     return {
       status: "error",
       errorKind: "field",

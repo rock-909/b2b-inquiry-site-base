@@ -1,4 +1,3 @@
-import { readFileSync } from "node:fs";
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
@@ -12,6 +11,15 @@ afterEach(() => {
 });
 
 describe("createStaticMarkdownContent", () => {
+  it("does not carry an incomplete table header into the next table", () => {
+    render(<>{createStaticMarkdownContent(
+      "| Abandoned |\n\nParagraph\n\n| Region |\n| --- |\n| EU |",
+    )}</>);
+    expect(screen.getByRole("columnheader", { name: "Region" })).toBeVisible();
+    expect(screen.queryByText("Abandoned")).not.toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: "EU" })).toBeVisible();
+  });
+
   it("renders inline bold inside list items without literal markdown markers", () => {
     const { container } = render(
       <>
@@ -171,23 +179,5 @@ describe("renderStaticMarkdownBlocks", () => {
     );
 
     expect(container.querySelector("h2")).toHaveTextContent("Privacy");
-  });
-});
-
-describe("static markdown renderer ownership", () => {
-  it("keeps the generic renderer independent of the page shell", () => {
-    const genericSource = readFileSync(
-      "src/lib/content/render-static-markdown-content.tsx",
-      "utf8",
-    );
-    const shellSource = readFileSync(
-      "src/components/content/legal-page-shell.tsx",
-      "utf8",
-    );
-
-    expect(genericSource).not.toContain("legal-page-shell");
-    // 页面外壳直接消费 blocks 渲染入口，不再有字符串转发 wrapper。
-    expect(shellSource).toContain("renderStaticMarkdownBlocks(blocks)");
-    expect(shellSource).not.toContain("LegalContentRenderer");
   });
 });

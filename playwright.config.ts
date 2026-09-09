@@ -16,24 +16,8 @@ const isAirtableCanary = process.env.POST_DEPLOY_TEST === "1";
 const hasExternalBaseUrl = Boolean(
   process.env.STAGING_URL || process.env.PLAYWRIGHT_BASE_URL,
 );
-const PLAYWRIGHT_PROFILE_LANE_IDS = new Set(["default", "optional", "all"]);
-
-function normalizePlaywrightProfileLane(rawValue: string | undefined) {
-  const normalized = rawValue?.trim() || "default";
-  if (!PLAYWRIGHT_PROFILE_LANE_IDS.has(normalized)) {
-    throw new Error(
-      `Unknown PLAYWRIGHT_PROFILE_LANE: ${normalized}. Allowed: default, optional, all`,
-    );
-  }
-  return normalized;
-}
-
-const profileLane = normalizePlaywrightProfileLane(
-  process.env.PLAYWRIGHT_PROFILE_LANE,
-);
 const defaultGrepInvertPatterns = [
   ...(isCI && !isFullCoverage ? [/debug|diagnosis/i] : []),
-  ...(profileLane === "default" ? [/@profile:/i] : []),
 ];
 const resolvedBaseUrl =
   process.env.STAGING_URL ||
@@ -119,8 +103,8 @@ export default defineConfig({
     actionTimeout: 10_000,
     navigationTimeout: 30_000,
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: "on-first-retry",
+    /* Keep failure traces even in the zero-retry browser lane. */
+    trace: "retain-on-failure",
 
     /* Take screenshot on failure */
     screenshot: "only-on-failure",
@@ -150,7 +134,7 @@ export default defineConfig({
               : "pnpm build && pnpm start",
           url: "http://localhost:3000",
           reuseExistingServer: shouldReuseExistingServer,
-          timeout: process.env.CI ? 60 * 1000 : 180 * 1000, // CI已构建,启动更快
+          timeout: isCI && !shouldRebuildServer ? 60 * 1000 : 180 * 1000, // 重建与仅启动分别计时
           // [local/test-mode] Local E2E proof boundary: this webServer uses test-mode services for stable smoke coverage.
           // It proves local rendering and interaction only, not real Turnstile or deployed lead proof.
           // NODE_ENV 必须为 production 以确保 React 19 正常工作
@@ -177,10 +161,6 @@ export default defineConfig({
           },
         },
       }),
-
-  /* Global setup and teardown */
-  globalSetup: require.resolve("./tests/e2e/global-setup.ts"),
-  globalTeardown: require.resolve("./tests/e2e/global-teardown.ts"),
 
   /* Test timeout */
   timeout: 30 * 1000,

@@ -9,8 +9,8 @@ import { captureExpectedConsoleErrors } from "@/test/console";
  * Runs the REAL pipeline: real Zod schema, real `processValidatedInquiry`,
  * real in-memory rate limiter, and the real Turnstile verification logic.
  *
- * Only the external wires are stubbed:
- * - `global.fetch` — Turnstile, Resend, and Airtable HTTP APIs
+ * HTTP 边界由 global.fetch 替代；环境读取仍使用全局 env mock，
+ * 不把此测试当作真实环境校验或 provider 投递证明。
  */
 
 const { fetchMock } = vi.hoisted(() => {
@@ -429,45 +429,9 @@ describe("lead pipeline (in-process integration)", () => {
     expect(getCapturedAirtableFields()["Requirements"]).toContain(
       "Need a custom component",
     );
-    expect(consoleError).toHaveBeenCalledTimes(2);
-  });
-
-  it("bakes the email-failure notice into the Airtable Message the owner reads", async () => {
-    const consoleError = captureExpectedConsoleErrors(
-      "Failed to send inquiry email",
-      "Owner inquiry email failed",
+    expect(getCapturedAirtableFields()["Message"]).toContain(
+      "Need a custom component",
     );
-    fetchMock.mockImplementation(async (input: unknown) => {
-      const url = resolveFetchUrl(input);
-      if (url === TURNSTILE_SITEVERIFY_URL) {
-        return jsonResponse(turnstileResponse);
-      }
-      if (url === RESEND_EMAILS_URL) {
-        return jsonResponse({ error: "resend down" }, 500);
-      }
-      if (url === AIRTABLE_RECORDS_URL) {
-        return jsonResponse({ records: [{ id: "rec_real_001" }] });
-      }
-      if (url.includes("/messages/")) {
-        return jsonResponse({});
-      }
-      throw new Error(`Unexpected fetch to ${url}`);
-    });
-
-    const response = await inquiryRoute.POST(
-      makeInquiryRequest(CANONICAL_MESSAGE_INQUIRY_BODY),
-    );
-
-    expect(response.status).toBe(200);
-    // 通知邮件没发出去时，业主唯一能看到这条线索的地方就是这一格。
-    // 单元测试只证到 process-lead 传给自己 mock 的参数；这里证的是
-    // 真正写进 Airtable 的那个字段名和那段文本。
-    const message = getCapturedAirtableFields()["Message"];
-    expect(typeof message).toBe("string");
-    expect(message as string).toMatch(/^⚠️ NOTE:/u);
-    expect(message as string).toContain("FAILED to send");
-    // 提示只是前缀，买家原文必须一字不少地跟在后面
-    expect(message as string).toContain(CANONICAL_BUYER_MESSAGE);
     expect(consoleError).toHaveBeenCalledTimes(2);
   });
 

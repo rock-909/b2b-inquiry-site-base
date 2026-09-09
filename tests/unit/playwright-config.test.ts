@@ -19,7 +19,6 @@ async function loadCiConfig(shouldRebuild: boolean) {
   vi.stubEnv("CI", "1");
   vi.stubEnv("CI_FULL_COVERAGE", "");
   vi.stubEnv("CI_FLAKE_SAMPLING", "");
-  vi.stubEnv("PLAYWRIGHT_PROFILE_LANE", "default");
   vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", shouldRebuild ? "true" : "");
   vi.stubEnv("STAGING_URL", "");
   vi.stubEnv("PLAYWRIGHT_BASE_URL", "");
@@ -82,7 +81,6 @@ describe("Playwright CI web server", () => {
     vi.stubEnv("CI", "1");
     vi.stubEnv("CI_FULL_COVERAGE", "true");
     vi.stubEnv("CI_FLAKE_SAMPLING", "1");
-    vi.stubEnv("PLAYWRIGHT_PROFILE_LANE", "all");
     vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", "");
     vi.stubEnv("STAGING_URL", "");
     vi.resetModules();
@@ -115,7 +113,6 @@ describe("Playwright CI web server", () => {
 describe("Playwright local server reuse contract", () => {
   async function loadLocalConfig(reuseFlag: string) {
     vi.stubEnv("CI", "");
-    vi.stubEnv("PLAYWRIGHT_PROFILE_LANE", "default");
     vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", "");
     vi.stubEnv("STAGING_URL", "");
     vi.stubEnv("PLAYWRIGHT_BASE_URL", "");

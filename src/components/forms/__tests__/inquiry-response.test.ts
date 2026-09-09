@@ -3,6 +3,26 @@ import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { decodeInquirySubmitState } from "@/components/forms/inquiry-response";
 
 describe("decodeInquirySubmitState", () => {
+  it.each([
+    "errors.email.invalid",
+    { length: 1 },
+    [null],
+    [{ toString: null }],
+  ])("rejects malformed field details %j before rendering", async (details) => {
+    const response = new Response(
+      JSON.stringify({
+        success: false,
+        errorCode: API_ERROR_CODES.INQUIRY_VALIDATION_FAILED,
+        details,
+      }),
+      { status: 400 },
+    );
+    await expect(decodeInquirySubmitState(response)).resolves.toEqual({
+      status: "error",
+      errorKind: "server",
+    });
+  });
+
   it("returns success with the reference id for an ok success body", async () => {
     const response = new Response(
       JSON.stringify({

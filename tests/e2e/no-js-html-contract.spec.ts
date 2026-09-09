@@ -1,3 +1,4 @@
+import { getOfferingPath, OFFERINGS } from "../../src/config/offerings";
 import { expect, test } from "@playwright/test";
 import { getSingleSitePublicStaticPages } from "@/config/single-site-seo";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
@@ -97,12 +98,6 @@ test.describe("No-JS HTML contract (default locale)", () => {
     expectExactlyOneMain(html);
     // The static shell must be server-rendered (prerendered), proven by the
     // hero H1 living in the raw HTML string — not injected by client boot.
-    // NavigationProgressBar reads useSearchParams under an explicit
-    // <Suspense fallback={null}> in [locale]/layout.tsx, so Next.js emits a
-    // BAILOUT_TO_CLIENT_SIDE_RENDERING marker for that bounded subtree only.
-    // That marker is the officially-sanctioned prerender pattern (installed
-    // next docs: use-search-params.md, "Prerendering") — a contained subtree
-    // bailout, NOT a whole-page bailout — so we do not assert its absence.
     expect(html).toMatch(site.homeHeading);
     expect(html).toContain('id="main-content"');
     await expectBodyRenderedOnce(page);
@@ -143,7 +138,7 @@ test.describe("No-JS HTML contract (default locale)", () => {
     // 锚点定位不依赖水合——无 JS 时初始 HTML 就必须包含它。
     // 相对路径走 playwright.config 的 baseURL：本地 3100 变通与 CI 3000 都正确。
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("/products/sample-offering", {
+    await page.goto(getOfferingPath(OFFERINGS[0]!.id), {
       waitUntil: "domcontentloaded",
     });
 

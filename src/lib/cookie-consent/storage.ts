@@ -65,7 +65,6 @@ export function loadConsent(): StoredConsent | null {
 
     return parsed;
   } catch {
-    window.localStorage.removeItem(CONSENT_STORAGE_KEY);
     return null;
   }
 }

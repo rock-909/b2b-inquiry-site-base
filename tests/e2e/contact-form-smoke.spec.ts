@@ -30,8 +30,6 @@ import { expect, test, type Page, type TestInfo } from "@playwright/test";
 test.describe.configure({ mode: "serial" });
 
 test.describe("Contact Form - Test-Mode Smoke", () => {
-  const expectedContactTitle = /Contact.*Reference/i;
-
   const resolveContactUrl = (info: TestInfo): string => {
     const base =
       process.env.STAGING_URL ||
@@ -62,16 +60,8 @@ test.describe("Contact Form - Test-Mode Smoke", () => {
     await expect(page.locator('input[name="fullName"]').first()).toBeEditable({
       timeout: 15_000,
     });
-    await expect(page).toHaveTitle(expectedContactTitle);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   };
-
-  test.beforeEach(async ({ page }) => {
-    // 设置 Turnstile 测试密钥
-    await page.addInitScript(() => {
-      // @ts-expect-error - 注入测试环境变量
-      window.NEXT_PUBLIC_TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
-    });
-  });
 
   // 字段名、输入类型和必填性是询盘链路的入口合约：这些值同时决定了买家看到什么、
   // 浏览器怎么校验、以及 FormData 提交给 /api/inquiry 的键名。

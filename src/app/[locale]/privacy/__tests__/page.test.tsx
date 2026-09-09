@@ -25,13 +25,11 @@ vi.mock("@/components/content/legal-page-shell", () => ({
     ({
       metadata,
       headings,
-      schemaType,
     }: {
       metadata: { title: string };
       headings: Array<{ id: string; text: string }>;
-      schemaType: string;
     }) => (
-      <div data-schema-type={schemaType}>
+      <div>
         <h1>{metadata.title}</h1>
         <nav aria-label="Table of Contents">
           {headings.map((heading) => (
@@ -60,8 +58,6 @@ const mockLegalPage = {
     slug: "privacy",
     publishedAt: "2024-01-01",
     updatedAt: "2024-02-01",
-    layout: "legal" as const,
-    showToc: true as const,
     lastReviewed: "2024-02-01",
     seo: {
       title: "Privacy Policy SEO",

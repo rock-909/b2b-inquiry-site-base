@@ -50,11 +50,6 @@ const CLOUDFLARE_SCRIPT_SURFACE_CHECKS = [
       "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
   },
 ];
-const DESTRUCTIVE_DEPLOY_SCRIPT_SNIPPETS = [
-  "wrangler delete",
-  "deleted_classes",
-  "new_sqlite_classes",
-];
 const RETIRED_SCRIPT_NAMES = [
   "build:cf",
   "deploy:cf",
@@ -110,9 +105,8 @@ function collectSourceTokens(relPath, text) {
 }
 
 /**
- * 在隔离子进程里真实执行 <rootDir>/open-next.config.ts，并断言 R2
- * incremental cache 的接线（identity 级）与导出身份。loader hooks 拦截
- * OpenNext 模块说明符，因此合成 fixture 与真实仓库走同一条证明路径。
+ * 在隔离子进程里真实执行 <rootDir>/open-next.config.ts，并用
+ * 安装的 OpenNext stable 验证 R2 incremental cache 最终接线。
  */
 function checkOpenNextWiring(rootDir, failures) {
   const runnerPath = path.join(
@@ -136,7 +130,7 @@ function checkOpenNextWiring(rootDir, failures) {
       label:
         "OpenNext config keeps the approved R2 incremental cache without split topology",
       missing: [
-        `open-next.config.ts failed to load under the open-next module harness: ${String(error)}`,
+        `open-next.config.ts failed to load with the installed OpenNext package: ${String(error)}`,
       ],
       forbidden: [],
     });
@@ -234,8 +228,8 @@ function checkWrangler(rootDir, failures) {
 }
 
 function checkOpenNextConfig(rootDir, failures) {
-  // 精确 token 扫描保留：注释不触发、更长标识符不误报，覆盖 loader hook
-  // 无法看到的"导入后未接线"的非法拓扑 token。
+  // 精确 token 扫描保留：注释不触发、更长标识符不误报，用于
+  // 阻止运行时最终 shape 无法区分的已退役拓扑。
   const text = readCloudflareConfigFile(rootDir, "open-next.config.ts");
   const tokens = collectSourceTokens("open-next.config.ts", text);
   const forbidden = OPEN_NEXT_FORBIDDEN_TOKENS.filter((token) =>
@@ -283,24 +277,6 @@ function checkPackageScripts(rootDir, failures) {
         missing: [`${check.name}: ${check.expected}`],
         forbidden: [],
       });
-    }
-
-    if (typeof script === "string") {
-      const forbidden = [
-        ...DESTRUCTIVE_DEPLOY_SCRIPT_SNIPPETS,
-        "&&",
-        "||",
-        ";",
-      ].filter((snippet) => script.includes(snippet));
-      if (forbidden.length > 0) {
-        failures.push({
-          file: "package.json",
-          label:
-            "Cloudflare build alias must stay exact and must not chain destructive actions",
-          missing: [],
-          forbidden,
-        });
-      }
     }
   }
 

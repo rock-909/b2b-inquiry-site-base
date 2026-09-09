@@ -1,28 +1,7 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { generateJSONLD } from "../structured-data";
-import * as structuredDataPublicApi from "../structured-data";
 
 describe("Structured Data - JSON-LD", () => {
-  describe("public structured-data API", () => {
-    it("does not expose legacy FAQ or breadcrumb schema aliases", () => {
-      expect("generateFAQSchema" in structuredDataPublicApi).toBe(false);
-      expect("generateBreadcrumbSchema" in structuredDataPublicApi).toBe(false);
-    });
-
-    it("keeps schema context literals out of the compatibility module", () => {
-      const structuredDataSource = readFileSync(
-        join(process.cwd(), "src/lib/structured-data.ts"),
-        "utf8",
-      );
-
-      expect(structuredDataSource).not.toContain(
-        '"@context": "https://schema.org"',
-      );
-    });
-  });
-
   describe("generateJSONLD", () => {
     it("should generate valid JSON-LD string", () => {
       const testData = {

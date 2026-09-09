@@ -4,6 +4,10 @@
     "files": [".open-next/**", ".next/**", ".next-lighthouse/**"],
     "overrides": [
       {
+        "files": ["src/lib/content/legal-page.ts"],
+        "rules": ["react-doctor/js-combine-iterations"]
+      },
+      {
         "files": ["package.json"],
         "rules": ["deslop/unused-dev-dependency"]
       },
@@ -66,10 +70,6 @@
         "rules": ["react-doctor/async-await-in-loop"]
       },
       {
-        "files": ["tests/e2e/global-setup.ts"],
-        "rules": ["react-doctor/async-parallel"]
-      },
-      {
         "files": [
           "src/components/forms/inquiry-form-static-fallback.tsx",
           "src/app/[locale]/contact/contact-page-sections.tsx",
@@ -94,10 +94,6 @@
           "tests/unit/scripts/proof-lane-contract.test.ts"
         ],
         "rules": ["react-doctor/js-combine-iterations"]
-      },
-      {
-        "files": ["tests/e2e/global-setup.ts"],
-        "rules": ["react-doctor/js-flatmap-filter"]
       },
       {
         "files": [
