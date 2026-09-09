@@ -55,8 +55,8 @@ export function HeaderLanguageMenu({
       <DropdownMenuTrigger
         type="button"
         openOnHover
-        delay={100}
-        closeDelay={0}
+        delay={0}
+        closeDelay={80}
         data-testid="language-toggle-button"
         aria-label={tAccessibility("language", {
           language: currentLanguageLabel,
