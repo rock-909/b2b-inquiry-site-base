@@ -20,10 +20,10 @@
   --brand-action-hover: oklch(0.3 0.08 245);
 
   --neutral-canvas: oklch(1 0 0);
-  --neutral-surface: oklch(0.9784 0.0011 197.1387);
-  --neutral-muted: oklch(0.9222 0.0013 286.3737);
-  --neutral-border-light: oklch(0.94 0.01 232);
-  --neutral-border: oklch(0.9317 0.0118 231.6594);
+  --neutral-surface: oklch(0.98 0 0);
+  --neutral-muted: oklch(0.93 0 0);
+  --neutral-border-light: oklch(0.94 0 0);
+  --neutral-border: oklch(0.92 0 0);
   --neutral-control-border: oklch(0.5637 0.0078 247.9662);
   --neutral-text-muted: oklch(0.446 0.012 250);
   --neutral-text: oklch(0.1884 0.0128 248.5103);
@@ -82,8 +82,8 @@
   /* Global visual feel. */
   --control-height-sm: 2rem;
   --control-height: 2.5rem;
-  --control-radius: 0.75rem;
-  --surface-radius: 1.3rem;
+  --control-radius: 0.5rem;
+  --surface-radius: 0.625rem;
   --control-shadow: none;
   --surface-shadow: none;
   --surface-hover-shadow: none;

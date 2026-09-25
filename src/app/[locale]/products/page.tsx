@@ -7,7 +7,6 @@ import {
 } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { buttonVariants } from "@/components/ui/button-variants";
-import { Card } from "@/components/ui/card";
 import { getOfferingsForLocale, getOfferingPath } from "@/config/offerings";
 import { getCanonicalPath, getLocalePath } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
@@ -80,22 +79,30 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
           </p>
         </header>
 
-        <div className="mt-10 grid gap-6 md:grid-cols-2">
+        <div className="mt-10 border-t border-border">
           {offerings.map((offering) => (
-            <Card key={offering.id} className="flex flex-col p-6">
-              <h2 className="text-section">{offering.name}</h2>
-              <p className="mt-3 flex-1 text-pretty text-muted-foreground">
+            <article
+              key={offering.id}
+              className="grid gap-4 border-b border-border py-7 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto] md:items-center md:gap-8"
+            >
+              <h2 className="text-xl font-semibold tracking-tight">
+                {offering.name}
+              </h2>
+              <p className="text-pretty text-muted-foreground">
                 {offering.summary}
               </p>
               <Link
                 href={getOfferingPath(offering.id)}
                 prefetch={false}
-                className={buttonVariants({ className: "mt-6 self-start" })}
+                className={buttonVariants({
+                  variant: "outline",
+                  className: "min-h-11 justify-self-start",
+                })}
               >
                 {t("page.viewDetails")}
                 <NavigationPending />
               </Link>
-            </Card>
+            </article>
           ))}
         </div>
       </div>
