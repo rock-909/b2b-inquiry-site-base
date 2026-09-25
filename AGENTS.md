@@ -34,7 +34,7 @@ Cloudflare/OpenNext，支持 offering 展示、联系和报价询盘转化。
 ## 验证边界
 
 - 按改动范围运行能够证明结果的最窄验证，再根据发布影响扩大验证。
-- `pnpm build`、`pnpm website:build:cf` 和 Playwright webServer 共用 `.next`，不得并行运行。
+- `pnpm build`、`pnpm website:build:cf` 和 Playwright webServer 共用 `.next`；需要运行多个流程时串行执行，避免产物互相覆盖。
 - 派生和上线工作按 `docs/派生项目交接.md` 分层验证；`pnpm release:verify` 只证明 release lane，不等于正式部署或业务上线。
 
 ## 依赖文档
