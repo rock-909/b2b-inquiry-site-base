@@ -44,6 +44,79 @@ test("buyer fills contact form, clicks submit, sees success", async ({
   await expect(page.locator('textarea[name="message"]')).toHaveValue("");
 });
 
+test("buyer retries a failed inquiry without losing the draft", async ({
+  page,
+}) => {
+  const selectors = buildCanarySelectors();
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  const submissions: unknown[] = [];
+  const draft = {
+    fullName: "Retry Buyer",
+    email: "retry@example.com",
+    message: "Please quote 500 units for our next shipment.",
+  };
+
+  // 仅替换 API 响应；保留真实表单、草稿和 test-mode 控件重置链路。
+  await page.route("**/api/inquiry", async (route) => {
+    submissions.push(route.request().postDataJSON());
+    await route.fulfill({
+      status: submissions.length === 1 ? 500 : 200,
+      contentType: "application/json",
+      body: JSON.stringify(
+        submissions.length === 1
+          ? { success: false, errorCode: "INQUIRY_PROCESSING_ERROR" }
+          : { success: true, data: { referenceId: "e2e-retry-ref" } },
+      ),
+    });
+  });
+  await page.goto("/contact");
+  const form = page.getByTestId("inquiry-form");
+  await form.scrollIntoViewIfNeeded();
+  const fullName = form.getByLabel(/^full name/i);
+  const email = form.getByLabel(/^email address/i);
+  const message = form.getByLabel(/message/i);
+  await fullName.fill(draft.fullName);
+  await email.fill(draft.email);
+  await message.fill(draft.message);
+  const submit = form.getByRole("button", { name: selectors.submitLabel });
+  await expect(submit).toBeEnabled();
+  await submit.click();
+
+  const serverError = form.getByText(
+    "We could not send your inquiry right now. Please try again shortly.",
+  );
+  await expect(serverError).toBeVisible();
+  await expect(form.getByText(selectors.successPrefix)).toHaveCount(0);
+  await expect(fullName).toHaveValue(draft.fullName);
+  await expect(email).toHaveValue(draft.email);
+  await expect(message).toHaveValue(draft.message);
+  expect(submissions).toHaveLength(1);
+
+  // 不刷新、不手工注入令牌：控件必须自行恢复，买家才能原页重试。
+  await expect(submit).toBeEnabled();
+  await submit.click();
+  await expect(form.getByText(selectors.successPrefix)).toBeVisible();
+  await expect(form.getByText(/e2e-retry-ref/)).toBeVisible();
+  await expect(serverError).toHaveCount(0);
+  expect(submissions).toHaveLength(2);
+  for (const submission of submissions) {
+    expect(submission).toMatchObject(draft);
+  }
+  await expect(fullName).toHaveValue("");
+  await expect(email).toHaveValue("");
+  await expect(message).toHaveValue("");
+
+  // 成功后再次访问也不能恢复旧询盘，避免只清空 DOM 却留下会话草稿。
+  await page.reload();
+  await form.scrollIntoViewIfNeeded();
+  await expect(fullName).toBeEditable();
+  await expect(fullName).toHaveValue("");
+  await expect(email).toHaveValue("");
+  await expect(message).toHaveValue("");
+  expect(pageErrors).toEqual([]);
+});
+
 async function expectAccessibleServerFieldErrors(page: Page, path: string) {
   const selectors = buildCanarySelectors();
   await page.route("**/api/inquiry", (route) =>

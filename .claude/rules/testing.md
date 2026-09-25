@@ -8,6 +8,15 @@ paths:
 
 Use this file when adding or changing tests, mocks, fixtures, or behavior proof.
 
+## Browser verification
+
+- Deterministic browser regressions use the existing Playwright suite.
+- Run the narrowest relevant test first, then expand validation according to risk.
+- Use browser interaction for exploration, visual inspection, or reproducing unknown UI failures.
+- If exploration finds stable reproduction steps with regression value, encode them as a Playwright test.
+- Do not weaken or remove assertions to make a test pass.
+- Do not require a new E2E test when a unit or integration test proves the contract more directly.
+
 ## Proof selection
 
 | Change type | Preferred proof |
