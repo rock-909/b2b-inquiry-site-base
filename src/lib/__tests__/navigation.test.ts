@@ -134,6 +134,13 @@ describe("navigation", () => {
       expect(isActivePath("/en/aboutus", "/about")).toBe(false);
     });
 
+    it("should only strip a whole locale segment", () => {
+      expect(isActivePath("/enquiry", "/enquiry")).toBe(true);
+      expect(isActivePath("/engineering/pumps", "/engineering")).toBe(true);
+      expect(isActivePath("/estimate", "/estimate")).toBe(true);
+      expect(isActivePath("/enquiry", "/")).toBe(false);
+    });
+
     it("should handle item paths that already end with slash", () => {
       // This test covers line 85 where cleanItemPath already ends with '/'
       expect(isActivePath("/about/team", "/about/")).toBe(true);
