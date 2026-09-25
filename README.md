@@ -18,6 +18,7 @@ B2B 询盘站模板，面向 offering 介绍、联系和报价询盘转化，内
 
 ```bash
 pnpm install
+pnpm hooks:install                # 启用本地 Git hook（每个 worktree 一次）
 cp .env.example .env.local        # Next.js 本地开发环境变量
 cp .dev.vars.example .dev.vars    # Cloudflare 本地预览环境变量
 pnpm dev

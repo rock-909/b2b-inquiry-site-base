@@ -11,10 +11,13 @@ export function isActivePath(currentPath: string, itemPath: string): boolean {
   // Handle empty string as root path
   let cleanCurrentPath = currentPath || "/";
 
-  // Remove locale prefix for comparison using safe string matching
+  // 只去掉完整的 locale 段："/en/about" 变成 "/about"，"/enquiry" 保持不变。
   for (const locale of LOCALES_CONFIG.locales) {
     const localePrefix = `/${locale}`;
-    if (cleanCurrentPath.startsWith(localePrefix)) {
+    if (
+      cleanCurrentPath === localePrefix ||
+      cleanCurrentPath.startsWith(`${localePrefix}/`)
+    ) {
       cleanCurrentPath = cleanCurrentPath.slice(localePrefix.length) || "/";
       break;
     }
