@@ -75,3 +75,4 @@ skills-lock.json
 # Superpowers local state only; process records use the tracked root plans/ directory.
 .superpowers/
 .worktrees/
+.alma-snapshots
