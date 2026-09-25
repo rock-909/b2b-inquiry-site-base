@@ -32,7 +32,6 @@ const MAGIC_NUMBER_IGNORE_LIST = [
 // 两个 block 各自的 scope-specific 差异（severity/选项/独有规则）仍留在各自 block 内。
 const sharedToolingPlugins = {
   security,
-  "react-you-might-not-need-an-effect": reactYouMightNotNeedAnEffect,
 };
 
 const sharedToolingRules = {
@@ -61,9 +60,6 @@ const sharedToolingRules = {
   "@typescript-eslint/no-require-imports": "off",
   "no-undef": ["error", { typeof: true }], // 未定义变量检查
   "no-restricted-imports": "off",
-  "react/no-unescaped-entities": "off", // 文案允许未转义实体
-  "react-you-might-not-need-an-effect/no-event-handler": "warn",
-  "react-you-might-not-need-an-effect/no-chain-state-updates": "warn",
   "no-void": "off", // 允许显式丢弃表达式结果
   "no-empty-function": "warn", // 工具占位符
 };
@@ -453,16 +449,10 @@ const eslintConfig = [
   {
     name: "config-and-dev-tools",
     files: [
-      "config/**/*.{js,ts}",
-      ".size-limit.js",
       "next.config.ts",
       "vitest.config.mts",
       "playwright.config.ts",
       "*.config.{js,ts,mjs}",
-
-      // 开发者工具。
-      "src/app/**/diagnostics/**/*.{ts,tsx}",
-      "src/components/examples/ui-showcase/**/*.{ts,tsx}",
     ],
     plugins: { ...sharedToolingPlugins },
     rules: {
