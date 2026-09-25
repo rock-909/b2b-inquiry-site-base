@@ -28,7 +28,7 @@ export function HeroSectionView({ content }: HeroSectionViewProps) {
   return (
     <section
       data-testid="hero-section"
-      className="relative px-6 py-10 pb-14 md:py-16 md:pb-[72px]"
+      className="relative px-6 py-12 pb-16 md:py-20 md:pb-24"
     >
       <HeroGuideOverlay />
       <div className="relative z-[1] mx-auto max-w-[1080px]">
@@ -42,17 +42,17 @@ export function HeroSectionView({ content }: HeroSectionViewProps) {
               {content.eyebrow}
             </span>
           </div>
-          <h1 className="mt-4 text-[36px] leading-[1.12] font-semibold text-balance md:text-[52px] md:leading-[1.06]">
+          <h1 className="mt-5 text-[36px] leading-[1.12] font-semibold tracking-tight text-balance md:text-[52px] md:leading-[1.06]">
             {content.title}
           </h1>
           <p className="mt-4 max-w-2xl text-lg text-pretty text-muted-foreground">
             {content.subtitle}
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link
               href={content.primaryCta.href}
               prefetch={false}
-              className={buttonVariants()}
+              className={buttonVariants({ className: "min-h-11 px-6" })}
             >
               {content.primaryCta.label}
               <NavigationPending />
@@ -60,7 +60,7 @@ export function HeroSectionView({ content }: HeroSectionViewProps) {
             <Link
               href={content.secondaryCta.href}
               prefetch={false}
-              className={buttonVariants({ variant: "outline" })}
+              className="inline-flex min-h-11 items-center gap-2 rounded-sm text-sm font-medium text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground motion-reduce:transition-none"
             >
               {content.secondaryCta.label}
               <NavigationPending />
