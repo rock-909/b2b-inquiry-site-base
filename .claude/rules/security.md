@@ -50,9 +50,11 @@ classification logic unless the route has a documented business reason.
 Canonical behavior for contact and inquiry:
 
 ```text
-browser form -> route handler (rate limit first) -> honeypot -> Zod -> Turnstile -> process lead -> owner email + Airtable record (parallel)
+browser form -> route handler (exact application/json content type -> 415, same-origin -> 403) -> rate limit -> honeypot -> Zod -> Turnstile -> process lead -> owner email + Airtable record (parallel)
 ```
 
+- The content-type and origin checks deliberately precede the rate limiter so
+  cross-site junk cannot consume a real buyer IP's quota.
 - Owner email and Airtable are independent parallel deliveries sharing one reference ID.
   Airtable does not claim whether the email arrived. The owner must periodically
   review backup records, not only records marked as notification failures.
