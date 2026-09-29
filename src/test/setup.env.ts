@@ -21,6 +21,9 @@ vi.stubEnv("EMAIL_FROM", "test@example.com");
 vi.stubEnv("INQUIRY_RECIPIENT_EMAIL", "reply@example.com");
 vi.stubEnv("TURNSTILE_BYPASS", "false");
 vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "test-account-id");
+// 限流存储凭据显式置空，避免外部环境变量让测试走真实 Redis 分支
+vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
+vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
 
 // Mock @t3-oss/env-nextjs to prevent server-side environment variable access errors
 vi.mock("@t3-oss/env-nextjs", () => ({
