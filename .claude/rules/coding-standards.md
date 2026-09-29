@@ -34,7 +34,13 @@ What eslint actually enforces (`no-restricted-imports`, `no-duplicate-imports`):
 
 - Use the `@/` alias for cross-directory imports. Relative parent imports
   (`../*`) are a lint error — reach for `@/lib/...`, `@/components/...`, etc.
-  instead. Same-folder relative imports (`./sibling`) are fine.
+  instead. Paths in the `architecture-boundaries` ignores of
+  `eslint.config.mjs` are outside this ban, such as test files (`*.test.*`,
+  `__tests__/`, `tests/`, `e2e/`), `scripts/**/*.{js,ts}` and root
+  `*.config.{js,ts,mjs}` files. `src/config/security.ts` is also exempt: `next.config.ts`
+  imports it at build time where the alias is unavailable, so ESLint turns
+  `no-restricted-imports` off for that file (`nextjs-config-files`).
+  Same-folder relative imports (`./sibling`) are fine.
 - Import locale-aware navigation as `{ Link }` from `@/i18n/routing`, never from
   `next/link` (lint error).
 - No duplicate import statements from the same module.
@@ -65,8 +71,7 @@ through convenience barrels.
 ## Quality boundaries
 
 - Do not weaken current TypeScript, ESLint, or build gates incidentally.
-- Production code must not import `src/test/**`, `src/testing/**`, or
-  `src/constants/test-*`.
+- Production code must not import `src/test/**`.
 - Prefer deleting stale compatibility code over wrapping obsolete behavior.
 
 ## Logging

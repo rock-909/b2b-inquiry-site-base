@@ -156,8 +156,10 @@ Tailwind config is in `@theme inline` inside `globals.css`; there is no
 `tailwind.config.ts`. This block adapts values from `theme.css` and must not
 become a second theme source.
 
-Do not build class names through string interpolation. Use literal maps or
-inline style for truly dynamic values.
+Do not build class names by interpolating fragments (for example
+`` `bg-${color}` ``); Tailwind cannot detect them. Whole class strings composed
+from constants are fine. Use literal maps or inline style for truly dynamic
+values.
 
 Use `cn()` from `@/lib/utils` for conditional classes.
 

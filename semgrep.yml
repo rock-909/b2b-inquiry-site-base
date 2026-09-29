@@ -307,7 +307,7 @@ rules:
       - pattern: $REQ.headers.get("x-forwarded-for")
       - pattern: $HEADERS.get("cf-connecting-ip")
       - pattern: $HEADERS.get("x-forwarded-for")
-    message: '不要在业务代码直接信任原始代理头；Cloudflare/header-only 上下文请走 getClientIP()/getClientIPFromHeaders() 或 x-internal-client-ip'
+    message: '不要在业务代码直接信任原始代理头；客户端 IP 请走 getClientIP(request)（@/lib/security/client-ip）'
     languages: [typescript, javascript]
     severity: ERROR
     paths:

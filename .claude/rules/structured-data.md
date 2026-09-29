@@ -12,7 +12,9 @@ paths:
 
 # Structured Data / JSON-LD Rules
 
-All schema objects are built through `src/lib/structured-data-generators.ts`.
+All schema objects except FAQPage are built through
+`src/lib/structured-data-generators.ts`; FAQPage comes from
+`generateFaqSchemaFromItems()` (see FAQ schema).
 
 Pages and component shells may render `<JsonLdScript>` or `<JsonLdGraphScript>`,
 but they must not hand-roll schema objects inline.
