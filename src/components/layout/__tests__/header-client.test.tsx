@@ -168,6 +168,25 @@ describe("MobileNavigationIsland", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("does not open the drawer on another route when navigation happens while it loads", async () => {
+    const { rerender } = render(
+      <MobileNavigationIsland {...MOBILE_NAV_ISLAND_LABELS} />,
+    );
+
+    fireEvent.click(screen.getByTestId("header-mobile-menu-button"));
+    mockPathname.current = "/contact";
+    rerender(<MobileNavigationIsland {...MOBILE_NAV_ISLAND_LABELS} />);
+
+    await act(async () => {
+      await vi.dynamicImportSettled();
+    });
+
+    expect(screen.getByTestId("mobile-navigation-interactive")).toHaveAttribute(
+      "data-initial-open",
+      "false",
+    );
+  });
+
   it("marks the deferred menu label as notranslate", () => {
     render(
       <MobileNavigationIsland

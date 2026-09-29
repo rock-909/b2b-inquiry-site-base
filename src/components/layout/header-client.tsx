@@ -77,21 +77,24 @@ export function MobileNavigationIsland({
   openMenuLabel,
   closeMenuLabel,
 }: MobileNavigationIslandProps) {
-  const [isActivated, setIsActivated] = useState(false);
+  const pathname = usePathname();
+  const [activationPathname, setActivationPathname] = useState<string | null>(
+    null,
+  );
   const fallback = (
     <MobileNavigationFallback
       openMenuLabel={openMenuLabel}
-      onActivate={() => setIsActivated(true)}
+      onActivate={() => setActivationPathname(pathname)}
     >
       {children}
     </MobileNavigationFallback>
   );
 
-  if (isActivated) {
+  if (activationPathname !== null) {
     return (
       <Suspense fallback={fallback}>
         <MobileNavigationInteractive
-          initialOpen
+          initialOpen={activationPathname === pathname}
           languageSwitcher={languageSwitcher}
           openMenuLabel={openMenuLabel}
           closeMenuLabel={closeMenuLabel}
