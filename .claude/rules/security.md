@@ -4,6 +4,7 @@ paths:
   - "src/lib/security/**/*"
   - "src/lib/api/**"
   - "src/lib/lead-pipeline/lead-schema.ts"
+  - "src/lib/lead-pipeline/canonical-buyer-fields.ts"
   - "src/components/forms/**"
   - "src/config/security.ts"
   - "next.config.ts"
@@ -34,7 +35,11 @@ Keep Turnstile failure handling centralized. Do not create route-local
 classification logic unless the route has a documented business reason.
 
 - Missing browser token means verification is required.
-- Invalid token, action, or hostname means anti-abuse failure.
+- Invalid token or action means anti-abuse failure.
+- A hostname mismatch (`invalid-hostname`) returns the same public
+  anti-abuse failure as a real rejection, but it is usually a configuration
+  error in `TURNSTILE_ALLOWED_HOSTS` or the base URL. Tell them apart by the
+  `invalid-hostname` error code in the server logs.
 - Missing server configuration, network failure, or timeout means service
   unavailable.
 - Public write routes must expose stable machine-readable error codes for these
@@ -45,7 +50,7 @@ classification logic unless the route has a documented business reason.
 Canonical behavior for contact and inquiry:
 
 ```text
-browser form -> route handler -> Zod -> Turnstile -> process lead -> owner email + Airtable record (parallel)
+browser form -> route handler (rate limit first) -> honeypot -> Zod -> Turnstile -> process lead -> owner email + Airtable record (parallel)
 ```
 
 - Owner email and Airtable are independent parallel deliveries sharing one reference ID.
@@ -61,9 +66,10 @@ browser form -> route handler -> Zod -> Turnstile -> process lead -> owner email
 
 Buyer-controlled free-text fields sent to Airtable or another spreadsheet-like
 sink must use `sanitizeAirtableTextField()` before record creation. Airtable's
-typed Email field is the narrow exception: the lead schema rejects
-formula-capable prefixes, and the valid address is stored unchanged so ordinary
-plus-addressing keeps working.
+typed Email field is the narrow exception: the lead schema rejects leading
+`+` and `-` (`=` and `@` are already rejected by the email format check), and
+the valid address is stored unchanged so ordinary plus-addressing keeps
+working.
 
 When changing contact, inquiry, or Airtable field mapping behavior,
 update focused lead-family tests for the changed contract. Do not rely on email
@@ -127,7 +133,8 @@ errors or markers in the public JSON.
 ## Env boundaries
 
 - App/runtime code reads server values through `@/lib/env`.
-- Browser code reads only `NEXT_PUBLIC_*` helpers exported from `@/lib/env`.
+- Client Components read only allowlisted `NEXT_PUBLIC_*` values through
+  `@/lib/public-runtime-env`, never `@/lib/env`.
 - Do not expose server secrets through `NEXT_PUBLIC_*`.
 - Sensitive keys include `AIRTABLE_API_KEY`, `RESEND_API_KEY`,
   `TURNSTILE_SECRET_KEY`, Cloudflare API tokens, and owner dashboard access

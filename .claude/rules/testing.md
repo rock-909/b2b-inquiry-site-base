@@ -51,6 +51,8 @@ that behavior breaks.
 Use a deliberate negative check when an assertion is new, surprising, or
 replacing another protection. Full mutation testing is optional.
 
+When fixing a defect, run the reproducing test against the unfixed code and confirm it fails before applying the fix, then confirm it passes. If the defect does not reproduce, stop and report instead of changing code. Changes with no reproducible failure (deletions, config, docs) prove themselves with reference searches and unchanged relevant checks.
+
 ## Coverage ownership
 
 Before saying another test or gate covers a removed check, confirm that it:
