@@ -90,13 +90,6 @@ function createPreviewFetchMock() {
         });
       }
 
-      if (pathname === MISSING_OFFERING_PATH) {
-        return response(404, HEALTHY_HTML, {
-          "content-type": "text/html; charset=utf-8",
-          ...SECURITY_HEADERS,
-        });
-      }
-
       return response(404, HEALTHY_HTML, {
         "content-type": "text/html; charset=utf-8",
         ...SECURITY_HEADERS,
@@ -160,6 +153,10 @@ function createDeployedFetchMock() {
 
       if (pathname === "/security-policy.txt") {
         return response(404, "not found", { "content-type": "text/plain" });
+      }
+
+      if (pathname === "/api/inquiry") {
+        return response(init?.method === "POST" ? 415 : 405);
       }
 
       return response(404, "not found");
@@ -258,7 +255,9 @@ function listenForDeployedSmoke(): Promise<{
         return;
       }
 
-      serverResponse.writeHead(404);
+      serverResponse.writeHead(
+        pathname === "/api/inquiry" && request.method === "POST" ? 415 : 404,
+      );
       serverResponse.end("not found");
     });
 
@@ -627,6 +626,7 @@ describe("deployed smoke", () => {
       "/api/health",
       "/.well-known/security.txt",
       "/security-policy.txt",
+      "/api/inquiry",
     ]);
     expect(
       fetchMock.mock.calls.every(
@@ -758,6 +758,7 @@ describe("deployed smoke", () => {
         "/api/health",
         "/.well-known/security.txt",
         "/security-policy.txt",
+        "/api/inquiry",
       ].sort(),
     );
     expect(result.stdout).toContain("[post-deploy-smoke] All checks passed");
