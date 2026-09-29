@@ -26,6 +26,8 @@ pnpm dev
 
 询盘表单需要在 `.env.local` 里填入真实服务配置。服务端密钥包括 `AIRTABLE_API_KEY`、`RESEND_API_KEY` 和 `TURNSTILE_SECRET_KEY`；`NEXT_PUBLIC_TURNSTILE_SITE_KEY` 是浏览器侧公开站点 key。完整键位以 `.env.example` 为准，派生和上线见 `docs/派生项目交接.md`。
 
+真实人机验证脚本加载失败，或等待超时仍未渲染控件时，表单会显示加载失败提示和邮件联系入口；未获得验证令牌时，提交按钮仍保持禁用，不会自动放行。已渲染、正在等待买家完成的交互式挑战不会触发此加载超时提示；若控件稍后验证成功，提示会消失，表单可继续提交。
+
 ## 常用命令
 
 ```bash
