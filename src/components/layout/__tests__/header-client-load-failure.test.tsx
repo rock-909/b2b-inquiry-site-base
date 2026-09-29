@@ -1,11 +1,18 @@
 /** @vitest-environment jsdom */
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageToggleIsland, MobileNavigationIsland } from "../header-client";
 
+const mockPathname = vi.hoisted(() => ({ current: "/products/widget" }));
+
 vi.mock("@/i18n/routing", () => ({
-  usePathname: () => "/",
+  usePathname: () => mockPathname.current,
 }));
+
+beforeEach(() => {
+  mockPathname.current = "/products/widget";
+  window.history.replaceState(null, "", "/products/widget?ref=buyer#specs");
+});
 
 vi.mock("@/components/layout/mobile-navigation-interactive", () => {
   throw new Error("simulated chunk load failure");
@@ -43,22 +50,50 @@ describe("header islands when their chunk fails to load", () => {
     consoleError.mockRestore();
   });
 
-  it("keeps an idle language trigger instead of a stuck loading state", async () => {
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+  it.each(["click", "hover"])(
+    "keeps current-page locale links usable after %s activation fails",
+    async (activation) => {
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
 
-    render(<LanguageToggleIsland ariaLabel="Language: English" locale="en" />);
+      const { rerender } = render(
+        <LanguageToggleIsland ariaLabel="Language: English" locale="en" />,
+      );
 
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("language-toggle-button"));
-      await vi.dynamicImportSettled();
-    });
+      await act(async () => {
+        const trigger = screen.getByTestId("language-toggle-button");
+        if (activation === "click") fireEvent.click(trigger);
+        else fireEvent.pointerEnter(trigger);
+        await vi.dynamicImportSettled();
+      });
 
-    expect(screen.getByTestId("language-toggle-button")).toHaveAttribute(
-      "aria-busy",
-      "false",
-    );
-    consoleError.mockRestore();
-  });
+      fireEvent.click(
+        screen.getByText("English", { selector: "summary span" }),
+      );
+      expect(screen.getByRole("link", { name: "English" })).toHaveAttribute(
+        "href",
+        "/products/widget?ref=buyer#specs",
+      );
+      expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
+        "href",
+        "/es/products/widget?ref=buyer#specs",
+      );
+
+      mockPathname.current = "/about";
+      window.history.replaceState(null, "", "/about");
+      rerender(
+        <LanguageToggleIsland ariaLabel="Language: Español" locale="es" />,
+      );
+      expect(screen.getByRole("link", { name: "English" })).toHaveAttribute(
+        "href",
+        "/about",
+      );
+      expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
+        "href",
+        "/es/about",
+      );
+      consoleError.mockRestore();
+    },
+  );
 });

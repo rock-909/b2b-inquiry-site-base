@@ -9,6 +9,7 @@ import {
 } from "@/config/paths/locales-config";
 import { LazyIslandBoundary } from "@/components/errors/lazy-island-boundary";
 import { cn } from "@/lib/utils";
+import { useLocaleSwitchHref } from "@/components/layout/use-locale-switch-href";
 import { MobileNavigationFallback } from "@/components/layout/header-mobile-navigation-fallback";
 
 const MobileNavigationInteractive = lazy(() =>
@@ -37,14 +38,14 @@ interface LanguageToggleIslandProps {
 
 interface LanguageToggleTriggerProps {
   ariaLabel: string;
-  isLoading?: boolean;
+  isLoading: boolean;
   locale: ConfiguredLocale;
-  onClick?: () => void;
+  onClick: () => void;
 }
 
 function LanguageToggleTrigger({
   ariaLabel,
-  isLoading = false,
+  isLoading,
   locale,
   onClick,
 }: LanguageToggleTriggerProps) {
@@ -111,6 +112,7 @@ export function LanguageToggleIsland({
   locale,
 }: LanguageToggleIslandProps) {
   const pathname = usePathname();
+  const localeSwitchHref = useLocaleSwitchHref(pathname);
   const [activationPathname, setActivationPathname] = useState<string | null>(
     null,
   );
@@ -137,7 +139,30 @@ export function LanguageToggleIsland({
       {isActivated ? (
         <LazyIslandBoundary
           fallback={
-            <LanguageToggleTrigger ariaLabel={ariaLabel} locale={locale} />
+            <details className="relative" translate="no">
+              <summary
+                aria-label={ariaLabel}
+                className="inline-flex h-9 cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+              >
+                <Globe aria-hidden="true" className="size-3.5" />
+                <span>{LOCALES_CONFIG.triggerLabels[locale]}</span>
+                <ChevronDown aria-hidden="true" className="size-3.5" />
+              </summary>
+              <div className="absolute top-full right-0 z-50 mt-2 min-w-40 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-lg">
+                {LOCALES_CONFIG.locales.map((targetLocale) => (
+                  <a
+                    key={targetLocale}
+                    href={localeSwitchHref(targetLocale)}
+                    hrefLang={targetLocale}
+                    lang={targetLocale}
+                    aria-current={targetLocale === locale ? "true" : undefined}
+                    className="flex min-h-10 items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    {LOCALES_CONFIG.displayNames[targetLocale]}
+                  </a>
+                ))}
+              </div>
+            </details>
           }
         >
           <Suspense fallback={fallback}>
