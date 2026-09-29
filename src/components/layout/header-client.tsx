@@ -7,6 +7,7 @@ import {
   LOCALES_CONFIG,
   type ConfiguredLocale,
 } from "@/config/paths/locales-config";
+import { LazyIslandBoundary } from "@/components/errors/lazy-island-boundary";
 import { cn } from "@/lib/utils";
 import { MobileNavigationFallback } from "@/components/layout/header-mobile-navigation-fallback";
 
@@ -89,14 +90,16 @@ export function MobileNavigationIsland({
 
   if (isActivated) {
     return (
-      <Suspense fallback={fallback}>
-        <MobileNavigationInteractive
-          initialOpen
-          languageSwitcher={languageSwitcher}
-          openMenuLabel={openMenuLabel}
-          closeMenuLabel={closeMenuLabel}
-        />
-      </Suspense>
+      <LazyIslandBoundary fallback={fallback}>
+        <Suspense fallback={fallback}>
+          <MobileNavigationInteractive
+            initialOpen
+            languageSwitcher={languageSwitcher}
+            openMenuLabel={openMenuLabel}
+            closeMenuLabel={closeMenuLabel}
+          />
+        </Suspense>
+      </LazyIslandBoundary>
     );
   }
 
@@ -132,12 +135,18 @@ export function LanguageToggleIsland({
       }}
     >
       {isActivated ? (
-        <Suspense fallback={fallback}>
-          <HeaderLanguageMenu
-            initialOpen={isActivationCurrent}
-            locale={locale}
-          />
-        </Suspense>
+        <LazyIslandBoundary
+          fallback={
+            <LanguageToggleTrigger ariaLabel={ariaLabel} locale={locale} />
+          }
+        >
+          <Suspense fallback={fallback}>
+            <HeaderLanguageMenu
+              initialOpen={isActivationCurrent}
+              locale={locale}
+            />
+          </Suspense>
+        </LazyIslandBoundary>
       ) : (
         fallback
       )}

@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { LazyIslandBoundary } from "@/components/errors/lazy-island-boundary";
 import type { InquiryFormCopy } from "@/components/forms/inquiry-form";
 
 const InquiryForm = lazy(() =>
@@ -63,13 +64,15 @@ export function DeferredInquiryForm({
         <style>{"[data-inquiry-form-deferred]{min-height:0}"}</style>
       </noscript>
       {isActivated ? (
-        <Suspense fallback={fallback}>
-          <InquiryForm
-            copy={copy}
-            fallback={fallback}
-            {...(initialMessage ? { initialMessage } : {})}
-          />
-        </Suspense>
+        <LazyIslandBoundary fallback={fallback}>
+          <Suspense fallback={fallback}>
+            <InquiryForm
+              copy={copy}
+              fallback={fallback}
+              {...(initialMessage ? { initialMessage } : {})}
+            />
+          </Suspense>
+        </LazyIslandBoundary>
       ) : (
         fallback
       )}
