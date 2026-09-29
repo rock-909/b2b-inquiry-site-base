@@ -30,6 +30,14 @@ describe("React Doctor gate contract", () => {
       isCompleteCleanReport({ ...clean, projects: [{ complete: false }] }),
     ).toBe(false);
     expect(isCompleteCleanReport({ ...clean, projects: [] })).toBe(false);
+    expect(
+      isCompleteCleanReport({
+        ...clean,
+        mode: "diff",
+        projects: [],
+        skippedProjects: [{ directory: "." }],
+      }),
+    ).toBe(false);
     expect(isCompleteCleanReport({})).toBe(false);
     expect(
       isCompleteCleanReport({
@@ -38,6 +46,16 @@ describe("React Doctor gate contract", () => {
       }),
     ).toBe(false);
   });
+  it("accepts a diff scan whose changes contain no React source files", () => {
+    expect(
+      isCompleteCleanReport({
+        mode: "diff",
+        projects: [],
+        summary: { errorCount: 0, warningCount: 0 },
+      }),
+    ).toBe(true);
+  });
+
   it("pins an exact react-doctor version in devDependencies", () => {
     const { devDependencies } = readPackageJson();
     const version = devDependencies["react-doctor"];

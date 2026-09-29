@@ -1,9 +1,13 @@
 const { spawnSync } = require("node:child_process");
 
 function isCompleteCleanReport(report) {
+  // diff 模式下没有变更源码的项目会被 React Doctor 省略；被跳过的项目仍算未完成。
+  const hasScannedScope =
+    report?.projects?.length > 0 ||
+    (report?.mode === "diff" && !report.skippedProjects?.length);
   return (
     Array.isArray(report?.projects) &&
-    report.projects.length > 0 &&
+    hasScannedScope &&
     report.projects.every((project) => project.complete === true) &&
     report.summary?.errorCount === 0 &&
     report.summary?.warningCount === 0
