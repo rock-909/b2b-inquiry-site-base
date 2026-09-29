@@ -136,6 +136,20 @@ describe("Cloudflare deploy workflow contract", () => {
     }
   });
 
+  it("runs production release proof without live provider or rate-limit secrets", () => {
+    const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+    const proof = steps.find((step) =>
+      step.run?.includes("pnpm release:verify --env production"),
+    );
+
+    expect(proof, "production release proof step must exist").toBeDefined();
+    for (const [name, value] of Object.entries(proof?.env ?? {})) {
+      expect(String(value), name).not.toMatch(
+        /secrets\.(?!NEXT_PUBLIC_|GOOGLE_SITE_)/u,
+      );
+    }
+  });
+
   it("does not cancel an in-flight production deployment", () => {
     expect(loadDeployWorkflow().concurrency?.["cancel-in-progress"]).toBe(
       "${{ inputs.environment != 'production' }}",

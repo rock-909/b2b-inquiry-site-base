@@ -98,6 +98,39 @@ function validateWranglerProductionPublicUrls(target, rootDir) {
       );
     }
   }
+
+  validateWranglerProductionTurnstileHosts(target, productionVars);
+}
+
+// A non-empty TURNSTILE_ALLOWED_HOSTS replaces the site-URL fallback at runtime,
+// so a stale placeholder rejects every real buyer submission as invalid-hostname.
+function validateWranglerProductionTurnstileHosts(target, productionVars) {
+  const configured = readEnv(productionVars, "TURNSTILE_ALLOWED_HOSTS");
+  const hosts = (configured ?? "")
+    .split(",")
+    .map((host) => host.trim().toLowerCase())
+    .filter(Boolean);
+  const siteHost = readSiteHostname(
+    readEnv(productionVars, "NEXT_PUBLIC_SITE_URL"),
+  );
+  const isReady =
+    hosts.length > 0 &&
+    hosts.every((host) => isPublicBaseUrlReady(`https://${host}`)) &&
+    (!siteHost || hosts.includes(siteHost));
+
+  if (!isReady) {
+    target.push(
+      "wrangler.jsonc env.production.vars.TURNSTILE_ALLOWED_HOSTS is not public-launch ready (list the real site hostname from NEXT_PUBLIC_SITE_URL and no placeholder or local hosts before production deploy).",
+    );
+  }
+}
+
+function readSiteHostname(siteUrl) {
+  try {
+    return new URL(siteUrl).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
 }
 
 function containsStarterMarker(value) {

@@ -263,6 +263,7 @@ function createPublicLaunchInput(
           vars: {
             NEXT_PUBLIC_SITE_URL: baseUrl,
             NEXT_PUBLIC_BASE_URL: baseUrl,
+            TURNSTILE_ALLOWED_HOSTS: new URL(baseUrl).hostname,
           },
           r2_buckets: [
             {
