@@ -48,7 +48,7 @@ function readCustomReason(issue: ZodIssue): unknown {
  * - too_big → tooLong；
  * - invalid_type：source 缺失或空白 → required，否则 invalid；
  * - custom：显式 reason==="required"，或 source 缺失/空白 → required，否则 invalid；
- * - 其余 code（含 email 格式 invalid_format 等）→ invalid。
+ * - 其余 code（含 email 格式 invalid_format 等）：source 缺失/空白 → required，否则 invalid。
  */
 function classifyIssue(
   issue: ZodIssue,
@@ -72,7 +72,7 @@ function classifyIssue(
       if (readCustomReason(issue) === "required") return "required";
       return missingOrBlank ? "required" : "invalid";
     default:
-      return "invalid";
+      return missingOrBlank ? "required" : "invalid";
   }
 }
 

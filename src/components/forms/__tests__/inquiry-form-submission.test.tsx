@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getFormControls,
@@ -76,6 +77,46 @@ describe("InquiryForm submission lifecycle", () => {
     await screen.findByText(
       `${copy.success} ${copy.referenceLabel}: inq-ref-1`,
     );
+  });
+
+  it("keeps the fields unchangeable while the request is in flight", async () => {
+    let resolveFetch: (value: Response) => void = () => undefined;
+    vi.mocked(fetch).mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+
+    const user = userEvent.setup();
+    const { container, copy } = renderInquiryForm();
+    const { form, fullName, email, message } = fillRequiredFields(container);
+
+    await act(async () => {
+      fireEvent.submit(form);
+    });
+
+    // 等待期间补写的内容不会进入已发出的请求；若还能改，成功后被清空的
+    // 就是买家以为发出、实际没发的文字。
+    await user.type(message, " Also need CE certificates");
+    await user.type(fullName, " Jr");
+    await user.type(email, "x");
+    expect(message).toHaveValue("");
+    expect(fullName).toHaveValue("Ada Buyer");
+    expect(email).toHaveValue("ada@example.com");
+    expect(window.sessionStorage.getItem("inquiry-draft")).toBeNull();
+
+    await act(async () => {
+      resolveFetch(successResponse());
+    });
+    await screen.findByText(
+      `${copy.success} ${copy.referenceLabel}: inq-ref-1`,
+    );
+
+    // 落定后重新可编辑。
+    expect(fullName).toHaveValue("");
+    await user.type(fullName, "Grace");
+    expect(fullName).toHaveValue("Grace");
   });
 
   it("requires a fresh Turnstile token for the next submit", async () => {

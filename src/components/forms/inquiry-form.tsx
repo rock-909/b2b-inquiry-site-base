@@ -458,6 +458,7 @@ function InquiryFormLive({
           copy={copy}
           {...(initialMessage ? { initialMessage } : {})}
           messageMaxLength={getInquiryMessageMaxLength()}
+          readOnly={displayState.status === "submitting"}
           {...(fieldDetails ? { fieldDetails } : {})}
         />
 

@@ -7,7 +7,7 @@ import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 const FIELD_CLASS = "min-w-0 space-y-2";
 const LABEL_CLASS = "block text-sm leading-none font-medium text-foreground";
 const INPUT_CLASS =
-  "min-h-11 w-full min-w-0 rounded-[var(--control-radius)] border border-input bg-background px-3.5 py-2 text-sm text-foreground shadow-[var(--control-shadow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "min-h-11 w-full min-w-0 rounded-[var(--control-radius)] border border-input bg-background px-3.5 py-2 text-sm text-foreground shadow-[var(--control-shadow)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring read-only:opacity-70";
 const HINT_CLASS = "text-xs leading-5 text-muted-foreground";
 const ERROR_CLASS = "text-xs leading-5 text-[var(--error-foreground)]";
 const REQUIRED_CLASS =
@@ -64,11 +64,14 @@ export function InquiryFormFields({
   fieldDetails,
   initialMessage,
   messageMaxLength,
+  readOnly,
 }: {
   copy: InquiryFormCopy;
   fieldDetails?: readonly string[];
   initialMessage?: string;
   messageMaxLength: number;
+  /** 提交进行中锁定输入：用 readOnly 而非 disabled，保留焦点且值仍随 FormData 提交。 */
+  readOnly?: boolean;
 }) {
   const messageHintId = "inquiry-message-hint";
   const fullNameError = resolveFieldError("fullName", fieldDetails, copy);
@@ -94,6 +97,7 @@ export function InquiryFormFields({
             className={INPUT_CLASS}
             id="inquiry-fullName"
             name="fullName"
+            readOnly={readOnly}
             required
             type="text"
           />
@@ -118,6 +122,7 @@ export function InquiryFormFields({
             id="inquiry-email"
             inputMode="email"
             name="email"
+            readOnly={readOnly}
             required
             type="email"
           />
@@ -148,6 +153,7 @@ export function InquiryFormFields({
           id="inquiry-message"
           maxLength={messageMaxLength}
           name="message"
+          readOnly={readOnly}
           rows={5}
         />
         <p className={HINT_CLASS} id={messageHintId}>
