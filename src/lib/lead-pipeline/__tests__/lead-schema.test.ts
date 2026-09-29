@@ -50,4 +50,32 @@ describe("inquiryLeadSchema", () => {
     expect(result.utmSource).toBe("google");
     expect(result.landingPage).toBe("/contact");
   });
+
+  it.each([
+    ["punycode TLD", "buyer@example.xn--p1ai"],
+    ["ampersand in local part", "r&d@example.com"],
+    ["hash in local part", "sales#eu@example.com"],
+  ])("accepts a browser-valid address with %s", (_label, email) => {
+    const result = inquiryLeadSchema.safeParse({
+      ...BASE_GENERAL_INQUIRY,
+      email,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.email).toBe(email);
+  });
+
+  it.each([
+    ["dotless domain", "a@b"],
+    ["single-letter TLD", "a@example.c"],
+    ["formula prefix =", "=cmd@example.com"],
+    ["formula prefix +", "+cmd@example.com"],
+    ["formula prefix -", "-cmd@example.com"],
+    ["formula prefix @", "@cmd@example.com"],
+    ["empty punycode label", "a@example.xn--"],
+  ])("rejects an address with %s", (_label, email) => {
+    expect(
+      inquiryLeadSchema.safeParse({ ...BASE_GENERAL_INQUIRY, email }).success,
+    ).toBe(false);
+  });
 });

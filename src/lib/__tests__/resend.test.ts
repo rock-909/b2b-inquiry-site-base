@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_CONFIG as SITE_CONFIG } from "@/config/single-site";
+import { canonicalBuyerEmailSchema } from "@/lib/lead-pipeline/canonical-buyer-fields";
 import type { ResendService as ResendServiceInstance } from "../resend-core";
 
 type ResendServiceConstructor = new () => ResendServiceInstance;
@@ -162,6 +163,23 @@ describe("resend - sendInquiryEmail", () => {
       name: "reference-id",
       value: "INQ-abc123-deadbeef",
     });
+  });
+
+  it("carries a browser-valid buyer address from lead validation to the provider", async () => {
+    const service = new ResendServiceClass();
+    mockResendSend.mockResolvedValue({
+      data: { id: "edge-address-id" },
+      error: null,
+    });
+    const buyerEmail = canonicalBuyerEmailSchema.parse(
+      "R&D#Team@example.xn--p1ai",
+    );
+
+    await service.sendInquiryEmail({ ...validInquiryData, email: buyerEmail });
+
+    expect(mockResendSend.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ replyTo: "r&d#team@example.xn--p1ai" }),
+    );
   });
 
   it("sanitizes inquiry data before rendering without expanding buyer placeholders", async () => {
