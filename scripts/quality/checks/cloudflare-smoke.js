@@ -36,6 +36,15 @@ const DEPLOYED_SMOKE_EXPECTATIONS = [
   { pathname: "/api/health", status: 200, cacheControl: "no-store" },
   { pathname: "/.well-known/security.txt", status: 200 },
   { pathname: "/security-policy.txt", status: 404 },
+  // 询盘路由在来源检查和限流之前就拒绝非 JSON 的 POST，所以这个探测零副作用、
+  // 不触达任何服务商。它只证明询盘路由模块在部署里能加载并响应；不证明 Worker
+  // secret、来源分支或真实投递正常。
+  {
+    pathname: "/api/inquiry",
+    status: 415,
+    method: "POST",
+    headers: { "content-type": "text/plain" },
+  },
 ];
 const CF_PREVIEW_PROOF_OUTPUT_PATH = path.join(
   ROOT,
@@ -218,7 +227,14 @@ function collectProbeFields(pathname, response, body, retries) {
 async function probePathname(
   baseUrl,
   pathname,
-  { userAgent, extraHeaders = {}, retries = 0, logTag, retryEvents = [] } = {},
+  {
+    userAgent,
+    extraHeaders = {},
+    method = "GET",
+    retries = 0,
+    logTag,
+    retryEvents = [],
+  } = {},
 ) {
   const url = new URL(pathname, baseUrl);
   const headers = { "user-agent": userAgent, ...extraHeaders };
@@ -229,6 +245,7 @@ async function probePathname(
   while (attempt <= retries) {
     try {
       const response = await fetch(url, {
+        method,
         redirect: "manual",
         headers,
         signal: AbortSignal.timeout(DEPLOY_SMOKE_REQUEST_TIMEOUT_MS),
@@ -433,7 +450,7 @@ function evaluateProbe(
 
 /** 并发探测一轮 expectation 列表。 */
 async function probeRound(expectations, probe) {
-  return Promise.all(expectations.map(({ pathname }) => probe(pathname)));
+  return Promise.all(expectations.map((expectation) => probe(expectation)));
 }
 
 function printFailures(logTag, failures) {
@@ -496,7 +513,7 @@ async function runCloudflarePreviewSmoke(args = []) {
   const responses = [];
   for (let round = 0; round < rounds; round++) {
     responses.push(
-      ...(await probeRound(expectations, (pathname) =>
+      ...(await probeRound(expectations, ({ pathname }) =>
         probePathname(baseUrl, pathname, {
           userAgent: CF_PREVIEW_SMOKE_LOG_TAG,
         }),
@@ -558,14 +575,17 @@ async function runDeployedSmoke(args = []) {
 
   // One concurrent round so every mandatory route is probed together; per-route
   // retry state stays local inside probePathname.
-  const responses = await probeRound(DEPLOYED_SMOKE_EXPECTATIONS, (pathname) =>
-    probePathname(baseUrl, pathname, {
-      userAgent: POST_DEPLOY_SMOKE_LOG_TAG,
-      extraHeaders,
-      retries: DEPLOY_SMOKE_REQUEST_RETRIES,
-      logTag: POST_DEPLOY_SMOKE_LOG_TAG,
-      retryEvents,
-    }),
+  const responses = await probeRound(
+    DEPLOYED_SMOKE_EXPECTATIONS,
+    ({ pathname, method, headers }) =>
+      probePathname(baseUrl, pathname, {
+        userAgent: POST_DEPLOY_SMOKE_LOG_TAG,
+        method,
+        extraHeaders: { ...headers, ...extraHeaders },
+        retries: DEPLOY_SMOKE_REQUEST_RETRIES,
+        logTag: POST_DEPLOY_SMOKE_LOG_TAG,
+        retryEvents,
+      }),
   );
 
   for (const [index, response] of responses.entries()) {
