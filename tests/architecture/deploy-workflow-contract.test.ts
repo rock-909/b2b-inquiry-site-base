@@ -10,6 +10,7 @@ interface DeployWorkflow {
   readonly jobs?: Record<
     string,
     {
+      readonly environment?: string;
       readonly needs?: string | readonly string[];
       readonly "continue-on-error"?: boolean;
       readonly steps?: readonly {
@@ -148,6 +149,17 @@ describe("Cloudflare deploy workflow contract", () => {
         /secrets\.(?!NEXT_PUBLIC_|GOOGLE_SITE_)/u,
       );
     }
+  });
+
+  it("gates the production deploy job behind the production environment only", () => {
+    const environment =
+      loadDeployWorkflow().jobs?.["build-and-deploy"]?.environment;
+
+    // GitHub Environment 把 production 部署限制在 main 并承载生产 secrets；
+    // 表达式仅在 production 输入时求值为 production，preview 不进入该环境。
+    expect(environment).toBe(
+      "${{ inputs.environment == 'production' && 'production' || '' }}",
+    );
   });
 
   it("does not cancel an in-flight production deployment", () => {
