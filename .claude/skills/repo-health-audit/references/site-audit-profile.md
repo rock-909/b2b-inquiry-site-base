@@ -7,8 +7,8 @@ legacy starter profiles that do not describe this repository.
 
 1. Offering discovery: offering truth -> public page -> SEO metadata ->
    JSON-LD -> sitemap -> CTA.
-2. Buyer inquiry: form -> `/api/inquiry` -> validation -> Turnstile -> rate
-   limit -> lead pipeline -> owner email + Airtable -> buyer feedback.
+2. Buyer inquiry: form -> `/api/inquiry` -> lead pipeline -> owner email +
+   Airtable -> buyer feedback (gate order is owned by `.claude/rules/security.md`).
 3. Release proof: source -> messages/content -> Next build -> OpenNext build ->
    Cloudflare Worker -> deployed smoke -> real lead canary -> owner receipt.
 
