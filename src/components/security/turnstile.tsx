@@ -31,6 +31,14 @@ type TurnstileDegradedKind = "unavailable" | "failed";
  */
 const TURNSTILE_BYPASS_TOKEN = "TURNSTILE_BYPASS_TOKEN";
 
+/**
+ * 脚本注入后等多久还没有渲染出控件，就认定买家被拦截并给出邮件入口。
+ *
+ * 库只在传了 `scriptOptions.onError` 时才监听脚本加载失败，且没有加载超时；
+ * 被代理或拦截插件挂起（既不成功也不报错）的请求只能靠这个超时兜底。
+ */
+const WIDGET_LOAD_TIMEOUT_MS = 10_000;
+
 interface TurnstileLabels {
   unavailable: string;
   loadFailed: string;
@@ -116,6 +124,44 @@ function TurnstileRescueStatus({
   );
 }
 
+/**
+ * 真实控件的降级状态：控件报错、脚本加载失败、或迟迟没渲染出来都算降级。
+ *
+ * 超时不阻塞控件，之后拿到令牌仍会清除降级提示。
+ */
+function useWidgetLoadFallback(rendersWidget: boolean) {
+  const widgetRenderedRef = useRef(false);
+  const [degradedKind, setDegradedKind] =
+    useState<TurnstileDegradedKind | null>(null);
+
+  useEffect(() => {
+    if (!rendersWidget) return undefined;
+
+    // 控件已渲染说明脚本可用，交互式挑战可能正在进行，不能在此时误报。
+    const timeoutId = window.setTimeout(() => {
+      if (widgetRenderedRef.current) return;
+      logger.warn("Turnstile widget did not render before timeout");
+      setDegradedKind("failed");
+    }, WIDGET_LOAD_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [rendersWidget]);
+
+  const scriptHandlers = {
+    onWidgetLoad: () => {
+      widgetRenderedRef.current = true;
+    },
+    scriptOptions: {
+      onError: () => {
+        logger.error("Turnstile script failed to load");
+        setDegradedKind("failed");
+      },
+    },
+  };
+
+  return { degradedKind, setDegradedKind, scriptHandlers };
+}
+
 export function TurnstileWidget({
   onSuccess,
   onError,
@@ -145,8 +191,7 @@ export function TurnstileWidget({
   const isUnavailable = mode === "unavailable";
   const autoResolveTriggeredRef = useRef(false);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
-  const [degradedKind, setDegradedKind] =
-    useState<TurnstileDegradedKind | null>(null);
+  const fallback = useWidgetLoadFallback(mode === "live");
 
   /**
    * reset 意味着上一个令牌已作废，控件要重新出题。
@@ -221,12 +266,12 @@ export function TurnstileWidget({
 
   const widgetHandlers = {
     onSuccess: (token: string) => {
-      setDegradedKind(null);
+      fallback.setDegradedKind(null);
       onSuccess?.(token);
     },
     onError: (error: string) => {
       logger.error("Turnstile error:", error);
-      setDegradedKind("failed");
+      fallback.setDegradedKind("failed");
       onError?.(error);
     },
     onExpire: () => {
@@ -242,6 +287,7 @@ export function TurnstileWidget({
           ref={turnstileRef}
           siteKey={siteKey}
           {...widgetHandlers}
+          {...fallback.scriptHandlers}
           options={{
             theme,
             size,
@@ -252,8 +298,8 @@ export function TurnstileWidget({
           id={id}
         />
       </div>
-      {degradedKind ? (
-        <TurnstileRescueStatus kind={degradedKind} labels={labels} />
+      {fallback.degradedKind ? (
+        <TurnstileRescueStatus kind={fallback.degradedKind} labels={labels} />
       ) : null}
     </>
   );
