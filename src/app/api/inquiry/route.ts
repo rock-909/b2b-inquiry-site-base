@@ -18,7 +18,6 @@ import {
   HTTP_BAD_REQUEST,
   HTTP_FORBIDDEN,
   HTTP_INTERNAL_ERROR,
-  HTTP_SERVICE_UNAVAILABLE,
   HTTP_TOO_MANY_REQUESTS,
   HTTP_UNSUPPORTED_MEDIA_TYPE,
 } from "@/constants";
@@ -271,48 +270,65 @@ function rejectPlausiblyIllegitimateRequest(
   return null;
 }
 
+/**
+ * 限流存储或私钥不可用时放行询盘（业主决定）：Turnstile 仍是反滥用闸门，
+ * 而拒绝会连同仍能正常交付的真实买家一起挡掉。只有真实超限才返回 429。
+ * 缺配置由部署前的 production-config 检查拦截，运行时只记日志、不挡买家。
+ */
+async function rejectIfRateLimited(
+  request: NextRequest,
+): Promise<NextResponse | null> {
+  let rateLimitKey: string;
+  let result: Awaited<ReturnType<typeof checkInquiryRateLimit>>;
+
+  try {
+    rateLimitKey = await getIPKey(request);
+    result = await checkInquiryRateLimit(rateLimitKey);
+  } catch (error) {
+    logger.error("Rate limit unavailable; allowing inquiry to proceed", {
+      reason: "key_failure",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    return null;
+  }
+
+  if (result.allowed) return null;
+
+  if (result.deniedReason === "storage_failure") {
+    logger.warn("Rate limit unavailable; allowing inquiry to proceed", {
+      reason: "storage_failure",
+    });
+    return null;
+  }
+
+  logger.warn("Rate limit exceeded", {
+    keyPrefix: rateLimitKey.slice(0, 8),
+    retryAfter: result.retryAfter,
+  });
+
+  const response = createApiErrorResponse(
+    API_ERROR_CODES.RATE_LIMIT_EXCEEDED,
+    HTTP_TOO_MANY_REQUESTS,
+  );
+
+  response.headers.set("X-RateLimit-Remaining", String(result.remaining));
+  response.headers.set("X-RateLimit-Reset", String(result.resetTime));
+  if (result.retryAfter !== null) {
+    response.headers.set("Retry-After", String(result.retryAfter));
+  }
+  return response;
+}
+
 async function handleRateLimitedInquiryPost(request: NextRequest) {
   const gateRejection = rejectPlausiblyIllegitimateRequest(request);
 
   if (gateRejection) return gateRejection;
 
-  try {
-    const clientIP = getClientIP(request);
-    const rateLimitKey = await getIPKey(request);
-    const result = await checkInquiryRateLimit(rateLimitKey);
+  const rateLimitRejection = await rejectIfRateLimited(request);
 
-    if (result.allowed) {
-      return handleInquiryPost(request, clientIP);
-    }
+  if (rateLimitRejection) return rateLimitRejection;
 
-    logger.warn("Rate limit exceeded", {
-      keyPrefix: rateLimitKey.slice(0, 8),
-      retryAfter: result.retryAfter,
-      deniedReason: result.deniedReason,
-    });
-
-    const response = createApiErrorResponse(
-      result.deniedReason === "storage_failure"
-        ? API_ERROR_CODES.SERVICE_UNAVAILABLE
-        : API_ERROR_CODES.RATE_LIMIT_EXCEEDED,
-      result.deniedReason === "storage_failure"
-        ? HTTP_SERVICE_UNAVAILABLE
-        : HTTP_TOO_MANY_REQUESTS,
-    );
-
-    response.headers.set("X-RateLimit-Remaining", String(result.remaining));
-    response.headers.set("X-RateLimit-Reset", String(result.resetTime));
-    if (result.retryAfter !== null) {
-      response.headers.set("Retry-After", String(result.retryAfter));
-    }
-    return response;
-  } catch (error) {
-    logger.error("Unexpected rate limit infrastructure failure", { error });
-    return createApiErrorResponse(
-      API_ERROR_CODES.SERVICE_UNAVAILABLE,
-      HTTP_SERVICE_UNAVAILABLE,
-    );
-  }
+  return handleInquiryPost(request, getClientIP(request));
 }
 
 export function POST(request: NextRequest) {

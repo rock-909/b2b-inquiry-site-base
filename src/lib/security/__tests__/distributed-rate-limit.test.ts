@@ -112,7 +112,7 @@ describe("distributed-rate-limit", () => {
     expect((await checkInquiryRateLimit("user-b")).allowed).toBe(true);
   });
 
-  it("fails closed when the store rejects", async () => {
+  it("reports storage failure when the store rejects", async () => {
     const error = new DOMException("The operation was aborted", "AbortError");
     vi.spyOn(MemoryRateLimitStore.prototype, "increment").mockRejectedValueOnce(
       error,
@@ -125,7 +125,7 @@ describe("distributed-rate-limit", () => {
       deniedReason: "storage_failure",
     });
     expect(mockLoggerWarn).toHaveBeenCalledWith(
-      expect.stringContaining("fail-closed"),
+      expect.stringContaining("rate limit unavailable"),
     );
     expect(mockLoggerError).toHaveBeenCalledWith(
       "[Rate Limit] Storage backend error details",
@@ -133,7 +133,7 @@ describe("distributed-rate-limit", () => {
     );
   });
 
-  it("fails closed when production Upstash configuration is missing", async () => {
+  it("reports storage failure when production Upstash configuration is missing", async () => {
     setEnv("NODE_ENV", "production");
     resetRateLimitStore();
 

@@ -61,6 +61,11 @@ browser form -> route handler (exact application/json content type -> 415, same-
 - Resend is the daily primary channel; Airtable is the structured backup.
 - Either channel succeeding is still the user-facing success condition: a lead
   must never be rejected while at least one delivery channel works.
+- Rate-limit store or key failure (timeout, error, missing Upstash config or
+  `RATE_LIMIT_PEPPER`) lets the inquiry through with a `warn`/`error` log;
+  only a real over-limit returns 429. Missing production config is caught by
+  the production-config deploy gate, not at request time. Only Turnstile being
+  unavailable rejects a lead.
 - When Airtable fails but email succeeds, the route returns success and the
   failure is logged as an error for manual CRM backfill.
 - Both channels failing returns failure with a stable error code.

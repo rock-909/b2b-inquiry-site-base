@@ -77,7 +77,7 @@ export async function checkInquiryRateLimit(
       ...(allowed ? {} : { deniedReason: "limit" as const }),
     };
   } catch (error) {
-    logger.warn("[Rate Limit] Storage failure — fail-closed, denying request");
+    logger.warn("[Rate Limit] Storage failure — rate limit unavailable");
     logger.error("[Rate Limit] Storage backend error details", {
       error:
         error instanceof SyntaxError
