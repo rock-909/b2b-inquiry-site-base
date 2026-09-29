@@ -34,10 +34,13 @@ What eslint actually enforces (`no-restricted-imports`, `no-duplicate-imports`):
 
 - Use the `@/` alias for cross-directory imports. Relative parent imports
   (`../*`) are a lint error — reach for `@/lib/...`, `@/components/...`, etc.
-  instead. The one exemption is `src/config/security.ts`, which `next.config.ts`
-  imports at build time where the alias is unavailable; ESLint turns
-  `no-restricted-imports` off for that file (`nextjs-config-files` in
-  `eslint.config.mjs`). Same-folder relative imports (`./sibling`) are fine.
+  instead. Paths in the `architecture-boundaries` ignores of
+  `eslint.config.mjs` are outside this ban, such as test files (`*.test.*`,
+  `__tests__/`, `tests/`, `e2e/`), `scripts/**/*.{js,ts}` and root
+  `*.config.{js,ts,mjs}` files. `src/config/security.ts` is also exempt: `next.config.ts`
+  imports it at build time where the alias is unavailable, so ESLint turns
+  `no-restricted-imports` off for that file (`nextjs-config-files`).
+  Same-folder relative imports (`./sibling`) are fine.
 - Import locale-aware navigation as `{ Link }` from `@/i18n/routing`, never from
   `next/link` (lint error).
 - No duplicate import statements from the same module.
