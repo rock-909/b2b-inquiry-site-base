@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+import { data, Evaluator, Lexer, Parser } from "@actions/expressions";
 import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
 
@@ -10,6 +11,7 @@ interface DeployWorkflow {
   readonly jobs?: Record<
     string,
     {
+      readonly environment?: string;
       readonly needs?: string | readonly string[];
       readonly "continue-on-error"?: boolean;
       readonly steps?: readonly {
@@ -150,6 +152,28 @@ describe("Cloudflare deploy workflow contract", () => {
     }
   });
 
+  it("selects production only for production dispatch input", () => {
+    assertEnvironmentSelection(
+      loadDeployWorkflow().jobs?.["build-and-deploy"]?.environment,
+    );
+  });
+
+  it("accepts equivalent environment-selection expressions", () => {
+    assertEnvironmentSelection(
+      "${{ (inputs.environment == 'production') && 'production' || '' }}",
+    );
+  });
+
+  it.each([
+    "${{ '' }}",
+    "${{ 'production' }}",
+    "${{ inputs.environment == 'preview' && 'production' || '' }}",
+  ])("rejects incorrect environment selection: %s", (expression) => {
+    expect(() => assertEnvironmentSelection(expression)).toThrow(
+      /environment for (production|preview)/u,
+    );
+  });
+
   it("does not cancel an in-flight production deployment", () => {
     expect(loadDeployWorkflow().concurrency?.["cancel-in-progress"]).toBe(
       "${{ inputs.environment != 'production' }}",
@@ -177,4 +201,33 @@ function findStepIndex(
   commandFragment: string,
 ) {
   return steps.findIndex((step) => step.run?.includes(commandFragment));
+}
+
+function assertEnvironmentSelection(expression: string | undefined) {
+  if (typeof expression !== "string") {
+    throw new Error("Deploy job must declare an environment selection");
+  }
+  const source = /^\$\{\{([\s\S]*)\}\}$/u.exec(expression.trim())?.[1];
+  if (source === undefined) {
+    throw new Error("Expected an environment-selection expression");
+  }
+  const { tokens } = new Lexer(source).lex();
+  const parsed = new Parser(tokens, ["inputs"], []).parse();
+
+  for (const [input, expected] of [
+    ["production", "production"],
+    ["preview", ""],
+  ] as const) {
+    const context = new data.Dictionary({
+      key: "inputs",
+      value: new data.Dictionary({
+        key: "environment",
+        value: new data.StringData(input),
+      }),
+    });
+    const selected = new Evaluator(parsed, context).evaluate();
+    expect(selected, `environment for ${input}`).toEqual(
+      new data.StringData(expected),
+    );
+  }
 }

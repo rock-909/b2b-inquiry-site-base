@@ -36,6 +36,9 @@ jobs:
     name: Cloudflare Workers 部署 / 外部 URL smoke
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # production 由 GitHub Environment 限定只能从 main 部署并提供生产 secrets；
+    # preview 输入求值为空字符串，不进入该环境。
+    environment: ${{ inputs.environment == 'production' && 'production' || '' }}
 
     outputs:
       deployment_url: ${{ steps.resolve_urls.outputs.deployment-url }}
