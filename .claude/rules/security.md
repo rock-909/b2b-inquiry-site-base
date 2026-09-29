@@ -59,13 +59,16 @@ browser form -> route handler (exact application/json content type -> 415, same-
   Airtable does not claim whether the email arrived. The owner must periodically
   review backup records, not only records marked as notification failures.
 - Resend is the daily primary channel; Airtable is the structured backup.
-- Either channel succeeding is still the user-facing success condition: a lead
-  must never be rejected while at least one delivery channel works.
+- Once validation and anti-abuse checks pass, either delivery channel succeeding
+  is the user-facing success condition; failure of the other channel must not
+  reject the lead.
 - Rate-limit store or key failure (timeout, error, missing Upstash config or
-  `RATE_LIMIT_PEPPER`) lets the inquiry through with a `warn`/`error` log;
-  only a real over-limit returns 429. Missing production config is caught by
-  the production-config deploy gate, not at request time. Only Turnstile being
-  unavailable rejects a lead.
+  missing/weak `RATE_LIMIT_PEPPER`) lets the inquiry continue through body
+  parsing, honeypot, Zod, Turnstile, and delivery with a `warn`/`error` log;
+  only a real over-limit returns 429. The production-config deploy gate blocks
+  missing production rate-limit configuration and weak peppers before deployment.
+  Among anti-abuse infrastructure outages, Turnstile unavailability still rejects
+  the inquiry; rate-limit unavailability does not bypass other request checks.
 - When Airtable fails but email succeeds, the route returns success and the
   failure is logged as an error for manual CRM backfill.
 - Both channels failing returns failure with a stable error code.

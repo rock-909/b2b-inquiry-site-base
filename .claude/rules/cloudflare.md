@@ -68,9 +68,10 @@ Proxy must not inject internal client-IP headers for public form flows.
 
 There is no live `'use server'` Server Action contact path. Any server-side
 submission code must validate internally and fail closed when request identity
-is unavailable rather than relying on proxy-provided trusted IP headers. The
-inquiry rate limiter is the exception: if its key or store is unavailable the
-inquiry proceeds (Turnstile still gates abuse) and the failure is logged.
+is unavailable rather than relying on proxy-provided trusted IP headers. For the
+inquiry rate limiter's fail-open exception, follow
+[Lead-family behavior](security.md#lead-family-behavior); unavailable rate-limit
+identity is not an authorization failure.
 
 ## Cache and runtime bindings
 
