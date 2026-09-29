@@ -32,6 +32,7 @@ function turnstileHostErrors(hosts: string | undefined, siteUrl = SITE_URL) {
     cwd,
     encoding: "utf8",
     env: {
+      NODE_ENV: "test",
       PATH: process.env.PATH,
       TSX_TSCONFIG_PATH: path.resolve("tsconfig.json"),
       APP_ENV: "preview",
