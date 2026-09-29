@@ -28,3 +28,4 @@ test:
   instructions: |
     按改动范围先运行能证明结果的最窄验证，再按影响范围扩大；完整回归由 CI 负责。
     不得调用真实的 Resend、Airtable、Turnstile、Upstash，不得发送真实询盘；需要真实环境的验证写明留给人工。
+    运行工作副本默认没有 node_modules；运行测试或检查之前先运行 `pnpm install --frozen-lockfile`。
