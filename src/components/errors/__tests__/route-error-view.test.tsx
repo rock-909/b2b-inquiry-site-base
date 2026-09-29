@@ -28,7 +28,7 @@ const copy = {
 };
 
 describe("RouteErrorView", () => {
-  const reset = vi.fn();
+  const retry = vi.fn();
   const error = new Error("route blew up");
 
   beforeEach(() => {
@@ -39,7 +39,7 @@ describe("RouteErrorView", () => {
     render(
       <RouteErrorView
         error={error}
-        reset={reset}
+        retry={retry}
         logContext="Contact"
         copy={copy}
       />,
@@ -59,7 +59,7 @@ describe("RouteErrorView", () => {
     render(
       <RouteErrorView
         error={error}
-        reset={reset}
+        retry={retry}
         logContext="Contact"
         copy={copy}
       />,
@@ -67,14 +67,14 @@ describe("RouteErrorView", () => {
 
     fireEvent.click(screen.getByRole("button", { name: copy.tryAgain }));
 
-    expect(reset).toHaveBeenCalledTimes(1);
+    expect(retry).toHaveBeenCalledTimes(1);
   });
 
   it("offers the homepage as the way out", () => {
     render(
       <RouteErrorView
         error={error}
-        reset={reset}
+        retry={retry}
         logContext="Contact"
         copy={copy}
       />,
@@ -90,7 +90,7 @@ describe("RouteErrorView", () => {
     render(
       <RouteErrorView
         error={error}
-        reset={reset}
+        retry={retry}
         logContext="Products"
         copy={copy}
       />,
@@ -104,7 +104,7 @@ describe("RouteErrorView", () => {
     const { rerender } = render(
       <RouteErrorView
         error={error}
-        reset={reset}
+        retry={retry}
         logContext="Contact"
         copy={copy}
       />,
@@ -114,7 +114,7 @@ describe("RouteErrorView", () => {
     rerender(
       <RouteErrorView
         error={nextError}
-        reset={reset}
+        retry={retry}
         logContext="Contact"
         copy={copy}
       />,

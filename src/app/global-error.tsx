@@ -6,7 +6,7 @@ import { isPublicRuntimeDevelopment } from "@/lib/public-runtime-env";
 
 interface GlobalErrorProps {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }
 
 const GLOBAL_ERROR_LOCALE = "en" as const;
@@ -30,7 +30,7 @@ async function reportGlobalError(error: Error): Promise<void> {
   logger.error("Global error caught", error);
 }
 
-export default function GlobalError({ error, reset }: GlobalErrorProps) {
+export default function GlobalError({ error, retry }: GlobalErrorProps) {
   const router = useRouter();
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
             <div className="space-y-4">
               <button
                 type="button"
-                onClick={reset}
+                onClick={retry}
                 className="inline-flex h-[38px] w-full shrink-0 items-center justify-center rounded-[6px] bg-[var(--button-primary-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--button-primary-fg)] transition-colors duration-150 hover:bg-[var(--button-primary-hover-bg)]"
                 data-testid="try-again-button"
               >
