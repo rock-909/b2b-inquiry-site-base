@@ -184,6 +184,44 @@ describe("createLeadRecord", () => {
     expect(JSON.stringify(logContext)).not.toContain("secret body");
   });
 
+  it("logs the Airtable error type so a missing column is distinguishable", async () => {
+    mockAirtableResponse(
+      {
+        error: {
+          type: "UNKNOWN_FIELD_NAME",
+          message: 'Unknown field name: "UTM Source"',
+        },
+      },
+      422,
+    );
+
+    await expect(createLeadRecord(createParams())).rejects.toThrow(
+      "Failed to create lead record",
+    );
+
+    expect(logger.error).toHaveBeenCalledWith("Failed to create lead record", {
+      errorType: "AIRTABLE_HTTP_ERROR",
+      statusCode: 422,
+      airtableErrorType: "UNKNOWN_FIELD_NAME",
+    });
+  });
+
+  it("does not log a non-enum Airtable error type", async () => {
+    mockAirtableResponse(
+      { error: { type: "buyer@example.com wrote this", message: "x" } },
+      422,
+    );
+
+    await expect(createLeadRecord(createParams())).rejects.toThrow(
+      "Failed to create lead record",
+    );
+
+    expect(logger.error).toHaveBeenCalledWith("Failed to create lead record", {
+      errorType: "AIRTABLE_HTTP_ERROR",
+      statusCode: 422,
+    });
+  });
+
   it("logs Error message for standard Error instances", async () => {
     vi.stubGlobal(
       "fetch",

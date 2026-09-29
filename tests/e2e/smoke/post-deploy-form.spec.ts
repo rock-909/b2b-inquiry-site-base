@@ -51,6 +51,13 @@ interface AirtableInquiryRecordFields {
   Requirements?: unknown;
   Message?: unknown;
   "Reference ID"?: unknown;
+  "UTM Source"?: unknown;
+  "UTM Medium"?: unknown;
+  "UTM Campaign"?: unknown;
+  "UTM Term"?: unknown;
+  "UTM Content"?: unknown;
+  "Landing Page"?: unknown;
+  "Captured At"?: unknown;
 }
 
 interface AirtableInquiryRecord {
@@ -69,8 +76,18 @@ interface InquirySuccessResponse {
 
 const AIRTABLE_BASE_URL = "https://api.airtable.com/v0";
 
+// Attribution is only written when the visit carries UTM params, so the canary
+// must arrive with all of them to prove every attribution column exists.
+const CANARY_UTM = {
+  utm_source: "canary-source",
+  utm_medium: "canary-medium",
+  utm_campaign: "canary-campaign",
+  utm_term: "canary-term",
+  utm_content: "canary-content",
+};
+
 async function waitForEditableInquiryForm(page: Page) {
-  await page.goto("/contact");
+  await page.goto(`/contact?${new URLSearchParams(CANARY_UTM)}`);
   await page.waitForLoadState("load");
 
   // Scroll the shared form into view before checking editability.
@@ -162,11 +179,24 @@ async function fetchAirtableRecord(
   return body.records?.[0];
 }
 
+function expectCanaryAttribution(fields?: AirtableInquiryRecordFields) {
+  expect(fields?.["UTM Source"]).toBe(CANARY_UTM.utm_source);
+  expect(fields?.["UTM Medium"]).toBe(CANARY_UTM.utm_medium);
+  expect(fields?.["UTM Campaign"]).toBe(CANARY_UTM.utm_campaign);
+  expect(fields?.["UTM Term"]).toBe(CANARY_UTM.utm_term);
+  expect(fields?.["UTM Content"]).toBe(CANARY_UTM.utm_content);
+  expect(fields?.["Landing Page"]).toBe("/contact");
+  expect(
+    Number.isNaN(Date.parse(String(fields?.["Captured At"]))),
+    "Airtable canary record did not include a valid Captured At",
+  ).toBe(false);
+}
+
 test.describe("Post-Deploy: Airtable Write Canary", () => {
   const CANARY_EMAIL = `smoke-test+${Date.now()}@example.com`;
   const CANARY_MESSAGE = "Automated post-deploy verification — please ignore";
 
-  test("form submission creates Airtable record with split name fields", async ({
+  test("form submission creates Airtable record with split name and attribution fields", async ({
     page,
     request,
   }) => {
@@ -218,6 +248,7 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
       expect(record?.fields?.Requirements).toBe(CANARY_MESSAGE);
       expect(record?.fields?.["Reference ID"]).toBe(referenceId);
       expect(record?.fields?.Company ?? "").toBe("");
+      expectCanaryAttribution(record?.fields);
     } finally {
       if (recordId) {
         const cleanupResponse = await request.delete(
