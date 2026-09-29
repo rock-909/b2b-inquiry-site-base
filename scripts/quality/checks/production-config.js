@@ -106,9 +106,7 @@ function validateWranglerProductionPublicUrls(target, rootDir) {
 // so a stale placeholder rejects every real buyer submission as invalid-hostname.
 function validateWranglerProductionTurnstileHosts(target, productionVars) {
   const configured = readEnv(productionVars, "TURNSTILE_ALLOWED_HOSTS");
-  if (!configured) return;
-
-  const hosts = configured
+  const hosts = (configured ?? "")
     .split(",")
     .map((host) => host.trim().toLowerCase())
     .filter(Boolean);
@@ -116,6 +114,7 @@ function validateWranglerProductionTurnstileHosts(target, productionVars) {
     readEnv(productionVars, "NEXT_PUBLIC_SITE_URL"),
   );
   const isReady =
+    hosts.length > 0 &&
     hosts.every((host) => isPublicBaseUrlReady(`https://${host}`)) &&
     (!siteHost || hosts.includes(siteHost));
 

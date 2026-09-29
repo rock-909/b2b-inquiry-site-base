@@ -1,9 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import os from "node:os";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 
 const GATE_PATH = path.resolve("scripts/quality/checks/production-config.js");
 const SITE_URL = "https://www.reference-site.com";
@@ -12,7 +10,7 @@ const FIXTURE_PREFIX = "turnstile-hosts-";
 const tempDirs: string[] = [];
 
 function turnstileHostErrors(hosts: string | undefined, siteUrl = SITE_URL) {
-  const cwd = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
+  const cwd = mkdtempSync(path.resolve(FIXTURE_PREFIX));
   tempDirs.push(cwd);
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp directory
   writeFileSync(
@@ -45,12 +43,16 @@ function turnstileHostErrors(hosts: string | undefined, siteUrl = SITE_URL) {
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
+    rmSync(tempDir, { recursive: true, force: true });
   }
 });
 
 describe("production gate for Wrangler TURNSTILE_ALLOWED_HOSTS", () => {
   it.each([
+    ["a missing value", undefined, SITE_URL],
+    ["an empty value", "", SITE_URL],
+    ["a whitespace-only value", " \t ", SITE_URL],
+    ["an empty host list", " , , ", SITE_URL],
     ["a placeholder host", "example.invalid", "https://example.invalid"],
     ["a list without the site hostname", "other-site.com", SITE_URL],
     [
@@ -67,7 +69,6 @@ describe("production gate for Wrangler TURNSTILE_ALLOWED_HOSTS", () => {
       "the site hostname among other real hosts",
       " WWW.reference-site.com , reference-site.com",
     ],
-    ["no value (runtime falls back to the site URL)", undefined],
   ])("accepts %s", (_name, hosts) => {
     expect(turnstileHostErrors(hosts)).toEqual([]);
   });
