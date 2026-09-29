@@ -165,15 +165,18 @@ describe("resend - sendInquiryEmail", () => {
     });
   });
 
-  it("carries a browser-valid buyer address from lead validation to the provider", async () => {
+  it.each([
+    "R&D#Team@example.xn--p1ai",
+    "R&D#Team@example.XN--P1AI",
+    "R&D#Team@example.Xn--p1ai",
+    "R&D#Team@example.xN--p1ai",
+  ])("carries browser-valid address %s to the provider", async (email) => {
     const service = new ResendServiceClass();
     mockResendSend.mockResolvedValue({
       data: { id: "edge-address-id" },
       error: null,
     });
-    const buyerEmail = canonicalBuyerEmailSchema.parse(
-      "R&D#Team@example.xn--p1ai",
-    );
+    const buyerEmail = canonicalBuyerEmailSchema.parse(email);
 
     await service.sendInquiryEmail({ ...validInquiryData, email: buyerEmail });
 

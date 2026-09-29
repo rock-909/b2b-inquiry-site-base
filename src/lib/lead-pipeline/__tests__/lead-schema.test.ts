@@ -53,6 +53,9 @@ describe("inquiryLeadSchema", () => {
 
   it.each([
     ["punycode TLD", "buyer@example.xn--p1ai"],
+    ["uppercase punycode TLD", "buyer@example.XN--P1AI"],
+    ["mixed-case punycode prefix Xn", "buyer@example.Xn--p1ai"],
+    ["mixed-case punycode prefix xN", "buyer@example.xN--p1ai"],
     ["ampersand in local part", "r&d@example.com"],
     ["hash in local part", "sales#eu@example.com"],
   ])("accepts a browser-valid address with %s", (_label, email) => {
