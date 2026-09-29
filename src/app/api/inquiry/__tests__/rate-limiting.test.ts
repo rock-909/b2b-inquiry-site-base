@@ -1,9 +1,10 @@
 /**
- * 限流 lane：配额判定、存储故障与私钥派生失败的降级行为。
+ * 限流 lane：配额判定，以及存储故障与私钥派生失败时询盘放行的行为。
  */
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
+import { logger } from "@/lib/logger";
 import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
 import { verifyTurnstileDetailed } from "@/lib/security/turnstile";
 import {
@@ -66,7 +67,7 @@ describe("/api/inquiry rate limiting", () => {
     expect(processValidatedInquiry).not.toHaveBeenCalled();
   });
 
-  it("should return 503 when the rate-limit store fails", async () => {
+  it("lets the inquiry through and logs a warning when the rate-limit store fails", async () => {
     routeMocks.checkInquiryRateLimit.mockResolvedValueOnce({
       allowed: false,
       remaining: 0,
@@ -78,25 +79,52 @@ describe("/api/inquiry rate limiting", () => {
     const response = await POST(
       createInquiryRequest(JSON.stringify(validInquiryData)),
     );
-    const data = await response.json();
 
-    expect(response.status).toBe(503);
-    expect(data.errorCode).toBe(API_ERROR_CODES.SERVICE_UNAVAILABLE);
-    expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
-    expect(processValidatedInquiry).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    // 限流存储故障不能挡住买家；Turnstile 仍是反滥用闸门，交付照常进行。
+    expect(verifyTurnstileDetailed).toHaveBeenCalledTimes(1);
+    expect(processValidatedInquiry).toHaveBeenCalledTimes(1);
+    expect(logger.warn).toHaveBeenCalledWith(
+      "Rate limit unavailable; allowing inquiry to proceed",
+      expect.objectContaining({ reason: "storage_failure" }),
+    );
   });
 
-  it("should return 503 when the private rate-limit key cannot be created", async () => {
+  it("lets the inquiry through and logs an error when the private rate-limit key cannot be created", async () => {
     routeMocks.getIPKey.mockRejectedValueOnce(new Error("pepper missing"));
 
     const response = await POST(
       createInquiryRequest(JSON.stringify(validInquiryData)),
     );
-    const data = await response.json();
 
-    expect(response.status).toBe(503);
-    expect(data.errorCode).toBe(API_ERROR_CODES.SERVICE_UNAVAILABLE);
+    expect(response.status).toBe(200);
     expect(checkInquiryRateLimit).not.toHaveBeenCalled();
+    expect(verifyTurnstileDetailed).toHaveBeenCalledTimes(1);
+    expect(processValidatedInquiry).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith(
+      "Rate limit unavailable; allowing inquiry to proceed",
+      expect.objectContaining({ reason: "key_failure" }),
+    );
+  });
+
+  it("still rejects bots at Turnstile when the rate-limit store fails", async () => {
+    routeMocks.checkInquiryRateLimit.mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      resetTime: Date.now() + 60000,
+      retryAfter: 60,
+      deniedReason: "storage_failure",
+    });
+    routeMocks.verifyTurnstileDetailed.mockResolvedValueOnce({
+      success: false,
+      errorCodes: ["invalid-input-response"],
+    });
+
+    const response = await POST(
+      createInquiryRequest(JSON.stringify(validInquiryData)),
+    );
+
+    expect(response.status).toBe(400);
     expect(processValidatedInquiry).not.toHaveBeenCalled();
   });
 
