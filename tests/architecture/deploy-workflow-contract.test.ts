@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+import { data, Evaluator, Lexer, Parser } from "@actions/expressions";
 import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
 
@@ -151,14 +152,25 @@ describe("Cloudflare deploy workflow contract", () => {
     }
   });
 
-  it("gates the production deploy job behind the production environment only", () => {
-    const environment =
-      loadDeployWorkflow().jobs?.["build-and-deploy"]?.environment;
+  it("selects production only for production dispatch input", () => {
+    assertEnvironmentSelection(
+      loadDeployWorkflow().jobs?.["build-and-deploy"]?.environment,
+    );
+  });
 
-    // GitHub Environment 把 production 部署限制在 main 并承载生产 secrets；
-    // 表达式仅在 production 输入时求值为 production，preview 不进入该环境。
-    expect(environment).toBe(
-      "${{ inputs.environment == 'production' && 'production' || '' }}",
+  it("accepts equivalent environment-selection expressions", () => {
+    assertEnvironmentSelection(
+      "${{ (inputs.environment == 'production') && 'production' || '' }}",
+    );
+  });
+
+  it.each([
+    "${{ '' }}",
+    "${{ 'production' }}",
+    "${{ inputs.environment == 'preview' && 'production' || '' }}",
+  ])("rejects incorrect environment selection: %s", (expression) => {
+    expect(() => assertEnvironmentSelection(expression)).toThrow(
+      /environment for (production|preview)/u,
     );
   });
 
@@ -189,4 +201,33 @@ function findStepIndex(
   commandFragment: string,
 ) {
   return steps.findIndex((step) => step.run?.includes(commandFragment));
+}
+
+function assertEnvironmentSelection(expression: string | undefined) {
+  if (typeof expression !== "string") {
+    throw new Error("Deploy job must declare an environment selection");
+  }
+  const source = /^\$\{\{([\s\S]*)\}\}$/u.exec(expression.trim())?.[1];
+  if (source === undefined) {
+    throw new Error("Expected an environment-selection expression");
+  }
+  const { tokens } = new Lexer(source).lex();
+  const parsed = new Parser(tokens, ["inputs"], []).parse();
+
+  for (const [input, expected] of [
+    ["production", "production"],
+    ["preview", ""],
+  ] as const) {
+    const context = new data.Dictionary({
+      key: "inputs",
+      value: new data.Dictionary({
+        key: "environment",
+        value: new data.StringData(input),
+      }),
+    });
+    const selected = new Evaluator(parsed, context).evaluate();
+    expect(selected, `environment for ${input}`).toEqual(
+      new data.StringData(expected),
+    );
+  }
 }
