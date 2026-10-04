@@ -157,6 +157,24 @@ describe("createLeadRecord", () => {
     });
   });
 
+  it.each(["=SUM(1)", "+SUM1", "-2+3", "@SUM(1)"])(
+    "neutralizes formula prefix in the last name %j",
+    async (lastName) => {
+      mockAirtableResponse({ records: [{ id: "rec-last-name" }] });
+
+      await createLeadRecord(
+        createParams({ ...validInquiryLeadData, lastName }),
+      );
+
+      const request = vi.mocked(fetch).mock.calls[0]?.[1];
+      expect(JSON.parse(String(request?.body))).toEqual({
+        records: [
+          { fields: expect.objectContaining({ "Last Name": `'${lastName}` }) },
+        ],
+      });
+    },
+  );
+
   it("logs only status metadata for non-success responses", async () => {
     mockAirtableResponse(
       { error: { type: "INVALID_VALUE_FOR_COLUMN", message: "secret body" } },
