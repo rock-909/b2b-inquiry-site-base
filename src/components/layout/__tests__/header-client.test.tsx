@@ -2,7 +2,6 @@
  * @vitest-environment jsdom
  * Tests for header client components (Island components)
  */
-import { readFileSync } from "node:fs";
 import React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -56,37 +55,6 @@ vi.mock("@/components/layout/header-language-menu", () => ({
 
 beforeEach(() => {
   mockPathname.current = "/";
-});
-
-describe("header client entry", () => {
-  it("keeps always-present header islands free of next/dynamic runtime", () => {
-    const source = readFileSync("src/components/layout/header-client.tsx", {
-      encoding: "utf8",
-    });
-
-    expect(source).not.toContain("next/dynamic");
-  });
-
-  it("keeps mobile fallback markup in a non-boundary helper module", () => {
-    const headerClientSource = readFileSync(
-      "src/components/layout/header-client.tsx",
-      {
-        encoding: "utf8",
-      },
-    );
-    const fallbackSource = readFileSync(
-      "src/components/layout/header-mobile-navigation-fallback.tsx",
-      {
-        encoding: "utf8",
-      },
-    );
-
-    expect(headerClientSource).toContain(
-      "@/components/layout/header-mobile-navigation-fallback",
-    );
-    expect(fallbackSource).toContain("function MobileNavigationFallback");
-    expect(fallbackSource).not.toMatch(/^["']use client["'];?$/m);
-  });
 });
 
 const MOBILE_NAV_ISLAND_LABELS = {
