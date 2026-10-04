@@ -112,6 +112,15 @@ describe("exact wire contract for inquiry field errors", () => {
         input: { ...validBase, email: "=cmd(a1)@example.com" },
         expected: ["errors.email.invalid"],
       },
+      // 能通过邮箱格式检查的公式前缀地址，只有 schema 的公式前缀 refine 会拒绝它们。
+      {
+        input: { ...validBase, email: "+SUM1@example.com" },
+        expected: ["errors.email.invalid"],
+      },
+      {
+        input: { ...validBase, email: "-2+3@example.com" },
+        expected: ["errors.email.invalid"],
+      },
       {
         input: { ...validBase, message: 123 },
         expected: ["errors.message.invalid"],

@@ -1,5 +1,6 @@
 /**
- * Turnstile lane：token 绑定 action、验证失败与验证服务不可用的降级。
+ * Turnstile lane：路由把浏览器 token 交给验证、验证失败与验证服务不可用的降级。
+ * action / hostname / 绕过 / 缺密钥等服务端防线由 src/lib/security/__tests__/turnstile-guards.test.ts 覆盖。
  */
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
@@ -42,13 +43,14 @@ describe("/api/inquiry turnstile gate", () => {
     vi.useRealTimers();
   });
 
-  it("binds Turnstile verification to the product_inquiry action", async () => {
+  it("verifies the browser-submitted Turnstile token exactly once", async () => {
     const request = createInquiryRequest(JSON.stringify(validInquiryData));
 
     await POST(request);
 
+    expect(verifyTurnstileDetailed).toHaveBeenCalledTimes(1);
     expect(verifyTurnstileDetailed).toHaveBeenCalledWith(
-      "valid-token",
+      validInquiryData.turnstileToken,
       expect.any(String),
     );
   });
