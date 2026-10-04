@@ -200,6 +200,16 @@ describe.each(GATE_LANES)("$name gate failures", (lane) => {
       "no-strict-origin-when-cross-origin",
       "strict-origin-when-cross-origin",
     ],
+    [
+      "referrer-policy",
+      "unsafe-url, STRICT-ORIGIN-WHEN-CROSS-ORIGIN",
+      "strict-origin-when-cross-origin",
+    ],
+    [
+      "referrer-policy",
+      "strict-origin-when-cross-origin, UNSAFE-URL",
+      "strict-origin-when-cross-origin",
+    ],
     ["referrer-policy", "not-a-policy", "strict-origin-when-cross-origin"],
   ])(
     "fails when %s is %j (invalid or overridden)",

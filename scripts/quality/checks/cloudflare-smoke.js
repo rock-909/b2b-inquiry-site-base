@@ -317,8 +317,8 @@ function pushExpectedStatus(response, expectedStatus, failures) {
   );
 }
 
-// Referrer Policy 规范：值是逗号分隔的列表，浏览器取最后一个可识别的策略，
-// 不可识别的 token 被忽略。
+// Referrer-Policy 含 ASCII 大写字母时拒绝；否则取逗号列表中最后一个
+// 可识别的小写策略，忽略未知 token。
 const REFERRER_POLICY_TOKENS = new Set([
   "no-referrer",
   "no-referrer-when-downgrade",
@@ -331,9 +331,11 @@ const REFERRER_POLICY_TOKENS = new Set([
 ]);
 
 function getEffectiveReferrerPolicy(value) {
+  if (/[A-Z]/u.test(value ?? "")) return undefined;
+
   const recognized = (value ?? "")
     .split(",")
-    .map((token) => token.trim().toLowerCase())
+    .map((token) => token.trim())
     .filter((token) => REFERRER_POLICY_TOKENS.has(token));
   return recognized.at(-1);
 }
