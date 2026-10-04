@@ -64,4 +64,33 @@ describe("safeParseJson", () => {
       statusCode: 413,
     });
   });
+
+  it("returns PAYLOAD_TOO_LARGE for a chunked body without content-length that exceeds maxBytes", async () => {
+    // 分块总长 20 字节且是合法 JSON，每块都不超限：只有累计计数才能拦住
+    const encoder = new TextEncoder();
+    const chunks = ['{"a":"', "xxxx", "xxxx", "xxxx", '"}'];
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) {
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+      },
+    });
+    const request = new NextRequest("http://localhost/api/test", {
+      method: "POST",
+      body,
+      duplex: "half",
+    } as RequestInit);
+
+    expect(request.headers.get("content-length")).toBeNull();
+
+    const result = await safeParseJson(request, { maxBytes: 10 });
+
+    expect(result).toEqual({
+      ok: false,
+      errorCode: API_ERROR_CODES.PAYLOAD_TOO_LARGE,
+      statusCode: 413,
+    });
+  });
 });
