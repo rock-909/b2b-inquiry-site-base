@@ -78,8 +78,8 @@ Buyer-controlled free-text fields sent to Airtable or another spreadsheet-like
 sink must use `sanitizeAirtableTextField()` before record creation. Airtable's
 typed Email field is the narrow exception: the lead schema rejects leading
 `+` and `-` (`=` and `@` are already rejected by the email format check), and
-the valid address is stored unchanged so ordinary plus-addressing keeps
-working.
+the valid address is lowercased and trimmed, but not spreadsheet-escaped, so
+ordinary plus-addressing keeps working.
 
 When changing contact, inquiry, or Airtable field mapping behavior,
 update focused lead-family tests for the changed contract. Do not rely on email

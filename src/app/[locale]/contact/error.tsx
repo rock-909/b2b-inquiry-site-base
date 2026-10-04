@@ -5,16 +5,16 @@ import { RouteErrorView } from "@/components/errors/route-error-view";
 
 interface RouteErrorProps {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }
 
-export default function ContactRouteError({ error, reset }: RouteErrorProps) {
+export default function ContactRouteError({ error, retry }: RouteErrorProps) {
   const t = useTranslations("errors.contact");
 
   return (
     <RouteErrorView
       error={error}
-      reset={reset}
+      retry={retry}
       logContext="Contact"
       copy={{
         title: t("title"),

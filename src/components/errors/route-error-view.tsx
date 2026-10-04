@@ -15,14 +15,14 @@ export interface RouteErrorCopy {
 
 export interface RouteErrorViewProps {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
   logContext: string;
   copy: RouteErrorCopy;
 }
 
 export function RouteErrorView({
   error,
-  reset,
+  retry,
   logContext,
   copy,
 }: RouteErrorViewProps) {
@@ -36,7 +36,7 @@ export function RouteErrorView({
         <h2 className="text-2xl font-semibold">{copy.title}</h2>
         <p className="mt-3 text-sm text-muted-foreground">{copy.description}</p>
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button type="button" onClick={reset}>
+          <Button type="button" onClick={retry}>
             {copy.tryAgain}
           </Button>
           <Link href="/" className={buttonVariants({ variant: "outline" })}>

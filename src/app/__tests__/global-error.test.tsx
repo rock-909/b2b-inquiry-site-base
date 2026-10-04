@@ -21,11 +21,11 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 describe("GlobalError", () => {
-  const mockReset = vi.fn();
+  const mockRetry = vi.fn();
   const mockError = new Error("Test error message");
 
   function renderGlobalError(error = mockError) {
-    return render(<GlobalError error={error} reset={mockReset} />, {
+    return render(<GlobalError error={error} retry={mockRetry} />, {
       container: document,
     });
   }
@@ -103,7 +103,7 @@ describe("GlobalError", () => {
       });
 
       const newError = new Error("New error message");
-      rerender(<GlobalError error={newError} reset={mockReset} />);
+      rerender(<GlobalError error={newError} retry={mockRetry} />);
 
       await waitFor(() => {
         expect(mockLoggerError).toHaveBeenCalledTimes(2);
@@ -116,12 +116,12 @@ describe("GlobalError", () => {
   });
 
   describe("button interactions", () => {
-    it("should call reset when Try again button is clicked", () => {
+    it("should call retry when Try again button is clicked", () => {
       renderGlobalError();
 
       fireEvent.click(screen.getByTestId("try-again-button"));
 
-      expect(mockReset).toHaveBeenCalledTimes(1);
+      expect(mockRetry).toHaveBeenCalledTimes(1);
     });
 
     it("should navigate to the homepage", () => {

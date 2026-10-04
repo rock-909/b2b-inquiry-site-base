@@ -56,6 +56,8 @@ interface InquiryDraft {
   email: string;
   fullName: string;
   message: string;
+  /** 保存时页面的产品预填；用来判断 message 是否被买家改写过。 */
+  prefill: string;
 }
 
 function getDraftString(value: unknown, maxLength: number): string {
@@ -81,6 +83,7 @@ function readInquiryDraft(): InquiryDraft | null {
       fullName: getDraftString(draftRecord.fullName, MAX_LEAD_NAME_LENGTH),
       email: getDraftString(draftRecord.email, MAX_LEAD_EMAIL_LENGTH),
       message: getDraftString(draftRecord.message, MAX_LEAD_MESSAGE_LENGTH),
+      prefill: getDraftString(draftRecord.prefill, MAX_LEAD_MESSAGE_LENGTH),
     };
 
     return draft.fullName || draft.email || draft.message ? draft : null;
@@ -91,7 +94,7 @@ function readInquiryDraft(): InquiryDraft | null {
 
 function getVisibleFormValue(
   form: HTMLFormElement,
-  name: keyof InquiryDraft,
+  name: "fullName" | "email" | "message",
   maxLength: number,
 ): string {
   const control = form.elements.namedItem(name);
@@ -101,11 +104,20 @@ function getVisibleFormValue(
     : "";
 }
 
+/** textarea 的 defaultValue 就是当前页面的产品预填（无预填时为空）。 */
+function getMessagePrefill(form: HTMLFormElement): string {
+  const control = form.elements.namedItem("message");
+  return control instanceof HTMLTextAreaElement
+    ? control.defaultValue.slice(0, MAX_LEAD_MESSAGE_LENGTH)
+    : "";
+}
+
 function saveInquiryDraft(form: HTMLFormElement) {
   const draft = {
     fullName: getVisibleFormValue(form, "fullName", MAX_LEAD_NAME_LENGTH),
     email: getVisibleFormValue(form, "email", MAX_LEAD_EMAIL_LENGTH),
     message: getVisibleFormValue(form, "message", MAX_LEAD_MESSAGE_LENGTH),
+    prefill: getMessagePrefill(form),
   };
 
   try {
@@ -127,14 +139,21 @@ function restoreInquiryDraft(form: HTMLFormElement | null) {
   const draft = readInquiryDraft();
   if (!form || !draft) return;
 
-  for (const name of ["fullName", "email", "message"] as const) {
+  // 留言与保存时的预填相同，说明买家没改过：保留当前页面的预填，
+  // 否则在 A 产品页留下的草稿会把 B 产品页的留言覆盖成对 A 感兴趣。
+  for (const name of ["fullName", "email"] as const) {
     const control = form.elements.namedItem(name);
-    if (
-      control instanceof HTMLInputElement ||
-      control instanceof HTMLTextAreaElement
-    ) {
+    if (control instanceof HTMLInputElement) {
       control.value = draft[name];
     }
+  }
+
+  const message = form.elements.namedItem("message");
+  if (
+    draft.message !== draft.prefill &&
+    message instanceof HTMLTextAreaElement
+  ) {
+    message.value = draft.message;
   }
 }
 
@@ -458,6 +477,7 @@ function InquiryFormLive({
           copy={copy}
           {...(initialMessage ? { initialMessage } : {})}
           messageMaxLength={getInquiryMessageMaxLength()}
+          readOnly={displayState.status === "submitting"}
           {...(fieldDetails ? { fieldDetails } : {})}
         />
 

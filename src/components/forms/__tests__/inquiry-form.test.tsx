@@ -143,6 +143,45 @@ describe("InquiryForm contract", () => {
     );
   });
 
+  it("keeps the current product prefill when the draft message was never edited", () => {
+    const productA = renderInquiryForm({
+      initialMessage: "I am interested in Product A",
+    });
+    const controlsA = getFormControls(productA.container);
+    fireEvent.input(controlsA.fullName, { target: { value: "Ada Buyer" } });
+    fireEvent.input(controlsA.email, {
+      target: { value: "ada@example.com" },
+    });
+    productA.unmount();
+
+    const productB = renderInquiryForm({
+      initialMessage: "I am interested in Product B",
+    });
+    const restored = getFormControls(productB.container);
+
+    expect(restored.message).toHaveValue("I am interested in Product B");
+    expect(restored.fullName).toHaveValue("Ada Buyer");
+    expect(restored.email).toHaveValue("ada@example.com");
+  });
+
+  it("restores a message the buyer edited even on another product page", () => {
+    const productA = renderInquiryForm({
+      initialMessage: "I am interested in Product A",
+    });
+    fireEvent.input(getFormControls(productA.container).message, {
+      target: { value: "Need 500 units delivered to Hamburg" },
+    });
+    productA.unmount();
+
+    const productB = renderInquiryForm({
+      initialMessage: "I am interested in Product B",
+    });
+
+    expect(getFormControls(productB.container).message).toHaveValue(
+      "Need 500 units delivered to Hamburg",
+    );
+  });
+
   it("ignores invalid inquiry draft data", () => {
     window.sessionStorage.setItem("inquiry-draft", "not-json");
 
