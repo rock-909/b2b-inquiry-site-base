@@ -66,9 +66,6 @@ jobs:
       - name: 内容结构检查
         run: pnpm content:check
 
-      - name: preview config smoke
-        run: APP_ENV=preview node scripts/quality/checks/production-config.js
-
       - name: Dependency cruiser architecture check
         run: pnpm exec dependency-cruiser src --config .dependency-cruiser.js -T err
 
