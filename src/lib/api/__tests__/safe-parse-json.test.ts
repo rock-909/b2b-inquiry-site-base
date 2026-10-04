@@ -81,7 +81,7 @@ describe("safeParseJson", () => {
       method: "POST",
       body,
       duplex: "half",
-    } as RequestInit);
+    });
 
     expect(request.headers.get("content-length")).toBeNull();
 
