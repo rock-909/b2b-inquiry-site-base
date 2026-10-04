@@ -74,6 +74,23 @@ function buildLeadFields(data: InquiryLeadData, now: string): AirtableFields {
 interface AirtableLikeError {
   errorType: string;
   statusCode: number;
+  airtableErrorType?: string;
+}
+
+// Airtable error types are upper-case enums such as UNKNOWN_FIELD_NAME; the
+// message can echo submitted data, so only the enum is ever read from the body.
+async function readAirtableErrorType(
+  response: Response,
+): Promise<string | undefined> {
+  try {
+    const body = (await response.json()) as { error?: { type?: unknown } };
+    const type = body.error?.type;
+    return typeof type === "string" && /^[A-Z_]{1,64}$/.test(type)
+      ? type
+      : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function isAirtableLikeError(error: unknown): error is AirtableLikeError {
@@ -92,7 +109,13 @@ function buildCreateLeadRecordLogContext(
   error: unknown,
 ): Record<string, string | number> {
   if (isAirtableLikeError(error)) {
-    return { errorType: error.errorType, statusCode: error.statusCode };
+    return {
+      errorType: error.errorType,
+      statusCode: error.statusCode,
+      ...(error.airtableErrorType && {
+        airtableErrorType: error.airtableErrorType,
+      }),
+    };
   }
 
   if (error instanceof Error) {
@@ -136,6 +159,7 @@ export async function createLeadRecord(params: {
       throw Object.assign(new Error("Airtable request failed"), {
         errorType: "AIRTABLE_HTTP_ERROR",
         statusCode: response.status,
+        airtableErrorType: await readAirtableErrorType(response),
       });
     }
 
