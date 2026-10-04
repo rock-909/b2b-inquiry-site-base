@@ -25,25 +25,25 @@ vi.mock("next-intl", () => ({
 }));
 
 describe("ContactRouteError", () => {
-  const reset = vi.fn();
+  const retry = vi.fn();
   const error = new Error("Contact form submission failed");
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("passes the error and reset handler straight through", () => {
-    render(<ContactRouteError error={error} reset={reset} />);
+  it("passes the error and retry handler straight through", () => {
+    render(<ContactRouteError error={error} retry={retry} />);
 
     const [props] = mockRouteErrorView.mock.calls[0] as unknown as [
-      { error: Error; reset: () => void },
+      { error: Error; retry: () => void },
     ];
     expect(props.error).toBe(error);
-    expect(props.reset).toBe(reset);
+    expect(props.retry).toBe(retry);
   });
 
   it("reads its copy from the contact error namespace", () => {
-    render(<ContactRouteError error={error} reset={reset} />);
+    render(<ContactRouteError error={error} retry={retry} />);
 
     const [props] = mockRouteErrorView.mock.calls[0] as unknown as [
       { copy: Record<string, string> },
@@ -57,7 +57,7 @@ describe("ContactRouteError", () => {
   });
 
   it("logs under the Contact context", () => {
-    render(<ContactRouteError error={error} reset={reset} />);
+    render(<ContactRouteError error={error} retry={retry} />);
 
     const [props] = mockRouteErrorView.mock.calls[0] as unknown as [
       { logContext: string },
