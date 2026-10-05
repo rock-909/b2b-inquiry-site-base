@@ -72,7 +72,7 @@ function buildCanonicalForPath(
 
 export { buildCanonicalForPath };
 
-function buildLanguagesForPath(path: string): Record<string, string> {
+export function buildLanguagesForPath(path: string): Record<string, string> {
   const normalizedPath = normalizePath(path);
 
   const entries: Array<[string, string]> = routing.locales.map((locale) => [

@@ -22,7 +22,8 @@ export function proxy(request: NextRequest) {
 
   if (!isKnownStaticPath && (!productId || !getOfferingById(productId))) {
     const notFoundUrl = request.nextUrl.clone();
-    notFoundUrl.pathname = `/${routing.defaultLocale}/__not-found-placeholder`;
+    // 保留已识别的语言前缀，避免非默认语言的 404 被改写成默认语言页面
+    notFoundUrl.pathname = `/${localePrefix ?? routing.defaultLocale}/__not-found-placeholder`;
     return NextResponse.rewrite(notFoundUrl, { status: 404 });
   }
 
