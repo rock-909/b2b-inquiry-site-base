@@ -6,7 +6,7 @@ vi.mock("@/lib/content/static-pages", () => ({
   getStaticPage: mockGetStaticPage,
 }));
 
-import { extractHeadingsFromContent, loadLegalPage } from "../legal-page";
+import { loadLegalPage } from "../legal-page";
 
 const SENTINEL_BLOCKS = [
   { kind: "heading", level: "h2", displayText: "Sentinel Scope", id: "scope" },
@@ -112,11 +112,21 @@ describe("single-parse contract", () => {
   });
 });
 
-describe("extractHeadingsFromContent", () => {
+describe("loadLegalPage headings", () => {
+  function headingsFor(content: string) {
+    mockGetStaticPage.mockReturnValueOnce({
+      metadata: { title: "Privacy", slug: "privacy", publishedAt: "2024-01-01" },
+      content,
+      slug: "privacy",
+      filePath: "/src/content/pages/en/privacy.ts",
+    });
+    return loadLegalPage("privacy", "en").headings;
+  }
+
   it("extracts H2 and H3 headings with slugified IDs", () => {
     const content =
       "## Introduction\n\nText.\n\n## Information We Collect\n\n### Personal Data\n\nMore text.";
-    const headings = extractHeadingsFromContent(content);
+    const headings = headingsFor(content);
 
     expect(headings).toEqual([
       { level: 2, text: "Introduction", id: "introduction" },
@@ -132,7 +142,7 @@ describe("extractHeadingsFromContent", () => {
   it("uses explicit anchor ID when present via {#id} syntax", () => {
     const content =
       "## Introduction {#intro}\n\n## How We Use Your Data {#data-use}\n\n### Cookies {#cookies-policy}";
-    const headings = extractHeadingsFromContent(content);
+    const headings = headingsFor(content);
 
     expect(headings).toEqual([
       { level: 2, text: "Introduction", id: "intro" },
@@ -142,10 +152,10 @@ describe("extractHeadingsFromContent", () => {
   });
 
   it("explicit ID remains stable when heading text changes", () => {
-    const v1 = extractHeadingsFromContent(
+    const v1 = headingsFor(
       "## Information Collection {#info-collect}",
     );
-    const v2 = extractHeadingsFromContent(
+    const v2 = headingsFor(
       "## What Information We Collect {#info-collect}",
     );
 
@@ -157,6 +167,6 @@ describe("extractHeadingsFromContent", () => {
   });
 
   it("returns empty array for content with no headings", () => {
-    expect(extractHeadingsFromContent("Just a paragraph.")).toEqual([]);
+    expect(headingsFor("Just a paragraph.")).toEqual([]);
   });
 });

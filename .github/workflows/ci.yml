@@ -72,6 +72,9 @@ jobs:
       - name: Dead-export / dead-file scan (knip)
         run: pnpm knip:check
 
+      - name: Production-only dead-file scan (knip, tests are not entries)
+        run: pnpm knip:check:production
+
   tests:
     name: L3 单元与集成测试
     runs-on: ubuntu-latest

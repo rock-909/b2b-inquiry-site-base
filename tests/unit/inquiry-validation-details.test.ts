@@ -7,7 +7,7 @@ import {
 } from "@/lib/api/inquiry-validation-details";
 import {
   INQUIRY_FIELD_ERROR_DETAILS,
-  INQUIRY_FIELD_ERROR_KEYS,
+  INQUIRY_FIELD_WIRE_DETAILS,
   INQUIRY_FIELD_WIRE_DETAIL_LEAVES,
 } from "@/constants/inquiry-field-error-protocol";
 import {
@@ -318,7 +318,7 @@ describe("inquiry validation detail mapping", () => {
   });
 
   it("does not expose phone validation detail keys", () => {
-    expect(INQUIRY_FIELD_ERROR_KEYS).not.toHaveProperty("phone");
+    expect(INQUIRY_FIELD_WIRE_DETAILS).not.toHaveProperty("phone");
     expect(INQUIRY_VALIDATION_DETAIL_KEYS).not.toContain(
       "errors.phone.invalid",
     );

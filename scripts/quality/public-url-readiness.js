@@ -99,32 +99,6 @@ function isPublicBaseUrlReady(baseUrl) {
   return true;
 }
 
-/** Shared fixture list for contract tests (keep TS/JS gates aligned). */
-const PUBLIC_BASE_URL_FIXTURES = {
-  rejected: [
-    "https://reference-site-production.example.invalid",
-    "https://example.com",
-    "https://sub.example.org",
-    "http://localhost:3000",
-    "http://127.0.0.1:8787",
-    "https://reference-site-preview.faints-pudgier-9r.workers.dev",
-    "mailto:sales@reference-site.test",
-    "ftp://reference-site.test",
-    "http://reference-site.com",
-    // Built without a literal script: URL so eslint no-script-url stays quiet.
-    ["javascript", ":alert(1)"].join(""),
-    "https://reference-site.com/path",
-    "https://user:pass@reference-site.com",
-    "https://reference-site.com?x=1",
-    "https://reference-site.com#hash",
-    "https://reference-site.com:8443",
-    "https://b2b-inquiry-site-base.test",
-    "https://foo.invalid",
-  ],
-  accepted: ["https://reference-site.com", "https://www.reference-site.com"],
-};
-
 module.exports = {
   isPublicBaseUrlReady,
-  PUBLIC_BASE_URL_FIXTURES,
 };

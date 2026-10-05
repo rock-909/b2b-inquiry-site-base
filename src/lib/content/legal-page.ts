@@ -17,20 +17,6 @@ function isHeading(
   return block.kind === "heading";
 }
 
-/**
- * 目录与正文共用同一份解析结果：heading 数据直接来自渲染所用的块序列，
- * 不再对同一内容做第二遍独立扫描。
- */
-export function extractHeadingsFromContent(content: string): HeadingItem[] {
-  return parseStaticMarkdownBlocks(content)
-    .filter(isHeading)
-    .map((block) => ({
-      level: block.level === "h2" ? 2 : 3,
-      text: block.displayText,
-      id: block.id,
-    }));
-}
-
 interface LegalPageData {
   metadata: LegalPageMetadata;
   content: string;
