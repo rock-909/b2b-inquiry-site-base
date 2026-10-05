@@ -35,7 +35,8 @@ vi.mock("@/i18n/routing", () => ({
   ),
 }));
 
-vi.mock("@/lib/seo-metadata", () => ({
+vi.mock("@/lib/seo-metadata", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/seo-metadata")>()),
   generateMetadataForPath: mockGenerateMetadataForPath,
 }));
 
