@@ -52,6 +52,18 @@ const CF_PREVIEW_PROOF_OUTPUT_PATH = path.join(
   "deploy",
   "cloudflare-preview-proof.json",
 );
+const CF_PREVIEW_BUILD_COMMAND = ["website:build:cf"];
+const CF_PREVIEW_BUILD_LOG_PATH = path.join(
+  ROOT,
+  "reports",
+  "deploy",
+  "cloudflare-preview-build.log",
+);
+// 与 release-verify 的单步 15 分钟上限一致：OpenNext 构建与上传都以分钟计。
+const CF_PREVIEW_BUILD_DEPLOY_TIMEOUT_MS = 15 * 60 * 1000;
+const CF_PREVIEW_SMOKE_TIMEOUT_MS = 5 * 60 * 1000;
+// 完整的 Next/OpenNext 构建日志远超 spawnSync 默认的 1 MiB 缓冲。
+const CHILD_COMMAND_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
 const CF_PREVIEW_DEPLOY_COMMAND = [
   "exec",
   "opennextjs-cloudflare",
@@ -655,13 +667,20 @@ async function runDeployedSmoke(args = []) {
 // Preview deploy proof adapter：编排部署与已部署冒烟，产出结构化 proof。
 // ---------------------------------------------------------------------------
 
-function runChildCommand(command, args) {
+function runChildCommand(command, args, timeoutMs) {
   return spawnSync(command, args, {
     cwd: ROOT,
     stdio: "pipe",
     encoding: "utf8",
     env: process.env,
+    timeout: timeoutMs,
+    killSignal: "SIGKILL",
+    maxBuffer: CHILD_COMMAND_MAX_BUFFER_BYTES,
   });
+}
+
+function childTimedOut(result) {
+  return result.error?.code === "ETIMEDOUT";
 }
 
 function extractCloudflarePreviewDeploymentUrls(output) {
@@ -707,53 +726,116 @@ function printCloudflarePreviewProofOutput(label, result) {
 }
 
 async function runCloudflarePreviewDeployedProof() {
-  const deployResult = runChildCommand("pnpm", CF_PREVIEW_DEPLOY_COMMAND);
-  const deployOutput = `${deployResult.stdout ?? ""}\n${deployResult.stderr ?? ""}`;
-  printCloudflarePreviewProofOutput("deploy", deployResult);
+  const buildCommand = `pnpm ${CF_PREVIEW_BUILD_COMMAND.join(" ")}`;
   const deployCommand = `pnpm ${CF_PREVIEW_DEPLOY_COMMAND.join(" ")}`;
+  let commitSha = null;
 
-  if (/MISSING_MESSAGE/iu.test(deployOutput)) {
-    const result = {
-      status: "fail",
-      stage: "deploy-log",
+  const finish = (result, exitCode) => {
+    const proof = {
+      ...result,
       generatedAt: new Date().toISOString(),
-      command: deployCommand,
-      reason: "next-intl MISSING_MESSAGE detected during preview proof",
+      commitSha,
     };
-    writeCloudflarePreviewProofResult(result);
-    console.log(JSON.stringify(result, null, 2));
-    return 1;
+    writeCloudflarePreviewProofResult(proof);
+    console.log(JSON.stringify(proof, null, 2));
+    return exitCode;
+  };
+
+  const revParse = runChildCommand(
+    "git",
+    ["rev-parse", "HEAD"],
+    CF_PREVIEW_SMOKE_TIMEOUT_MS,
+  );
+  commitSha = revParse.status === 0 ? revParse.stdout.trim() : null;
+  if (!commitSha) {
+    return finish(
+      {
+        status: "blocked",
+        stage: "commit-sha",
+        command: "git rev-parse HEAD",
+        reason: "cannot record the commit this proof covers",
+      },
+      2,
+    );
   }
 
+  // `opennextjs-cloudflare deploy` 只上传磁盘上现有的 .open-next，所以每次证明
+  // 都要先就地构建，并在这份构建日志上检查 next-intl 缺失消息。
+  const buildResult = runChildCommand(
+    "pnpm",
+    CF_PREVIEW_BUILD_COMMAND,
+    CF_PREVIEW_BUILD_DEPLOY_TIMEOUT_MS,
+  );
+  const buildOutput = `${buildResult.stdout ?? ""}\n${buildResult.stderr ?? ""}`;
+  printCloudflarePreviewProofOutput("build", buildResult);
+  fs.mkdirSync(path.dirname(CF_PREVIEW_BUILD_LOG_PATH), { recursive: true });
+  fs.writeFileSync(CF_PREVIEW_BUILD_LOG_PATH, buildOutput);
+
+  if (/MISSING_MESSAGE/iu.test(buildOutput)) {
+    return finish(
+      {
+        status: "fail",
+        stage: "build-log",
+        command: buildCommand,
+        buildLog: path.relative(ROOT, CF_PREVIEW_BUILD_LOG_PATH),
+        reason: "next-intl MISSING_MESSAGE detected during preview proof",
+      },
+      1,
+    );
+  }
+
+  if (buildResult.status !== 0) {
+    return finish(
+      {
+        status: "fail",
+        stage: "build",
+        command: buildCommand,
+        buildLog: path.relative(ROOT, CF_PREVIEW_BUILD_LOG_PATH),
+        reason: childTimedOut(buildResult)
+          ? "preview build timed out"
+          : "preview build failed",
+      },
+      1,
+    );
+  }
+
+  const deployResult = runChildCommand(
+    "pnpm",
+    CF_PREVIEW_DEPLOY_COMMAND,
+    CF_PREVIEW_BUILD_DEPLOY_TIMEOUT_MS,
+  );
+  const deployOutput = `${deployResult.stdout ?? ""}\n${deployResult.stderr ?? ""}`;
+  printCloudflarePreviewProofOutput("deploy", deployResult);
+
   if (deployResult.status !== 0) {
-    const result = {
-      status: "blocked",
-      stage: "deploy",
-      generatedAt: new Date().toISOString(),
-      command: deployCommand,
-      reason: "preview deploy failed or credentials are unavailable",
-    };
-    writeCloudflarePreviewProofResult(result);
-    console.log(JSON.stringify(result, null, 2));
-    return 2;
+    return finish(
+      {
+        status: "blocked",
+        stage: "deploy",
+        command: deployCommand,
+        reason: childTimedOut(deployResult)
+          ? "preview deploy timed out"
+          : "preview deploy failed or credentials are unavailable",
+      },
+      2,
+    );
   }
 
   const urls = extractCloudflarePreviewDeploymentUrls(deployOutput);
   const baseUrl = chooseCloudflarePreviewGatewayUrl(urls);
 
   if (!baseUrl) {
-    const result = {
-      status: "blocked",
-      stage: "deploy-output-parse",
-      generatedAt: new Date().toISOString(),
-      command: deployCommand,
-      reason:
-        "preview deploy completed but no workers.dev URL was found in output",
-      discoveredUrls: urls,
-    };
-    writeCloudflarePreviewProofResult(result);
-    console.log(JSON.stringify(result, null, 2));
-    return 2;
+    return finish(
+      {
+        status: "blocked",
+        stage: "deploy-output-parse",
+        command: deployCommand,
+        reason:
+          "preview deploy completed but no workers.dev URL was found in output",
+        discoveredUrls: urls,
+      },
+      2,
+    );
   }
 
   // Proof adapter 保持与旧实现一致的子进程边界：deployed-smoke 以独立进程
@@ -765,22 +847,25 @@ async function runCloudflarePreviewDeployedProof() {
     "--base-url",
     baseUrl,
   ];
-  const smokeResult = runChildCommand("node", smokeArgs);
+  const smokeResult = runChildCommand(
+    "node",
+    smokeArgs,
+    CF_PREVIEW_SMOKE_TIMEOUT_MS,
+  );
   printCloudflarePreviewProofOutput("smoke", smokeResult);
 
-  const result = {
-    status: smokeResult.status === 0 ? "pass" : "fail",
-    stage: smokeResult.status === 0 ? "complete" : "smoke",
-    generatedAt: new Date().toISOString(),
-    baseUrl,
-    discoveredUrls: urls,
-    deployCommand,
-    smokeCommand: `node ${smokeArgs.join(" ")}`,
-  };
-  writeCloudflarePreviewProofResult(result);
-  console.log(JSON.stringify(result, null, 2));
-
-  return smokeResult.status ?? 1;
+  return finish(
+    {
+      status: smokeResult.status === 0 ? "pass" : "fail",
+      stage: smokeResult.status === 0 ? "complete" : "smoke",
+      baseUrl,
+      discoveredUrls: urls,
+      buildCommand,
+      deployCommand,
+      smokeCommand: `node ${smokeArgs.join(" ")}`,
+    },
+    smokeResult.status ?? 1,
+  );
 }
 
 async function main([command, ...args] = process.argv.slice(2)) {
@@ -816,6 +901,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  runChildCommand,
   runCloudflarePreviewDeployedProof,
   runCloudflarePreviewSmoke,
   runDeployedSmoke,
