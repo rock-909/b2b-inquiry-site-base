@@ -78,7 +78,7 @@ describe("createLeadRecord", () => {
     const data = {
       firstName: "Jane",
       lastName: "Buyer",
-      email: "Buyer@Example.com",
+      email: "buyer@example.com",
       message: "Need details",
       requirements: "Custom packaging",
       referenceId: "INQ-test-123",

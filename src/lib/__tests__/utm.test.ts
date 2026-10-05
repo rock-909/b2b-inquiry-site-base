@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { createInquiryPayload } from "@/components/forms/inquiry-payload";
 import {
-  appendAttributionToFormData,
   captureUtmParams,
+  getAttributionSnapshot,
   storeAttributionData,
-  getAttributionAsObject,
 } from "@/lib/marketing/utm";
 
 describe("UTM attribution", () => {
@@ -16,8 +16,8 @@ describe("UTM attribution", () => {
     "does not let malformed optional storage block submission: %s",
     (stored) => {
       sessionStorage.setItem("inquiry_attribution", stored);
-      expect(() => appendAttributionToFormData(new FormData())).not.toThrow();
-      expect(getAttributionAsObject()).toEqual({});
+      expect(() => createInquiryPayload(new FormData(), "token")).not.toThrow();
+      expect(getAttributionSnapshot()).toEqual({});
     },
   );
   beforeEach(() => {
@@ -37,16 +37,15 @@ describe("UTM attribution", () => {
     });
   });
 
-  it("keeps the first touch across pages and appends it to the inquiry", () => {
+  it("keeps the first touch across pages and sends it with the inquiry", () => {
     window.history.replaceState({}, "", "/landing?utm_source=google");
     storeAttributionData();
     window.history.replaceState({}, "", "/contact?utm_source=direct");
     storeAttributionData();
 
-    const formData = new FormData();
-    appendAttributionToFormData(formData);
-    expect(formData.get("utmSource")).toBe("google");
-    expect(formData.get("landingPage")).toBe("/landing");
-    expect(formData.get("gclid")).toBeNull();
+    const payload = createInquiryPayload(new FormData(), "token");
+    expect(payload.utmSource).toBe("google");
+    expect(payload.landingPage).toBe("/landing");
+    expect(payload).not.toHaveProperty("gclid");
   });
 });

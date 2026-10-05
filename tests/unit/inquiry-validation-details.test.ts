@@ -6,11 +6,6 @@ import {
   mapInquiryValidationDetails,
 } from "@/lib/api/inquiry-validation-details";
 import {
-  INQUIRY_FIELD_ERROR_DETAILS,
-  INQUIRY_FIELD_WIRE_DETAILS,
-  INQUIRY_FIELD_WIRE_DETAIL_LEAVES,
-} from "@/constants/inquiry-field-error-protocol";
-import {
   INQUIRY_LEAD_TYPE,
   inquiryLeadSchema,
 } from "@/lib/lead-pipeline/lead-schema";
@@ -51,20 +46,6 @@ const inquiryFailureInputs: ReadonlyArray<Record<string, unknown>> = [
   { ...validBase, utmSource: "x".repeat(257) },
   { ...validBase, utmSource: 42 },
 ];
-
-describe("inquiry field error lookup table", () => {
-  it("covers every declared wire detail exactly, mapping to the matching leaf", () => {
-    for (const detail of INQUIRY_FIELD_ERROR_DETAILS) {
-      const [, field, leaf] = detail.split(".");
-      expect(
-        INQUIRY_FIELD_WIRE_DETAIL_LEAVES[
-          field as keyof typeof INQUIRY_FIELD_WIRE_DETAIL_LEAVES
-        ][detail],
-        detail,
-      ).toBe(leaf);
-    }
-  });
-});
 
 describe("exact wire contract for inquiry field errors", () => {
   it("maps the real-schema failure matrix to exact, ordered detail arrays", () => {
@@ -318,7 +299,6 @@ describe("inquiry validation detail mapping", () => {
   });
 
   it("does not expose phone validation detail keys", () => {
-    expect(INQUIRY_FIELD_WIRE_DETAILS).not.toHaveProperty("phone");
     expect(INQUIRY_VALIDATION_DETAIL_KEYS).not.toContain(
       "errors.phone.invalid",
     );

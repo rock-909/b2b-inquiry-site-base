@@ -10,7 +10,7 @@ function getErrorSummary(
   state: InquirySubmitState,
   rateLimitActive: boolean,
 ): string | null {
-  if (state.status !== "error" || !state.errorKind) {
+  if (state.status !== "error") {
     return null;
   }
 
@@ -24,8 +24,11 @@ function getErrorSummary(
       return rateLimitActive ? copy.errors.rateLimitSummary : null;
     case "server":
       return copy.errors.serverSummary;
-    default:
-      return copy.errors.serverSummary;
+    default: {
+      // 新增 errorKind 而漏写分支时，这里的 never 赋值让 type-check 直接红。
+      const exhaustiveKind: never = state;
+      return exhaustiveKind;
+    }
   }
 }
 

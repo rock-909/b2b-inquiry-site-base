@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import baseEnglishMessages from "@messages/base/en/messages.json";
 import { EMAIL_COPY } from "@/emails/email-copy";
-import type { InquiryEmailData } from "@/lib/email/email-data-schema";
+import type { InquiryEmailData } from "@/lib/email/runtime-email-content";
 
 interface EmailTemplates {
   common: {
@@ -20,7 +20,7 @@ const inquiryEmailData: InquiryEmailData = {
   firstName: "John",
   lastName: "Doe",
   email: "john.doe@example.com",
-  requirements: "Need urgent delivery.",
+  message: "Need urgent delivery.",
 };
 
 const inquiryEmailDataWithPlaceholderLikeInput: InquiryEmailData = {
@@ -28,7 +28,7 @@ const inquiryEmailDataWithPlaceholderLikeInput: InquiryEmailData = {
   firstName: "John",
   lastName: "Doe",
   email: "john.doe@example.com",
-  requirements: "Need {lastName}",
+  message: "Need {lastName}",
 };
 
 const UNRESOLVED_PLACEHOLDER_PATTERN = /\{[^}]+\}/;

@@ -29,7 +29,7 @@ const AIRTABLE_ATTRIBUTION_FIELD_NAMES = {
 
 function buildBaseFields(email: string, now: string): AirtableFields {
   return {
-    Email: email.toLowerCase().trim(),
+    Email: email,
     "Submitted At": now,
     Status: "New",
     Source: INQUIRY_SOURCE,

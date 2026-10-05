@@ -1,28 +1,32 @@
 import "server-only";
 
 import { createAirtableLead } from "@/lib/airtable/service";
-import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 import {
   INQUIRY_LEAD_TYPE,
   type InquiryLeadInput,
 } from "@/lib/lead-pipeline/lead-schema";
-import {
-  generateLeadReferenceId,
-  generateInquiryMessage,
-  resolveBuyerMessage,
-  splitName,
-} from "@/lib/lead-pipeline/utils";
+import { generateLeadReferenceId, splitName } from "@/lib/lead-pipeline/utils";
 import { logger, sanitizeEmail } from "@/lib/logger";
-import { pickAttributionFields } from "@/lib/marketing/attribution-fields";
+import {
+  type MarketingAttributionFields,
+  pickAttributionFields,
+} from "@/lib/marketing/attribution-fields";
 import { ResendService } from "@/lib/resend-core";
 
-export interface LeadResult {
-  success: boolean;
-  emailSent: boolean;
-  recordCreated: boolean;
-  referenceId?: string | undefined;
-  error?: "PROCESSING_FAILED";
-}
+export type LeadResult =
+  | {
+      success: true;
+      emailSent: boolean;
+      recordCreated: boolean;
+      referenceId: string;
+    }
+  | {
+      success: false;
+      emailSent: boolean;
+      recordCreated: boolean;
+      referenceId?: string | undefined;
+      error: "PROCESSING_FAILED";
+    };
 
 const LEAD_DELIVERY_POLICY = "email-primary-airtable-backup" as const;
 const resendService = new ResendService();
@@ -43,33 +47,21 @@ function createProcessingFailureResult(referenceId?: string): LeadResult {
 
 function createOwnerLead(lead: InquiryLeadInput, referenceId: string) {
   const { firstName, lastName } = splitName(lead.fullName);
-  const requirements = resolveBuyerMessage({ message: lead.message });
 
   return {
     referenceId,
     firstName,
     lastName,
     email: lead.email,
-    ...(requirements ? { requirements } : {}),
-    attribution: pickAttributionFields(lead),
+    ...(lead.message ? { message: lead.message } : {}),
   };
 }
 
 type OwnerLead = ReturnType<typeof createOwnerLead>;
 
-function createInquiryEmailData(lead: OwnerLead): InquiryEmailData {
-  return {
-    referenceId: lead.referenceId,
-    firstName: lead.firstName,
-    lastName: lead.lastName,
-    email: lead.email,
-    ...(lead.requirements ? { requirements: lead.requirements } : {}),
-  };
-}
-
 async function sendOwnerEmail(lead: OwnerLead): Promise<boolean> {
   try {
-    await resendService.sendInquiryEmail(createInquiryEmailData(lead));
+    await resendService.sendInquiryEmail(lead);
     return true;
   } catch (error) {
     logger.error("Owner inquiry email failed", {
@@ -81,18 +73,23 @@ async function sendOwnerEmail(lead: OwnerLead): Promise<boolean> {
   }
 }
 
-async function createInquiryLeadRecord(lead: OwnerLead): Promise<boolean> {
-  const message = generateInquiryMessage({ requirements: lead.requirements });
-
+async function createInquiryLeadRecord(
+  lead: OwnerLead,
+  attribution: MarketingAttributionFields,
+): Promise<boolean> {
   try {
     await createAirtableLead({
       firstName: lead.firstName,
       lastName: lead.lastName,
       email: lead.email,
-      message,
-      ...(lead.requirements ? { requirements: lead.requirements } : {}),
+      // Airtable 的 Message 列带 "Requirements: " 前缀，Requirements 列存原文；
+      // 两列都是业主可见契约，值都来自买家留言。
+      message: lead.message
+        ? `Requirements: ${lead.message}`
+        : "General inquiry",
+      ...(lead.message ? { requirements: lead.message } : {}),
       referenceId: lead.referenceId,
-      ...lead.attribution,
+      ...attribution,
     });
     return true;
   } catch (error) {
@@ -112,7 +109,7 @@ export async function processValidatedInquiry(
   let referenceId: string | undefined;
 
   try {
-    referenceId = generateLeadReferenceId(INQUIRY_LEAD_TYPE);
+    referenceId = generateLeadReferenceId();
 
     logger.info("Processing lead", {
       type: INQUIRY_LEAD_TYPE,
@@ -125,7 +122,7 @@ export async function processValidatedInquiry(
     // 两个独立收件通道共享引用号，不让邮件故障阻塞备份写入。
     const [emailSent, recordCreated] = await Promise.all([
       sendOwnerEmail(ownerLead),
-      createInquiryLeadRecord(ownerLead),
+      createInquiryLeadRecord(ownerLead, pickAttributionFields(input)),
     ]);
 
     if (!emailSent && !recordCreated) {

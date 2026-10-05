@@ -63,7 +63,8 @@ describe("inquiryLeadSchema", () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.data?.email).toBe(email);
+    // 小写化只在 schema 做：owner 邮件与 Airtable 都直接使用这个值。
+    expect(result.data?.email).toBe(email.toLowerCase());
   });
 
   it.each([

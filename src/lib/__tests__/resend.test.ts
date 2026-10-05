@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_CONFIG as SITE_CONFIG } from "@/config/single-site";
-import { canonicalBuyerEmailSchema } from "@/lib/lead-pipeline/canonical-buyer-fields";
+import { inquiryLeadSchema } from "@/lib/lead-pipeline/lead-schema";
 import type { ResendService as ResendServiceInstance } from "../resend-core";
 
 type ResendServiceConstructor = new () => ResendServiceInstance;
@@ -98,7 +98,7 @@ describe("resend - Service Initialization", () => {
       firstName: "Jane",
       lastName: "Smith",
       email: "jane.smith@example.com",
-      requirements: "Need bulk pricing",
+      message: "Need bulk pricing",
     });
 
     const payload = mockResendSend.mock.calls[0]?.[0];
@@ -121,7 +121,7 @@ describe("resend - sendInquiryEmail", () => {
     email: "jane.smith@example.com",
     offeringId: "sample-offering",
     offeringName: "Sample Offering",
-    requirements: "Need bulk pricing",
+    message: "Need bulk pricing",
   };
 
   beforeEach(async () => {
@@ -176,7 +176,7 @@ describe("resend - sendInquiryEmail", () => {
       data: { id: "edge-address-id" },
       error: null,
     });
-    const buyerEmail = canonicalBuyerEmailSchema.parse(email);
+    const buyerEmail = inquiryLeadSchema.shape.email.parse(email);
 
     await service.sendInquiryEmail({ ...validInquiryData, email: buyerEmail });
 
@@ -185,13 +185,13 @@ describe("resend - sendInquiryEmail", () => {
     );
   });
 
-  it("sanitizes inquiry data before rendering without expanding buyer placeholders", async () => {
+  it("escapes buyer text when rendering without expanding buyer placeholders", async () => {
     const service = new ResendServiceClass();
     const emailData = {
       ...validInquiryData,
       email: "JANE@EXAMPLE.COM",
       lastName: "<Pump {lastName}>",
-      requirements: "Need {lastName}\n\nwith data:text/plain and onclick=alert",
+      message: "Need {lastName}\n\nwith data:text/plain and onclick=alert",
     };
 
     mockResendSend.mockResolvedValue({

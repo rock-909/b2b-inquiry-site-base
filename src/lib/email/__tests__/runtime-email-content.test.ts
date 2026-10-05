@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { EMAIL_COPY } from "@/emails/email-copy";
-import type { InquiryEmailData } from "@/lib/email/email-data-schema";
-import { buildInquiryEmailContent } from "@/lib/email/runtime-email-content";
+import {
+  buildInquiryEmailContent,
+  type InquiryEmailData,
+} from "@/lib/email/runtime-email-content";
 
 describe("runtime email content", () => {
   it("renders inquiry body fields without losing buyer details", () => {
@@ -10,7 +12,7 @@ describe("runtime email content", () => {
       firstName: "Pat",
       lastName: "Lee",
       email: "pat@example.com",
-      requirements: "Line one\nLine two",
+      message: "Line one\nLine two",
     };
 
     const content = buildInquiryEmailContent(inquiryData);
@@ -47,7 +49,7 @@ describe("runtime email content", () => {
       firstName: "J&ne",
       lastName: "<Buyer>",
       email: "pat@example.com",
-      requirements: "Need <fast> & 'safe' output",
+      message: "Need <fast> & 'safe' output",
     });
 
     expect(content.html).toContain("J&amp;ne &lt;Buyer&gt;");

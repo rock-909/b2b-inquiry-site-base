@@ -4,7 +4,6 @@ paths:
   - "src/lib/security/**/*"
   - "src/lib/api/**"
   - "src/lib/lead-pipeline/lead-schema.ts"
-  - "src/lib/lead-pipeline/canonical-buyer-fields.ts"
   - "src/components/forms/**"
   - "src/config/security.ts"
   - "next.config.ts"

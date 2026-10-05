@@ -46,7 +46,7 @@ describe("processValidatedInquiry", () => {
       firstName: "Jane",
       lastName: "Buyer",
       email: "jane@example.com",
-      requirements: "Need custom height\nStainless finish",
+      message: "Need custom height\nStainless finish",
     });
     expect(mockCreateLead).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -60,6 +60,19 @@ describe("processValidatedInquiry", () => {
     );
     expect(mockCreateLead.mock.calls[0]?.[0]).not.toHaveProperty("company");
     expect(mockCreateLead.mock.calls[0]?.[0]).not.toHaveProperty("quantity");
+  });
+
+  it("keeps the Airtable columns and omits the email field when the buyer left no message", async () => {
+    const { message: _omitted, ...leadWithoutMessage } = VALID_LEAD;
+
+    await processValidatedInquiry(leadWithoutMessage);
+
+    expect(mockSendProductInquiryEmail.mock.calls[0]?.[0]).not.toHaveProperty(
+      "message",
+    );
+    const airtableLead = mockCreateLead.mock.calls[0]?.[0];
+    expect(airtableLead.message).toBe("General inquiry");
+    expect(airtableLead).not.toHaveProperty("requirements");
   });
 
   it("gives owner email and Airtable the same reference the buyer receives", async () => {

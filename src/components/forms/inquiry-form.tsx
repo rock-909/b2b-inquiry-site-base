@@ -24,7 +24,6 @@ import {
   MAX_LEAD_NAME_LENGTH,
 } from "@/constants/validation-limits";
 import { trackGenerateLead } from "@/lib/marketing/lead-event";
-import { appendAttributionToFormData } from "@/lib/marketing/utm";
 
 export type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 
@@ -34,7 +33,7 @@ export interface InquiryFormProps {
   /**
    * 产品语境预填：仅产品详情页传入（来源为编译期 offerings 配置，非用户输入）。
    * 走 textarea defaultValue——React 文本渲染不是 HTML sink；提交仍经
-   * canonicalBuyerMessageSchema 校验。传入前截断到 message 上限，
+   * inquiryLeadSchema 校验。传入前截断到 message 上限，
    * 避免超长初始值先过浏览器 maxLength 再被服务端 400。
    */
   readonly initialMessage?: string;
@@ -407,15 +406,10 @@ function InquiryFormLive({
     setDisplayState({ status: "submitting" });
 
     try {
-      appendAttributionToFormData(formData);
       const decoded = await postInquiry(formData, turnstile.token);
       setDisplayState(decoded);
 
-      if (
-        decoded.status === "error" &&
-        decoded.errorKind === "rateLimit" &&
-        decoded.retryAfterSeconds !== undefined
-      ) {
+      if (decoded.status === "error" && decoded.errorKind === "rateLimit") {
         rateLimit.startFromSeconds(decoded.retryAfterSeconds);
       } else {
         rateLimit.clear();

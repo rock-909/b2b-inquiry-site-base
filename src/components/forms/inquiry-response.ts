@@ -5,16 +5,24 @@ import {
 import { type ApiErrorResponse } from "@/lib/api/api-response";
 import { readLeadReferenceId } from "@/lib/forms/lead-response";
 
-export type InquiryErrorKind = "field" | "security" | "rateLimit" | "server";
-
-export interface InquirySubmitState {
-  readonly status: "idle" | "submitting" | "success" | "error";
-  readonly referenceId?: string;
-  readonly errorKind?: InquiryErrorKind;
-  readonly fieldDetails?: readonly string[];
-  /** 仅 rateLimit 错误携带；已经过合法性校验与上限约束。 */
-  readonly retryAfterSeconds?: number;
-}
+export type InquirySubmitState =
+  | { readonly status: "idle" | "submitting" }
+  | { readonly status: "success"; readonly referenceId: string }
+  | {
+      readonly status: "error";
+      readonly errorKind: "field";
+      readonly fieldDetails?: readonly string[];
+    }
+  | {
+      readonly status: "error";
+      readonly errorKind: "rateLimit";
+      /** 已经过合法性校验与上限约束。 */
+      readonly retryAfterSeconds: number;
+    }
+  | {
+      readonly status: "error";
+      readonly errorKind: "security" | "server";
+    };
 
 const SECURITY_ERROR_CODES = new Set<ApiErrorCode>([
   API_ERROR_CODES.TURNSTILE_REQUIRED,

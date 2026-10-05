@@ -1,6 +1,7 @@
 import {
-  INQUIRY_FIELD_WIRE_DETAIL_LEAVES,
+  INQUIRY_FIELD_ERROR_DETAILS,
   type InquiryErrorField,
+  type InquiryFieldErrorDetail,
 } from "@/constants/inquiry-field-error-protocol";
 import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 
@@ -13,46 +14,21 @@ const ERROR_CLASS = "text-xs leading-5 text-[var(--error-foreground)]";
 const REQUIRED_CLASS =
   "after:ml-0.5 after:text-destructive after:content-['*']";
 
-const FIELD_ERROR_LEAVES = INQUIRY_FIELD_WIRE_DETAIL_LEAVES;
+function isFieldErrorDetail(detail: string): detail is InquiryFieldErrorDetail {
+  return (INQUIRY_FIELD_ERROR_DETAILS as readonly string[]).includes(detail);
+}
 
-type VisibleField = InquiryErrorField;
-
-function resolveFieldError<Field extends VisibleField>(
-  field: Field,
+// 网络来的 detail 只在属于当前字段且协议内时才取文案；按 detail 出现顺序取第一条。
+function resolveFieldError(
+  field: InquiryErrorField,
   fieldDetails: readonly string[] | undefined,
   copy: InquiryFormCopy,
 ): string | null {
-  if (!fieldDetails?.length) {
-    return null;
-  }
+  const prefix = `errors.${field}.`;
 
-  // 精确查找表替代字符串拆解与 copy 断言：leaf 与文案 key 全部由协议类型封口。
-  const leafByDetail = FIELD_ERROR_LEAVES[field];
-
-  for (const detail of fieldDetails) {
-    const leaf = leafByDetail[detail];
-    if (leaf === undefined) {
-      continue;
-    }
-
-    // 按字段分发后两侧类型都收窄为具体字面量，无需任何断言；
-    // message 无 required 文案，该分支在 inquiryLeadSchema 下也不可达。
-    switch (field) {
-      case "fullName":
-        return copy.errors.fullName[leaf] ?? null;
-      case "email":
-        return copy.errors.email[leaf] ?? null;
-      case "message":
-        // message 无 required 文案；该分支在 inquiryLeadSchema 下也不可达。
-        if (leaf === "invalid") {
-          return copy.errors.message.invalid ?? null;
-        }
-        if (leaf === "tooLong") {
-          return copy.errors.message.tooLong ?? null;
-        }
-        break;
-      default:
-        break;
+  for (const detail of fieldDetails ?? []) {
+    if (detail.startsWith(prefix) && isFieldErrorDetail(detail)) {
+      return copy.errors.fields[detail];
     }
   }
 

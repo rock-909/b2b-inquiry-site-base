@@ -22,7 +22,7 @@ describe("multiline lead fields", () => {
       firstName: "Jane",
       lastName: "Buyer",
       email: "jane@example.com",
-      requirements: parsed.message,
+      message: parsed.message!,
     });
     expect(content.html).toContain("Need custom height");
     expect(content.html).toContain("Stainless finish");

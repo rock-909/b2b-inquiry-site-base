@@ -6,7 +6,6 @@ import {
   SIZES,
   SPACING,
 } from "@/emails/theme";
-import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 
 export interface RuntimeEmailContent {
   html: string;
@@ -114,6 +113,15 @@ function renderEmailDocument({
   };
 }
 
+/** 已通过 inquiryLeadSchema 校验的询盘字段；这里只负责渲染，不再清洗。 */
+export interface InquiryEmailData {
+  referenceId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  message?: string;
+}
+
 export function buildInquiryEmailContent(
   data: InquiryEmailData,
 ): RuntimeEmailContent {
@@ -124,10 +132,10 @@ export function buildInquiryEmailContent(
       value: `${data.firstName} ${data.lastName}`,
     },
     { label: EMAIL_COPY.common.fields.email, value: data.email },
-    data.requirements
+    data.message
       ? {
           label: EMAIL_COPY.common.fields.requirements,
-          value: data.requirements,
+          value: data.message,
           multiline: true,
         }
       : null,

@@ -1,4 +1,3 @@
-import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 import baseEnglishMessages from "@messages/base/en/messages.json";
 
 const emailTemplateCopy = baseEnglishMessages.emailTemplates;
@@ -11,7 +10,7 @@ export const EMAIL_COPY = {
     title: emailTemplateCopy.inquiry.title,
     preview: emailTemplateCopy.inquiry.preview,
     footer: () => emailTemplateCopy.inquiry.footer,
-    subject: (data: InquiryEmailData) =>
+    subject: (data: { referenceId: string }) =>
       `[${data.referenceId}] ${emailTemplateCopy.inquiry.subject}`,
   },
 } as const;
