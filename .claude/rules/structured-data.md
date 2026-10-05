@@ -52,3 +52,9 @@ schema types.
 Product detail pages that represent one catalog item should emit a single
 `Product` node plus supporting graph nodes such as `BreadcrumbList` and
 `FAQPage` when those concepts apply.
+
+This is an inquiry site: products are quoted, not sold at public prices, so
+product pages do not pursue Google product rich results. Do not invent
+`offers`, prices, `review` or `aggregateRating` to satisfy the product snippet
+requirements. Search Console product snippet warnings or invalid items on
+product pages are expected, not defects.
