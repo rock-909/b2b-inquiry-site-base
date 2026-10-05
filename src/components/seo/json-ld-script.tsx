@@ -1,6 +1,10 @@
 import "server-only";
+import { getTranslations } from "next-intl/server";
 import { generateJSONLD } from "@/lib/structured-data";
-import { generatePageStructuredData } from "@/lib/page-structured-data";
+import {
+  generateOrganizationData,
+  generateWebSiteData,
+} from "@/lib/structured-data-generators";
 import type { Locale } from "@/types/content.types";
 import { createJsonLdGraphData } from "@/components/seo/json-ld-graph-data";
 
@@ -50,19 +54,17 @@ export async function JsonLdGraphScript({
   locale,
   data = EMPTY_JSON_LD_GRAPH_DATA,
 }: JsonLdGraphScriptProps) {
-  let identity: Awaited<ReturnType<typeof generatePageStructuredData>>;
+  let identity: Record<string, unknown>[];
 
   try {
-    identity = await generatePageStructuredData(locale);
+    const t = await getTranslations({
+      locale,
+      namespace: "structured-data",
+    });
+    identity = [generateOrganizationData(t), generateWebSiteData(t)];
   } catch {
     return null;
   }
 
-  const { organizationData, websiteData } = identity;
-
-  return (
-    <JsonLdScript
-      data={createJsonLdGraphData([organizationData, websiteData, ...data])}
-    />
-  );
+  return <JsonLdScript data={createJsonLdGraphData([...identity, ...data])} />;
 }

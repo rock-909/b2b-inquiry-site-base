@@ -27,7 +27,8 @@ interface FactualSourceMessages {
 
 type FactualCompleteMessages = FactualSourceMessages;
 
-const factualPlaceholderPattern = /\{(?:siteName|companyName|currentYear)\}/u;
+const factualPlaceholderPattern =
+  /\{(?:siteName|companyName|established|currentYear)\}/u;
 const heroDiagramKeys = [] as const;
 const homeB2BSectionPaths = [
   ["home", "value", "title"],
@@ -106,6 +107,7 @@ function assertFactualCompleteMessages(
 }
 
 afterEach(() => {
+  vi.doUnmock("@messages/base/en/messages.json");
   vi.resetModules();
   vi.clearAllMocks();
 });
@@ -137,6 +139,32 @@ describe("load-messages runtime loading", () => {
     );
 
     expect(JSON.stringify(enMessages)).not.toMatch(factualPlaceholderPattern);
+  });
+
+  it("replaces every site placeholder in messages and leaves call-time ones alone", async () => {
+    vi.doMock("@messages/base/en/messages.json", async (importOriginal) => {
+      const actual = await importOriginal<{
+        default: Record<string, unknown>;
+      }>();
+
+      return {
+        default: {
+          ...actual.default,
+          probe: { text: "Since {established} for {productName}" },
+        },
+      };
+    });
+    const [{ loadCompleteMessages }, { SINGLE_SITE_FACTS }] = await Promise.all(
+      [import("@/lib/i18n/load-messages"), import("@/config/single-site")],
+    );
+
+    const messages = (await loadCompleteMessages("en")) as {
+      probe: { text: string };
+    };
+
+    expect(messages.probe.text).toBe(
+      `Since ${SINGLE_SITE_FACTS.company.established} for {productName}`,
+    );
   });
 
   it("keeps the neutral homepage copy in complete runtime messages", async () => {

@@ -2,21 +2,14 @@ import { env, isRuntimeProduction, runtimeEnv } from "@/lib/env";
 import { PATHS_CONFIG } from "@/config/paths/paths-config";
 import type { PageType } from "@/config/paths/types";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
-import type {
-  SiteConfig,
-  SiteDefinition,
-  SiteFacts,
-} from "@/config/site-types";
+import type { SiteConfig, SiteFacts } from "@/config/site-types";
 
 export type {
   BusinessHours,
   CompanyInfo,
   ContactInfo,
   SiteConfig,
-  SiteDefinition,
   SiteFacts,
-  SiteFooterColumnConfig,
-  SiteFooterLinkItem,
   SiteNavigationItem,
   SiteSeoConfig,
   SiteSocialConfig,
@@ -47,12 +40,10 @@ const social = {
   linkedin: "",
 } as const;
 
-const FOOTER_NAVIGATION_PAGE_TYPES = [
-  "home",
-  "products",
-  "about",
-  "contact",
-] as const satisfies readonly PageType[];
+// 页脚导航列与主导航是同一份页面清单（pages.config 的 navigationKey）。
+const FOOTER_NAVIGATION_PAGE_TYPES = SINGLE_SITE_NAVIGATION.map(
+  (item) => item.key,
+);
 
 const FOOTER_SUPPORT_PAGE_TYPES = [
   "privacy",
@@ -78,20 +69,10 @@ const FOOTER_COLUMN_TRANSLATION_KEYS = {
 } as const;
 
 function getFooterLinkItem(pageType: FooterLinkPageType) {
-  const href = PATHS_CONFIG[pageType];
-  const translationKey = FOOTER_TRANSLATION_KEYS[pageType];
-
-  if (href === undefined || translationKey === undefined) {
-    throw new Error(
-      `Missing footer link configuration for page type: ${pageType}`,
-    );
-  }
-
   return {
     key: pageType,
-    href,
-    external: false,
-    translationKey,
+    href: PATHS_CONFIG[pageType],
+    translationKey: FOOTER_TRANSLATION_KEYS[pageType],
   } as const;
 }
 
@@ -120,59 +101,49 @@ const establishedYear = 2026;
 /**
  * Single-site canonical source for the current cutover phase.
  */
-export const SINGLE_SITE_KEY = "b2b-inquiry-site-base" as const;
-export const SINGLE_SITE_DEFINITION = {
-  key: SINGLE_SITE_KEY,
-  config: {
-    baseUrl,
-    name: "Northstar Industrial Reference",
-    description:
-      "Neutral B2B inquiry reference site that must be replaced before launch",
-    seo: {
-      titleTemplate: "%s | Northstar Industrial Reference",
-      defaultTitle: "Northstar Industrial Reference - B2B Inquiry Template",
-      defaultDescription:
-        "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details.",
-    },
-    social,
-    contact,
+export const SINGLE_SITE_CONFIG: SiteConfig = {
+  baseUrl,
+  name: "Northstar Industrial Reference",
+  description:
+    "Neutral B2B inquiry reference site that must be replaced before launch",
+  seo: {
+    titleTemplate: "%s | Northstar Industrial Reference",
+    defaultTitle: "Northstar Industrial Reference - B2B Inquiry Template",
+    defaultDescription:
+      "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details.",
   },
-  facts: {
-    company: {
-      name: "Northstar Industrial Reference",
-      established: establishedYear,
-      location: {
-        country: "Replace before launch",
-        city: "Replace before launch",
-        address: TEMPLATE_REGISTERED_ADDRESS,
-      },
-    },
-    contact: {
-      phone: contact.phone,
-      email: contact.email,
-      businessHours: {
-        weekdays: "Replace before launch",
-        saturday: "Replace before launch",
-        sundayClosed: false,
-      },
-    },
-    social,
-    brandAssets: {
-      logo: {
-        status: "pending",
-        horizontal: "/icon.svg",
-        width: 240,
-        height: 72,
-      },
-      ogImage: "/opengraph-image.png",
-      favicon: "/icon.svg",
-    },
-  },
-  navigation: {
-    main: SINGLE_SITE_NAVIGATION,
-  },
-  footerColumns: SINGLE_SITE_FOOTER_COLUMNS,
-} as const satisfies SiteDefinition;
+  social,
+  contact,
+};
 
-export const SINGLE_SITE_CONFIG: SiteConfig = SINGLE_SITE_DEFINITION.config;
-export const SINGLE_SITE_FACTS: SiteFacts = SINGLE_SITE_DEFINITION.facts;
+export const SINGLE_SITE_FACTS: SiteFacts = {
+  company: {
+    name: "Northstar Industrial Reference",
+    established: establishedYear,
+    location: {
+      country: "Replace before launch",
+      city: "Replace before launch",
+      address: TEMPLATE_REGISTERED_ADDRESS,
+    },
+  },
+  contact: {
+    phone: contact.phone,
+    email: contact.email,
+    businessHours: {
+      weekdays: "Replace before launch",
+      saturday: "Replace before launch",
+      sundayClosed: false,
+    },
+  },
+  social,
+  brandAssets: {
+    logo: {
+      status: "pending",
+      horizontal: "/icon.svg",
+      width: 240,
+      height: 72,
+    },
+    ogImage: "/opengraph-image.png",
+    favicon: "/icon.svg",
+  },
+};

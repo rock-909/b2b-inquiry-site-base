@@ -61,24 +61,13 @@ function FooterSection({
       <ul className="mt-3">
         {section.links.map((link) => (
           <li key={link.key}>
-            {link.external ? (
-              <a
-                className={LINK_CLASS}
-                href={link.href}
-                rel="noreferrer noopener"
-                target="_blank"
-              >
-                {translateConfigKey(link.translationKey)}
-              </a>
-            ) : (
-              <Link
-                className={LINK_CLASS}
-                href={link.href as "/privacy" | "/terms"}
-                prefetch={false}
-              >
-                {translateConfigKey(link.translationKey)}
-              </Link>
-            )}
+            <Link
+              className={LINK_CLASS}
+              href={link.href as "/privacy" | "/terms"}
+              prefetch={false}
+            >
+              {translateConfigKey(link.translationKey)}
+            </Link>
           </li>
         ))}
       </ul>

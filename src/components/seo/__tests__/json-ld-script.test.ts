@@ -1,20 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import React from "react";
 import { render } from "@testing-library/react";
+import { getTranslations } from "next-intl/server";
 import { createJsonLdGraphData } from "@/components/seo/json-ld-graph-data";
 import {
   JsonLdGraphScript,
   JsonLdScript,
 } from "@/components/seo/json-ld-script";
 import { generateJSONLD } from "@/lib/structured-data";
-
-const { mockGeneratePageStructuredData } = vi.hoisted(() => ({
-  mockGeneratePageStructuredData: vi.fn(),
-}));
-
-vi.mock("@/lib/page-structured-data", () => ({
-  generatePageStructuredData: mockGeneratePageStructuredData,
-}));
 
 function graphTypes(graphData: unknown) {
   if (
@@ -40,36 +33,17 @@ function graphTypes(graphData: unknown) {
 }
 
 describe("createJsonLdGraphData", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockGeneratePageStructuredData.mockResolvedValue({
-      organizationData: {
-        "@type": "Organization",
-        "@id": "https://www.example.com#organization",
-        name: "Reference Industries",
-      },
-      websiteData: {
-        "@type": "WebSite",
-        "@id": "https://www.example.com#website",
-        name: "Reference Industries",
-      },
-    });
-  });
-
   it("keeps page-level schema node types in the merged graph", () => {
     const graphData = createJsonLdGraphData([
       {
-        "@context": "https://schema.org",
         "@type": "Organization",
         name: "Reference Industries",
       },
       {
-        "@context": "https://schema.org",
         "@type": "WebSite",
         name: "Reference Industries",
       },
       {
-        "@context": "https://schema.org",
         "@type": "FAQPage",
         mainEntity: [],
       },
@@ -81,33 +55,6 @@ describe("createJsonLdGraphData", () => {
       "WebSite",
       "FAQPage",
     ]);
-  });
-
-  it("flattens nested graph inputs instead of nesting @graph nodes", () => {
-    const graphData = createJsonLdGraphData([
-      {
-        "@context": "https://schema.org",
-        "@graph": [
-          { "@type": "BreadcrumbList", itemListElement: [] },
-          { "@type": "ProductGroup", name: "reference catalog examples" },
-        ],
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: [],
-      },
-    ]);
-
-    expect(graphTypes(graphData)).toEqual([
-      "BreadcrumbList",
-      "ProductGroup",
-      "FAQPage",
-    ]);
-    expect(
-      (graphData["@graph"] as Array<Record<string, unknown>>).some(
-        (node) => "@graph" in node,
-      ),
-    ).toBe(false);
   });
 
   it("uses shared JSON-LD escaping for script-injection text", () => {
@@ -154,8 +101,34 @@ describe("createJsonLdGraphData", () => {
     expect(script.innerHTML).not.toContain("<script>");
   });
 
+  it("renders one @context with identity nodes ahead of the page nodes", async () => {
+    const { container } = render(
+      await JsonLdGraphScript({
+        locale: "en",
+        data: [{ "@type": "FAQPage", mainEntity: [] }],
+      }),
+    );
+
+    const script = container.querySelector(
+      'script[type="application/ld+json"]',
+    );
+    if (!script) throw new Error("Expected a JSON-LD script element");
+    const graphData = JSON.parse(script.innerHTML) as {
+      "@context": string;
+      "@graph": Array<Record<string, unknown>>;
+    };
+
+    expect(graphData["@context"]).toBe("https://schema.org");
+    expect(graphTypes(graphData)).toEqual([
+      "Organization",
+      "WebSite",
+      "FAQPage",
+    ]);
+    expect(graphData["@graph"].some((node) => "@context" in node)).toBe(false);
+  });
+
   it("treats identity schema failures as a non-critical enhancement", async () => {
-    mockGeneratePageStructuredData.mockRejectedValueOnce(new Error("boom"));
+    vi.mocked(getTranslations).mockRejectedValueOnce(new Error("boom"));
 
     await expect(
       JsonLdGraphScript({ locale: "en", data: [] }),

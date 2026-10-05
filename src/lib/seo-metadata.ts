@@ -6,6 +6,7 @@ import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import { routing } from "@/i18n/routing-config";
 import { getLocalePath } from "@/config/paths/utils";
 import { getRuntimeAppEnv, getRuntimeEnvString } from "@/lib/env";
+import { getSiteMessageValues } from "@/lib/i18n/site-message-values";
 import { interpolate } from "@/lib/interpolate";
 
 export type { Locale } from "@/config/paths";
@@ -15,10 +16,6 @@ interface SEOConfig {
   description?: string;
   image?: string;
   type?: "website" | "article" | "product";
-  publishedTime?: string;
-  modifiedTime?: string;
-  authors?: string[];
-  section?: string;
 }
 
 interface StaticPageMetadata {
@@ -33,22 +30,13 @@ interface StaticPageMetadata {
 
 interface StaticPageMetadataConfigOptions {
   readonly includeImage?: boolean;
-  readonly includeEmptyDescription?: boolean;
 }
 
 const DEFAULT_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
 
-function resolveLocale(locale: Locale): Locale {
-  return locale;
-}
-
-/** Replace ICU-style {placeholders} with SINGLE_SITE_FACTS values in SEO strings. */
-const SEO_INTERPOLATION_MAP: Record<string, string | number> = {
-  established: SINGLE_SITE_FACTS.company.established,
-};
-
+/** 用站点占位符表（getSiteMessageValues）替换 SEO 字符串里的 {placeholder}。 */
 function interpolateSeoString(text: string): string {
-  return interpolate(text, SEO_INTERPOLATION_MAP);
+  return interpolate(text, getSiteMessageValues());
 }
 
 function normalizePath(path: string): string {
@@ -154,8 +142,7 @@ export function generateMetadataForPath(
 ): Metadata {
   const { locale, pageType, path, config } = params;
   const seoConfig = { ...STATIC_PAGE_SEO_DEFAULTS, ...config };
-  const safeLocale = resolveLocale(locale);
-  const canonical = buildCanonicalForPath(path, safeLocale);
+  const canonical = buildCanonicalForPath(path, locale);
   const languages = buildLanguagesForPath(path);
   const title = resolveMetadataTitle(seoConfig);
   const description = resolveMetadataDescription(seoConfig);
@@ -170,14 +157,10 @@ export function generateMetadataForPath(
       title,
       description,
       siteName,
-      locale: safeLocale,
+      locale,
       type: openGraphType,
       url: canonical,
       images: seoConfig.image ? [{ url: seoConfig.image }] : undefined,
-      publishedTime: seoConfig.publishedTime,
-      modifiedTime: seoConfig.modifiedTime,
-      authors: seoConfig.authors,
-      section: seoConfig.section,
     },
     twitter: {
       card: "summary_large_image",
@@ -214,9 +197,7 @@ export function createStaticPageMetadataConfig(
 
   return {
     title: metadata.seo?.title ?? metadata.title,
-    ...(description || (options.includeEmptyDescription && description === "")
-      ? { description }
-      : {}),
+    ...(description ? { description } : {}),
     ...(options.includeImage && metadata.seo?.ogImage
       ? { image: metadata.seo.ogImage }
       : {}),

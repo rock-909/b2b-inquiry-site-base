@@ -1,33 +1,21 @@
 import {
-  getPublicStaticPageDefinition,
+  PUBLIC_STATIC_PAGE_DEFINITIONS,
   toNavigationNamespaceKey,
-  type NavigationMessageKey,
 } from "@/config/pages.config";
 import { PATHS_CONFIG } from "@/config/paths/paths-config";
 
 export type { SiteNavigationItem } from "@/config/site-types";
 
-const MAIN_NAVIGATION_PAGE_TYPES = [
-  "home",
-  "products",
-  "about",
-  "contact",
-] as const;
-
-function requireNavigationKey(
-  pageType: (typeof MAIN_NAVIGATION_PAGE_TYPES)[number],
-): NavigationMessageKey {
-  const definition = getPublicStaticPageDefinition(pageType);
-  if (!definition?.navigationKey) {
-    throw new Error(`Missing navigation key for page type: ${pageType}`);
-  }
-  return definition.navigationKey;
-}
-
-export const SINGLE_SITE_NAVIGATION = MAIN_NAVIGATION_PAGE_TYPES.map(
-  (pageType) => ({
-    key: pageType,
-    href: PATHS_CONFIG[pageType],
-    messageKey: toNavigationNamespaceKey(requireNavigationKey(pageType)),
-  }),
+// 主导航 = pages.config 里带 navigationKey 的页面，顺序同页面清单。
+export const SINGLE_SITE_NAVIGATION = PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap(
+  (definition) =>
+    definition.navigationKey
+      ? [
+          {
+            key: definition.pageType,
+            href: PATHS_CONFIG[definition.pageType],
+            messageKey: toNavigationNamespaceKey(definition.navigationKey),
+          },
+        ]
+      : [],
 );

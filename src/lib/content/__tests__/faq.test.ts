@@ -4,14 +4,7 @@ import type { FaqItem } from "@/types/content.types";
 import {
   extractFaqFromMetadata,
   generateFaqSchemaFromItems,
-  interpolateFaqAnswer,
 } from "../faq";
-
-const MOCK_FACTS = {
-  companyName: "Reference Industries",
-  exportCountries: 20,
-  established: 2018,
-};
 
 describe("extractFaqFromMetadata", () => {
   it("returns empty array when no faq field", () => {
@@ -36,21 +29,6 @@ describe("extractFaqFromMetadata", () => {
     const result = extractFaqFromMetadata(metadata);
     expect(result).toHaveLength(2);
     expect(result[0]?.id).toBe("project-details");
-  });
-});
-
-describe("interpolateFaqAnswer", () => {
-  it("replaces {companyName} with fact value", () => {
-    const result = interpolateFaqAnswer(
-      "{companyName} has been in business since {established}.",
-      MOCK_FACTS,
-    );
-    expect(result).toBe("Reference Industries has been in business since 2018.");
-  });
-
-  it("leaves unknown placeholders intact", () => {
-    const result = interpolateFaqAnswer("Contact {unknownField}.", MOCK_FACTS);
-    expect(result).toBe("Contact {unknownField}.");
   });
 });
 

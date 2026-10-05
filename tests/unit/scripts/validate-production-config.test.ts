@@ -71,26 +71,24 @@ const STARTER_PUBLIC_LAUNCH_FIXTURE = {
   getPublicContactEmail: () => undefined,
   getPublicContactPhone: () => undefined,
   getPublicLogoPath: () => undefined,
-  SINGLE_SITE_DEFINITION: {
-    config: {
-      baseUrl: "https://example.com",
-      name: "Showcase Website Starter",
-      description:
-        "Public demo starter for launching a showcase website foundation",
-      seo: {
-        titleTemplate: "%s | Showcase Website Starter",
-        defaultTitle: "Showcase Website Starter - Public Demo Starter Site",
-        defaultDescription:
-          "A public demo starter site for teams that need a deployable showcase website foundation before they have a real website.",
-      },
-      social: {
-        twitter: "https://x.com/example",
-        linkedin: "https://www.linkedin.com/company/example",
-      },
-      contact: {
-        phone: "+86-518-0000-0000",
-        email: "starter-contact@example.com",
-      },
+  SINGLE_SITE_CONFIG: {
+    baseUrl: "https://example.com",
+    name: "Showcase Website Starter",
+    description:
+      "Public demo starter for launching a showcase website foundation",
+    seo: {
+      titleTemplate: "%s | Showcase Website Starter",
+      defaultTitle: "Showcase Website Starter - Public Demo Starter Site",
+      defaultDescription:
+        "A public demo starter site for teams that need a deployable showcase website foundation before they have a real website.",
+    },
+    social: {
+      twitter: "https://x.com/example",
+      linkedin: "https://www.linkedin.com/company/example",
+    },
+    contact: {
+      phone: "+86-518-0000-0000",
+      email: "starter-contact@example.com",
     },
   },
   SINGLE_SITE_FACTS: {
@@ -110,21 +108,19 @@ const READY_PUBLIC_LAUNCH_FIXTURE = {
   getPublicContactEmail: (email: string) => email,
   getPublicContactPhone: (phone: string) => phone,
   getPublicLogoPath: (logo: { horizontal: string }) => logo.horizontal,
-  SINGLE_SITE_DEFINITION: {
-    config: {
-      baseUrl: "https://reference-site.com",
-      name: "Reference Industrial",
-      description: "Industrial products and buyer support.",
-      seo: {
-        titleTemplate: "%s | Reference Industrial",
-        defaultTitle: "Reference Industrial",
-        defaultDescription: "Industrial products and buyer support.",
-      },
-      social: { twitter: "", linkedin: "" },
-      contact: {
-        phone: "+1 212 555 0199",
-        email: "sales@reference-site.com",
-      },
+  SINGLE_SITE_CONFIG: {
+    baseUrl: "https://reference-site.com",
+    name: "Reference Industrial",
+    description: "Industrial products and buyer support.",
+    seo: {
+      titleTemplate: "%s | Reference Industrial",
+      defaultTitle: "Reference Industrial",
+      defaultDescription: "Industrial products and buyer support.",
+    },
+    social: { twitter: "", linkedin: "" },
+    contact: {
+      phone: "+1 212 555 0199",
+      email: "sales@reference-site.com",
     },
   },
   SINGLE_SITE_FACTS: {

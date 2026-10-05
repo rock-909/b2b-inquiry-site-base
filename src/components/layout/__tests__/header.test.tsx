@@ -2,31 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/layout/header";
 
-interface MockHomeLinkTargets {
-  primaryCta: string;
-  secondaryCta: string;
-  contact?: string;
-  products?: string;
-}
-
-const mockSingleSiteHomeLinkTargets = vi.hoisted(
-  (): { current: MockHomeLinkTargets } => ({
-    current: {
-      contact: "/contact",
-      products: "/products",
-      primaryCta: "/products",
-      secondaryCta: "/contact",
-    },
-  }),
-);
-
-vi.mock("@/config/single-site-links", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/config/single-site-links")>()),
-  get SINGLE_SITE_HOME_LINK_TARGETS() {
-    return mockSingleSiteHomeLinkTargets.current;
-  },
-}));
-
 vi.mock("@/components/layout/logo", () => ({
   Logo: () => <div data-testid="logo">Logo</div>,
 }));
@@ -70,12 +45,6 @@ function renderHeader() {
 describe("Header", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSingleSiteHomeLinkTargets.current = {
-      contact: "/contact",
-      products: "/products",
-      primaryCta: "/products",
-      secondaryCta: "/contact",
-    };
   });
 
   it("renders the production navigation surface", () => {
@@ -101,19 +70,6 @@ describe("Header", () => {
       "/contact",
     );
     expect(screen.getAllByText("Start an inquiry")).toHaveLength(2);
-  });
-
-  it("omits inquiry CTAs when the active profile has no inquiry route", () => {
-    mockSingleSiteHomeLinkTargets.current = {
-      primaryCta: "/",
-      secondaryCta: "/",
-    };
-
-    renderHeader();
-
-    expect(screen.queryByTestId("header-cta")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("header-mobile-cta")).not.toBeInTheDocument();
-    expect(screen.getByTestId("mobile-navigation")).toBeInTheDocument();
   });
 
   it("protects navigation labels from browser translation", () => {

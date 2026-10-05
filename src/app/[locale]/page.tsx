@@ -10,7 +10,6 @@ import { HeroSection } from "@/components/sections/hero-section";
 import { EmbeddedInquiryFormSection } from "@/components/sections/inquiry-form-embed";
 import { getCanonicalPath } from "@/config/paths";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
-import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
 
 interface HomePageProps {
@@ -52,7 +51,7 @@ export default async function HomePage({ params }: HomePageProps) {
       <EmbeddedInquiryFormSection
         title={t("finalCta.title")}
         description={t("finalCta.description")}
-        messages={getSourceMessages(locale)}
+        locale={locale}
       />
     </>
   );

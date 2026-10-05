@@ -1,7 +1,6 @@
 ---
 paths:
   - "src/lib/structured-data*.ts"
-  - "src/lib/page-structured-data.ts"
   - "src/lib/content/faq.ts"
   - "src/components/seo/**"
   - "src/app/**/page.tsx"

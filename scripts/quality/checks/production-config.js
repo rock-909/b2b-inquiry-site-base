@@ -315,7 +315,7 @@ function validatePublicLaunchTrustContent(env, input) {
     getPublicContactEmail,
     getPublicContactPhone,
     getPublicLogoPath,
-    SINGLE_SITE_DEFINITION,
+    SINGLE_SITE_CONFIG,
     SINGLE_SITE_FACTS,
   } = input?.publicLaunch ?? loadPublicLaunchInput();
   const rootDir = input?.rootDir ?? process.cwd();
@@ -335,17 +335,17 @@ function validatePublicLaunchTrustContent(env, input) {
   validateNoStarterMarker(
     target,
     "SITE_CONFIG.name",
-    SINGLE_SITE_DEFINITION.config.name,
+    SINGLE_SITE_CONFIG.name,
     "replace the starter company identity before client launch",
   );
-  if (!isPublicBaseUrlReady(SINGLE_SITE_DEFINITION.config.baseUrl)) {
+  if (!isPublicBaseUrlReady(SINGLE_SITE_CONFIG.baseUrl)) {
     target.push(
       "SITE_CONFIG.baseUrl is not public-launch ready (configure the real public domain before client launch).",
     );
   }
   if (
-    containsStarterMarker(SINGLE_SITE_DEFINITION.config.contact.email) ||
-    !getPublicContactEmail(SINGLE_SITE_DEFINITION.config.contact.email)
+    containsStarterMarker(SINGLE_SITE_CONFIG.contact.email) ||
+    !getPublicContactEmail(SINGLE_SITE_CONFIG.contact.email)
   ) {
     target.push(
       "SITE_CONFIG.contact.email is not public-launch ready (replace the starter contact email before client launch).",
@@ -354,35 +354,35 @@ function validatePublicLaunchTrustContent(env, input) {
   validateNoStarterMarker(
     target,
     "SITE_CONFIG.seo.defaultTitle",
-    SINGLE_SITE_DEFINITION.config.seo.defaultTitle,
+    SINGLE_SITE_CONFIG.seo.defaultTitle,
     "replace starter SEO title defaults before client launch",
   );
   validateNoStarterMarker(
     target,
     "SITE_CONFIG.seo.defaultDescription",
-    SINGLE_SITE_DEFINITION.config.seo.defaultDescription,
+    SINGLE_SITE_CONFIG.seo.defaultDescription,
     "replace starter SEO description defaults before client launch",
   );
   validateOptionalSocialProfile(
     target,
     "SITE_CONFIG.social.twitter",
-    SINGLE_SITE_DEFINITION.config.social.twitter,
+    SINGLE_SITE_CONFIG.social.twitter,
   );
   validateOptionalSocialProfile(
     target,
     "SITE_CONFIG.social.linkedin",
-    SINGLE_SITE_DEFINITION.config.social.linkedin,
+    SINGLE_SITE_CONFIG.social.linkedin,
   );
   validateNoStarterMarker(
     target,
     "SITE_CONFIG.seo.titleTemplate",
-    SINGLE_SITE_DEFINITION.config.seo.titleTemplate,
+    SINGLE_SITE_CONFIG.seo.titleTemplate,
     "replace the starter SEO title template before client launch",
   );
   validateNoStarterMarker(
     target,
     "SITE_CONFIG.description",
-    SINGLE_SITE_DEFINITION.config.description,
+    SINGLE_SITE_CONFIG.description,
     "replace the starter company description before client launch",
   );
   validateNoStarterMarker(

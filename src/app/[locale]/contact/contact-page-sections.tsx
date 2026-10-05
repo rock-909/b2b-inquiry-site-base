@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { FaqAccordion } from "@/components/sections/faq-accordion";
 import { Card } from "@/components/ui/card";
 import { SectionHead } from "@/components/ui/section-head";
@@ -6,12 +7,10 @@ import {
   getPublicContactPhone,
 } from "@/config/public-trust";
 import { SINGLE_SITE_FACTS } from "@/config/single-site";
-import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
-import type { FaqItem } from "@/types/content.types";
-import { createInquiryFormCopyFromMessages } from "@/components/forms/inquiry-form-copy";
+import type { FaqItem, Locale } from "@/types/content.types";
+import { createInquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
-import type { ContactPageData } from "@/app/[locale]/contact/contact-page-data";
 
 const CONTACT_HANDOFF_ITEM_KEYS = ["need", "context", "timing"] as const;
 const UNCONFIGURED_BUSINESS_HOURS = "Replace before launch";
@@ -27,51 +26,29 @@ function getBusinessHoursValue(
     : fallback;
 }
 
-export function ContactInquiryHandoff({
-  messages,
-}: {
-  messages: Record<string, unknown>;
-}) {
-  const title = readRequiredMessagePath(messages, [
-    "contact",
-    "inquiryHandoff",
-    "title",
-  ]);
-  const description = readRequiredMessagePath(messages, [
-    "contact",
-    "inquiryHandoff",
-    "description",
-  ]);
+export async function ContactInquiryHandoff({ locale }: { locale: Locale }) {
+  const t = await getTranslations({
+    locale,
+    namespace: "contact.inquiryHandoff",
+  });
 
   return (
     <section
       className="surface-card mb-10 p-6 md:p-8"
       data-testid="contact-inquiry-handoff"
     >
-      <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
+      <h2 className="text-2xl font-semibold text-foreground">{t("title")}</h2>
       <p className="mt-3 max-w-3xl text-base leading-7 text-muted-foreground">
-        {description}
+        {t("description")}
       </p>
       <div className="mt-6 grid gap-4 md:grid-cols-3">
         {CONTACT_HANDOFF_ITEM_KEYS.map((key) => (
           <div key={key} className="rounded-2xl border border-border p-4">
             <h3 className="text-base font-semibold text-foreground">
-              {readRequiredMessagePath(messages, [
-                "contact",
-                "inquiryHandoff",
-                "items",
-                key,
-                "title",
-              ])}
+              {t(`items.${key}.title`)}
             </h3>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              {readRequiredMessagePath(messages, [
-                "contact",
-                "inquiryHandoff",
-                "items",
-                key,
-                "description",
-              ])}
+              {t(`items.${key}.description`)}
             </p>
           </div>
         ))}
@@ -80,18 +57,15 @@ export function ContactInquiryHandoff({
   );
 }
 
-export function ContactMethodsCard({
-  copy,
-}: {
-  copy: ContactPageData["copy"]["panel"]["contact"];
-}) {
+export async function ContactMethodsCard({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: "contact.panel" });
   const publicEmail = getPublicContactEmail(SINGLE_SITE_FACTS.contact.email);
   const publicPhone = getPublicContactPhone(SINGLE_SITE_FACTS.contact.phone);
 
   return (
     <Card className="gap-0 p-0 shadow-[var(--surface-shadow)]">
       <div className="border-b border-border px-6 py-5">
-        <h3 className="text-lg font-semibold">{copy.title}</h3>
+        <h3 className="text-lg font-semibold">{t("contactTitle")}</h3>
       </div>
       <div className="space-y-4 p-6">
         <div className="flex items-center gap-3">
@@ -111,9 +85,9 @@ export function ContactMethodsCard({
             </svg>
           </div>
           <div className="min-w-0">
-            <p className="font-medium">{copy.emailLabel}</p>
+            <p className="font-medium">{t("email")}</p>
             <p className="break-words text-muted-foreground">
-              {publicEmail ?? copy.emailUnavailable}
+              {publicEmail ?? t("emailUnavailable")}
             </p>
           </div>
         </div>
@@ -136,7 +110,7 @@ export function ContactMethodsCard({
               </svg>
             </div>
             <div className="min-w-0">
-              <p className="font-medium">{copy.phoneLabel}</p>
+              <p className="font-medium">{t("phone")}</p>
               <p className="break-words text-muted-foreground">{publicPhone}</p>
             </div>
           </div>
@@ -146,70 +120,57 @@ export function ContactMethodsCard({
   );
 }
 
-export function ResponseExpectationsCard({
-  responseCopy,
-  hoursCopy,
-}: {
-  responseCopy: ContactPageData["copy"]["panel"]["response"];
-  hoursCopy: ContactPageData["copy"]["panel"]["hours"];
-}) {
+export async function ResponseExpectationsCard({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: "contact.panel" });
   const { businessHours } = SINGLE_SITE_FACTS.contact;
 
   return (
     <Card className="gap-0 p-0 shadow-[var(--surface-shadow)]">
       <div className="border-b border-border px-6 py-5">
-        <h3 className="text-lg font-semibold">{responseCopy.title}</h3>
+        <h3 className="text-lg font-semibold">{t("responseTitle")}</h3>
       </div>
       <div className="p-6">
         <dl className="space-y-4 text-sm">
           <div className="space-y-1">
-            <dt className="font-medium">{responseCopy.responseTimeLabel}</dt>
+            <dt className="font-medium">{t("responseTimeLabel")}</dt>
             <dd className="min-w-0 break-words text-muted-foreground">
-              {responseCopy.responseTimeValue}
+              {t("responseTimeValue")}
             </dd>
           </div>
           <div className="space-y-1">
-            <dt className="font-medium">{responseCopy.bestForLabel}</dt>
+            <dt className="font-medium">{t("bestForLabel")}</dt>
             <dd className="min-w-0 break-words text-muted-foreground">
-              {responseCopy.bestForValue}
+              {t("bestForValue")}
             </dd>
           </div>
           <div className="space-y-1">
-            <dt className="font-medium">{responseCopy.prepareLabel}</dt>
+            <dt className="font-medium">{t("prepareLabel")}</dt>
             <dd className="min-w-0 break-words text-muted-foreground">
-              {responseCopy.prepareValue}
+              {t("prepareValue")}
             </dd>
           </div>
         </dl>
 
         <div className="mt-6 border-t pt-6">
           <h4 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-            {hoursCopy.title}
+            {t("hoursTitle")}
           </h4>
           <div className="space-y-2 text-sm">
             <div className="flex min-w-0 justify-between gap-4">
-              <span>{hoursCopy.weekdaysLabel}</span>
+              <span>{t("weekdays")}</span>
               <span className="text-muted-foreground">
-                {getBusinessHoursValue(
-                  businessHours?.weekdays,
-                  hoursCopy.closedLabel,
-                )}
+                {getBusinessHoursValue(businessHours?.weekdays, t("closed"))}
               </span>
             </div>
             <div className="flex min-w-0 justify-between gap-4">
-              <span>{hoursCopy.saturdayLabel}</span>
+              <span>{t("saturday")}</span>
               <span className="text-muted-foreground">
-                {getBusinessHoursValue(
-                  businessHours?.saturday,
-                  hoursCopy.closedLabel,
-                )}
+                {getBusinessHoursValue(businessHours?.saturday, t("closed"))}
               </span>
             </div>
             <div className="flex min-w-0 justify-between gap-4">
-              <span>{hoursCopy.sundayLabel}</span>
-              <span className="text-muted-foreground">
-                {hoursCopy.closedLabel}
-              </span>
+              <span>{t("sunday")}</span>
+              <span className="text-muted-foreground">{t("closed")}</span>
             </div>
           </div>
         </div>
@@ -218,13 +179,14 @@ export function ResponseExpectationsCard({
   );
 }
 
-export function ContactFaqSection({
+export async function ContactFaqSection({
   faqItems,
-  title,
+  locale,
 }: {
   faqItems: FaqItem[];
-  title: string;
+  locale: Locale;
 }) {
+  const t = await getTranslations({ locale, namespace: "faq" });
   const accordionItems = faqItems.map((item) => ({
     key: item.id,
     question: item.question,
@@ -237,22 +199,16 @@ export function ContactFaqSection({
       data-testid="faq-section"
     >
       <div className="mx-auto max-w-[1080px] px-6">
-        <SectionHead title={title} />
+        <SectionHead title={t("sectionTitle")} />
         <FaqAccordion items={accordionItems} />
       </div>
     </section>
   );
 }
 
-export function ContactFormWithFallback({
-  messages,
-}: {
-  messages: Record<string, unknown>;
-}) {
-  const inquiryCopy = createInquiryFormCopyFromMessages(
-    messages,
-    SINGLE_SITE_FACTS.contact.email,
-  );
+export async function ContactFormWithFallback({ locale }: { locale: Locale }) {
+  const t = await getTranslations({ locale, namespace: "inquiry.form" });
+  const inquiryCopy = createInquiryFormCopy(t, SINGLE_SITE_FACTS.contact.email);
   const inquiryFallback = <InquiryFormStaticFallback copy={inquiryCopy} />;
 
   return (
