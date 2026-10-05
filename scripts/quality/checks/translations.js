@@ -90,6 +90,17 @@ function collectLeafPaths(value, prefix = "") {
   );
 }
 
+/** 叶子必须是字符串；运行时遇到其他类型会直接显示翻译键。 */
+function collectNonStringLeafPaths(value, prefix = "") {
+  if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value).flatMap(([key, nested]) =>
+      collectNonStringLeafPaths(nested, prefix ? `${prefix}.${key}` : key),
+    );
+  }
+
+  return typeof value === "string" ? [] : [prefix || "(root)"];
+}
+
 function validateLocale(locale) {
   const relativePath = getMessagePath(locale);
   const absolutePath = getMessageAbsolutePath(locale);
@@ -109,7 +120,17 @@ function validateLocale(locale) {
     return null;
   }
 
-  const leafKeys = new Set(collectLeafPaths(JSON.parse(source)));
+  const messages = JSON.parse(source);
+  const nonStringPaths = collectNonStringLeafPaths(messages);
+  if (nonStringPaths.length > 0) {
+    console.error(`   Error: non-string message values in ${relativePath}:`);
+    for (const nonStringPath of nonStringPaths.slice(0, 10)) {
+      console.error(`      - ${nonStringPath}`);
+    }
+    return null;
+  }
+
+  const leafKeys = new Set(collectLeafPaths(messages));
   return { locale, leafKeys, totalKeys: leafKeys.size };
 }
 
