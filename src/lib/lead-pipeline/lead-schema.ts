@@ -83,3 +83,5 @@ export const inquiryLeadSchema = object({
 });
 
 export type InquiryLeadInput = ZodOutput<typeof inquiryLeadSchema>;
+
+export type ValidatedInquiry = InquiryLeadInput & { referenceId: string };

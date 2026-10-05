@@ -9,10 +9,8 @@ import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { EMAIL_COPY } from "@/emails/email-copy";
 import { env, getRuntimeEnvString } from "@/lib/env";
 import { ResendHttpEmailClient } from "@/lib/email/resend-http-client";
-import {
-  buildInquiryEmailContent,
-  type InquiryEmailData,
-} from "@/lib/email/runtime-email-content";
+import { buildInquiryEmailContent } from "@/lib/email/runtime-email-content";
+import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
 import { logger, sanitizeEmail } from "@/lib/logger";
 
 function getInquiryTags(referenceId: string) {
@@ -85,7 +83,7 @@ export class ResendService {
     return this.isConfigured && this.resend !== null;
   }
 
-  public async sendInquiryEmail(data: InquiryEmailData): Promise<string> {
+  public async sendInquiryEmail(data: ValidatedInquiry): Promise<string> {
     if (!this.isReady()) {
       throw new Error("Resend service is not configured");
     }

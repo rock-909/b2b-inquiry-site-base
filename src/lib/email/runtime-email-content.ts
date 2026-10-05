@@ -1,3 +1,5 @@
+import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
+import { splitName } from "@/lib/lead-pipeline/utils";
 import { EMAIL_COPY } from "@/emails/email-copy";
 import {
   COLORS,
@@ -113,23 +115,15 @@ function renderEmailDocument({
   };
 }
 
-/** 已通过 inquiryLeadSchema 校验的询盘字段；这里只负责渲染，不再清洗。 */
-export interface InquiryEmailData {
-  referenceId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  message?: string;
-}
-
 export function buildInquiryEmailContent(
-  data: InquiryEmailData,
+  data: ValidatedInquiry,
 ): RuntimeEmailContent {
+  const { firstName, lastName } = splitName(data.fullName);
   const fields = compactFields([
     { label: EMAIL_COPY.common.fields.reference, value: data.referenceId },
     {
       label: EMAIL_COPY.common.fields.contactName,
-      value: `${data.firstName} ${data.lastName}`,
+      value: `${firstName} ${lastName}`,
     },
     { label: EMAIL_COPY.common.fields.email, value: data.email },
     data.message
