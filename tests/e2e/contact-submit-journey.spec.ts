@@ -6,6 +6,8 @@ test("buyer fills contact form, clicks submit, sees success", async ({
   page,
 }) => {
   const selectors = buildCanarySelectors();
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.route("**/api/inquiry", (route) =>
     route.fulfill({
       status: 200,
@@ -42,6 +44,7 @@ test("buyer fills contact form, clicks submit, sees success", async ({
   await expect(fullName).toHaveValue("");
   await expect(page.locator('input[name="email"]')).toHaveValue("");
   await expect(page.locator('textarea[name="message"]')).toHaveValue("");
+  expect(pageErrors).toStrictEqual([]);
 });
 
 test("buyer retries a failed inquiry without losing the draft", async ({
