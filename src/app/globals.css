@@ -111,7 +111,7 @@
       }
     }
 
-    @media (prefers-contrast: high) {
+    @media (prefers-contrast: more) {
       ::view-transition-old(root),
       ::view-transition-new(root) {
         animation-timing-function: linear;
@@ -138,7 +138,7 @@
   }
 
   /* High contrast mode */
-  @media (prefers-contrast: high) {
+  @media (prefers-contrast: more) {
     *:focus-visible {
       outline: 3px solid var(--ring) !important;
       outline-offset: 2px !important;
@@ -213,6 +213,17 @@
 ::-moz-selection {
   background-color: Highlight;
   color: HighlightText;
+}
+
+/* 强制颜色模式（如 Windows 高对比度）会去掉 box-shadow，而 Tailwind 的
+   outline-none 只输出 outline-style: none，键盘焦点会整个消失。
+   这段不放进 @layer：只有未分层规则才能盖过 utilities 层的 outline-none，
+   一处恢复所有控件的焦点轮廓，不必逐个组件改。 */
+@media (forced-colors: active) {
+  *:focus-visible {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
