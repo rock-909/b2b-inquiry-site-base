@@ -317,22 +317,57 @@ function pushExpectedStatus(response, expectedStatus, failures) {
   );
 }
 
+// Referrer-Policy 含 ASCII 大写字母时拒绝；否则取逗号列表中最后一个
+// 可识别的小写策略，忽略未知 token。
+const REFERRER_POLICY_TOKENS = new Set([
+  "no-referrer",
+  "no-referrer-when-downgrade",
+  "same-origin",
+  "origin",
+  "strict-origin",
+  "origin-when-cross-origin",
+  "strict-origin-when-cross-origin",
+  "unsafe-url",
+]);
+
+function getEffectiveReferrerPolicy(value) {
+  if (/[A-Z]/u.test(value ?? "")) return undefined;
+
+  const recognized = (value ?? "")
+    .split(",")
+    .map((token) => token.trim())
+    .filter((token) => REFERRER_POLICY_TOKENS.has(token));
+  return recognized.at(-1);
+}
+
 // F-05：安全 header 必须真的到达浏览器——配置存在不等于生效，
 // 部署管线（CDN/Worker/静态资产分流）任何一环丢失都只能在这里发现。
+// 按策略语义判断“实际生效的值”，而不是子串包含：被改写或被覆盖的值不能算通过。
 function pushSecurityHeaderChecks(response, failures) {
   const headerChecks = [
-    ["x-frame-options", response.frameOptions, "DENY"],
-    ["x-content-type-options", response.nosniff, "nosniff"],
+    [
+      "x-frame-options",
+      response.frameOptions,
+      "DENY",
+      response.frameOptions?.trim(),
+    ],
+    [
+      "x-content-type-options",
+      response.nosniff,
+      "nosniff",
+      response.nosniff?.trim(),
+    ],
     [
       "referrer-policy",
       response.referrerPolicy,
       "strict-origin-when-cross-origin",
+      getEffectiveReferrerPolicy(response.referrerPolicy),
     ],
   ];
 
-  for (const [headerName, actual, expected] of headerChecks) {
+  for (const [headerName, actual, expected, effective] of headerChecks) {
     pushFailureUnless(
-      (actual ?? "").toLowerCase().includes(expected.toLowerCase()),
+      effective?.toLowerCase() === expected.toLowerCase(),
       `Expected ${response.pathname} to carry ${headerName}: ${expected}, got ${actual ?? "none"}`,
       failures,
     );
