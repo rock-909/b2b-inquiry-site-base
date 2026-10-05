@@ -27,7 +27,7 @@ const MAGIC_NUMBER_IGNORE_LIST = [
   365, 1000, 1024, 4000, 5000, 60000, 300000,
 ];
 
-// 构建/配置/脚本工具的共享宽松规则与插件（R2-F04）。
+// 构建/配置/脚本工具的共享宽松规则与插件。
 // 这些条目在 config-and-dev-tools 与 scripts 两个 block 中逐字相同；
 // 两个 block 各自的 scope-specific 差异（severity/选项/独有规则）仍留在各自 block 内。
 const sharedToolingPlugins = {
@@ -177,6 +177,26 @@ const eslintConfig = [
       ".eslintcache-audit",
       // Auto-generated files
       "src/lib/*.generated.ts",
+      "node_modules/**",
+      "out/**",
+      ".conductor/**",
+      "public/**",
+      ".env*",
+      "*.d.ts",
+      "backups/**", // 忽略备份文件，减少非目标代码噪声
+      ".worktrees/**", // local dependency-lane worktrees and their generated build output
+      ".dependency-cruiser.js", // 工具配置文件
+      ".claude/skills/**", // agent skill 参考脚本，非生产代码
+      ".claude/worktrees/**", // temporary git worktree state
+      ".agent/**", // repo-local agent runtime assets
+      ".agents/**", // repo-local agent skill assets
+      ".continue/**", // local editor/agent workspace files
+      ".factory/**", // local factory outputs
+      ".kiro/**", // local IDE agent assets
+      "skills/**", // local skill workspace
+      "skills-lock.json", // local skill lockfile
+      ".open-next/**", // OpenNext/Cloudflare 构建产物
+      ".wrangler/**", // Wrangler 构建产物
     ],
   },
   // Base JavaScript configuration
@@ -258,8 +278,6 @@ const eslintConfig = [
       promise,
     },
     rules: {
-      "@typescript-eslint/no-explicit-any": "error",
-      "no-throw-literal": "error",
       "promise/always-return": "off",
       "promise/catch-or-return": ["error", { allowFinally: true }],
       "no-console": ["error", { allow: ["warn", "error"] }],
@@ -480,17 +498,12 @@ const eslintConfig = [
     files: ["**/*.{js,jsx,ts,tsx}"],
     ignores: [
       "scripts/**/*.{js,ts}",
-      "config/**/*.{js,ts}",
       "*.config.{js,ts,mjs}",
-      // 允许常量聚合入口使用 export * 模式（集中 re-export 常量）
-      "src/constants/index.ts",
       // 测试文件豁免 - 允许相对路径导入
       "**/*.test.{js,jsx,ts,tsx}",
       "**/__tests__/**/*.{js,jsx,ts,tsx}",
       "tests/**/*.{js,jsx,ts,tsx}",
       "src/test/**/*.{js,jsx,ts,tsx}",
-      "src/testing/**/*.{js,jsx,ts,tsx}",
-      "e2e/**/*.{js,jsx,ts,tsx}",
     ],
     rules: {
       // 使用命名导出，避免新增不透明的 barrel 边界。
@@ -532,7 +545,6 @@ const eslintConfig = [
       "src/lib/public-runtime-env.ts",
       "src/lib/logger.ts",
       "src/test/**",
-      "src/testing/**",
       "**/__tests__/**",
       "**/*.{test,spec}.{js,jsx,ts,tsx}",
     ],
@@ -551,7 +563,6 @@ const eslintConfig = [
 
       // 函数命名和结构
       "func-names": ["warn", "as-needed"], // 鼓励命名函数，便于调试
-      "no-anonymous-default-export": "off", // 允许匿名默认导出（React组件）
 
       // 安全增强（eval / implied-eval / Function 构造函数的禁令在
       // production-quality，作用域与本块完全相同，不在这里重复设置）
@@ -626,14 +637,8 @@ const eslintConfig = [
       "**/__tests__/**/*.{js,jsx,ts,tsx}",
       "tests/**/*.{js,jsx,ts,tsx}",
       "src/test/**/*.{js,jsx,ts,tsx}",
-      "src/testing/**/*.{js,jsx,ts,tsx}",
-      "e2e/**/*.{js,jsx,ts,tsx}",
-      "scripts/__fixtures__/**/*.{js,jsx,ts,tsx}",
       "**/mocks/**/*.{js,jsx,ts,tsx}",
     ],
-    plugins: {
-      security,
-    },
     languageOptions: {
       globals: {
         describe: "readonly",
@@ -726,14 +731,7 @@ const eslintConfig = [
   {
     name: "types-compatibility-overrides",
     files: ["src/types/**/*.{ts,tsx}"],
-    plugins: {
-      security,
-    },
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ],
       "@typescript-eslint/no-require-imports": "off",
       "max-depth": ["warn", 5],
       "security/detect-object-injection": "warn",
@@ -787,42 +785,6 @@ const eslintConfig = [
 
   // Prettier configuration (must be last to override conflicting rules)
   prettierConfig,
-
-  // Global ignores
-  {
-    ignores: [
-      "node_modules/**",
-      ".next/**",
-      ".next-lighthouse/**",
-      ".trash-next-artifacts/**",
-      "out/**",
-      "build/**",
-      "dist/**",
-      ".conductor/**",
-      "public/**",
-      ".env*",
-      "coverage/**",
-      "*.d.ts",
-      "reports/**",
-      "backups/**", // 忽略备份文件，减少非目标代码噪声
-      ".worktrees/**", // local dependency-lane worktrees and their generated build output
-      "jest.setup.js",
-      "jest.config.js",
-      "tina/__generated__/**", // 忽略TinaCMS生成的文件
-      ".dependency-cruiser.js", // 工具配置文件
-      ".claude/skills/**", // agent skill 参考脚本，非生产代码
-      ".claude/worktrees/**", // temporary git worktree state
-      ".agent/**", // repo-local agent runtime assets
-      ".agents/**", // repo-local agent skill assets
-      ".continue/**", // local editor/agent workspace files
-      ".factory/**", // local factory outputs
-      ".kiro/**", // local IDE agent assets
-      "skills/**", // local skill workspace
-      "skills-lock.json", // local skill lockfile
-      ".open-next/**", // OpenNext/Cloudflare 构建产物
-      ".wrangler/**", // Wrangler 构建产物
-    ],
-  },
 ];
 
 export default eslintConfig;

@@ -9,44 +9,68 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 engineStrict: true
-minimumReleaseAge: 0
 overrides:
+  # version floor; reached via @babel/helper-compilation-targets, update-browserslist-db
   browserslist@<=4.28.6: '>=4.28.7'
+  # version floor; reached via vite, tsx, wrangler, @opennextjs/aws
   esbuild@>=0.17.0 <0.28.1: '>=0.28.1'
+  # version floor; reached via @playwright/test
   playwright@<1.55.1: '>=1.57.0'
-  vite@>=7.1.0 <7.3.2: '>=7.3.2'
+  # keeps eslint-config-next on the same resolver-node 0.3.9 that eslint-plugin-import resolves
   eslint-config-next>eslint-import-resolver-node: 0.3.9
+  # keeps eslint-config-next on the root's eslint-import-resolver-typescript 4.4.x
   eslint-config-next>eslint-import-resolver-typescript: '>=4.4.4'
-  tmp: 0.2.6
-  mdast-util-to-hast: '>=13.2.1'
+  # version floor; reached via @lhci/cli (4.x) and @opennextjs/aws (5.x)
   express: '>=4.22.0'
+  # version floor; reached via express and body-parser
   qs: '>=6.15.2'
+  # version floor, pinned exact; reached via inquirer; bump the pin when a newer lodash is needed
   lodash: 4.18.1
+  # version floor; reached via lighthouse
   lodash-es: '>=4.18.0'
+  # version floor; reached via get-uri
   basic-ftp: '>=5.3.1'
+  # version floor; reached via router (express 5)
   path-to-regexp@>=8.0.0 <8.4.0: '>=8.4.0'
-  happy-dom: '>=20.8.9'
+  # version floor; reached via socks
   ip-address@<=10.1.0: '>=10.1.1'
+  # version floor; reached via eslint-plugin-import, eslint-plugin-react
   minimatch@<3.1.5: '>=3.1.5'
+  # version floor; reached via minimatch
   brace-expansion@<1.1.13: '>=1.1.13'
+  # @opennextjs/aws declares ^8.0.6, whose glob 10.3.3 is in the glob@10.2-10.5 vulnerable range; 9.x uses glob 10.5.0
   '@opennextjs/aws>@node-minify/core': 9.0.2
+  # same reason as @node-minify/core above
   '@opennextjs/aws>@node-minify/terser': 9.0.1
+  # version floor; reached via @node-minify/core
   glob@>=10.2.0 <10.5.0: 10.5.0
+  # version floor; reached via eslint, glob, typescript-estree
   minimatch@>=9.0.0 <10.2.6: 10.2.6
+  # version floor; reached via commitlint, ajv-formats, conf
   ajv@>=8.0.0 <8.18.0: '>=8.18.0'
-  serialize-javascript@<=7.0.2: '>=7.0.3'
-  webpack@>=5.49.0 <5.104.1: '>=5.104.1'
+  # version floor; reached via vite, vitest, knip, dependency-cruiser, tinyglobby, fdir
   picomatch@>=4.0.0 <4.0.4: '>=4.0.4'
+  # version floor; reached via eslint-plugin-react-hooks, styled-jsx, @babel/helper-module-transforms
   '@babel/core@<=7.29.0': 7.29.7
+  # version floor; reached via eslint-plugin-import, eslint-plugin-react and many tools
   semver@<7.7.4: '>=7.7.4'
+  # version floor; reached via lighthouse
   ws@>=7.0.0 <7.5.11: 7.5.11
+  # version floor; reached via miniflare, puppeteer-core
   ws@>=8.0.0 <8.21.0: 8.21.0
+  # version floor; reached via @types/node-fetch
   form-data@>=4.0.0 <4.0.6: 4.0.6
+  # version floor for the root dependency next-intl
   next-intl@<4.11.0: '>=4.11.0'
+  # version floor; reached via next, vite, @tailwindcss/postcss
   postcss@<8.5.18: '>=8.5.18'
+  # version floor; reached via next, miniflare
   sharp@<0.35.0: '>=0.35.0'
+  # version floor; reached via @lhci/cli, external-editor
   tmp@<0.2.6: '>=0.2.6'
+  # version floor; reached via miniflare
   undici@>=7.0.0 <7.29.0: 7.29.0
+  # version floor; reached via @lhci/cli
   uuid: '>=14.0.0'
 peerDependencyRules:
   allowedVersions:
@@ -55,7 +79,6 @@ peerDependencyRules:
     eslint-plugin-jsx-a11y>eslint: '10'
     eslint-plugin-react>eslint: '10'
     tailwindcss-animate>tailwindcss: '4'
-    tsconfck>typescript: '6'
 sharedWorkspaceLockfile: true
 trustPolicy: no-downgrade
 verifyDepsBeforeRun: true

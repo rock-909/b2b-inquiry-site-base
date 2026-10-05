@@ -86,9 +86,6 @@ temp/
 .parcel-cache/
 .eslintcache
 
-# Husky hooks
-.husky/_/
-
 # Test artifacts
 test-results/
 playwright-report/
@@ -126,6 +123,3 @@ semgrep-*.json
 
 # Local tool data (not project code)
 .firecrawl/
-
-# CommonJS service files (legacy format)
-src/services/*-cjs.js

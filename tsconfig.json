@@ -66,27 +66,12 @@
     "**/*.spec.tsx",
     "src/test/**/*.ts",
     "src/test/**/*.tsx",
-    "src/testing/**/*.ts",
-    "src/testing/**/*.tsx",
     "tests/**/*.ts",
     "tests/**/*.tsx",
-    "__mocks__/**/*.ts",
-    "__mocks__/**/*.tsx",
-    "__mocks__/**/*.js",
-    "src/**/__tests__/**/*.ts",
-    "src/**/__tests__/**/*.tsx",
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/**/*.spec.ts",
-    "src/**/*.spec.tsx",
     "scripts/**/*.ts",
     "scripts/**/*.js",
-    "config/**/*.ts",
-    "config/**/*.js",
     "*.config.ts",
     "*.config.js",
-    "*.config.mjs",
-    "instrumentation*.ts",
-    "src/constants/dev-tools.ts"
+    "*.config.mjs"
   ]
 }
