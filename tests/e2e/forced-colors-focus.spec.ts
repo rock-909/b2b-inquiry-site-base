@@ -61,7 +61,7 @@ test.describe("forced-colors keyboard indicators", () => {
       .locator("[data-highlighted]");
     await expect(highlighted).toHaveCount(1);
 
-    // 高亮项背景必须和菜单底色不同，否则只剩一个字符串不同、肉眼不可见的透明/白底。
+    // 无轮廓时才依赖背景差异，避免透明/白底高亮与菜单底色相同而不可见。
     const outline = await visibleOutline(highlighted);
     const background = await highlighted.evaluate(
       (element) => getComputedStyle(element).backgroundColor,
