@@ -161,7 +161,7 @@
   --footer-bg: var(--neutral-surface);
 }
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   :root {
     --border: var(--neutral-control-border);
     --ring: var(--brand-focus-strong);

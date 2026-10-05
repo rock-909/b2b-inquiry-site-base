@@ -13,7 +13,7 @@ vi.mock("next-intl/middleware", () => ({
 vi.mock("@/i18n/routing-config", () => ({
   routing: {
     defaultLocale: "en",
-    locales: ["en"],
+    locales: ["en", "es"],
     pathnames: {
       "/": "/",
       "/about": "/about",
@@ -50,7 +50,7 @@ describe("proxy next-intl boundary", () => {
     expect(createMiddlewareMock).toHaveBeenCalledWith(
       expect.objectContaining({
         defaultLocale: "en",
-        locales: ["en"],
+        locales: ["en", "es"],
       }),
     );
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
@@ -119,6 +119,34 @@ describe("proxy next-intl boundary", () => {
     expect(response.status).toBe(404);
     expect(response.headers.get("x-middleware-rewrite")).toBe(
       "http://localhost:3000/en/__not-found-placeholder",
+    );
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the locale prefix when rewriting an unknown prefixed route to 404", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest("http://localhost:3000/es/nope");
+
+    const response = proxy(request);
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost:3000/es/__not-found-placeholder",
+    );
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the locale prefix when rewriting an unknown prefixed product to 404", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest(
+      "http://localhost:3000/es/products/not-a-real-product",
+    );
+
+    const response = proxy(request);
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost:3000/es/__not-found-placeholder",
     );
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
