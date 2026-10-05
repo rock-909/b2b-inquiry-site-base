@@ -78,6 +78,8 @@
   --footer-heading: var(--neutral-heading-subtle);
   --footer-divider: color-mix(in oklch, var(--neutral-text) 10%, transparent);
   --grid-guide: color-mix(in oklch, var(--neutral-text) 6%, transparent);
+  /* 遮罩两个主题都用固定的半透明深色；不要由 --neutral-text 派生（深色主题下会变白）。 */
+  --overlay-scrim: oklch(0 0 0 / 0.5);
 
   /* Global visual feel. */
   --control-height-sm: 2rem;
