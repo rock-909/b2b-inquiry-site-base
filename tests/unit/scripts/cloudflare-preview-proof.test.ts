@@ -7,12 +7,11 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import { runChildCommand } from "../../../scripts/quality/checks/cloudflare-smoke.js";
 
 const FIXTURE_PREFIX = "b2b-cf-preview-proof-";
@@ -21,14 +20,14 @@ const tempDirs: string[] = [];
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
+    rmSync(tempDir, { recursive: true, force: true });
   }
 });
 
 // 子进程边界上的替身：假的 pnpm / node 只记录调用顺序并按环境变量输出，
 // 证明通道本身（含 git）仍是真实进程。
 function createProofFixture() {
-  const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
+  const rootDir = mkdtempSync(path.resolve(FIXTURE_PREFIX));
   tempDirs.push(rootDir);
 
   const checksDir = path.join(rootDir, "scripts", "quality", "checks");
@@ -167,16 +166,30 @@ describe("cloudflare preview deploy proof", () => {
 });
 
 describe("runChildCommand", () => {
-  it("kills a child that outlives its timeout instead of waiting for it", () => {
-    const result = runChildCommand(
-      process.execPath,
-      ["-e", "setTimeout(() => {}, 30000)"],
-      300,
+  it("kills wrapper descendants before they can produce delayed side effects", async () => {
+    const rootDir = mkdtempSync(path.resolve(FIXTURE_PREFIX));
+    tempDirs.push(rootDir);
+    const marker = path.join(rootDir, "marker");
+    const result = await runChildCommand(
+      "sh",
+      [
+        "-c",
+        '"$1" -e "$2" "$3" & wait',
+        "wrapper",
+        process.execPath,
+        'process.stdout.write("ready"); setTimeout(() => require("node:fs").writeFileSync(process.argv[1], "escaped"), 1500)',
+        marker,
+      ],
+      700,
     );
 
+    await new Promise((resolve) => setTimeout(resolve, 1800));
+    expect(result.stdout).toBe("ready");
     expect((result.error as NodeJS.ErrnoException | undefined)?.code).toBe(
       "ETIMEDOUT",
     );
+    expect(result.status).toBeNull();
     expect(result.signal).toBe("SIGKILL");
+    expect(existsSync(marker)).toBe(false);
   });
 });

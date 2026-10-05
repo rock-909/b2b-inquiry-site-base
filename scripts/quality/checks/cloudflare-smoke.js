@@ -1,4 +1,4 @@
-const { spawnSync } = require("node:child_process");
+const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -667,15 +667,51 @@ async function runDeployedSmoke(args = []) {
 // Preview deploy proof adapter：编排部署与已部署冒烟，产出结构化 proof。
 // ---------------------------------------------------------------------------
 
-function runChildCommand(command, args, timeoutMs) {
-  return spawnSync(command, args, {
-    cwd: ROOT,
-    stdio: "pipe",
-    encoding: "utf8",
-    env: process.env,
-    timeout: timeoutMs,
-    killSignal: "SIGKILL",
-    maxBuffer: CHILD_COMMAND_MAX_BUFFER_BYTES,
+async function runChildCommand(command, args, timeoutMs) {
+  return new Promise((resolve) => {
+    const child = spawn(command, args, {
+      cwd: ROOT,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: process.env,
+      detached: true,
+    });
+    const output = { stdout: [], stderr: [] };
+    let outputBytes = 0;
+    let error;
+
+    const terminate = (code) => {
+      error ??= Object.assign(new Error(`Command failed: ${code}`), { code });
+      if (child.pid) {
+        try {
+          process.kill(-child.pid, "SIGKILL");
+        } catch (killError) {
+          if (killError.code !== "ESRCH") throw killError;
+        }
+      }
+    };
+    const timer = setTimeout(() => terminate("ETIMEDOUT"), timeoutMs);
+
+    for (const stream of ["stdout", "stderr"]) {
+      child[stream].on("data", (chunk) => {
+        const remaining = CHILD_COMMAND_MAX_BUFFER_BYTES - outputBytes;
+        if (remaining > 0) output[stream].push(chunk.subarray(0, remaining));
+        outputBytes += Math.min(chunk.length, remaining);
+        if (chunk.length > remaining) terminate("ENOBUFS");
+      });
+    }
+    child.on("error", (childError) => {
+      error ??= childError;
+    });
+    child.on("close", (status, signal) => {
+      clearTimeout(timer);
+      resolve({
+        status: error ? null : status,
+        signal,
+        stdout: Buffer.concat(output.stdout).toString("utf8"),
+        stderr: Buffer.concat(output.stderr).toString("utf8"),
+        error,
+      });
+    });
   });
 }
 
@@ -741,7 +777,7 @@ async function runCloudflarePreviewDeployedProof() {
     return exitCode;
   };
 
-  const revParse = runChildCommand(
+  const revParse = await runChildCommand(
     "git",
     ["rev-parse", "HEAD"],
     CF_PREVIEW_SMOKE_TIMEOUT_MS,
@@ -761,7 +797,7 @@ async function runCloudflarePreviewDeployedProof() {
 
   // `opennextjs-cloudflare deploy` 只上传磁盘上现有的 .open-next，所以每次证明
   // 都要先就地构建，并在这份构建日志上检查 next-intl 缺失消息。
-  const buildResult = runChildCommand(
+  const buildResult = await runChildCommand(
     "pnpm",
     CF_PREVIEW_BUILD_COMMAND,
     CF_PREVIEW_BUILD_DEPLOY_TIMEOUT_MS,
@@ -799,7 +835,7 @@ async function runCloudflarePreviewDeployedProof() {
     );
   }
 
-  const deployResult = runChildCommand(
+  const deployResult = await runChildCommand(
     "pnpm",
     CF_PREVIEW_DEPLOY_COMMAND,
     CF_PREVIEW_BUILD_DEPLOY_TIMEOUT_MS,
@@ -847,7 +883,7 @@ async function runCloudflarePreviewDeployedProof() {
     "--base-url",
     baseUrl,
   ];
-  const smokeResult = runChildCommand(
+  const smokeResult = await runChildCommand(
     "node",
     smokeArgs,
     CF_PREVIEW_SMOKE_TIMEOUT_MS,
