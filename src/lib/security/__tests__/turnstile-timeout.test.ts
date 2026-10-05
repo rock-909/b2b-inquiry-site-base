@@ -1,5 +1,4 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { captureExpectedConsoleErrors } from "@/test/console";
 import { logger } from "@/lib/logger";
 import {
   TURNSTILE_VERIFY_TIMEOUT_MS,
@@ -33,10 +32,7 @@ it.each([
   );
   await expect(
     verifyTurnstileDetailed("test-token", "127.0.0.1"),
-  ).resolves.toEqual({
-    success: false,
-    errorCodes: ["network-error"],
-  });
+  ).resolves.toEqual({ status: "service-unavailable" });
   expect(log).toHaveBeenCalled();
 });
 
@@ -48,10 +44,7 @@ it("does not log malformed verification response bodies", async () => {
   );
   await expect(
     verifyTurnstileDetailed("test-token", "127.0.0.1"),
-  ).resolves.toEqual({
-    success: false,
-    errorCodes: ["network-error"],
-  });
+  ).resolves.toEqual({ status: "service-unavailable" });
   expect(log).toHaveBeenCalledWith("Turnstile verification network failure", {
     errorCode: "network-error",
     ip: expect.any(String),
@@ -60,9 +53,7 @@ it("does not log malformed verification response bodies", async () => {
 
 it("aborts a stalled response body after receiving successful headers", async () => {
   vi.useFakeTimers();
-  const errors = captureExpectedConsoleErrors(
-    "Turnstile verification network failure",
-  );
+  const log = vi.spyOn(logger, "error").mockImplementation(() => undefined);
   vi.stubGlobal(
     "fetch",
     vi.fn(async (_url, init: RequestInit) => ({
@@ -78,9 +69,9 @@ it("aborts a stalled response body after receiving successful headers", async ()
 
   const pending = verifyTurnstileDetailed("test-token", "127.0.0.1");
   await vi.advanceTimersByTimeAsync(TURNSTILE_VERIFY_TIMEOUT_MS);
-  await expect(pending).resolves.toEqual({
-    success: false,
-    errorCodes: ["timeout"],
+  await expect(pending).resolves.toEqual({ status: "service-unavailable" });
+  expect(log).toHaveBeenCalledWith("Turnstile verification network failure", {
+    errorCode: "timeout",
+    ip: expect.any(String),
   });
-  expect(errors).toHaveBeenCalled();
 });

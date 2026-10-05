@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   getIPKey,
@@ -7,12 +6,7 @@ import {
 } from "../rate-limit-key-strategies";
 
 // Use vi.hoisted for mock functions
-const mockGetClientIP = vi.hoisted(() => vi.fn());
 const mockLoggerWarn = vi.hoisted(() => vi.fn());
-
-vi.mock("@/lib/security/client-ip", () => ({
-  getClientIP: mockGetClientIP,
-}));
 
 vi.mock("@/lib/logger", () => ({
   logger: {
@@ -52,32 +46,6 @@ describe("rate-limit-key-strategies", () => {
     vi.resetAllMocks();
     process.env = originalEnv;
   });
-
-  function createMockRequest(
-    options: {
-      cookies?: Record<string, string>;
-      headers?: Record<string, string>;
-    } = {},
-  ): NextRequest {
-    const url = "http://localhost/api/test";
-    const headers = new Headers(options.headers);
-
-    const request = new NextRequest(url, { headers });
-
-    // Mock cookies
-    if (options.cookies) {
-      Object.defineProperty(request.cookies, "get", {
-        value: vi.fn().mockImplementation((cookieName: string) => {
-          if (options.cookies && cookieName in options.cookies) {
-            return { value: options.cookies[cookieName] };
-          }
-          return undefined;
-        }),
-      });
-    }
-
-    return request;
-  }
 
   describe("hmacKey", () => {
     it("should generate consistent hash for same input", async () => {
@@ -212,41 +180,24 @@ describe("rate-limit-key-strategies", () => {
   describe("getIPKey", () => {
     it("should return IP-based key with prefix", async () => {
       setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
-      mockGetClientIP.mockReturnValue("192.168.1.100");
-
-      const request = createMockRequest();
-      const key = await getIPKey(request);
+      const key = await getIPKey("192.168.1.100");
 
       expect(key).toMatch(/^ip:[0-9a-f]{16}$/);
-    });
-
-    it("should call getClientIP with request", async () => {
-      setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
-      mockGetClientIP.mockReturnValue("10.0.0.1");
-
-      const request = createMockRequest();
-      await getIPKey(request);
-
-      expect(mockGetClientIP).toHaveBeenCalledWith(request);
     });
 
     it("should produce different keys for different IPs", async () => {
       setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
 
-      mockGetClientIP.mockReturnValue("192.168.1.1");
-      const key1 = await getIPKey(createMockRequest());
+      const key1 = await getIPKey("192.168.1.1");
 
-      mockGetClientIP.mockReturnValue("192.168.1.2");
-      const key2 = await getIPKey(createMockRequest());
+      const key2 = await getIPKey("192.168.1.2");
 
       expect(key1).not.toBe(key2);
     });
 
     it("should keep IPv4 keys based on the full IPv4 address", async () => {
       setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
-      mockGetClientIP.mockReturnValue("203.0.113.50");
-
-      const key = await getIPKey(createMockRequest());
+      const key = await getIPKey("203.0.113.50");
       const expected = `ip:${await hmacKey("203.0.113.50")}`;
 
       expect(key).toBe(expected);
@@ -255,14 +206,15 @@ describe("rate-limit-key-strategies", () => {
     it("should bucket IPv6 addresses in the same /64 to the same key", async () => {
       setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
 
-      mockGetClientIP.mockReturnValue("2001:db8:1234:5678:aaaa:bbbb:cccc:0001");
-      const expandedKey = await getIPKey(createMockRequest());
+      const expandedKey = await getIPKey(
+        "2001:db8:1234:5678:aaaa:bbbb:cccc:0001",
+      );
 
-      mockGetClientIP.mockReturnValue("2001:db8:1234:5678:ffff:eeee:dddd:9999");
-      const alternateHostKey = await getIPKey(createMockRequest());
+      const alternateHostKey = await getIPKey(
+        "2001:db8:1234:5678:ffff:eeee:dddd:9999",
+      );
 
-      mockGetClientIP.mockReturnValue("2001:db8:1234:5678::1");
-      const compressedKey = await getIPKey(createMockRequest());
+      const compressedKey = await getIPKey("2001:db8:1234:5678::1");
 
       expect(alternateHostKey).toBe(expandedKey);
       expect(compressedKey).toBe(expandedKey);
@@ -271,11 +223,9 @@ describe("rate-limit-key-strategies", () => {
     it("should bucket different IPv6 /64 prefixes to different keys", async () => {
       setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
 
-      mockGetClientIP.mockReturnValue("2001:db8:1234:5678::1");
-      const firstPrefixKey = await getIPKey(createMockRequest());
+      const firstPrefixKey = await getIPKey("2001:db8:1234:5678::1");
 
-      mockGetClientIP.mockReturnValue("2001:db8:1234:5679::1");
-      const secondPrefixKey = await getIPKey(createMockRequest());
+      const secondPrefixKey = await getIPKey("2001:db8:1234:5679::1");
 
       expect(firstPrefixKey).not.toBe(secondPrefixKey);
     });
@@ -283,11 +233,9 @@ describe("rate-limit-key-strategies", () => {
     it("should keep distinct IPv4-mapped clients in separate buckets", async () => {
       setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
 
-      mockGetClientIP.mockReturnValue("::ffff:192.0.2.128");
-      const mappedKey = await getIPKey(createMockRequest());
+      const mappedKey = await getIPKey("::ffff:192.0.2.128");
 
-      mockGetClientIP.mockReturnValue("::ffff:192.0.2.129");
-      const mappedNeighborKey = await getIPKey(createMockRequest());
+      const mappedNeighborKey = await getIPKey("::ffff:192.0.2.129");
 
       expect(mappedNeighborKey).not.toBe(mappedKey);
     });
@@ -295,14 +243,11 @@ describe("rate-limit-key-strategies", () => {
     it("should normalize equivalent IPv4-mapped IPv6 forms to the same key", async () => {
       setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
 
-      mockGetClientIP.mockReturnValue("::ffff:192.0.2.128");
-      const compressedMappedKey = await getIPKey(createMockRequest());
+      const compressedMappedKey = await getIPKey("::ffff:192.0.2.128");
 
-      mockGetClientIP.mockReturnValue("0:0:0:0:0:ffff:192.0.2.128");
-      const expandedMappedKey = await getIPKey(createMockRequest());
+      const expandedMappedKey = await getIPKey("0:0:0:0:0:ffff:192.0.2.128");
 
-      mockGetClientIP.mockReturnValue("192.0.2.128");
-      const nativeIpv4Key = await getIPKey(createMockRequest());
+      const nativeIpv4Key = await getIPKey("192.0.2.128");
 
       expect(expandedMappedKey).toBe(compressedMappedKey);
       expect(nativeIpv4Key).toBe(compressedMappedKey);
@@ -310,9 +255,7 @@ describe("rate-limit-key-strategies", () => {
 
     it("should fall back to the raw IP when parsing fails", async () => {
       setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
-      mockGetClientIP.mockReturnValue("not-an-ip");
-
-      const key = await getIPKey(createMockRequest());
+      const key = await getIPKey("not-an-ip");
       const expected = `ip:${await hmacKey("not-an-ip")}`;
 
       expect(key).toBe(expected);

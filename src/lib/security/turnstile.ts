@@ -2,6 +2,8 @@
  * Turnstile Verification
  *
  * Low-level Cloudflare Turnstile verifier used by the lead Turnstile policy.
+ *
+ * 失败分类和诊断日志都在这里完成：每次失败只在分类处记一条日志。
  */
 
 import { FIVE_SECONDS_MS } from "@/constants/time";
@@ -21,6 +23,15 @@ import {
   getAllowedTurnstileHosts,
   isAllowedTurnstileHostname,
 } from "@/lib/security/turnstile-config";
+
+/**
+ * `failed` 是买家令牌被拒（400）；`service-unavailable` 是我们或 Cloudflare 一侧
+ * 的故障（503）——缺密钥、网络、超时、provider 的 `internal-error`。
+ */
+export type TurnstileVerification =
+  | { status: "verified" }
+  | { status: "failed" }
+  | { status: "service-unavailable" };
 
 interface TurnstileVerificationResult {
   success: boolean;
@@ -116,6 +127,7 @@ function validateTurnstileHostnameResponse(
   }
 
   logger.warn("Turnstile verification rejected due to unexpected hostname", {
+    errorCode: "invalid-hostname",
     hostname: result.hostname,
     allowed: getAllowedTurnstileHosts(),
     ip: sanitizeIP(ip),
@@ -133,6 +145,7 @@ function validateTurnstileActionResponse(
   }
 
   logger.warn("Turnstile verification rejected due to mismatched action", {
+    errorCode: "invalid-action",
     action: result.action,
     expectedAction: INQUIRY_TURNSTILE_ACTION,
     ip: sanitizeIP(ip),
@@ -165,57 +178,71 @@ function isOfficialPreviewTestContract(
   );
 }
 
-function handleTurnstileFailure(
+function classifyProviderFailure(
   result: TurnstileVerificationResult,
   ip: string,
-): { success: false; errorCodes?: string[] } {
+): TurnstileVerification {
+  const errorCodes = result["error-codes"];
+
+  // Cloudflare siteverify returns `internal-error` for a retryable server-side
+  // fault. Treating it as a service failure (503) avoids rejecting a genuine
+  // buyer's lead with a 400 when the fault is on Cloudflare's side.
+  if (errorCodes?.includes("internal-error")) {
+    logger.error("Turnstile verification unavailable", {
+      errorCodes,
+      clientIP: sanitizeIP(ip),
+    });
+    return { status: "service-unavailable" };
+  }
+
   logger.warn("Turnstile verification failed:", {
-    errorCodes: result["error-codes"],
+    errorCodes,
     clientIP: sanitizeIP(ip),
   });
-  const errorCodes = result["error-codes"];
-  return errorCodes ? { success: false, errorCodes } : { success: false };
+  return { status: "failed" };
 }
 
 /**
- * Verify a Turnstile token with detailed result.
+ * 校验一次令牌并直接给出分类结果，调用方不需要再解码任何错误码。
  */
 export async function verifyTurnstileDetailed(
   token: string,
   ip: string,
-): Promise<{ success: boolean; errorCodes?: string[] }> {
+): Promise<TurnstileVerification> {
   try {
     if (shouldBypassTurnstile(ip)) {
-      return { success: true };
+      return { status: "verified" };
     }
 
     const secretKey =
       getRuntimeEnvString("TURNSTILE_SECRET_KEY") ?? env.TURNSTILE_SECRET_KEY;
 
     if (!secretKey) {
-      logger.warn("Turnstile secret key not configured");
-      return { success: false, errorCodes: ["not-configured"] };
+      logger.error("Turnstile secret key not configured", {
+        ip: sanitizeIP(ip),
+      });
+      return { status: "service-unavailable" };
     }
 
     const payload = buildTurnstilePayload(token, ip, secretKey);
     const result = await requestTurnstileVerification(payload);
 
     if (!result.success) {
-      return handleTurnstileFailure(result, ip);
+      return classifyProviderFailure(result, ip);
     }
 
     if (
       !isOfficialPreviewTestContract(token, secretKey) &&
       !validateTurnstileHostnameResponse(result, ip)
     ) {
-      return { success: false, errorCodes: ["invalid-hostname"] };
+      return { status: "failed" };
     }
 
     if (
       !isOfficialPreviewTestContract(token, secretKey) &&
       !validateTurnstileActionResponse(result, ip)
     ) {
-      return { success: false, errorCodes: ["invalid-action"] };
+      return { status: "failed" };
     }
 
     logger.info("Turnstile verification attempt", {
@@ -224,11 +251,10 @@ export async function verifyTurnstileDetailed(
       clientIP: sanitizeIP(ip),
     });
 
-    return { success: true };
+    return { status: "verified" };
   } catch (error) {
-    // Network errors (timeout, DNS failure, Cloudflare outage) are returned as
-    // a structured failure instead of re-throwing so callers always receive
-    // Promise<TurnstileVerificationResult> without an unexpected exception path.
+    // 网络错误（超时、DNS 失败、Cloudflare 故障）归为 service-unavailable 而不是
+    // 重新抛出，调用方始终拿到 TurnstileVerification，不会有意外的异常路径。
     const errorCode =
       error instanceof Error && error.name === "AbortError"
         ? "timeout"
@@ -237,6 +263,6 @@ export async function verifyTurnstileDetailed(
       errorCode,
       ip: sanitizeIP(ip),
     });
-    return { success: false, errorCodes: [errorCode] };
+    return { status: "service-unavailable" };
   }
 }

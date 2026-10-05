@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { logger } from "@/lib/logger";
 import { getClientIP } from "../client-ip";
 
 /**
@@ -48,6 +49,29 @@ describe("client-ip", () => {
         const request = createMockRequest();
         const ip = getClientIP(request);
         expect(ip).toBe("0.0.0.0");
+      });
+
+      it("logs one error when production cannot resolve a deployment platform", () => {
+        const errorLog = vi
+          .spyOn(logger, "error")
+          .mockImplementation(() => undefined);
+        setEnv("NODE_ENV", "production");
+
+        expect(getClientIP(createMockRequest())).toBe("0.0.0.0");
+        expect(errorLog).toHaveBeenCalledTimes(1);
+      });
+
+      it("does not log for a resolved production platform", () => {
+        const errorLog = vi
+          .spyOn(logger, "error")
+          .mockImplementation(() => undefined);
+        setEnv("NODE_ENV", "production");
+        setEnv("DEPLOYMENT_PLATFORM", "cloudflare");
+
+        getClientIP(
+          createMockRequest({ headers: { "cf-connecting-ip": "203.0.113.5" } }),
+        );
+        expect(errorLog).not.toHaveBeenCalled();
       });
 
       it("should NOT trust x-forwarded-for without platform", () => {

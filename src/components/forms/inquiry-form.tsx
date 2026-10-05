@@ -488,8 +488,6 @@ function InquiryFormLive({
           onExpire={turnstile.handleExpire}
           onSuccess={turnstile.handleSuccess}
           onReadyRef={turnstile.registerReset}
-          size="normal"
-          theme="auto"
         />
 
         <InquiryFormStatus

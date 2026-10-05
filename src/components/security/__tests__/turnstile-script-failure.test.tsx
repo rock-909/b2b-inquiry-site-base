@@ -58,7 +58,15 @@ describe("TurnstileWidget when the Cloudflare script cannot load", () => {
   it("offers the email fallback when the script is blocked, without granting a token", async () => {
     const consoleError = captureExpectedConsoleErrors("Turnstile");
     const onSuccess = vi.fn();
-    render(<TurnstileWidget labels={labels} onSuccess={onSuccess} />);
+    render(
+      <TurnstileWidget
+        labels={labels}
+        onSuccess={onSuccess}
+        onError={vi.fn()}
+        onExpire={vi.fn()}
+        onReadyRef={vi.fn()}
+      />,
+    );
     // 库靠 MutationObserver 发现脚本标签，让它的状态更新在 act 内落地。
     await act(async () => {
       await vi.advanceTimersByTimeAsync(WIDGET_RENDER_SETTLE_MS);
@@ -76,7 +84,15 @@ describe("TurnstileWidget when the Cloudflare script cannot load", () => {
 
   it("offers the email fallback when the script never settles and no widget renders", async () => {
     const onSuccess = vi.fn();
-    render(<TurnstileWidget labels={labels} onSuccess={onSuccess} />);
+    render(
+      <TurnstileWidget
+        labels={labels}
+        onSuccess={onSuccess}
+        onError={vi.fn()}
+        onExpire={vi.fn()}
+        onReadyRef={vi.fn()}
+      />,
+    );
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(LONGER_THAN_LOAD_TIMEOUT_MS);
@@ -92,7 +108,15 @@ describe("TurnstileWidget when the Cloudflare script cannot load", () => {
       render: renderWidget,
       remove: vi.fn(),
     };
-    render(<TurnstileWidget labels={labels} />);
+    render(
+      <TurnstileWidget
+        labels={labels}
+        onSuccess={vi.fn()}
+        onError={vi.fn()}
+        onExpire={vi.fn()}
+        onReadyRef={vi.fn()}
+      />,
+    );
 
     // 先让库发现 window.turnstile 并渲染控件，再让等待超时走完。
     await act(async () => {

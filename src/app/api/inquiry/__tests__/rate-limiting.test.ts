@@ -115,8 +115,7 @@ describe("/api/inquiry rate limiting", () => {
       deniedReason: "storage_failure",
     });
     routeMocks.verifyTurnstileDetailed.mockResolvedValueOnce({
-      success: false,
-      errorCodes: ["invalid-input-response"],
+      status: "failed",
     });
 
     const response = await POST(

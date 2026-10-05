@@ -153,7 +153,7 @@ describe("Cloudflare runtime env timing", () => {
 
     await expect(
       verifyTurnstileDetailed("token", "203.0.113.10"),
-    ).resolves.toEqual({ success: true });
+    ).resolves.toEqual({ status: "verified" });
 
     const body = fetchMock.mock.calls[0]?.[1]?.body;
     expect(String(body)).toContain("secret=runtime-turnstile-secret");
@@ -204,6 +204,6 @@ describe("Cloudflare runtime env timing", () => {
 
     await expect(
       verifyTurnstileDetailed("token", "203.0.113.10"),
-    ).resolves.toEqual({ success: false, errorCodes: ["invalid-action"] });
+    ).resolves.toEqual({ status: "failed" });
   });
 });
