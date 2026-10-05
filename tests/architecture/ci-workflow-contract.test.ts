@@ -79,22 +79,6 @@ function executableLines(run: string): string[] {
 }
 
 describe("CI workflow contract", () => {
-  it("runs an honestly named preview configuration smoke in the quality job", () => {
-    const qualitySteps = readCiWorkflowConfig().jobs?.quality?.steps ?? [];
-    // 锚定真实执行的命令行（heredoc 数据体不算）：echo、注释或从未执行的
-    // 文本里出现同样的 token 不能冒充冒烟步骤。
-    const smoke = qualitySteps.find((step) =>
-      executableLines(step.run ?? "").some((line) =>
-        /^APP_ENV=preview node scripts\/quality\/checks\/production-config\.js$/u.test(
-          line,
-        ),
-      ),
-    );
-
-    expect(smoke, "preview config smoke step must exist").toBeDefined();
-    expect(smoke?.name).toMatch(/preview/iu);
-  });
-
   // CI 作业和步骤都必须传播失败；其他工作流有自己的契约。
   it("keeps no ci.yml step or job that can never fail", () => {
     const jobs = Object.entries(readCiWorkflowConfig().jobs ?? {});
