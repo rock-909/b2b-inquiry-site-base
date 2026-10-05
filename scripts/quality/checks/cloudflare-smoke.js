@@ -7,7 +7,6 @@ const ROOT = process.cwd();
 const DEFAULT_CF_PREVIEW_BASE_URL =
   process.env.CLOUDFLARE_PREVIEW_BASE_URL || "http://127.0.0.1:8787";
 const DEFAULT_DEPLOY_SMOKE_BASE_URL = process.env.DEPLOY_SMOKE_BASE_URL || "";
-const DEFAULT_EXTERNAL_URL_SMOKE_BASE_URL = DEFAULT_DEPLOY_SMOKE_BASE_URL;
 const DEPLOY_SMOKE_REQUEST_TIMEOUT_MS = 30000;
 const DEPLOY_SMOKE_REQUEST_RETRIES = 2;
 const DEPLOY_SMOKE_RETRY_DELAY_MS = 1000;
@@ -75,7 +74,6 @@ const CF_PREVIEW_URL_PATTERN = new RegExp(
   "https://[^\\s\\\"']+\\.workers\\.dev",
   "gi",
 );
-const CF_PREVIEW_DEPLOY_URL_PATTERN = CF_PREVIEW_URL_PATTERN;
 
 // ---------------------------------------------------------------------------
 // 统一的表驱动参数解析：mode 只声明自己的选项表，解析循环只有一份。
@@ -147,7 +145,7 @@ function parseExternalUrlSmokeArgs(args) {
   const parsed = parseSmokeArgs(
     args,
     { [COMMON_BASE_URL_OPTION]: valueOption("baseUrl") },
-    { baseUrl: DEFAULT_EXTERNAL_URL_SMOKE_BASE_URL },
+    { baseUrl: DEFAULT_DEPLOY_SMOKE_BASE_URL },
   );
 
   if (!parsed.baseUrl) {
@@ -408,16 +406,7 @@ function pushHealthyHtmlResponse(response, failures) {
     `Expected ${response.pathname} to return a complete HTML document`,
     failures,
   );
-  pushFailureUnless(
-    !response.body.includes("Unexpected loadManifest"),
-    `Unexpected manifest loader failure surfaced on ${response.pathname}`,
-    failures,
-  );
-  pushFailureUnless(
-    !response.body.includes("Application error"),
-    `Unexpected application error surfaced on ${response.pathname}`,
-    failures,
-  );
+  pushBodyErrorChecks(response, failures);
 }
 
 function pushBodyErrorChecks(response, failures) {
@@ -719,30 +708,6 @@ function childTimedOut(result) {
   return result.error?.code === "ETIMEDOUT";
 }
 
-function extractCloudflarePreviewDeploymentUrls(output) {
-  const urls = [];
-  for (const match of output.matchAll(CF_PREVIEW_DEPLOY_URL_PATTERN)) {
-    urls.push({
-      worker: "native",
-      url: match[0] ?? "",
-    });
-  }
-  if (urls.length > 0) return urls;
-
-  return [...new Set(output.match(CF_PREVIEW_URL_PATTERN) ?? [])].map(
-    (url) => ({
-      worker: "unknown",
-      url,
-    }),
-  );
-}
-
-function chooseCloudflarePreviewGatewayUrl(urls) {
-  const explicitGateway = urls.find((item) => item.worker === "native");
-  if (explicitGateway) return explicitGateway.url;
-  return urls.at(-1)?.url ?? null;
-}
-
 function writeCloudflarePreviewProofResult(result) {
   fs.mkdirSync(path.dirname(CF_PREVIEW_PROOF_OUTPUT_PATH), {
     recursive: true,
@@ -857,8 +822,11 @@ async function runCloudflarePreviewDeployedProof() {
     );
   }
 
-  const urls = extractCloudflarePreviewDeploymentUrls(deployOutput);
-  const baseUrl = chooseCloudflarePreviewGatewayUrl(urls);
+  // proof JSON 的 discoveredUrls 保持 { worker, url } 形状；烟测只取输出里第一个 URL。
+  const urls = [...deployOutput.matchAll(CF_PREVIEW_URL_PATTERN)].map(
+    ([url]) => ({ worker: "native", url }),
+  );
+  const baseUrl = urls[0]?.url ?? null;
 
   if (!baseUrl) {
     return finish(

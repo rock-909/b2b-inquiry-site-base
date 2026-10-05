@@ -20,7 +20,7 @@ interface DeployWorkflow {
         readonly name?: string;
         readonly run?: string;
         readonly uses?: string;
-        readonly with?: Record<string, string>;
+        readonly with?: Record<string, string | boolean>;
         readonly env?: Record<string, string>;
         readonly "continue-on-error"?: boolean;
       }[];
@@ -97,10 +97,57 @@ describe("Cloudflare deploy workflow contract", () => {
     expect(
       normalizeNeeds(workflow.jobs?.["post-deploy-verification"]?.needs),
     ).toContain("build-and-deploy");
-    expect(smokeStep?.run).toContain(
-      "needs.build-and-deploy.outputs.deployment_url",
+    expect(smokeStep?.env?.DEPLOYMENT_URL).toBe(
+      "${{ needs.build-and-deploy.outputs.deployment_url }}",
     );
     expect(deployStep?.run).toContain("worker-url=${DEPLOY_URL}");
+  });
+
+  // 部署 URL 来自 wrangler 输出；直接插值进脚本体，被篡改的值就会在持有
+  // 部署凭据的 job 里当作 shell 执行。
+  it("hands the deployed URL to post-deploy shell steps through env only", () => {
+    const steps = workflowSteps(
+      loadDeployWorkflow(),
+      "post-deploy-verification",
+    );
+    const urlSteps = steps.filter((step) =>
+      step.run?.includes('"$DEPLOYMENT_URL"'),
+    );
+
+    expect(urlSteps).toHaveLength(2);
+    for (const step of urlSteps) {
+      expect(step.env?.DEPLOYMENT_URL).toBe(
+        "${{ needs.build-and-deploy.outputs.deployment_url }}",
+      );
+    }
+    for (const step of steps) {
+      expect(step.run ?? "", step.name).not.toContain("${{");
+    }
+  });
+
+  it("does not persist checkout credentials in any deploy workflow job", () => {
+    const checkouts = Object.values(loadDeployWorkflow().jobs ?? {})
+      .flatMap((job) => job?.steps ?? [])
+      .filter((step) => step.uses?.startsWith("actions/checkout@"));
+
+    expect(checkouts.length).toBeGreaterThan(0);
+    for (const step of checkouts) {
+      expect(step.with?.["persist-credentials"], step.name).toBe(false);
+    }
+  });
+
+  it("pins third-party actions that run beside deploy secrets to commit SHAs", () => {
+    const uses = Object.values(loadDeployWorkflow().jobs ?? {})
+      .flatMap((job) => job?.steps ?? [])
+      .map((step) => step.uses ?? "");
+
+    for (const action of ["pnpm/action-setup", "actions/github-script"]) {
+      const references = uses.filter((value) => value.startsWith(`${action}@`));
+      expect(references.length, action).toBeGreaterThan(0);
+      for (const reference of references) {
+        expect(reference, action).toMatch(/@[0-9a-f]{40}$/u);
+      }
+    }
   });
 
   it("treats preview input as external smoke data, not deploy proof shell", () => {

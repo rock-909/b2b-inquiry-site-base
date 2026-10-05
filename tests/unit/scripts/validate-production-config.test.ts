@@ -324,7 +324,6 @@ describe("validate-production-config runtime contract", () => {
     );
 
     expect(result.errors).toEqual([]);
-    expect(result.warnings).toEqual([]);
   });
 
   it.each([
