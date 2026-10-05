@@ -28,12 +28,16 @@ pnpm react:doctor:report
 ```
 
 Use the report to confirm no warning debt remains. If a warning is intentionally
-retained, add the narrowest file/rule exception and document the proof.
+retained, add the narrowest file/rule exception to `doctor.config.json` and
+record the reason in the "证明边界" section of `docs/质量门禁.md`. Every
+`ignore.overrides` entry must still produce a diagnostic when overrides are
+cleared; delete entries that no longer do, and never add one for a rule that
+has not fired.
 
 ## Project rules
 
-- Errors and warnings are CI blockers.
-- Findings must be fixed, excluded as generated/tool code, or documented as a narrow exception.
+- Errors and warnings are blockers: `pnpm react:doctor` runs with `--blocking warning` and CI scans only the files changed against the base branch; the full-repo report is the manual `pnpm react:doctor:report`.
+- Findings must be fixed, excluded as generated/tool code (`ignore.files`), or documented as a narrow exception in `docs/质量门禁.md`.
 - Do not mechanically fix warnings that could change buyer-facing behavior, i18n, deployment/runtime behavior, or design tokens.
 - For dead-code findings, verify real production, script, build, and runtime references before removing anything.
 - Prefer small, behavior-preserving fixes over score-chasing.
