@@ -44,7 +44,7 @@
   --secondary: var(--neutral-text);
   --secondary-foreground: var(--neutral-canvas);
   --accent: var(--brand-soft);
-  --accent-foreground: var(--brand-solid);
+  --accent-foreground: var(--brand-text);
   --muted: var(--neutral-muted);
   --muted-foreground: var(--neutral-text-muted);
   --border: var(--neutral-border);
@@ -163,7 +163,7 @@
   --footer-bg: var(--neutral-surface);
 }
 
-@media (prefers-contrast: high) {
+@media (prefers-contrast: more) {
   :root {
     --border: var(--neutral-control-border);
     --ring: var(--brand-focus-strong);

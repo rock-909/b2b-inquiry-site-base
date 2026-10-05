@@ -8,11 +8,13 @@ import {
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { getOfferingsForLocale, getOfferingPath } from "@/config/offerings";
-import { getCanonicalPath, getLocalePath } from "@/config/paths";
-import { SINGLE_SITE_CONFIG } from "@/config/single-site";
+import { getCanonicalPath } from "@/config/paths";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
-import { generateMetadataForPath } from "@/lib/seo-metadata";
+import {
+  buildCanonicalForPath,
+  generateMetadataForPath,
+} from "@/lib/seo-metadata";
 import { buildWebPageSchema } from "@/lib/structured-data-generators";
 
 interface ProductsPageProps {
@@ -59,10 +61,7 @@ export default async function ProductsPage({ params }: ProductsPageProps) {
             locale,
             name: tMetadata("title"),
             description: tMetadata("description"),
-            url: new URL(
-              getLocalePath(locale, pagePath),
-              SINGLE_SITE_CONFIG.baseUrl,
-            ).toString(),
+            url: buildCanonicalForPath(pagePath, locale),
           }),
         ]}
       />
