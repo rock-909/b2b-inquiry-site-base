@@ -1,17 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LocaleLayout from "../layout";
 
-const {
-  mockGetFontClassNames,
-  mockNotFound,
-  mockRootLocale,
-  mockSetRequestLocale,
-} = vi.hoisted(() => ({
-  mockGetFontClassNames: vi.fn(() => ""),
-  mockNotFound: vi.fn(),
-  mockRootLocale: vi.fn(async () => "en"),
-  mockSetRequestLocale: vi.fn(),
-}));
+const { mockNotFound, mockRootLocale, mockSetRequestLocale } = vi.hoisted(
+  () => ({
+    mockNotFound: vi.fn(),
+    mockRootLocale: vi.fn(async () => "en"),
+    mockSetRequestLocale: vi.fn(),
+  }),
+);
 
 vi.mock("next-intl/server", () => ({
   getTranslations: vi.fn(),
@@ -20,9 +16,6 @@ vi.mock("next-intl/server", () => ({
 
 vi.mock("next/navigation", () => ({ notFound: mockNotFound }));
 vi.mock("next/root-params", () => ({ locale: mockRootLocale }));
-vi.mock("@/app/[locale]/layout-fonts", () => ({
-  getFontClassNames: mockGetFontClassNames,
-}));
 vi.mock("@/i18n/locale-utils", () => ({
   coerceLocale: (locale: string) => locale,
   isLocale: (locale: string) => locale === "en",
@@ -31,7 +24,6 @@ vi.mock("@/i18n/locale-utils", () => ({
 describe("LocaleLayout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetFontClassNames.mockReturnValue("");
     mockRootLocale.mockResolvedValue("en");
     mockNotFound.mockImplementation(() => {
       throw new Error("NEXT_NOT_FOUND");
@@ -52,9 +44,7 @@ describe("LocaleLayout", () => {
     expect(mockSetRequestLocale).not.toHaveBeenCalled();
   });
 
-  it("wires the locale, font class, and outer document shell", async () => {
-    mockGetFontClassNames.mockReturnValue("font-contract-sentinel");
-
+  it("wires the locale and outer document shell", async () => {
     const page = await LocaleLayout({
       children: <div>Child</div>,
       params: Promise.resolve({ locale: "en" }),
@@ -64,13 +54,11 @@ describe("LocaleLayout", () => {
     expect(page.type).toBe("html");
     expect(page.props).toMatchObject({
       lang: "en",
-      className: "font-contract-sentinel",
       suppressHydrationWarning: true,
     });
     expect(body.type).toBe("body");
     expect(body.props.className).toBe("flex min-h-dvh flex-col antialiased");
     expect(body.props.children.props.children).toEqual(<div>Child</div>);
-    expect(mockGetFontClassNames).toHaveBeenCalledTimes(1);
     expect(mockSetRequestLocale).toHaveBeenCalledWith("en");
   });
 });

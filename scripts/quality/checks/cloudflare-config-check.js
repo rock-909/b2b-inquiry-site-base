@@ -281,7 +281,7 @@ function checkPackageScripts(rootDir, failures) {
   }
 
   const retired = RETIRED_SCRIPT_NAMES.filter((name) =>
-    Object.prototype.hasOwnProperty.call(scripts, name),
+    Object.hasOwn(scripts, name),
   );
   if (retired.length > 0) {
     failures.push({

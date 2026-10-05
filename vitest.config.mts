@@ -98,13 +98,6 @@ export default defineConfig({
   // 路径别名配置 - 统一使用单一别名符合规则要求
   resolve: {
     alias: [
-      // Stub CSS imports to avoid PostCSS processing in tests (must come before @ alias)
-      {
-        find: "@/app/globals.css",
-        replacement: resolve(import.meta.dirname, "./src/test/css-stub.ts"),
-      },
-      // Fix directory import resolution in Vitest for packages that import "next/font/local"
-      { find: "next/font/local", replacement: "next/font/local/index.js" },
       // Main path aliases
       {
         find: "@messages",

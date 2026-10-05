@@ -20,7 +20,7 @@ function isDev(): boolean {
 }
 
 function isValidLogLevel(value: string): value is LogLevel {
-  return Object.prototype.hasOwnProperty.call(LOG_LEVELS, value);
+  return Object.hasOwn(LOG_LEVELS, value);
 }
 
 function getLogLevel(): LogLevel {

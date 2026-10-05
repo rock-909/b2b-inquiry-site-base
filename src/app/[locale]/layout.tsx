@@ -6,7 +6,6 @@ import { locale as getRootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ThemeProvider } from "next-themes";
-import { getFontClassNames } from "@/app/[locale]/layout-fonts";
 import { AttributionBootstrap } from "@/components/attribution-bootstrap";
 import { CookieConsentIsland } from "@/components/cookie/cookie-consent-island";
 import { Footer } from "@/components/footer/footer";
@@ -114,11 +113,7 @@ export default async function LocaleLayout({ children }: LocaleLayoutProps) {
   setRequestLocale(typedLocale);
 
   return (
-    <html
-      lang={typedLocale}
-      className={getFontClassNames()}
-      suppressHydrationWarning
-    >
+    <html lang={typedLocale} suppressHydrationWarning>
       <body className="flex min-h-dvh flex-col antialiased">
         <AsyncLocaleLayoutContent>{children}</AsyncLocaleLayoutContent>
       </body>

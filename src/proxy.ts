@@ -15,10 +15,7 @@ export function proxy(request: NextRequest) {
     : pathname;
   const productMatch = publicPath.match(/^\/products\/([^/]+)$/u);
   const productId = productMatch?.[1];
-  const isKnownStaticPath = Object.prototype.hasOwnProperty.call(
-    routing.pathnames,
-    publicPath,
-  );
+  const isKnownStaticPath = Object.hasOwn(routing.pathnames, publicPath);
 
   if (!isKnownStaticPath && (!productId || !getOfferingById(productId))) {
     const notFoundUrl = request.nextUrl.clone();

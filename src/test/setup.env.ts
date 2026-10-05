@@ -20,7 +20,6 @@ vi.stubEnv("AIRTABLE_TABLE_NAME", "test-table");
 vi.stubEnv("EMAIL_FROM", "test@example.com");
 vi.stubEnv("INQUIRY_RECIPIENT_EMAIL", "reply@example.com");
 vi.stubEnv("TURNSTILE_BYPASS", "false");
-vi.stubEnv("CLOUDFLARE_ACCOUNT_ID", "test-account-id");
 // 限流存储凭据显式置空，避免外部环境变量让测试走真实 Redis 分支
 vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
 vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
@@ -38,7 +37,6 @@ vi.mock("@t3-oss/env-nextjs", () => ({
     EMAIL_FROM: "test@example.com",
     INQUIRY_RECIPIENT_EMAIL: "reply@example.com",
     TURNSTILE_BYPASS: false,
-    CLOUDFLARE_ACCOUNT_ID: "test-account-id",
     NEXT_PUBLIC_BASE_URL: "https://example.com",
   })),
 }));
@@ -55,7 +53,6 @@ vi.mock("@/lib/env", () => {
     AIRTABLE_TABLE_NAME: "test-table",
     EMAIL_FROM: "test@example.com",
     INQUIRY_RECIPIENT_EMAIL: "reply@example.com",
-    CLOUDFLARE_ACCOUNT_ID: "test-account-id",
     NEXT_PUBLIC_BASE_URL: "https://example.com",
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: "test-site-key-12345",
     NEXT_PUBLIC_DEPLOYMENT_PLATFORM: "development",

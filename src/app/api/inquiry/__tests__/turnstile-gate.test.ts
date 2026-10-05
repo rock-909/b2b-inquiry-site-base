@@ -36,7 +36,6 @@ vi.mock("@/lib/security/turnstile", async () => {
   const { routeMocks } = await import("./route-harness");
   return { verifyTurnstileDetailed: routeMocks.verifyTurnstileDetailed };
 });
-vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 describe("/api/inquiry turnstile gate", () => {
   afterEach(() => {
