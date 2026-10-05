@@ -197,6 +197,54 @@ describe("prerender static behavior gate", () => {
     expect(JSON.parse(output)).toEqual([]);
   });
 
+  // 脚本在 CLI 里不带 NODE_ENV 运行，但构建产物按 production 解析站点地址；
+  // 期望值必须跟构建一致，而不是脚本自己再推导一遍。
+  it.each([
+    ["no site URL configured", {}, "https://example.invalid"],
+    [
+      "a localhost site URL the build embeds as-is",
+      { NEXT_PUBLIC_SITE_URL: "http://localhost:3000" },
+      "http://localhost:3000",
+    ],
+  ])(
+    "expects the og:image base URL the production build emits with %s",
+    (_label, siteEnv, emittedBaseUrl) => {
+      const rootDir = createBuildFixture();
+      writeMetadataArtifacts({
+        rootDir,
+        homeOgImage: `${emittedBaseUrl}/opengraph-image.png`,
+      });
+      const inheritedEnv = Object.fromEntries(
+        Object.entries(process.env).filter(
+          ([key]) =>
+            ![
+              "NODE_ENV",
+              "NEXT_PUBLIC_SITE_URL",
+              "NEXT_PUBLIC_BASE_URL",
+            ].includes(key),
+        ),
+      ) as NodeJS.ProcessEnv;
+      const output = execFileSync(
+        process.execPath,
+        [
+          "-e",
+          `
+      const { collectPrerenderStaticFindings } = require("./scripts/quality/checks/prerender-static");
+      console.log(JSON.stringify(collectPrerenderStaticFindings({ rootDir: process.argv[1] })));
+    `,
+          rootDir,
+        ],
+        {
+          encoding: "utf8",
+          env: { ...inheritedEnv, ...siteEnv },
+          timeout: 10_000,
+        },
+      );
+
+      expect(JSON.parse(output)).toEqual([]);
+    },
+  );
+
   it("accepts fully prerendered locale routes", () => {
     expect(
       collectFindings({

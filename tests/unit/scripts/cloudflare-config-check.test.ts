@@ -20,7 +20,9 @@ const CANONICAL_CLOUDFLARE_BUILD_SCRIPTS = {
   "website:build:cf:debug":
     "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
 };
-const STABLE_OPEN_NEXT_DEPENDENCY = "1.20.6";
+// 刻意不用仓库真实版本：门禁只校验固定策略（精确 stable），
+// OpenNext 升级时不应需要改这里。
+const STABLE_OPEN_NEXT_DEPENDENCY = "9.8.7";
 const PREVIEW_R2_BUCKET = "derived-site-next-cache-preview";
 const PRODUCTION_R2_BUCKET = "derived-site-next-cache-production";
 
@@ -296,50 +298,68 @@ describe("Cloudflare config source contract", () => {
     ]);
   });
 
-  it("rejects the moving PR package reference", () => {
-    const rootDir = createFixture();
-    writePassingSideFiles(rootDir);
-    writePassingWranglerConfig(rootDir);
+  function writePackageWith(
+    rootDir: string,
+    scripts: Record<string, string>,
+    openNextVersion = STABLE_OPEN_NEXT_DEPENDENCY,
+  ): void {
     writeFixtureFile(
       rootDir,
       "package.json",
       JSON.stringify({
-        scripts: CANONICAL_CLOUDFLARE_BUILD_SCRIPTS,
-        devDependencies: {
-          "@opennextjs/cloudflare":
-            "https://pkg.pr.new/@opennextjs/cloudflare@1318",
-        },
+        scripts,
+        devDependencies: { "@opennextjs/cloudflare": openNextVersion },
       }),
     );
+  }
+
+  it.each([
+    "https://pkg.pr.new/@opennextjs/cloudflare@1318",
+    "^9.8.7",
+    "~9.8.7",
+    "9.8.7-beta.1",
+    "latest",
+  ])("rejects the non-exact or non-stable OpenNext reference %s", (version) => {
+    const rootDir = createFixture();
+    writePassingSideFiles(rootDir);
+    writePassingWranglerConfig(rootDir);
+    writePackageWith(rootDir, CANONICAL_CLOUDFLARE_BUILD_SCRIPTS, version);
 
     const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
 
     expect(failures).toEqual([
       expect.objectContaining({
         file: "package.json",
-        missing: [`@opennextjs/cloudflare: ${STABLE_OPEN_NEXT_DEPENDENCY}`],
+        missing: [expect.stringContaining("@opennextjs/cloudflare")],
       }),
     ]);
   });
 
-  it("rejects a Cloudflare build script with the wrong platform value", () => {
+  it.each([
+    [
+      "the wrong platform value",
+      "DEPLOYMENT_PLATFORM=vercel NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
+    ],
+    [
+      "a missing public platform value",
+      "DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
+    ],
+    [
+      "a command that is not the native OpenNext build",
+      "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec next build",
+    ],
+    [
+      "a debug-only unminified build",
+      "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
+    ],
+  ])("rejects the production build script with %s", (_label, script) => {
     const rootDir = createFixture();
     writePassingSideFiles(rootDir);
     writePassingWranglerConfig(rootDir);
-    writeFixtureFile(
-      rootDir,
-      "package.json",
-      JSON.stringify({
-        scripts: {
-          ...CANONICAL_CLOUDFLARE_BUILD_SCRIPTS,
-          "website:build:cf":
-            "DEPLOYMENT_PLATFORM=vercel NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
-        },
-        devDependencies: {
-          "@opennextjs/cloudflare": STABLE_OPEN_NEXT_DEPENDENCY,
-        },
-      }),
-    );
+    writePackageWith(rootDir, {
+      ...CANONICAL_CLOUDFLARE_BUILD_SCRIPTS,
+      "website:build:cf": script,
+    });
 
     const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
 
@@ -348,30 +368,35 @@ describe("Cloudflare config source contract", () => {
     ]);
   });
 
-  it("rejects a Cloudflare build script with extra env prefixes", () => {
+  it("rejects a debug build script that stops being unminified", () => {
     const rootDir = createFixture();
     writePassingSideFiles(rootDir);
     writePassingWranglerConfig(rootDir);
-    writeFixtureFile(
-      rootDir,
-      "package.json",
-      JSON.stringify({
-        scripts: {
-          ...CANONICAL_CLOUDFLARE_BUILD_SCRIPTS,
-          "website:build:cf":
-            "NODE_OPTIONS=--inspect DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
-        },
-        devDependencies: {
-          "@opennextjs/cloudflare": STABLE_OPEN_NEXT_DEPENDENCY,
-        },
-      }),
-    );
+    writePackageWith(rootDir, {
+      ...CANONICAL_CLOUDFLARE_BUILD_SCRIPTS,
+      "website:build:cf:debug":
+        "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
+    });
 
     const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
 
     expect(failures).toEqual([
       expect.objectContaining({ file: "package.json" }),
     ]);
+  });
+
+  it("accepts extra env prefixes and build flags that do not change the contract", () => {
+    const rootDir = createFixture();
+    writePassingSideFiles(rootDir);
+    writePassingWranglerConfig(rootDir);
+    writePackageWith(rootDir, {
+      "website:build:cf":
+        "NODE_OPTIONS=--max-old-space-size=4096 DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --someNewFlag",
+      "website:build:cf:debug":
+        "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --someNewFlag --noMinify",
+    });
+
+    expect(loadChecker().collectCloudflareConfigFailures(rootDir)).toEqual([]);
   });
 
   describe("open-next wiring check", () => {

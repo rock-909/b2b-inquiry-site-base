@@ -36,10 +36,6 @@ function hasPair(env, firstKey, secondKey) {
   return Boolean(readEnv(env, firstKey) && readEnv(env, secondKey));
 }
 
-function hasAny(env, ...keys) {
-  return keys.some((key) => Boolean(readEnv(env, key)));
-}
-
 function isTrue(env, key) {
   return readEnv(env, key) === "true";
 }
@@ -58,18 +54,6 @@ function parseJsoncText(filePath, content) {
   return parsed.config;
 }
 
-function readWranglerProductionVars(rootDir = process.cwd()) {
-  const filePath = path.join(rootDir, WRANGLER_CONFIG_PATH);
-
-  if (!fs.existsSync(filePath)) {
-    return undefined;
-  }
-
-  const config = parseJsoncText(filePath, fs.readFileSync(filePath, "utf8"));
-  const vars = config?.env?.production?.vars;
-  return isRecord(vars) ? vars : undefined;
-}
-
 function readWranglerConfig(rootDir = process.cwd()) {
   const filePath = path.join(rootDir, WRANGLER_CONFIG_PATH);
 
@@ -80,10 +64,10 @@ function readWranglerConfig(rootDir = process.cwd()) {
   return parseJsoncText(filePath, fs.readFileSync(filePath, "utf8"));
 }
 
-function validateWranglerProductionPublicUrls(target, rootDir) {
-  const productionVars = readWranglerProductionVars(rootDir);
+function validateWranglerProductionPublicUrls(target, wranglerConfig) {
+  const productionVars = wranglerConfig?.env?.production?.vars;
 
-  if (!productionVars) {
+  if (!isRecord(productionVars)) {
     target.push(
       "wrangler.jsonc env.production.vars is missing; production deploy config cannot be public-launch validated.",
     );
@@ -158,8 +142,7 @@ function validateOptionalSocialProfile(target, markerPath, value) {
   );
 }
 
-function validateWranglerSentinelResources(target, rootDir) {
-  const config = readWranglerConfig(rootDir);
+function validateWranglerSentinelResources(target, config) {
   if (!config) return;
 
   validateNoStarterMarker(
@@ -224,17 +207,10 @@ function shouldValidateProductionRuntimeContract(env) {
     return true;
   }
 
-  const nodeEnv = readEnv(env, "NODE_ENV")?.toLowerCase();
-  const isProduction = nodeEnv === "production";
-  const isCloudflareProduction =
-    isProduction &&
-    hasAny(env, "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN");
-
-  return isProduction || isCloudflareProduction;
+  return readEnv(env, "NODE_ENV")?.toLowerCase() === "production";
 }
 
 function validateProductionRuntimeContract(env) {
-  const warnings = [];
   const errors = [];
   const hasUpstash = hasPair(
     env,
@@ -320,7 +296,7 @@ function validateProductionRuntimeContract(env) {
     );
   }
 
-  return { warnings, errors };
+  return { errors };
 }
 
 function validatePublicLaunchTrustContent(env, input) {
@@ -352,8 +328,9 @@ function validatePublicLaunchTrustContent(env, input) {
       );
     }
   }
-  validateWranglerProductionPublicUrls(target, rootDir);
-  validateWranglerSentinelResources(target, rootDir);
+  const wranglerConfig = readWranglerConfig(rootDir);
+  validateWranglerProductionPublicUrls(target, wranglerConfig);
+  validateWranglerSentinelResources(target, wranglerConfig);
 
   validateNoStarterMarker(
     target,
@@ -445,11 +422,11 @@ function validateProductionConfig(env = process.env, input) {
   const runtimeContractChecked = shouldValidateProductionRuntimeContract(env);
   const runtimeContract = runtimeContractChecked
     ? validateProductionRuntimeContract(env)
-    : { warnings: [], errors: [] };
+    : { errors: [] };
   const publicLaunchTrust = validatePublicLaunchTrustContent(env, input);
 
   return {
-    warnings: [...runtimeContract.warnings, ...publicLaunchTrust.warnings],
+    warnings: publicLaunchTrust.warnings,
     errors: [...runtimeContract.errors, ...publicLaunchTrust.errors],
     runtimeContractChecked,
   };
@@ -458,7 +435,6 @@ function validateProductionConfig(env = process.env, input) {
 function isSentinelBlocker(message) {
   return (
     message.includes("is not public-launch ready") ||
-    message.includes("not configured for production") ||
     message.includes("SITE_CONFIG.") ||
     message.includes("brandAssets.")
   );
