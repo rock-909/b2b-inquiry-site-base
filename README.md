@@ -71,7 +71,7 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 - Offering 数据：`src/config/offerings.ts`
 - UI 文案 authoring truth：`messages/base/{locale}/messages.json`
 
-修改 locale message pack 后运行 `pnpm content:check`。
+修改 locale message pack 后运行 `pnpm content:check`。消息叶子值必须是字符串，允许有意义的空字符串；数字、布尔值、`null` 和数组会使检查失败，并输出对应语言文件和消息路径。
 
 ## AI 协作入口
 
