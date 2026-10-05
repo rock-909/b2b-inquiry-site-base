@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { load } from "js-yaml";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 interface WorkflowStep {
   readonly name?: string;
@@ -56,7 +56,7 @@ describe("weekly dependency audit workflow", () => {
     });
   });
 
-  it("opens one real issue and still fails when the audit step fails", () => {
+  it("gates the issue and the failing exit on the audit outcome, in order", () => {
     const auditStep = requireStep((step) => step.id === "audit");
     const issueStep = requireStep(
       (step) => step.uses === "actions/github-script@v8",
@@ -71,17 +71,6 @@ describe("weekly dependency audit workflow", () => {
       if: "steps.audit.outcome == 'failure'",
       uses: "actions/github-script@v8",
     });
-    expect(issueStep.with?.script).toContain(
-      'const title = "Weekly production dependency audit failed"',
-    );
-    expect(issueStep.with?.script).toContain(
-      "github.paginate(github.rest.issues.listForRepo",
-    );
-    expect(issueStep.with?.script).toContain(
-      "!issue.pull_request && issue.title === title",
-    );
-    expect(issueStep.with?.script).toContain("github.rest.issues.create({");
-    expect(issueStep.with?.script).toContain("title,\n");
     expect(failStep).toEqual(
       expect.objectContaining({
         if: "${{ !cancelled() && steps.audit.outcome == 'failure' }}",
@@ -90,5 +79,76 @@ describe("weekly dependency audit workflow", () => {
     );
     expect(steps.indexOf(issueStep)).toBeGreaterThan(steps.indexOf(auditStep));
     expect(steps.indexOf(failStep)).toBeGreaterThan(steps.indexOf(issueStep));
+  });
+
+  it("opens an issue only when no open issue already carries the title", async () => {
+    const script = requireStep(
+      (step) => step.uses === "actions/github-script@v8",
+    ).with?.script;
+    if (!script) {
+      throw new Error("Weekly audit issue step has no script");
+    }
+    // 执行 YAML 中的真实脚本，只替换 GitHub 客户端。
+    // eslint-disable-next-line no-new-func -- 执行已检入的 workflow 脚本，不执行网络输入。
+    const execute = new Function(
+      "github",
+      "context",
+      "core",
+      `return (async () => { ${script} })()`,
+    );
+    const title = "Weekly production dependency audit failed";
+    const context = {
+      repo: { owner: "owner", repo: "repo" },
+      serverUrl: "https://github.example",
+      runId: 42,
+    };
+    const cases = [
+      { name: "no open issue", existing: [], creates: 1 },
+      {
+        name: "open issue with the same title",
+        existing: [{ title }],
+        creates: 0,
+      },
+      {
+        name: "pull request with the same title",
+        existing: [{ title, pull_request: {} }],
+        creates: 1,
+      },
+      {
+        name: "open issue with another title",
+        existing: [{ title: "Something else" }],
+        creates: 1,
+      },
+    ];
+
+    for (const { name, existing, creates } of cases) {
+      const listForRepo = vi.fn();
+      const create = vi.fn().mockResolvedValue({});
+      const paginate = vi.fn().mockResolvedValue(existing);
+      await execute(
+        { paginate, rest: { issues: { listForRepo, create } } },
+        context,
+        {},
+      );
+      expect(paginate, name).toHaveBeenCalledWith(
+        listForRepo,
+        expect.objectContaining({
+          owner: "owner",
+          repo: "repo",
+          state: "open",
+        }),
+      );
+      expect(create, name).toHaveBeenCalledTimes(creates);
+      if (creates > 0) {
+        expect(create, name).toHaveBeenCalledWith({
+          owner: "owner",
+          repo: "repo",
+          title,
+          body: expect.stringContaining(
+            "https://github.example/owner/repo/actions/runs/42",
+          ),
+        });
+      }
+    }
   });
 });

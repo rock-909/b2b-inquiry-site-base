@@ -276,11 +276,10 @@ describe("/api/inquiry lead delivery", () => {
     const response = await POST(request);
 
     expect(response.status).toBe(200);
-    // 路由要是改回逐字段枚举、漏掉其中任何一个，这里就少一个键。
-    const forwarded = vi.mocked(routeMocks.processValidatedInquiry).mock
-      .calls[0]![0] as Record<string, unknown>;
-    expect([...Object.keys(forwarded)].sort()).toEqual(
-      [...Object.keys(SAMPLE_VALUE_PER_SCHEMA_FIELD)].sort(),
+    // 键和值都要原样转发：路由改回逐字段枚举而漏掉某个字段，或键还在、值却被
+    // 清成 undefined（例如搜索词归因 utmTerm / utmContent 丢失），这里都会红。
+    expect(routeMocks.processValidatedInquiry).toHaveBeenCalledWith(
+      SAMPLE_VALUE_PER_SCHEMA_FIELD,
     );
   });
 
