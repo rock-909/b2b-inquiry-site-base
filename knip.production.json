@@ -1,0 +1,32 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/**/*.{js,mjs,ts}",
+    "*.config.{js,mjs,ts,mts}",
+    "open-next.config.ts"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx}",
+    "!src/**/__tests__/**",
+    "!src/**/*.test.{ts,tsx}",
+    "!src/test/**",
+    "scripts/**/*.{js,mjs,ts}"
+  ],
+  "vitest": false,
+  "playwright": false,
+  "eslint": false,
+  "rules": {
+    "files": "error",
+    "dependencies": "off",
+    "devDependencies": "off",
+    "unlisted": "off",
+    "binaries": "off",
+    "unresolved": "off",
+    "types": "off",
+    "nsExports": "off",
+    "nsTypes": "off",
+    "duplicates": "off",
+    "enumMembers": "off",
+    "exports": "off"
+  }
+}

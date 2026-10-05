@@ -61,6 +61,10 @@ through convenience barrels.
 ## Dependency and deletion hygiene
 
 - Treat unused dependency/export reports as leads, not deletion proof.
+- `knip:check` treats tests as entries, so code that only a test imports counts
+  as used. `knip:check:production` (`knip.production.json`) drops test entries
+  and fails on production files nothing live imports; it covers files only, so
+  test-only exports and JSON assets still need a reference search.
 - Before removal, distinguish runtime, generated/tooling, governed, and truly
   unused entrypoints.
 - After deleting a named surface, search configuration, tests, generated files,
