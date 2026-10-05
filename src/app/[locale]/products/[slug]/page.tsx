@@ -13,12 +13,15 @@ import {
   getOfferingPath,
   type Offering,
 } from "@/config/offerings";
-import { getLocalePath, type Locale } from "@/config/paths";
+import { getCanonicalPath, type Locale } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { getSourceMessages } from "@/lib/i18n/load-messages";
-import { generateMetadataForPath } from "@/lib/seo-metadata";
+import {
+  buildCanonicalForPath,
+  generateMetadataForPath,
+} from "@/lib/seo-metadata";
 import {
   buildBreadcrumbListSchema,
   generateProductData,
@@ -57,10 +60,10 @@ function buildProductStructuredData(
   locale: Locale,
   breadcrumbNames: { home: string; products: string },
 ) {
-  const productUrl = new URL(
-    getLocalePath(locale, getOfferingPath(offering.id)),
-    SINGLE_SITE_CONFIG.baseUrl,
-  ).toString();
+  const productUrl = buildCanonicalForPath(
+    getOfferingPath(offering.id),
+    locale,
+  );
 
   return [
     generateProductData({
@@ -72,17 +75,11 @@ function buildProductStructuredData(
     buildBreadcrumbListSchema([
       {
         name: breadcrumbNames.home,
-        url: new URL(
-          getLocalePath(locale, "/"),
-          SINGLE_SITE_CONFIG.baseUrl,
-        ).toString(),
+        url: buildCanonicalForPath("/", locale),
       },
       {
         name: breadcrumbNames.products,
-        url: new URL(
-          getLocalePath(locale, "/products"),
-          SINGLE_SITE_CONFIG.baseUrl,
-        ).toString(),
+        url: buildCanonicalForPath(getCanonicalPath("products"), locale),
       },
       { name: offering.name, url: productUrl },
     ]),

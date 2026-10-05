@@ -9,7 +9,7 @@ import {
   buildBreadcrumbListSchema,
   buildWebPageSchema,
 } from "@/lib/structured-data-generators";
-import { SINGLE_SITE_CONFIG } from "@/config/single-site";
+import { buildCanonicalForPath } from "@/lib/seo-metadata";
 import type { StaticMarkdownBlock } from "@/lib/content/static-markdown-blocks";
 import type { LegalPageMetadata, Locale } from "@/types/content.types";
 
@@ -58,7 +58,7 @@ export async function LegalPageShell({
   const t = await getTranslations({ locale, namespace: "legal" });
   const tNav = await getTranslations({ locale, namespace: "navigation" });
 
-  const pageUrl = new URL(pagePath, SINGLE_SITE_CONFIG.baseUrl).toString();
+  const pageUrl = buildCanonicalForPath(pagePath, locale);
   const schema = await buildShellPageSchema({
     metadata,
     locale,
@@ -70,7 +70,7 @@ export async function LegalPageShell({
     buildBreadcrumbListSchema([
       {
         name: tNav("home"),
-        url: new URL("/", SINGLE_SITE_CONFIG.baseUrl).toString(),
+        url: buildCanonicalForPath("/", locale),
       },
       { name: metadata.title, url: pageUrl },
     ]),
