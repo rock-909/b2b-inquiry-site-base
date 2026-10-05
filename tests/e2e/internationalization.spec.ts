@@ -4,6 +4,7 @@ import {
   getOfferingsForLocale,
 } from "../../src/config/offerings";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { checkA11y } from "./helpers/axe";
 import {
   expectHtmlLang,
   getHeaderMobileMenuButton,
@@ -114,6 +115,27 @@ test.describe("Spanish locale contract", () => {
 });
 
 test.describe("Language switcher journey", () => {
+  test("keyboard-highlighted language option keeps readable text contrast", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/contact", { waitUntil: "domcontentloaded" });
+
+    const trigger = page.getByRole("button", { name: "Languages: English" });
+    await trigger.focus();
+    await page.keyboard.press("Enter");
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    const spanish = page.getByRole("menuitem", { name: "Español" });
+    await page.keyboard.press("ArrowDown");
+    await page.keyboard.press("ArrowDown");
+    await expect(spanish).toHaveAttribute("data-highlighted", "");
+
+    await checkA11y(page, '[data-testid="language-dropdown-content"]', {
+      axeOptions: { runOnly: ["color-contrast"] },
+    });
+  });
+
   test("desktop switch preserves the URL, inquiry draft, and keyboard lifecycle", async ({
     page,
   }) => {
