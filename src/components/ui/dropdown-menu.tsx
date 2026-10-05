@@ -67,6 +67,7 @@ function DropdownMenuItem({
       className={cn(
         "flex min-h-9 w-full cursor-default items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground outline-none",
         "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+        "forced-colors:data-[highlighted]:outline-2 forced-colors:data-[highlighted]:outline-[color:Highlight] forced-colors:data-[highlighted]:outline-solid",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
@@ -85,6 +86,7 @@ function DropdownMenuLinkItem({
       className={cn(
         "flex min-h-9 w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground outline-none",
         "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+        "forced-colors:data-[highlighted]:outline-2 forced-colors:data-[highlighted]:outline-[color:Highlight] forced-colors:data-[highlighted]:outline-solid",
         className,
       )}
       {...props}
