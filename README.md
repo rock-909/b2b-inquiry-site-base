@@ -7,6 +7,7 @@ B2B 询盘站模板，面向 offering 介绍、联系和报价询盘转化，内
 ## 当前站点范围
 
 - 多语言示例：英语为默认语言，公开 URL 不带 `/en` 前缀；西班牙语使用 `/es/` 前缀。
+- 未知页面或不存在的产品路径由 proxy 返回 404 时，保留已识别的语言前缀：例如 `/es/nope` 和 `/es/products/not-real` 显示西班牙语 404，导航和返回首页链接也保持西班牙语；没有已识别语言前缀的未知路径使用默认语言。
 - 页面：Home、Products、About、Contact、Privacy、Terms。
 - 业务身份、offering 和页面内容必须由派生站 owner 在公开上线前替换确认。
 
