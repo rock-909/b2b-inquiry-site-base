@@ -40,14 +40,17 @@ const OPEN_NEXT_FORBIDDEN_TOKENS = [
   "/api/cache/invalidate",
 ];
 
-// 生产构建默认压缩；只有 debug 入口显式关闭压缩。
-const CLOUDFLARE_BUILD_SCRIPTS = [
-  { name: "website:build:cf", minified: true },
-  { name: "website:build:cf:debug", minified: false },
-];
-const CLOUDFLARE_PLATFORM_ENV = [
-  "DEPLOYMENT_PLATFORM=cloudflare",
-  "NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare",
+const CLOUDFLARE_SCRIPT_SURFACE_CHECKS = [
+  {
+    name: "website:build:cf",
+    expected:
+      "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
+  },
+  {
+    name: "website:build:cf:debug",
+    expected:
+      "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
+  },
 ];
 const RETIRED_SCRIPT_NAMES = [
   "build:cf",
@@ -249,38 +252,6 @@ function checkOpenNextConfig(rootDir, failures) {
   checkOpenNextWiring(rootDir, failures);
 }
 
-// 脚本开头的 `KEY=value` 是构建环境，其后是 OpenNext Cloudflare CLI 的
-// `build` 命令及参数。额外的环境变量或参数不算错；合同只有三项：
-// 原生 CLI、平台模式、是否压缩。
-function findBuildScriptProblems(script, minified) {
-  const words = typeof script === "string" ? script.trim().split(/\s+/u) : [];
-  const env = new Map();
-  let index = 0;
-  while (/^[A-Za-z_][A-Za-z0-9_]*=/u.test(words[index] ?? "")) {
-    const [key, ...value] = words[index].split("=");
-    env.set(key, value.join("="));
-    index += 1;
-  }
-  const command = words.slice(index);
-
-  const missing = CLOUDFLARE_PLATFORM_ENV.filter((assignment) => {
-    const [key, value] = assignment.split("=");
-    return env.get(key) !== value;
-  });
-  const isNativeBuild = command.some(
-    (word, at) =>
-      word === "opennextjs-cloudflare" && command[at + 1] === "build",
-  );
-  if (!isNativeBuild) {
-    missing.push("native `opennextjs-cloudflare build` command");
-  }
-  const isMinified = !command.includes("--noMinify");
-  if (minified !== isMinified) {
-    missing.push(minified ? "default minified build" : "--noMinify");
-  }
-  return missing;
-}
-
 function checkPackageScripts(rootDir, failures) {
   const packageJson = JSON.parse(
     readCloudflareConfigFile(rootDir, "package.json"),
@@ -302,13 +273,14 @@ function checkPackageScripts(rootDir, failures) {
     });
   }
 
-  for (const { name, minified } of CLOUDFLARE_BUILD_SCRIPTS) {
-    const missing = findBuildScriptProblems(scripts[name], minified);
-    if (missing.length > 0) {
+  for (const check of CLOUDFLARE_SCRIPT_SURFACE_CHECKS) {
+    const script = scripts[check.name];
+    if (script !== check.expected) {
       failures.push({
         file: "package.json",
-        label: `${name} must use the native OpenNext Cloudflare CLI`,
-        missing,
+        label:
+          "stable Cloudflare build entrypoint must use the native OpenNext Cloudflare CLI",
+        missing: [`${check.name}: ${check.expected}`],
         forbidden: [],
       });
     }

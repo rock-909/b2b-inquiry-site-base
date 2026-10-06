@@ -1,8 +1,20 @@
-import { readFileSync } from "node:fs";
+/* eslint-disable security/detect-non-literal-fs-filename -- 路径都位于本测试创建的临时 fixture 下 */
+import { spawnSync } from "node:child_process";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 import { data, Evaluator, Lexer, Parser } from "@actions/expressions";
 import { load } from "js-yaml";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 
 interface DeployWorkflow {
   readonly concurrency?: {
@@ -26,6 +38,62 @@ interface DeployWorkflow {
       }[];
     }
   >;
+}
+
+const DEPLOYMENT_URL_EXPRESSION =
+  "${{ needs.build-and-deploy.outputs.deployment_url }}";
+const FIXTURE_PREFIX = "deploy-workflow-contract-";
+const tempDirs: string[] = [];
+
+afterEach(() => {
+  for (const tempDir of tempDirs.splice(0)) {
+    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
+  }
+});
+
+// 替身 curl/node 只记录收到的参数；curl 恒返回 200，让就绪探测一次通过。
+function createPostDeployFixture() {
+  const rootDir = mkdtempSync(path.join(tmpdir(), FIXTURE_PREFIX));
+  tempDirs.push(rootDir);
+  const binDir = path.join(rootDir, "bin");
+  mkdirSync(binDir);
+  const argLog = path.join(rootDir, "args.log");
+  const recorder = (output: string) =>
+    [
+      "#!/bin/sh",
+      'for arg in "$@"; do printf "%s\\n" "$arg" >> "$ARG_LOG"; done',
+      output,
+      "",
+    ].join("\n");
+  for (const [name, body] of [
+    ["curl", recorder('printf "200"')],
+    ["node", recorder("exit 0")],
+  ] as const) {
+    writeFileSync(path.join(binDir, name), body);
+    chmodSync(path.join(binDir, name), 0o755);
+  }
+  mkdirSync(path.join(rootDir, "scripts/quality/checks"), { recursive: true });
+  writeFileSync(
+    path.join(rootDir, "scripts/quality/checks/cloudflare-smoke.js"),
+    "",
+  );
+
+  return {
+    run: (script: string, deploymentUrl: string) =>
+      spawnSync("bash", ["-e", "-c", script], {
+        cwd: rootDir,
+        encoding: "utf8",
+        env: {
+          PATH: `${binDir}:/usr/bin:/bin`,
+          ARG_LOG: argLog,
+          DEPLOYMENT_URL: deploymentUrl,
+          NODE_ENV: "test",
+        },
+      }),
+    recordedArguments: () =>
+      existsSync(argLog) ? readFileSync(argLog, "utf8").split("\n") : [],
+    exists: (name: string) => existsSync(path.join(rootDir, name)),
+  };
 }
 
 function loadDeployWorkflow(): DeployWorkflow {
@@ -87,8 +155,9 @@ describe("Cloudflare deploy workflow contract", () => {
   it("keeps post-deploy verification serialized after the deploy job", () => {
     const workflow = loadDeployWorkflow();
     const buildSteps = workflowSteps(workflow, "build-and-deploy");
-    const smokeStep = workflowSteps(workflow, "post-deploy-verification").find(
-      (step) => step.run?.includes("cloudflare-smoke.js deployed-smoke"),
+    const verificationSteps = workflowSteps(
+      workflow,
+      "post-deploy-verification",
     );
     const deployStep = buildSteps.find(
       (step) => step.id === "deploy_production",
@@ -97,31 +166,43 @@ describe("Cloudflare deploy workflow contract", () => {
     expect(
       normalizeNeeds(workflow.jobs?.["post-deploy-verification"]?.needs),
     ).toContain("build-and-deploy");
-    expect(smokeStep?.env?.DEPLOYMENT_URL).toBe(
-      "${{ needs.build-and-deploy.outputs.deployment_url }}",
-    );
+    expect(
+      verificationSteps.filter(
+        (step) => step.env?.DEPLOYMENT_URL === DEPLOYMENT_URL_EXPRESSION,
+      ),
+    ).toHaveLength(2);
     expect(deployStep?.run).toContain("worker-url=${DEPLOY_URL}");
   });
 
-  // 部署 URL 来自 wrangler 输出；直接插值进脚本体，被篡改的值就会在持有
-  // 部署凭据的 job 里当作 shell 执行。
-  it("hands the deployed URL to post-deploy shell steps through env only", () => {
+  // 部署 URL 来自 wrangler 输出，被篡改的值必须始终只是数据：这里用替身
+  // curl/node 真实执行 post-deploy 的两个 shell 步骤，核对收到的参数，
+  // 并用带 shell 元字符的 URL 证明它不会被当作命令执行。
+  it("passes the deployed URL to post-deploy steps as data, never as shell", () => {
     const steps = workflowSteps(
       loadDeployWorkflow(),
       "post-deploy-verification",
     );
-    const urlSteps = steps.filter((step) =>
-      step.run?.includes('"$DEPLOYMENT_URL"'),
+    const urlSteps = steps.filter(
+      (step) => step.env?.DEPLOYMENT_URL === DEPLOYMENT_URL_EXPRESSION,
     );
-
     expect(urlSteps).toHaveLength(2);
-    for (const step of urlSteps) {
-      expect(step.env?.DEPLOYMENT_URL).toBe(
-        "${{ needs.build-and-deploy.outputs.deployment_url }}",
-      );
-    }
     for (const step of steps) {
       expect(step.run ?? "", step.name).not.toContain("${{");
+    }
+
+    const hostileUrl =
+      'https://x.workers.dev/$(touch pwned-sub)`touch pwned-bt`"; touch pwned-q';
+    for (const step of urlSteps) {
+      const fixture = createPostDeployFixture();
+      const result = fixture.run(step.run ?? "", hostileUrl);
+
+      expect(result.status, `${step.name}: ${result.stderr}`).toBe(0);
+      expect(fixture.recordedArguments(), step.name).toContain(hostileUrl);
+      for (const marker of ["pwned-sub", "pwned-bt", "pwned-q"]) {
+        expect(fixture.exists(marker), `${step.name} ran ${marker}`).toBe(
+          false,
+        );
+      }
     }
   });
 
