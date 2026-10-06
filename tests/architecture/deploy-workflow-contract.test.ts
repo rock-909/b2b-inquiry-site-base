@@ -6,15 +6,14 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
-import { tmpdir } from "node:os";
 import path from "node:path";
 
 import { data, Evaluator, Lexer, Parser } from "@actions/expressions";
 import { load } from "js-yaml";
 import { afterEach, describe, expect, it } from "vitest";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 
 interface DeployWorkflow {
   readonly concurrency?: {
@@ -24,6 +23,7 @@ interface DeployWorkflow {
     string,
     {
       readonly environment?: string;
+      readonly outputs?: Record<string, string>;
       readonly needs?: string | readonly string[];
       readonly "continue-on-error"?: boolean;
       readonly steps?: readonly {
@@ -47,17 +47,19 @@ const tempDirs: string[] = [];
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
+    rmSync(tempDir, { recursive: true, force: true });
   }
 });
 
 // 替身 curl/node 只记录收到的参数；curl 恒返回 200，让就绪探测一次通过。
-function createPostDeployFixture() {
-  const rootDir = mkdtempSync(path.join(tmpdir(), FIXTURE_PREFIX));
+function createDeployFixture() {
+  const rootDir = mkdtempSync(path.join(process.cwd(), FIXTURE_PREFIX));
   tempDirs.push(rootDir);
   const binDir = path.join(rootDir, "bin");
   mkdirSync(binDir);
   const argLog = path.join(rootDir, "args.log");
+  const githubOutput = path.join(rootDir, "github-output");
+  writeFileSync(githubOutput, "");
   const recorder = (output: string) =>
     [
       "#!/bin/sh",
@@ -68,6 +70,7 @@ function createPostDeployFixture() {
   for (const [name, body] of [
     ["curl", recorder('printf "200"')],
     ["node", recorder("exit 0")],
+    ["pnpm", recorder('printf "%s\\n" "$DEPLOYMENT_URL"')],
   ] as const) {
     writeFileSync(path.join(binDir, name), body);
     chmodSync(path.join(binDir, name), 0o755);
@@ -79,7 +82,11 @@ function createPostDeployFixture() {
   );
 
   return {
-    run: (script: string, deploymentUrl: string) =>
+    run: (
+      script: string,
+      deploymentUrl: string,
+      env: Record<string, string> = {},
+    ) =>
       spawnSync("bash", ["-e", "-c", script], {
         cwd: rootDir,
         encoding: "utf8",
@@ -88,8 +95,11 @@ function createPostDeployFixture() {
           ARG_LOG: argLog,
           DEPLOYMENT_URL: deploymentUrl,
           NODE_ENV: "test",
+          GITHUB_OUTPUT: githubOutput,
+          ...env,
         },
       }),
+    output: () => readFileSync(githubOutput, "utf8"),
     recordedArguments: () =>
       existsSync(argLog) ? readFileSync(argLog, "utf8").split("\n") : [],
     exists: (name: string) => existsSync(path.join(rootDir, name)),
@@ -154,13 +164,9 @@ describe("Cloudflare deploy workflow contract", () => {
 
   it("keeps post-deploy verification serialized after the deploy job", () => {
     const workflow = loadDeployWorkflow();
-    const buildSteps = workflowSteps(workflow, "build-and-deploy");
     const verificationSteps = workflowSteps(
       workflow,
       "post-deploy-verification",
-    );
-    const deployStep = buildSteps.find(
-      (step) => step.id === "deploy_production",
     );
 
     expect(
@@ -171,8 +177,42 @@ describe("Cloudflare deploy workflow contract", () => {
         (step) => step.env?.DEPLOYMENT_URL === DEPLOYMENT_URL_EXPRESSION,
       ),
     ).toHaveLength(2);
-    expect(deployStep?.run).toContain("worker-url=${DEPLOY_URL}");
+    expect(workflow.jobs?.["build-and-deploy"]?.outputs?.deployment_url).toBe(
+      "${{ steps.resolve_urls.outputs.deployment-url }}",
+    );
   });
+
+  it.each([
+    "https://fixture.workers.dev",
+    'https://$(touch${IFS}pwned-sub)`touch${IFS}pwned-bt`"quote.workers.dev',
+  ])("emits the deployed URL through both output handoffs: %s", (url) => {
+    const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+    const deploy = steps.find((step) => step.id === "deploy_production");
+    const resolve = steps.find((step) => step.id === "resolve_urls");
+
+    expect(resolve?.env?.WORKER_URL).toBe(
+      "${{ steps.deploy_production.outputs.worker-url }}",
+    );
+    expect(resolve?.env?.DEPLOY_ENVIRONMENT).toBe("${{ inputs.environment }}");
+    assertDeploymentOutput(deploy?.run ?? "", resolve?.run ?? "", url);
+  });
+
+  it.each(["deploy", "resolve"])(
+    "rejects a missing %s output even when the shell succeeds",
+    (stage) => {
+      const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+      const deploy = steps.find((step) => step.id === "deploy_production");
+      const resolve = steps.find((step) => step.id === "resolve_urls");
+
+      expect(() =>
+        assertDeploymentOutput(
+          stage === "deploy" ? ":" : (deploy?.run ?? ""),
+          stage === "resolve" ? ":" : (resolve?.run ?? ""),
+          "https://fixture.workers.dev",
+        ),
+      ).toThrow(/expected/u);
+    },
+  );
 
   // 部署 URL 来自 wrangler 输出，被篡改的值必须始终只是数据：这里用替身
   // curl/node 真实执行 post-deploy 的两个 shell 步骤，核对收到的参数，
@@ -186,14 +226,11 @@ describe("Cloudflare deploy workflow contract", () => {
       (step) => step.env?.DEPLOYMENT_URL === DEPLOYMENT_URL_EXPRESSION,
     );
     expect(urlSteps).toHaveLength(2);
-    for (const step of steps) {
-      expect(step.run ?? "", step.name).not.toContain("${{");
-    }
 
     const hostileUrl =
       'https://x.workers.dev/$(touch pwned-sub)`touch pwned-bt`"; touch pwned-q';
     for (const step of urlSteps) {
-      const fixture = createPostDeployFixture();
+      const fixture = createDeployFixture();
       const result = fixture.run(step.run ?? "", hostileUrl);
 
       expect(result.status, `${step.name}: ${result.stderr}`).toBe(0);
@@ -357,5 +394,29 @@ function assertEnvironmentSelection(expression: string | undefined) {
     expect(selected, `environment for ${input}`).toEqual(
       new data.StringData(expected),
     );
+  }
+}
+
+function assertDeploymentOutput(
+  deployScript: string,
+  resolveScript: string,
+  url: string,
+) {
+  const deployment = createDeployFixture();
+  const deployed = deployment.run(deployScript, url);
+  expect(deployed.status, deployed.stderr).toBe(0);
+  expect(deployment.output()).toBe(`worker-url=${url}\n`);
+
+  const resolution = createDeployFixture();
+  const resolved = resolution.run(resolveScript, url, {
+    DEPLOY_ENVIRONMENT: "production",
+    WORKER_URL: deployment.output().trimEnd().slice("worker-url=".length),
+  });
+  expect(resolved.status, resolved.stderr).toBe(0);
+  expect(resolution.output()).toBe(`deployment-url=${url}\n`);
+  for (const fixture of [deployment, resolution]) {
+    for (const marker of ["pwned-sub", "pwned-bt"]) {
+      expect(fixture.exists(marker)).toBe(false);
+    }
   }
 }
