@@ -345,12 +345,24 @@ describe("Cloudflare config source contract", () => {
       "DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
     ],
     [
+      "extra env prefixes",
+      "NODE_OPTIONS=--inspect DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
+    ],
+    [
       "a command that is not the native OpenNext build",
       "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec next build",
     ],
     [
       "a debug-only unminified build",
       "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
+    ],
+    [
+      "a quoted --noMinify flag",
+      'DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build "--noMinify"',
+    ],
+    [
+      "an extra build flag",
+      "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --someNewFlag",
     ],
   ])("rejects the production build script with %s", (_label, script) => {
     const rootDir = createFixture();
@@ -368,14 +380,22 @@ describe("Cloudflare config source contract", () => {
     ]);
   });
 
-  it("rejects a debug build script that stops being unminified", () => {
+  it.each([
+    [
+      "that stops being unminified",
+      "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
+    ],
+    [
+      "with a quoted --noMinify flag",
+      'DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build "--noMinify"',
+    ],
+  ])("rejects a debug build script %s", (_label, script) => {
     const rootDir = createFixture();
     writePassingSideFiles(rootDir);
     writePassingWranglerConfig(rootDir);
     writePackageWith(rootDir, {
       ...CANONICAL_CLOUDFLARE_BUILD_SCRIPTS,
-      "website:build:cf:debug":
-        "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
+      "website:build:cf:debug": script,
     });
 
     const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
@@ -383,20 +403,6 @@ describe("Cloudflare config source contract", () => {
     expect(failures).toEqual([
       expect.objectContaining({ file: "package.json" }),
     ]);
-  });
-
-  it("accepts extra env prefixes and build flags that do not change the contract", () => {
-    const rootDir = createFixture();
-    writePassingSideFiles(rootDir);
-    writePassingWranglerConfig(rootDir);
-    writePackageWith(rootDir, {
-      "website:build:cf":
-        "NODE_OPTIONS=--max-old-space-size=4096 DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --someNewFlag",
-      "website:build:cf:debug":
-        "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --someNewFlag --noMinify",
-    });
-
-    expect(loadChecker().collectCloudflareConfigFailures(rootDir)).toEqual([]);
   });
 
   describe("open-next wiring check", () => {
