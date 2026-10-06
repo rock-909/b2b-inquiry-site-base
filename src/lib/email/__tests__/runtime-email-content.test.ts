@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { EMAIL_COPY } from "@/emails/email-copy";
+import { buildInquiryEmailContent } from "@/lib/email/runtime-email-content";
 import {
-  buildInquiryEmailContent,
-  type InquiryEmailData,
-} from "@/lib/email/runtime-email-content";
+  inquiryLeadSchema,
+  type ValidatedInquiry,
+} from "@/lib/lead-pipeline/lead-schema";
 
 describe("runtime email content", () => {
   it("renders inquiry body fields without losing buyer details", () => {
-    const inquiryData: InquiryEmailData = {
+    const inquiryData: ValidatedInquiry = {
       referenceId: "INQ-abc123-deadbeef",
-      firstName: "Pat",
-      lastName: "Lee",
-      email: "pat@example.com",
-      message: "Line one\nLine two",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "Pat Lee",
+        email: "pat@example.com",
+        message: "Line one\nLine two",
+      }),
     };
 
     const content = buildInquiryEmailContent(inquiryData);
@@ -30,11 +33,13 @@ describe("runtime email content", () => {
   });
 
   it("omits requirements when not provided", () => {
-    const inquiryData: InquiryEmailData = {
+    const inquiryData: ValidatedInquiry = {
       referenceId: "INQ-abc123-deadbeef",
-      firstName: "Pat",
-      lastName: "Lee",
-      email: "pat@example.com",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "Pat Lee",
+        email: "pat@example.com",
+      }),
     };
 
     const content = buildInquiryEmailContent(inquiryData);
@@ -46,10 +51,12 @@ describe("runtime email content", () => {
   it("escapes special characters in HTML while keeping readable text content", () => {
     const content = buildInquiryEmailContent({
       referenceId: "INQ-abc123-deadbeef",
-      firstName: "J&ne",
-      lastName: "<Buyer>",
-      email: "pat@example.com",
-      message: "Need <fast> & 'safe' output",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "J&ne <Buyer>",
+        email: "pat@example.com",
+        message: "Need <fast> & 'safe' output",
+      }),
     });
 
     expect(content.html).toContain("J&amp;ne &lt;Buyer&gt;");

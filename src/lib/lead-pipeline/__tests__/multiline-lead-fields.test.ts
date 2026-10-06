@@ -18,11 +18,8 @@ describe("multiline lead fields", () => {
     );
 
     const content = buildInquiryEmailContent({
-      referenceId: "PRO-abc123-deadbeef",
-      firstName: "Jane",
-      lastName: "Buyer",
-      email: "jane@example.com",
-      message: parsed.message!,
+      ...parsed,
+      referenceId: "INQ-abc123-deadbeef",
     });
     expect(content.html).toContain("Need custom height");
     expect(content.html).toContain("Stainless finish");

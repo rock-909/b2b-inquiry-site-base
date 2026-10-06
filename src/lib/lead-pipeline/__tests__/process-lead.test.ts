@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { logger } from "@/lib/logger";
-import { INQUIRY_LEAD_TYPE, type InquiryLeadInput } from "../lead-schema";
+import { INQUIRY_LEAD_TYPE, inquiryLeadSchema } from "../lead-schema";
 import { processValidatedInquiry } from "../process-lead";
 
 const { mockCreateLead, mockSendProductInquiryEmail } = vi.hoisted(() => ({
@@ -18,12 +18,12 @@ vi.mock("@/lib/resend-core", () => ({
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
 
-const VALID_LEAD: InquiryLeadInput = {
+const VALID_LEAD = inquiryLeadSchema.parse({
   type: INQUIRY_LEAD_TYPE,
   fullName: "Jane Buyer",
   email: "jane@example.com",
   message: "Need custom height\nStainless finish",
-};
+});
 
 describe("processValidatedInquiry", () => {
   beforeEach(() => {
@@ -43,18 +43,17 @@ describe("processValidatedInquiry", () => {
     expect(result.referenceId).toMatch(/^INQ-/);
     expect(mockSendProductInquiryEmail).toHaveBeenCalledWith({
       referenceId: result.referenceId,
-      firstName: "Jane",
-      lastName: "Buyer",
+      type: INQUIRY_LEAD_TYPE,
+      fullName: "Jane Buyer",
       email: "jane@example.com",
       message: "Need custom height\nStainless finish",
     });
     expect(mockCreateLead).toHaveBeenCalledWith(
       expect.objectContaining({
-        firstName: "Jane",
-        lastName: "Buyer",
+        type: INQUIRY_LEAD_TYPE,
+        fullName: "Jane Buyer",
         email: "jane@example.com",
-        requirements: "Need custom height\nStainless finish",
-        message: expect.stringContaining("Requirements: Need custom height"),
+        message: "Need custom height\nStainless finish",
         referenceId: expect.stringMatching(/^INQ-/),
       }),
     );
@@ -62,7 +61,7 @@ describe("processValidatedInquiry", () => {
     expect(mockCreateLead.mock.calls[0]?.[0]).not.toHaveProperty("quantity");
   });
 
-  it("keeps the Airtable columns and omits the email field when the buyer left no message", async () => {
+  it("passes the absent buyer message unchanged to both adapters", async () => {
     const { message: _omitted, ...leadWithoutMessage } = VALID_LEAD;
 
     await processValidatedInquiry(leadWithoutMessage);
@@ -71,7 +70,7 @@ describe("processValidatedInquiry", () => {
       "message",
     );
     const airtableLead = mockCreateLead.mock.calls[0]?.[0];
-    expect(airtableLead.message).toBe("General inquiry");
+    expect(airtableLead).not.toHaveProperty("message");
     expect(airtableLead).not.toHaveProperty("requirements");
   });
 

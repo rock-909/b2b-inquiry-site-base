@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { inquiryLeadSchema } from "@/lib/lead-pipeline/lead-schema";
 
 function createEnvMock(runtimeValues: Record<string, string | undefined>) {
   const env = {
@@ -96,10 +97,13 @@ describe("Cloudflare runtime env timing", () => {
     runtimeValues.AIRTABLE_TABLE_NAME = "Contacts";
 
     await createAirtableLead({
-      firstName: "Runtime",
-      lastName: "Tester",
-      email: "runtime@example.com",
-      message: "Runtime env should be available when Airtable initializes.",
+      referenceId: "INQ-abc123-deadbeef",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "Runtime Tester",
+        email: "runtime@example.com",
+        message: "Runtime env should be available when Airtable initializes.",
+      }),
     });
 
     expect(fetchMock).toHaveBeenCalledWith(

@@ -95,10 +95,12 @@ describe("resend - Service Initialization", () => {
 
     await service.sendInquiryEmail({
       referenceId: "INQ-abc123-deadbeef",
-      firstName: "Jane",
-      lastName: "Smith",
-      email: "jane.smith@example.com",
-      message: "Need bulk pricing",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "Jane Smith",
+        email: "jane.smith@example.com",
+        message: "Need bulk pricing",
+      }),
     });
 
     const payload = mockResendSend.mock.calls[0]?.[0];
@@ -116,12 +118,12 @@ describe("resend - sendInquiryEmail", () => {
 
   const validInquiryData = {
     referenceId: "INQ-abc123-deadbeef",
-    firstName: "Jane",
-    lastName: "Smith",
-    email: "jane.smith@example.com",
-    offeringId: "sample-offering",
-    offeringName: "Sample Offering",
-    message: "Need bulk pricing",
+    ...inquiryLeadSchema.parse({
+      type: "inquiry",
+      fullName: "Jane Smith",
+      email: "jane.smith@example.com",
+      message: "Need bulk pricing",
+    }),
   };
 
   beforeEach(async () => {
@@ -189,9 +191,12 @@ describe("resend - sendInquiryEmail", () => {
     const service = new ResendServiceClass();
     const emailData = {
       ...validInquiryData,
-      email: "JANE@EXAMPLE.COM",
-      lastName: "<Pump {lastName}>",
-      message: "Need {lastName}\n\nwith data:text/plain and onclick=alert",
+      ...inquiryLeadSchema.parse({
+        ...validInquiryData,
+        email: "JANE@EXAMPLE.COM",
+        fullName: "Jane <Pump {lastName}>",
+        message: "Need {lastName}\n\nwith data:text/plain and onclick=alert",
+      }),
     };
 
     mockResendSend.mockResolvedValue({
@@ -222,6 +227,7 @@ describe("resend - sendInquiryEmail", () => {
     await expect(service.sendInquiryEmail(validInquiryData)).rejects.toThrow(
       "Failed to send inquiry email",
     );
+    expect(mockResendSend).toHaveBeenCalledTimes(1);
   });
 
   it("handles network errors for inquiry", async () => {
@@ -231,6 +237,7 @@ describe("resend - sendInquiryEmail", () => {
     await expect(service.sendInquiryEmail(validInquiryData)).rejects.toThrow(
       "Failed to send inquiry email",
     );
+    expect(mockResendSend).toHaveBeenCalledTimes(1);
   });
 
   it("logs the reference on both delivery outcomes so a quoted reference is traceable", async () => {
@@ -253,6 +260,7 @@ describe("resend - sendInquiryEmail", () => {
       "Failed to send inquiry email",
     );
 
+    expect(mockResendSend).toHaveBeenCalledTimes(2);
     expect(logger.error).toHaveBeenCalledWith(
       "Failed to send inquiry email",
       expect.objectContaining({ referenceId: "INQ-abc123-deadbeef" }),
