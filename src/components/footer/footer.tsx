@@ -63,7 +63,7 @@ function FooterSection({
           <li key={link.key}>
             <Link
               className={LINK_CLASS}
-              href={link.href as "/privacy" | "/terms"}
+              href={link.href}
               prefetch={false}
             >
               {translateConfigKey(link.translationKey)}

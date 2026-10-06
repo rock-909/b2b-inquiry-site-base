@@ -1,7 +1,5 @@
 import { env, isRuntimeProduction, runtimeEnv } from "@/lib/env";
-import { PATHS_CONFIG } from "@/config/paths/paths-config";
-import type { PageType } from "@/config/paths/types";
-import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
+import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 import type { SiteConfig, SiteFacts } from "@/config/site-types";
 
 export type {
@@ -41,18 +39,18 @@ const social = {
 } as const;
 
 // 页脚导航列与主导航是同一份页面清单（pages.config 的 navigationKey）。
-const FOOTER_NAVIGATION_PAGE_TYPES = SINGLE_SITE_NAVIGATION.map(
-  (item) => item.key,
+const FOOTER_NAVIGATION_PAGES = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+  (definition) => definition.navigationKey !== null,
 );
 
-const FOOTER_SUPPORT_PAGE_TYPES = [
-  "privacy",
-  "terms",
-] as const satisfies readonly PageType[];
+const FOOTER_SUPPORT_PAGES = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+  (definition) =>
+    definition.pageType === "privacy" || definition.pageType === "terms",
+);
 
-type FooterLinkPageType =
-  | (typeof FOOTER_NAVIGATION_PAGE_TYPES)[number]
-  | (typeof FOOTER_SUPPORT_PAGE_TYPES)[number];
+type FooterLinkPage =
+  | (typeof FOOTER_NAVIGATION_PAGES)[number]
+  | (typeof FOOTER_SUPPORT_PAGES)[number];
 
 const FOOTER_TRANSLATION_KEYS = {
   home: "footer.sections.navigation.home",
@@ -61,17 +59,17 @@ const FOOTER_TRANSLATION_KEYS = {
   contact: "footer.sections.navigation.contact",
   privacy: "footer.sections.support.privacy",
   terms: "footer.sections.support.terms",
-} as const satisfies Record<FooterLinkPageType, string>;
+} as const satisfies Record<FooterLinkPage["pageType"], string>;
 
 const FOOTER_COLUMN_TRANSLATION_KEYS = {
   navigation: "footer.sections.navigation.title",
   support: "footer.sections.support.title",
 } as const;
 
-function getFooterLinkItem(pageType: FooterLinkPageType) {
+function getFooterLinkItem({ pageType, path }: FooterLinkPage) {
   return {
     key: pageType,
-    href: PATHS_CONFIG[pageType],
+    href: path,
     translationKey: FOOTER_TRANSLATION_KEYS[pageType],
   } as const;
 }
@@ -80,12 +78,12 @@ export const SINGLE_SITE_FOOTER_COLUMNS = [
   {
     key: "navigation",
     translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.navigation,
-    links: FOOTER_NAVIGATION_PAGE_TYPES.map(getFooterLinkItem),
+    links: FOOTER_NAVIGATION_PAGES.map(getFooterLinkItem),
   },
   {
     key: "support",
     translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.support,
-    links: FOOTER_SUPPORT_PAGE_TYPES.map(getFooterLinkItem),
+    links: FOOTER_SUPPORT_PAGES.map(getFooterLinkItem),
   },
 ] as const;
 
