@@ -20,7 +20,9 @@ const sentinelTurnstileLabels = {
 };
 
 function renderTurnstileWidget(
-  props: Omit<React.ComponentProps<typeof TurnstileWidget>, "labels"> & {
+  props: Partial<
+    Omit<React.ComponentProps<typeof TurnstileWidget>, "labels">
+  > & {
     labels?: React.ComponentProps<typeof TurnstileWidget>["labels"];
   } = {},
 ) {
