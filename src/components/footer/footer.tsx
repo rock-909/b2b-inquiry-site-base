@@ -61,11 +61,7 @@ function FooterSection({
       <ul className="mt-3">
         {section.links.map((link) => (
           <li key={link.key}>
-            <Link
-              className={LINK_CLASS}
-              href={link.href}
-              prefetch={false}
-            >
+            <Link className={LINK_CLASS} href={link.href} prefetch={false}>
               {translateConfigKey(link.translationKey)}
             </Link>
           </li>
