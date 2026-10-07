@@ -89,8 +89,8 @@ function collectLocalizedRouteFindings({ buildRoot, localizedRoutes }) {
 }
 
 function loadExpectedOgImageUrl() {
-  // 构建产物按 production 解析站点地址（如 localhost 回退到占位域名），
-  // 这里必须用同一份规则，所以在加载 single-site 前按 production 解析。
+  // 构建产物按 production 解析站点地址；加载 single-site 前设置相同环境，
+  // 以复用其地址解析规则，避免烟测期望值与构建产物不一致。
   const previousNodeEnv = process.env.NODE_ENV;
   process.env.NODE_ENV = "production";
   try {
