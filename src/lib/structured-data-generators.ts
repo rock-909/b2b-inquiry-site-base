@@ -1,10 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
-import type {
-  BreadcrumbData,
-  OrganizationData,
-  WebSiteData,
-} from "@/lib/structured-data-types";
 import {
   getPublicContactPhone,
   getPublicLogoPath,
@@ -44,12 +39,10 @@ export function websiteStructuredDataId(baseUrl: string = FALLBACK_BASE_URL) {
 }
 
 function getSocialProfileUrls(t: StructuredDataTranslator): string[] {
-  const twitter =
-    t("organization.social.twitter") ?? SINGLE_SITE_CONFIG.social.twitter;
-  const linkedin =
-    t("organization.social.linkedin") ?? SINGLE_SITE_CONFIG.social.linkedin;
-
-  return [twitter, linkedin].filter((url) => /^https?:\/\//iu.test(url));
+  return [
+    t("organization.social.twitter"),
+    t("organization.social.linkedin"),
+  ].filter((url) => /^https?:\/\//iu.test(url));
 }
 
 function buildOrganizationPostalAddress() {
@@ -64,32 +57,24 @@ function buildOrganizationPostalAddress() {
 /**
  * 生成组织结构化数据
  */
-export function generateOrganizationData(
-  t: StructuredDataTranslator,
-  data: OrganizationData = {},
-) {
-  const baseUrl = data.url ?? FALLBACK_BASE_URL;
-  const logoPath = data.logo ?? getPublicLogoPath();
-  const telephone = getPublicContactPhone(
-    data.phone ?? SINGLE_SITE_CONFIG.contact.phone,
-  );
+export function generateOrganizationData(t: StructuredDataTranslator) {
+  const logoPath = getPublicLogoPath();
+  const telephone = getPublicContactPhone(SINGLE_SITE_CONFIG.contact.phone);
   const sameAs = getSocialProfileUrls(t);
-  const email = data.email ?? SINGLE_SITE_CONFIG.contact.email;
+  const { email } = SINGLE_SITE_CONFIG.contact;
 
   return {
-    "@context": "https://schema.org",
     "@type": "Organization",
-    "@id": organizationStructuredDataId(baseUrl),
-    name: data.name ?? t("organization.name") ?? SINGLE_SITE_CONFIG.name,
-    description:
-      data.description ??
-      t("organization.description") ??
-      SINGLE_SITE_CONFIG.description,
-    url: baseUrl,
+    "@id": organizationStructuredDataId(),
+    name: t("organization.name"),
+    description: t("organization.description"),
+    url: FALLBACK_BASE_URL,
     ...(email ? { email } : {}),
     foundingDate: String(SINGLE_SITE_FACTS.company.established),
     address: buildOrganizationPostalAddress(),
-    ...(logoPath ? { logo: new URL(logoPath, baseUrl).toString() } : {}),
+    ...(logoPath
+      ? { logo: new URL(logoPath, FALLBACK_BASE_URL).toString() }
+      : {}),
     contactPoint: {
       "@type": "ContactPoint",
       ...(telephone ? { telephone } : {}),
@@ -103,24 +88,15 @@ export function generateOrganizationData(
 /**
  * 生成网站结构化数据
  */
-export function generateWebSiteData(
-  t: StructuredDataTranslator,
-  data: WebSiteData = {},
-) {
-  const baseUrl = data.url ?? FALLBACK_BASE_URL;
-
+export function generateWebSiteData(t: StructuredDataTranslator) {
   return {
-    "@context": "https://schema.org",
     "@type": "WebSite",
-    "@id": websiteStructuredDataId(baseUrl),
-    name: data.name ?? t("website.name") ?? SINGLE_SITE_CONFIG.name,
-    description:
-      data.description ??
-      t("website.description") ??
-      SINGLE_SITE_CONFIG.seo.defaultDescription,
-    url: baseUrl,
+    "@id": websiteStructuredDataId(),
+    name: t("website.name"),
+    description: t("website.description"),
+    url: FALLBACK_BASE_URL,
     publisher: {
-      "@id": organizationStructuredDataId(baseUrl),
+      "@id": organizationStructuredDataId(),
     },
     inLanguage: routing.locales,
   };
@@ -130,7 +106,6 @@ export function generateProductData(
   data: ProductInput,
 ): Record<string, unknown> {
   return {
-    "@context": "https://schema.org",
     "@type": "Product",
     name: data.name,
     description: data.description,
@@ -147,7 +122,6 @@ export function buildWebPageSchema(
   data: WebPageSchemaInput,
 ): Record<string, unknown> {
   return {
-    "@context": "https://schema.org",
     "@type": "WebPage",
     "@id": data.url,
     url: data.url,
@@ -168,27 +142,13 @@ export function buildWebPageSchema(
 export function buildBreadcrumbListSchema(
   items: Array<{ name: string; url: string }>,
 ): Record<string, unknown> {
-  return generateBreadcrumbData({
-    items: items.map((item, index) => ({
-      ...item,
-      position: index + 1,
-    })),
-  });
-}
-
-/**
- * 生成面包屑结构化数据
- */
-export function generateBreadcrumbData(data: BreadcrumbData) {
   return {
-    "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement:
-      data.items?.map((item, index) => ({
-        "@type": "ListItem",
-        position: item.position || index + 1,
-        name: item.name,
-        item: item.url,
-      })) || [],
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
   };
 }

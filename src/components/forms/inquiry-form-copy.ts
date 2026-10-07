@@ -2,7 +2,6 @@ import {
   type InquiryFieldErrorCopyMap,
   type InquiryFieldErrorDetail,
 } from "@/constants/inquiry-field-error-protocol";
-import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
 
 type InquiryFormMessageKey =
   | "optional"
@@ -95,14 +94,3 @@ export function createInquiryFormCopy(
 }
 
 export type InquiryFormCopy = ReturnType<typeof createInquiryFormCopy>;
-
-export function createInquiryFormCopyFromMessages(
-  messages: Record<string, unknown>,
-  rescueEmail: string,
-): InquiryFormCopy {
-  return createInquiryFormCopy(
-    (key: InquiryFormMessageKey) =>
-      readRequiredMessagePath(messages, ["inquiry", "form", ...key.split(".")]),
-    rescueEmail,
-  );
-}

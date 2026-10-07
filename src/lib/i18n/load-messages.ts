@@ -8,6 +8,7 @@ import { type Locale } from "@/i18n/routing-config";
 import { coerceLocale } from "@/i18n/locale-utils";
 import enMessages from "@messages/base/en/messages.json";
 import esMessages from "@messages/base/es/messages.json";
+import { interpolate } from "@/lib/interpolate";
 import {
   getSiteMessageValues,
   type SiteMessageValues,
@@ -20,28 +21,12 @@ const SOURCE_MESSAGES: Record<Locale, Messages> = {
   es: esMessages,
 };
 
-function interpolateSiteMessageString(
-  value: string,
-  siteValues: SiteMessageValues,
-): string {
-  const replacements: Record<string, string> = {
-    siteName: siteValues.siteName,
-    companyName: siteValues.companyName,
-    currentYear: siteValues.currentYear,
-  };
-
-  return value.replace(
-    /\{(siteName|companyName|currentYear)\}/gu,
-    (match, key: string) => replacements[key] ?? match,
-  );
-}
-
 function interpolateSiteMessageValues(
   value: unknown,
   siteValues: SiteMessageValues,
 ): unknown {
   if (typeof value === "string") {
-    return interpolateSiteMessageString(value, siteValues);
+    return interpolate(value, siteValues);
   }
 
   if (Array.isArray(value)) {

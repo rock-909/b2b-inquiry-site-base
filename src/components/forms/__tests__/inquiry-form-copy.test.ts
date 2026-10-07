@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { getSourceMessages } from "@/lib/i18n/load-messages";
-import { createInquiryFormCopyFromMessages } from "@/components/forms/inquiry-form-copy";
 import {
   MAX_LEAD_EMAIL_LENGTH,
   MAX_LEAD_NAME_LENGTH,
@@ -16,19 +15,6 @@ describe("inquiry form copy", () => {
     expect(copy.message).toBe("Message");
     expect(copy.optional).toBe("optional");
     expect(copy.submit).toBe("Send inquiry");
-  });
-
-  it("reads the same namespace from the canonical messages", () => {
-    const fromMessages = createInquiryFormCopyFromMessages(
-      getSourceMessages("en"),
-      "sales@example.invalid",
-    );
-    const fromHelper = createTestInquiryFormCopy();
-
-    expect(fromMessages.fullName).toBe(fromHelper.fullName);
-    expect(fromMessages.errors.fieldSummary).toBe(
-      fromHelper.errors.fieldSummary,
-    );
   });
 
   it("reads all eight visible field error leaves from inquiry.form.errors", () => {

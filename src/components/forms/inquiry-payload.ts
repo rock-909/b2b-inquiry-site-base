@@ -1,4 +1,3 @@
-import { MAX_LEAD_MESSAGE_LENGTH } from "@/constants/validation-limits";
 import {
   pickAttributionFieldsFromFormData,
   type MarketingAttributionFields,
@@ -34,8 +33,4 @@ export function createInquiryPayload(
     turnstileToken,
     ...pickAttributionFieldsFromFormData(formData),
   };
-}
-
-export function getInquiryMessageMaxLength(): number {
-  return MAX_LEAD_MESSAGE_LENGTH;
 }

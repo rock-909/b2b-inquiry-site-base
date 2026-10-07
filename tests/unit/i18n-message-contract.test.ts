@@ -1,9 +1,9 @@
 import enMessagesSource from "../../messages/base/en/messages.json";
 import { describe, expect, it } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
-import { createInquiryFormCopyFromMessages } from "@/components/forms/inquiry-form-copy";
 import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { INQUIRY_VALIDATION_DETAIL_KEYS } from "@/lib/api/inquiry-validation-details";
+import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
 
 type JsonObject = Record<string, unknown>;
 
@@ -46,10 +46,7 @@ function assertNonEmptyStringLeaves(value: unknown, label: string): void {
 
 describe("real i18n runtime message contract", () => {
   it("keeps the inquiry.form leaf set used by InquiryFormCopy", () => {
-    const copy = createInquiryFormCopyFromMessages(
-      enMessages,
-      "sales@example.invalid",
-    );
+    const copy = createTestInquiryFormCopy();
     assertNonEmptyStringLeaves(copy, "inquiry.form");
   });
 

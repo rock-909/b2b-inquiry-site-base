@@ -30,10 +30,7 @@ export async function generateStaticContentPageMetadata(
     locale,
     pageType: config.pageType,
     path: getCanonicalPath(config.pageType),
-    config: createStaticPageMetadataConfig(metadata, {
-      includeEmptyDescription: true,
-      includeImage: true,
-    }),
+    config: createStaticPageMetadataConfig(metadata, { includeImage: true }),
   });
 }
 

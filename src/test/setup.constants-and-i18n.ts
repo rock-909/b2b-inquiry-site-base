@@ -38,17 +38,23 @@ vi.mock("next-intl", async () => {
 vi.mock("next-intl/server", async () => {
   const { getFlatMessages, lookupMessage } =
     await import("@/test/i18n-messages");
-  const messages = getFlatMessages();
+  const enMessages = getFlatMessages();
 
   return {
     // 生产签名是 getTranslations(namespace) 或 getTranslations({ locale, namespace })。
-    getTranslations: vi.fn((options?: string | { namespace?: string }) => {
-      const namespace =
-        typeof options === "string" ? options : options?.namespace;
+    // 显式传入 locale 时按该 locale 取词，和生产一致；没传 locale 才回落 en。
+    getTranslations: vi.fn(
+      (options?: string | { locale?: string; namespace?: string }) => {
+        const namespace =
+          typeof options === "string" ? options : options?.namespace;
+        const locale =
+          typeof options === "string" ? undefined : options?.locale;
+        const messages = locale === "es" ? getFlatMessages("es") : enMessages;
 
-      return (key: string) =>
-        lookupMessage(messages, namespace ? `${namespace}.${key}` : key);
-    }),
+        return (key: string) =>
+          lookupMessage(messages, namespace ? `${namespace}.${key}` : key);
+      },
+    ),
     getLocale: vi.fn(() => "en"),
     getMessages: vi.fn(() => ({})),
     getFormatter: vi.fn(() => ({

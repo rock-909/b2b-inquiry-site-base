@@ -17,6 +17,7 @@ vi.mock("@/config/single-site", () => ({
   },
   SINGLE_SITE_FACTS: {
     company: {
+      name: "Test Company",
       established: 2021,
     },
     brandAssets: {
@@ -100,6 +101,34 @@ describe("SEO Metadata", () => {
       });
 
       expect(metadata.title).toBe("Established in 2021");
+    });
+
+    it("interpolates every site placeholder in titles and descriptions", () => {
+      const metadata = generateMetadataForPath({
+        locale: "en",
+        pageType: "about",
+        path: "/about",
+        config: {
+          title: "{siteName} by {companyName}",
+          description: "© {currentYear} {siteName}, since {established}.",
+        },
+      });
+
+      expect(metadata.title).toBe("Test Site by Test Company");
+      expect(metadata.description).toBe(
+        `© ${new Date().getUTCFullYear()} Test Site, since 2021.`,
+      );
+    });
+
+    it("leaves non-site placeholders untouched", () => {
+      const metadata = generateMetadataForPath({
+        locale: "en",
+        pageType: "about",
+        path: "/about",
+        config: { title: "About {productName}" },
+      });
+
+      expect(metadata.title).toBe("About {productName}");
     });
 
     it("renders canonical, hreflang and openGraph.url from the actual route path", () => {
@@ -254,22 +283,19 @@ describe("SEO Metadata", () => {
       });
     });
 
-    it("preserves empty static page descriptions when a route opts in", () => {
-      expect(
-        createStaticPageMetadataConfig(
-          {
-            title: "Page title",
-            description: "Page description",
-            seo: {
-              description: "",
-            },
-          },
-          { includeEmptyDescription: true },
-        ),
-      ).toEqual({
-        title: "Page title",
-        description: "",
+    it("falls back to the site default description when seo.description is empty", () => {
+      const metadata = generateMetadataForPath({
+        locale: "en",
+        pageType: "privacy",
+        path: "/privacy",
+        config: createStaticPageMetadataConfig({
+          title: "Page title",
+          description: "Page description",
+          seo: { description: "" },
+        }),
       });
+
+      expect(metadata.description).toBe("Default Description");
     });
   });
 });

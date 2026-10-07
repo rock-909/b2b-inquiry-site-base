@@ -1,7 +1,7 @@
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { getSingleSitePublicStaticPages } from "@/config/single-site-seo";
+import { getStaticSitemapPages } from "@/config/pages.config";
 
 interface LighthouseConfig {
   ci: {
@@ -30,9 +30,7 @@ describe("lighthouse route contract", () => {
     const paths = loadConfig(true).ci.collect.url.map(
       (url) => new URL(url).pathname,
     );
-    const expected = getSingleSitePublicStaticPages().map(
-      (path) => path || "/",
-    );
+    const expected = getStaticSitemapPages().map((path) => path || "/");
 
     expect([...paths].sort()).toEqual([...expected].sort());
   });

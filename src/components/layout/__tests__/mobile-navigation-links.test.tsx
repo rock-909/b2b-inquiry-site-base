@@ -6,7 +6,7 @@
  * MobileNavigationLinks — server-rendered / no-JS link list.
  *
  * This is the sole owner of proofs about the *content* of the mobile link
- * list: the no-JS SSR fallback, the conditional contact CTA, active-path
+ * list: the no-JS SSR fallback, the contact CTA, active-path
  * highlighting, and the exact item set/order. Drawer interaction (opening,
  * closing, keyboard) lives in mobile-navigation.test.tsx; the standalone
  * toggle button lives in mobile-menu-button.test.tsx.
@@ -34,23 +34,6 @@ function stringifyMockHref(href: MockLinkHref): string {
   return `${href.pathname}${query}`;
 }
 
-interface MockHomeLinkTargets {
-  primaryCta: string;
-  secondaryCta: string;
-  contact?: string;
-}
-
-// Mutable link-target source so the CTA-omission branch can be exercised.
-const mockHomeLinkTargets = vi.hoisted(
-  (): { current: MockHomeLinkTargets } => ({
-    current: {
-      contact: "/contact",
-      primaryCta: "/contact",
-      secondaryCta: "/about",
-    },
-  }),
-);
-
 vi.mock("next-intl", () => ({
   useTranslations: vi.fn(),
   useLocale: vi.fn(() => "en"),
@@ -66,18 +49,6 @@ vi.mock("@/i18n/routing", () => ({
   ),
 }));
 
-vi.mock("@/config/single-site-links", async (importOriginal) => {
-  // Keep the real route-href table (the navigation config needs it at load);
-  // only the home-link CTA targets are made overridable per test.
-  const actual = (await importOriginal()) as Record<string, unknown>;
-  return {
-    ...actual,
-    get SINGLE_SITE_HOME_LINK_TARGETS() {
-      return mockHomeLinkTargets.current;
-    },
-  };
-});
-
 const EXPECTED_ITEM_LABELS = [
   "Home",
   "Products",
@@ -92,11 +63,6 @@ describe("MobileNavigationLinks", () => {
     (useTranslations as ReturnType<typeof vi.fn>).mockImplementation(
       createMockUseTranslations(),
     );
-    mockHomeLinkTargets.current = {
-      contact: "/contact",
-      primaryCta: "/contact",
-      secondaryCta: "/about",
-    };
   });
 
   it("renders a server-safe link list for the no-JS fallback", () => {
@@ -147,16 +113,6 @@ describe("MobileNavigationLinks", () => {
     expect(
       screen.getAllByRole("link", { name: CTA_LABEL }).at(-1),
     ).toHaveAttribute("href", "/contact");
-  });
-
-  it("omits the drawer CTA when the active profile has no contact route", () => {
-    mockHomeLinkTargets.current = { primaryCta: "/", secondaryCta: "/" };
-
-    const html = renderToStaticMarkup(
-      <MobileNavigationLinks contactSalesLabel="Contact sales" />,
-    );
-
-    expect(html).not.toContain("Contact sales");
   });
 
   it("marks the active item with aria-current and leaves others unset", () => {

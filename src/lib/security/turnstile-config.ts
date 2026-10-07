@@ -40,16 +40,12 @@ function deriveFallbackHosts(): string[] {
   return Array.from(hosts);
 }
 
-function getAllowedTurnstileHostsFromConfig(): string[] {
-  const configured = parseConfiguredHosts();
-  return configured.length > 0 ? configured : deriveFallbackHosts();
-}
-
 /**
  * Return the list of hostnames that are allowed to appear in Turnstile verification responses.
  */
 export function getAllowedTurnstileHosts(): string[] {
-  return getAllowedTurnstileHostsFromConfig();
+  const configured = parseConfiguredHosts();
+  return configured.length > 0 ? configured : deriveFallbackHosts();
 }
 
 /**
@@ -59,5 +55,5 @@ export function isAllowedTurnstileHostname(hostname?: string | null): boolean {
   if (!hostname) return false;
 
   const normalized = hostname.toLowerCase();
-  return new Set(getAllowedTurnstileHostsFromConfig()).has(normalized);
+  return new Set(getAllowedTurnstileHosts()).has(normalized);
 }

@@ -2,7 +2,8 @@
  * Replace `{placeholder}` tokens in a template with values from a map.
  *
  * Unknown placeholders are left untouched. Values are coerced to strings.
- * Shared by FAQ answer interpolation and SEO string interpolation.
+ * Shared by message, FAQ and SEO string interpolation, which all pass the
+ * site placeholder table from `getSiteMessageValues()`.
  */
 export function interpolate(
   template: string,

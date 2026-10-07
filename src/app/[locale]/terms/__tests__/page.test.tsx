@@ -82,33 +82,6 @@ describe("TermsPage", () => {
         },
       });
     });
-
-    it("should preserve an empty description from the previous legal route behavior", async () => {
-      mockLoadLegalPage.mockResolvedValueOnce({
-        ...mockLegalPage,
-        metadata: {
-          ...mockLegalPage.metadata,
-          seo: {
-            title: "Terms SEO",
-            description: "",
-          },
-        },
-      });
-
-      await generateMetadata({
-        params: Promise.resolve(mockParams),
-      });
-
-      expect(mockGenerateMetadataForPath).toHaveBeenCalledWith({
-        locale: "en",
-        pageType: "terms",
-        path: "/terms",
-        config: {
-          title: "Terms SEO",
-          description: "",
-        },
-      });
-    });
   });
 
   describe("TermsPage", () => {

@@ -95,7 +95,7 @@ describe("structured-data generators", () => {
 
   describe("Given Article pages publish under the company brand", () => {
     it("When generating Organization data, Then real contact facts and stable @id are present", () => {
-      const schema = generateOrganizationData(mockTranslator, {});
+      const schema = generateOrganizationData(mockTranslator);
 
       expect(schema).toMatchObject({
         "@type": "Organization",
@@ -112,7 +112,7 @@ describe("structured-data generators", () => {
     });
 
     it("When generating WebSite data, Then stable @id and publisher reference are present", () => {
-      const schema = generateWebSiteData(mockTranslator, {});
+      const schema = generateWebSiteData(mockTranslator);
 
       expect(schema).toMatchObject({
         "@type": "WebSite",

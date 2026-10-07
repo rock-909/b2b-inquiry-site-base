@@ -1,15 +1,15 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setRequestLocale } from "next-intl/server";
 import ContactPage, { generateMetadata } from "@/app/[locale]/contact/page";
-import { getStaticContactPage } from "@/app/[locale]/contact/contact-page-data";
+import {
+  getContactPageData,
+  getStaticContactPage,
+} from "@/app/[locale]/contact/contact-page-data";
+import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import * as staticPages from "@/lib/content/static-pages";
 import { renderAsyncPage } from "@/test/render-async-page";
-
-const { mockGetContactCopyFromMessages } = vi.hoisted(() => ({
-  mockGetContactCopyFromMessages: vi.fn(),
-}));
 
 vi.mock("react", async () => {
   const actual = await vi.importActual<typeof React>("react");
@@ -33,36 +33,6 @@ vi.mock("react", async () => {
   };
 });
 
-const contactCopy = {
-  header: {
-    title: "Contact",
-    description: "Share the essentials so the team can identify the next step.",
-  },
-  panel: {
-    contact: {
-      title: "Email & inquiry form",
-      emailLabel: "Email",
-      phoneLabel: "Phone",
-    },
-    response: {
-      title: "What happens next",
-      responseTimeLabel: "Response target",
-      responseTimeValue: "Set before launch",
-      bestForLabel: "Useful first reply",
-      bestForValue: "The next confirmed step",
-      prepareLabel: "Help the team respond",
-      prepareValue: "Share the requirement, scope, timing and destination.",
-    },
-    hours: {
-      title: "Business hours",
-      weekdaysLabel: "Weekdays",
-      saturdayLabel: "Saturday",
-      sundayLabel: "Sunday",
-      closedLabel: "Set before launch",
-    },
-  },
-};
-
 vi.mock("@/components/forms/inquiry-form", () => ({
   InquiryForm: ({
     copy,
@@ -83,10 +53,6 @@ vi.mock("@/lib/content/render-static-markdown-content", () => ({
   ),
 }));
 
-vi.mock("@/lib/contact/getContactCopy", () => ({
-  getContactCopyFromMessages: mockGetContactCopyFromMessages,
-}));
-
 describe("ContactPage static content", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -95,7 +61,6 @@ describe("ContactPage static content", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetContactCopyFromMessages.mockReturnValue(contactCopy);
   });
 
   it("renders hero and body from static content while keeping the form", async () => {
@@ -158,13 +123,6 @@ describe("ContactPage static content", () => {
   });
 
   it("renders English contact panel copy from the top-level contact namespace", async () => {
-    const actualContactCopy = await vi.importActual<
-      typeof import("@/lib/contact/getContactCopy")
-    >("@/lib/contact/getContactCopy");
-    mockGetContactCopyFromMessages.mockImplementation(
-      actualContactCopy.getContactCopyFromMessages,
-    );
-
     const page = await ContactPage({
       params: Promise.resolve({ locale: "en" }),
     });
@@ -183,13 +141,6 @@ describe("ContactPage static content", () => {
   });
 
   it("localizes unconfigured Spanish business hours", async () => {
-    const actualContactCopy = await vi.importActual<
-      typeof import("@/lib/contact/getContactCopy")
-    >("@/lib/contact/getContactCopy");
-    mockGetContactCopyFromMessages.mockImplementation(
-      actualContactCopy.getContactCopyFromMessages,
-    );
-
     const page = await ContactPage({
       params: Promise.resolve({ locale: "es" }),
     });
@@ -212,22 +163,39 @@ describe("ContactPage static content", () => {
   it("renders the public email and hides the owner TODO phone", async () => {
     const { ContactMethodsCard } = await import("../contact-page-sections");
 
-    render(
-      <ContactMethodsCard
-        copy={{
-          title: "Email & inquiry",
-          emailLabel: "Email",
-          emailUnavailable: "Use the inquiry form if email is unavailable.",
-          phoneLabel: "Phone",
-        }}
-      />,
-    );
+    await renderAsyncPage(<ContactMethodsCard locale="en" />);
 
     expect(screen.queryByText("sales@example.invalid")).not.toBeInTheDocument();
     expect(screen.queryByText("+86-518-0000-0000")).not.toBeInTheDocument();
     expect(screen.queryByText("TODO-OWNER")).not.toBeInTheDocument();
     expect(screen.queryByText("Phone")).not.toBeInTheDocument();
     expect(screen.queryByText(/WhatsApp/i)).not.toBeInTheDocument();
+  });
+
+  it("interpolates site placeholders in FAQ answers", () => {
+    const page = staticPages.getStaticPage("contact", "en");
+    vi.spyOn(staticPages, "getStaticPage").mockReturnValue({
+      ...page,
+      metadata: {
+        ...page.metadata,
+        faq: [
+          {
+            id: "who",
+            question: "Who are we?",
+            answer: "{siteName} ({companyName}) since {established}. {unknown}",
+          },
+        ],
+      },
+    });
+
+    const { faqItems, faqSchema } = getContactPageData("en");
+
+    expect(faqItems[0]?.answer).toBe(
+      `${SINGLE_SITE_CONFIG.name} (${SINGLE_SITE_FACTS.company.name}) since ${SINGLE_SITE_FACTS.company.established}. {unknown}`,
+    );
+    expect(faqSchema?.mainEntity[0]?.acceptedAnswer.text).toContain(
+      SINGLE_SITE_CONFIG.name,
+    );
   });
 
   it("does not render starter FAQ from page metadata", async () => {

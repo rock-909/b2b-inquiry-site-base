@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getStaticPage } from "@/lib/content/static-pages";
 import { getCanonicalPath } from "@/config/paths/utils";
-import {
-  SINGLE_SITE_PUBLIC_STATIC_PAGE_ROUTES,
-  SINGLE_SITE_PUBLIC_STATIC_PAGES,
-} from "@/config/single-site-seo";
+import { getStaticSitemapPages } from "@/config/pages.config";
 import {
   getStaticContentPageLastModified,
   isStaticContentPage,
@@ -38,7 +35,7 @@ describe("page-dates", () => {
       { path: "/products", hasStaticContent: false },
     ] as const;
 
-    for (const pagePath of SINGLE_SITE_PUBLIC_STATIC_PAGES) {
+    for (const pagePath of getStaticSitemapPages()) {
       expect(isStaticContentPage(pagePath)).toBe(
         !pagesWithoutStaticContent.has(pagePath),
       );
@@ -47,15 +44,6 @@ describe("page-dates", () => {
     for (const { path, hasStaticContent } of representativePageContracts) {
       expect(isStaticContentPage(path)).toBe(hasStaticContent);
     }
-
-    expect(SINGLE_SITE_PUBLIC_STATIC_PAGE_ROUTES).toEqual([
-      "home",
-      "products",
-      "about",
-      "contact",
-      "privacy",
-      "terms",
-    ]);
   });
 
   it("loads updatedAt from the statically imported en-only content", async () => {
