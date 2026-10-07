@@ -1,9 +1,7 @@
 import "server-only";
 
-import type {
-  CreatedAirtableRecord,
-  InquiryLeadData,
-} from "@/lib/airtable/types";
+import type { CreatedAirtableRecord } from "@/lib/airtable/types";
+import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
 import { env, getRuntimeEnvString } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createLeadRecord } from "@/lib/airtable/service-internal/lead-records";
@@ -18,7 +16,7 @@ function readAirtableEnv(key: AirtableEnvKey): string | undefined {
 }
 
 export function createAirtableLead(
-  data: InquiryLeadData,
+  data: ValidatedInquiry,
 ): Promise<CreatedAirtableRecord> {
   const apiKey = readAirtableEnv("AIRTABLE_API_KEY");
   const baseId = readAirtableEnv("AIRTABLE_BASE_ID");

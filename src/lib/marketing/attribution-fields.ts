@@ -35,18 +35,3 @@ export function pickAttributionFields(
 
   return fields;
 }
-
-export function pickAttributionFieldsFromFormData(
-  formData: FormData,
-): MarketingAttributionFields {
-  const fields: MarketingAttributionFields = {};
-
-  for (const fieldName of ATTRIBUTION_FIELD_NAMES) {
-    const value = formData.get(fieldName);
-    if (typeof value === "string" && value.trim()) {
-      fields[fieldName] = value.trim();
-    }
-  }
-
-  return fields;
-}

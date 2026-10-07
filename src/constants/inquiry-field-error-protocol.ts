@@ -1,13 +1,13 @@
 /**
- * 询盘字段错误协议的唯一真相源。
+ * 询盘字段错误协议的真相源。
  *
- * wire 上的一条字段错误 detail 形如 errors.<field>.<leaf>；服务端 mapper、
- * 客户端字段匹配和 copy 类型全部从这里派生，新增 detail 只改 PROTOCOL 常量。
+ * wire 上的一条字段错误 detail 形如 errors.<field>.<leaf>。可渲染 detail 清单
+ * 与 detail 类型都从 PROTOCOL 派生；新增 detail 时还要同步服务端 mapper 的
+ * 按字段分支（inquiry-validation-details.ts）和客户端文案表（inquiry-form-copy.ts，
+ * 漏写时 type-check 报错）。
  * 本模块必须保持 client-safe：只允许纯常量与纯类型，禁止引入 zod、env、
  * logger、server-only 或 React——否则客户端 import 会把服务端依赖拖进包。
  */
-
-const ERROR_KEY_PREFIX = "errors";
 
 export const INQUIRY_FIELD_ERROR_PROTOCOL = {
   fullName: ["required", "invalid", "tooLong"],
@@ -17,7 +17,7 @@ export const INQUIRY_FIELD_ERROR_PROTOCOL = {
 
 export type InquiryErrorField = keyof typeof INQUIRY_FIELD_ERROR_PROTOCOL;
 
-export type InquiryErrorLeaf<Field extends InquiryErrorField> =
+type InquiryErrorLeaf<Field extends InquiryErrorField> =
   (typeof INQUIRY_FIELD_ERROR_PROTOCOL)[Field][number];
 
 /** wire 上的一条可见字段错误 detail，例如 errors.fullName.required。 */
@@ -25,62 +25,11 @@ export type InquiryFieldErrorDetail = {
   [Field in InquiryErrorField]: `errors.${Field}.${InquiryErrorLeaf<Field>}`;
 }[InquiryErrorField];
 
-/** 客户端字段错误文案对象的完整性合同：每个字段、每个 leaf 都必须有文案。 */
-export type InquiryFieldErrorCopyMap = {
-  readonly [Field in InquiryErrorField]: {
-    readonly [Leaf in InquiryErrorLeaf<Field>]: string;
-  };
-};
-
-function wireDetails<Field extends InquiryErrorField>(
-  field: Field,
-): readonly `errors.${Field}.${InquiryErrorLeaf<Field>}`[] {
-  return INQUIRY_FIELD_ERROR_PROTOCOL[field].map(
-    (leaf) => `${ERROR_KEY_PREFIX}.${field}.${leaf}` as const,
-  );
-}
-
-export const INQUIRY_FIELD_WIRE_DETAILS: Record<
-  InquiryErrorField,
-  readonly InquiryFieldErrorDetail[]
-> = {
-  fullName: wireDetails("fullName"),
-  email: wireDetails("email"),
-  message: wireDetails("message"),
-};
-
 /** 服务端可渲染、客户端可内联展示的全部字段错误 detail。 */
-export const INQUIRY_FIELD_ERROR_DETAILS = [
-  ...INQUIRY_FIELD_WIRE_DETAILS.fullName,
-  ...INQUIRY_FIELD_WIRE_DETAILS.email,
-  ...INQUIRY_FIELD_WIRE_DETAILS.message,
-] as readonly InquiryFieldErrorDetail[];
-
-/**
- * wire detail → 对应 leaf 的精确查找表。客户端用它替代字符串拆解（split），
- * 服务端字段名单在这里逐项封口：协议新增 leaf 而这里漏写时，type-check 直接红。
- */
-export const INQUIRY_FIELD_WIRE_DETAIL_LEAVES: {
-  readonly [Field in InquiryErrorField]: Readonly<
-    Record<string, InquiryErrorLeaf<Field> | undefined>
-  > & {
-    readonly [
-      D in `errors.${Field & string}.${InquiryErrorLeaf<Field>}`
-    ]: InquiryErrorLeaf<Field>;
-  };
-} = {
-  fullName: {
-    "errors.fullName.required": "required",
-    "errors.fullName.invalid": "invalid",
-    "errors.fullName.tooLong": "tooLong",
-  },
-  email: {
-    "errors.email.required": "required",
-    "errors.email.invalid": "invalid",
-    "errors.email.tooLong": "tooLong",
-  },
-  message: {
-    "errors.message.invalid": "invalid",
-    "errors.message.tooLong": "tooLong",
-  },
-};
+export const INQUIRY_FIELD_ERROR_DETAILS = (
+  Object.keys(INQUIRY_FIELD_ERROR_PROTOCOL) as InquiryErrorField[]
+).flatMap((field) =>
+  INQUIRY_FIELD_ERROR_PROTOCOL[field].map(
+    (leaf) => `errors.${field}.${leaf}` as InquiryFieldErrorDetail,
+  ),
+);

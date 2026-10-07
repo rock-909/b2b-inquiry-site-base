@@ -1,7 +1,5 @@
-import {
-  pickAttributionFieldsFromFormData,
-  type MarketingAttributionFields,
-} from "@/lib/marketing/attribution-fields";
+import type { MarketingAttributionFields } from "@/lib/marketing/attribution-fields";
+import { getAttributionSnapshot } from "@/lib/marketing/utm";
 
 export interface InquiryPayload extends MarketingAttributionFields {
   readonly fullName: string;
@@ -31,6 +29,6 @@ export function createInquiryPayload(
     website,
     ...(message ? { message } : {}),
     turnstileToken,
-    ...pickAttributionFieldsFromFormData(formData),
+    ...getAttributionSnapshot(),
   };
 }

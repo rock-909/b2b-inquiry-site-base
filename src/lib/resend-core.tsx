@@ -8,29 +8,10 @@ import "server-only";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { EMAIL_COPY } from "@/emails/email-copy";
 import { env, getRuntimeEnvString } from "@/lib/env";
-import {
-  inquiryEmailDataSchema,
-  type InquiryEmailData,
-} from "@/lib/email/email-data-schema";
 import { ResendHttpEmailClient } from "@/lib/email/resend-http-client";
 import { buildInquiryEmailContent } from "@/lib/email/runtime-email-content";
+import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
 import { logger, sanitizeEmail } from "@/lib/logger";
-import {
-  sanitizeMultilineText,
-  sanitizePlainText,
-} from "@/lib/security/validation";
-
-function sanitizeInquiryData(data: InquiryEmailData): InquiryEmailData {
-  return {
-    referenceId: data.referenceId,
-    firstName: sanitizePlainText(data.firstName),
-    lastName: sanitizePlainText(data.lastName),
-    email: data.email.toLowerCase().trim(),
-    requirements: data.requirements
-      ? sanitizeMultilineText(data.requirements)
-      : undefined,
-  };
-}
 
 function getInquiryTags(referenceId: string) {
   return [
@@ -102,25 +83,22 @@ export class ResendService {
     return this.isConfigured && this.resend !== null;
   }
 
-  public async sendInquiryEmail(data: InquiryEmailData): Promise<string> {
+  public async sendInquiryEmail(data: ValidatedInquiry): Promise<string> {
     if (!this.isReady()) {
       throw new Error("Resend service is not configured");
     }
 
     try {
-      const validatedData = inquiryEmailDataSchema.parse(data);
-      const sanitizedData = sanitizeInquiryData(validatedData);
-
-      const emailContent = buildInquiryEmailContent(sanitizedData);
+      const emailContent = buildInquiryEmailContent(data);
 
       const result = await this.resend!.send({
         from: this.emailConfig.from,
         to: [this.emailConfig.recipient],
-        replyTo: sanitizedData.email,
-        subject: EMAIL_COPY.inquiry.subject(sanitizedData),
+        replyTo: data.email,
+        subject: EMAIL_COPY.inquiry.subject(data),
         html: emailContent.html,
         text: emailContent.text,
-        tags: getInquiryTags(sanitizedData.referenceId),
+        tags: getInquiryTags(data.referenceId),
       });
 
       if (result.error || !result.data) {
@@ -130,10 +108,10 @@ export class ResendService {
       }
 
       logger.info("Inquiry email sent successfully", {
-        referenceId: sanitizedData.referenceId,
+        referenceId: data.referenceId,
         messageId: result.data.id,
         to: sanitizeEmail(this.emailConfig.recipient),
-        from: sanitizeEmail(sanitizedData.email),
+        from: sanitizeEmail(data.email),
       });
 
       return result.data.id;

@@ -77,9 +77,6 @@
       "fields": {
         "contactName": "Nombre de contacto",
         "email": "Correo electrónico",
-        "interest": "Interés",
-        "offering": "Oferta",
-        "offeringId": "ID de la oferta",
         "reference": "Referencia",
         "requirements": "Requisitos"
       }
