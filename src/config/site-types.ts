@@ -33,16 +33,9 @@ export interface CompanyInfo {
   };
 }
 
-export interface BusinessHours {
-  weekdays: string;
-  saturday: string;
-  sundayClosed: boolean;
-}
-
 export interface ContactInfo {
   phone: string;
   email: string;
-  businessHours?: BusinessHours;
 }
 
 export interface SocialLinks {
