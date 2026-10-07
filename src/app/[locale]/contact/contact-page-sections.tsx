@@ -13,18 +13,6 @@ import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
 
 const CONTACT_HANDOFF_ITEM_KEYS = ["need", "context", "timing"] as const;
-const UNCONFIGURED_BUSINESS_HOURS = "Replace before launch";
-
-function getBusinessHoursValue(
-  value: string | undefined,
-  fallback: string,
-): string {
-  const trimmed = value?.trim();
-
-  return trimmed && trimmed !== UNCONFIGURED_BUSINESS_HOURS
-    ? trimmed
-    : fallback;
-}
 
 export async function ContactInquiryHandoff({ locale }: { locale: Locale }) {
   const t = await getTranslations({
@@ -122,7 +110,6 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
 
 export async function ResponseExpectationsCard({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: "contact.panel" });
-  const { businessHours } = SINGLE_SITE_FACTS.contact;
 
   return (
     <Card className="gap-0 p-0 shadow-[var(--surface-shadow)]">
@@ -150,30 +137,6 @@ export async function ResponseExpectationsCard({ locale }: { locale: Locale }) {
             </dd>
           </div>
         </dl>
-
-        <div className="mt-6 border-t pt-6">
-          <h4 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-            {t("hoursTitle")}
-          </h4>
-          <div className="space-y-2 text-sm">
-            <div className="flex min-w-0 justify-between gap-4">
-              <span>{t("weekdays")}</span>
-              <span className="text-muted-foreground">
-                {getBusinessHoursValue(businessHours?.weekdays, t("closed"))}
-              </span>
-            </div>
-            <div className="flex min-w-0 justify-between gap-4">
-              <span>{t("saturday")}</span>
-              <span className="text-muted-foreground">
-                {getBusinessHoursValue(businessHours?.saturday, t("closed"))}
-              </span>
-            </div>
-            <div className="flex min-w-0 justify-between gap-4">
-              <span>{t("sunday")}</span>
-              <span className="text-muted-foreground">{t("closed")}</span>
-            </div>
-          </div>
-        </div>
       </div>
     </Card>
   );

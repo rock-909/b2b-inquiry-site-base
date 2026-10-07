@@ -3,7 +3,6 @@ import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 import type { SiteConfig, SiteFacts } from "@/config/site-types";
 
 export type {
-  BusinessHours,
   CompanyInfo,
   ContactInfo,
   SiteConfig,
@@ -127,11 +126,6 @@ export const SINGLE_SITE_FACTS: SiteFacts = {
   contact: {
     phone: contact.phone,
     email: contact.email,
-    businessHours: {
-      weekdays: "Replace before launch",
-      saturday: "Replace before launch",
-      sundayClosed: false,
-    },
   },
   social,
   brandAssets: {
