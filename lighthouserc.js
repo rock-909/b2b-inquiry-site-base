@@ -16,8 +16,8 @@
  * Budget governance:
  * - 继续保留全局 total-byte-weight warning，作为当前黄债信号。
  * - 旧 route-class target 已退役。
- * - route-class 目标升成硬断言前，必须先用多次 16 页 fresh sweep 证明不会制造
- *   false red。
+ * - route-class 目标升成硬断言前，必须先多次测量下方 allUrls 覆盖的全部路由，
+ *   证明不会制造 false red。
  */
 
 // 关键 URL 优先策略：全量覆盖任务运行全部 URL，否则仅运行首页。
@@ -61,8 +61,8 @@ const allUrls = [
 ];
 
 const sharedLighthouseAssertions = {
-  // 此前记录称 /en 首页在 GitHub runner 上落在 0.75~0.79 区间（来源待核，
-  // 本仓没有产生该数值的 CI 作业）；0.82 会把运行环境抖动误判成产品回归。
+  // 此前记录称 /en 首页在 GitHub runner 上落在 0.75~0.79 区间（来源待核）。
+  // 提高门槛前需重新测量，确认不会把运行环境抖动误判成产品回归。
   // 暂时把硬门槛放到 0.78，继续保留 LCP / TBT / 字节预算等细项约束。
   // 这不是最终目标值，后续性能收口后仍应重新抬回 0.82+。
   "categories:performance": [
@@ -74,13 +74,11 @@ const sharedLighthouseAssertions = {
   "first-contentful-paint": ["error", { maxNumericValue: 2000 }],
   // LCP ≤4500ms（记录的实测区间 2429-4331ms，来源待核）
   "largest-contentful-paint": ["error", { maxNumericValue: 4500 }],
-  // CLS ≤0.15（记录的实测接近 0，来源待核；符合 Good CWV 标准，可考虑收紧）
+  // 记录的 CLS 实测接近 0，来源待核；收紧阈值前需重新测量。
   "cumulative-layout-shift": ["error", { maxNumericValue: 0.15 }],
   // 此前记录称 GitHub runner 下 /en 页 best-run TBT 为 259.5ms / 341ms
-  // （来源待核，本仓没有产生该数值的 CI 作业）。
-  // 250ms 继续作为硬门槛会把运行环境抖动放大成系统性红灯。
-  // 暂时放宽到 350ms，仍明显低于真正的坏值（>500ms），
-  // 并继续使用 median 聚合降低冷启动噪声。
+  // （来源待核）；恢复 250ms 门槛前需重新测量运行环境抖动。
+  // 保留 median 聚合以降低冷启动噪声。
   "total-blocking-time": [
     "error",
     { maxNumericValue: 350, aggregationMethod: "median" },
