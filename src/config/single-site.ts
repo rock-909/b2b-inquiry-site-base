@@ -1,22 +1,13 @@
 import { env, isRuntimeProduction, runtimeEnv } from "@/lib/env";
-import { PATHS_CONFIG } from "@/config/paths/paths-config";
-import type { PageType } from "@/config/paths/types";
-import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
-import type {
-  SiteConfig,
-  SiteDefinition,
-  SiteFacts,
-} from "@/config/site-types";
+import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
+import type { SiteConfig, SiteFacts } from "@/config/site-types";
 
 export type {
   BusinessHours,
   CompanyInfo,
   ContactInfo,
   SiteConfig,
-  SiteDefinition,
   SiteFacts,
-  SiteFooterColumnConfig,
-  SiteFooterLinkItem,
   SiteNavigationItem,
   SiteSeoConfig,
   SiteSocialConfig,
@@ -47,21 +38,19 @@ const social = {
   linkedin: "",
 } as const;
 
-const FOOTER_NAVIGATION_PAGE_TYPES = [
-  "home",
-  "products",
-  "about",
-  "contact",
-] as const satisfies readonly PageType[];
+// 页脚导航列与主导航是同一份页面清单（pages.config 的 navigationKey）。
+const FOOTER_NAVIGATION_PAGES = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+  (definition) => definition.navigationKey !== null,
+);
 
-const FOOTER_SUPPORT_PAGE_TYPES = [
-  "privacy",
-  "terms",
-] as const satisfies readonly PageType[];
+const FOOTER_SUPPORT_PAGES = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+  (definition) =>
+    definition.pageType === "privacy" || definition.pageType === "terms",
+);
 
-type FooterLinkPageType =
-  | (typeof FOOTER_NAVIGATION_PAGE_TYPES)[number]
-  | (typeof FOOTER_SUPPORT_PAGE_TYPES)[number];
+type FooterLinkPage =
+  | (typeof FOOTER_NAVIGATION_PAGES)[number]
+  | (typeof FOOTER_SUPPORT_PAGES)[number];
 
 const FOOTER_TRANSLATION_KEYS = {
   home: "footer.sections.navigation.home",
@@ -70,28 +59,18 @@ const FOOTER_TRANSLATION_KEYS = {
   contact: "footer.sections.navigation.contact",
   privacy: "footer.sections.support.privacy",
   terms: "footer.sections.support.terms",
-} as const satisfies Record<FooterLinkPageType, string>;
+} as const satisfies Record<FooterLinkPage["pageType"], string>;
 
 const FOOTER_COLUMN_TRANSLATION_KEYS = {
   navigation: "footer.sections.navigation.title",
   support: "footer.sections.support.title",
 } as const;
 
-function getFooterLinkItem(pageType: FooterLinkPageType) {
-  const href = PATHS_CONFIG[pageType];
-  const translationKey = FOOTER_TRANSLATION_KEYS[pageType];
-
-  if (href === undefined || translationKey === undefined) {
-    throw new Error(
-      `Missing footer link configuration for page type: ${pageType}`,
-    );
-  }
-
+function getFooterLinkItem({ pageType, path }: FooterLinkPage) {
   return {
     key: pageType,
-    href,
-    external: false,
-    translationKey,
+    href: path,
+    translationKey: FOOTER_TRANSLATION_KEYS[pageType],
   } as const;
 }
 
@@ -99,12 +78,12 @@ export const SINGLE_SITE_FOOTER_COLUMNS = [
   {
     key: "navigation",
     translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.navigation,
-    links: FOOTER_NAVIGATION_PAGE_TYPES.map(getFooterLinkItem),
+    links: FOOTER_NAVIGATION_PAGES.map(getFooterLinkItem),
   },
   {
     key: "support",
     translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.support,
-    links: FOOTER_SUPPORT_PAGE_TYPES.map(getFooterLinkItem),
+    links: FOOTER_SUPPORT_PAGES.map(getFooterLinkItem),
   },
 ] as const;
 
@@ -120,59 +99,49 @@ const establishedYear = 2026;
 /**
  * Single-site canonical source for the current cutover phase.
  */
-export const SINGLE_SITE_KEY = "b2b-inquiry-site-base" as const;
-export const SINGLE_SITE_DEFINITION = {
-  key: SINGLE_SITE_KEY,
-  config: {
-    baseUrl,
-    name: "Northstar Industrial Reference",
-    description:
-      "Neutral B2B inquiry reference site that must be replaced before launch",
-    seo: {
-      titleTemplate: "%s | Northstar Industrial Reference",
-      defaultTitle: "Northstar Industrial Reference - B2B Inquiry Template",
-      defaultDescription:
-        "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details.",
-    },
-    social,
-    contact,
+export const SINGLE_SITE_CONFIG: SiteConfig = {
+  baseUrl,
+  name: "Northstar Industrial Reference",
+  description:
+    "Neutral B2B inquiry reference site that must be replaced before launch",
+  seo: {
+    titleTemplate: "%s | Northstar Industrial Reference",
+    defaultTitle: "Northstar Industrial Reference - B2B Inquiry Template",
+    defaultDescription:
+      "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details.",
   },
-  facts: {
-    company: {
-      name: "Northstar Industrial Reference",
-      established: establishedYear,
-      location: {
-        country: "Replace before launch",
-        city: "Replace before launch",
-        address: TEMPLATE_REGISTERED_ADDRESS,
-      },
-    },
-    contact: {
-      phone: contact.phone,
-      email: contact.email,
-      businessHours: {
-        weekdays: "Replace before launch",
-        saturday: "Replace before launch",
-        sundayClosed: false,
-      },
-    },
-    social,
-    brandAssets: {
-      logo: {
-        status: "pending",
-        horizontal: "/icon.svg",
-        width: 240,
-        height: 72,
-      },
-      ogImage: "/opengraph-image.png",
-      favicon: "/icon.svg",
-    },
-  },
-  navigation: {
-    main: SINGLE_SITE_NAVIGATION,
-  },
-  footerColumns: SINGLE_SITE_FOOTER_COLUMNS,
-} as const satisfies SiteDefinition;
+  social,
+  contact,
+};
 
-export const SINGLE_SITE_CONFIG: SiteConfig = SINGLE_SITE_DEFINITION.config;
-export const SINGLE_SITE_FACTS: SiteFacts = SINGLE_SITE_DEFINITION.facts;
+export const SINGLE_SITE_FACTS: SiteFacts = {
+  company: {
+    name: "Northstar Industrial Reference",
+    established: establishedYear,
+    location: {
+      country: "Replace before launch",
+      city: "Replace before launch",
+      address: TEMPLATE_REGISTERED_ADDRESS,
+    },
+  },
+  contact: {
+    phone: contact.phone,
+    email: contact.email,
+    businessHours: {
+      weekdays: "Replace before launch",
+      saturday: "Replace before launch",
+      sundayClosed: false,
+    },
+  },
+  social,
+  brandAssets: {
+    logo: {
+      status: "pending",
+      horizontal: "/icon.svg",
+      width: 240,
+      height: 72,
+    },
+    ogImage: "/opengraph-image.png",
+    favicon: "/icon.svg",
+  },
+};

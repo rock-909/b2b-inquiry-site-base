@@ -5,8 +5,8 @@ import {
 } from "@/lib/content/page-dates";
 import type { Locale } from "@/config/paths";
 import { OFFERINGS, getOfferingPath } from "@/config/offerings";
+import { getStaticSitemapPages } from "@/config/pages.config";
 import {
-  getSingleSitePublicStaticPages,
   getSingleSiteSitemapPageConfig,
   type SingleSiteSitemapPageConfig,
 } from "@/config/single-site-seo";
@@ -17,11 +17,6 @@ import {
 } from "@/lib/seo-metadata";
 
 type PageConfig = SingleSiteSitemapPageConfig;
-
-// Helper to get page config
-function getPageConfig(path: string): PageConfig {
-  return getSingleSiteSitemapPageConfig(path);
-}
 
 interface SitemapEntryParams {
   url: string;
@@ -62,7 +57,7 @@ function createProductEntries(
 
 // Generate static page entries for all locales
 async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
-  const publicStaticPages = getSingleSitePublicStaticPages();
+  const publicStaticPages = getStaticSitemapPages();
   const contentPages = publicStaticPages.filter(isStaticContentPage);
   const contentDates = new Map<string, Date>();
   await Promise.all(
@@ -75,7 +70,7 @@ async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
 
   for (const locale of routing.locales) {
     for (const page of publicStaticPages) {
-      const config = getPageConfig(page);
+      const config = getSingleSiteSitemapPageConfig(page);
       const url = buildCanonicalForPath(page, locale);
       const alternates = buildLanguagesForPath(page);
       const lastModified = contentDates.get(page);
@@ -93,14 +88,10 @@ async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
   return entries;
 }
 
-export function generateSitemap(): Promise<MetadataRoute.Sitemap> {
-  return generateStaticPageEntries();
-}
-
 /**
  * Dynamic sitemap generation for Next.js.
  * Includes the template's public pages and configured products.
  */
 export default function sitemap(): Promise<MetadataRoute.Sitemap> {
-  return generateSitemap();
+  return generateStaticPageEntries();
 }

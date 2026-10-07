@@ -90,14 +90,6 @@ export const PUBLIC_STATIC_PAGE_TYPES = PUBLIC_STATIC_PAGE_DEFINITIONS.map(
   (definition) => definition.pageType,
 ) as readonly PageType[];
 
-export function getPublicStaticPageDefinition(
-  pageType: PageType,
-): PublicStaticPageDefinition | undefined {
-  return PUBLIC_STATIC_PAGE_DEFINITIONS.find(
-    (definition) => definition.pageType === pageType,
-  );
-}
-
 export function getStaticSitemapPages(): string[] {
   return PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((definition) =>
     definition.sitemap.include ? [toSitemapStaticPath(definition.path)] : [],

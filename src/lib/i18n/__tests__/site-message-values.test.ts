@@ -19,6 +19,7 @@ describe("site message values", () => {
     expect(values).toEqual({
       siteName: SINGLE_SITE_CONFIG.name,
       companyName: SINGLE_SITE_FACTS.company.name,
+      established: String(SINGLE_SITE_FACTS.company.established),
       currentYear: "2030",
     });
   });

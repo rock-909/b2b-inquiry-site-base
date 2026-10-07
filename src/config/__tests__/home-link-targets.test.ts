@@ -6,8 +6,6 @@ describe("home link targets", () => {
     expect(SINGLE_SITE_HOME_LINK_TARGETS).toEqual({
       primaryCta: "/contact",
       secondaryCta: "/about",
-      contact: "/contact",
-      about: "/about",
     });
   });
 });

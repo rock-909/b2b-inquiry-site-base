@@ -5,7 +5,7 @@ import { NavigationPending } from "@/components/navigation/navigation-pending";
  * 服务端渲染的头部，交互部件以客户端小岛方式注入，减少首屏 JS 体积。
  */
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
-import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
+import { PATHS_CONFIG } from "@/config/paths/paths-config";
 import { Link } from "@/i18n/routing";
 import type { Locale } from "@/i18n/routing-config";
 import { cn } from "@/lib/utils";
@@ -148,43 +148,39 @@ function HeaderUtilityControls({
   openMenuLabel: string;
   closeMenuLabel: string;
 }) {
-  const contactHref = SINGLE_SITE_HOME_LINK_TARGETS.contact;
+  const contactHref = PATHS_CONFIG.contact;
 
   return (
     <div className="header-nav-right" data-testid="header-utility-controls">
       {
         <>
-          {contactHref ? (
+          <Link
+            href={contactHref}
+            prefetch={false}
+            data-testid="header-cta"
+            className={cn(HEADER_CTA_CLASS, "header-cta-desktop-only")}
+          >
+            <span data-testid="header-contact-sales-label" translate="no">
+              {contactSalesLabel}
+            </span>
+            <NavigationPending />
+          </Link>
+          <div
+            className="header-mobile-only"
+            data-testid="header-mobile-cta-wrapper"
+          >
             <Link
               href={contactHref}
               prefetch={false}
-              data-testid="header-cta"
-              className={cn(HEADER_CTA_CLASS, "header-cta-desktop-only")}
+              data-testid="header-mobile-cta"
+              className={HEADER_CTA_CLASS}
             >
-              <span data-testid="header-contact-sales-label" translate="no">
+              <span data-testid="header-mobile-contact-label" translate="no">
                 {contactSalesLabel}
               </span>
               <NavigationPending />
             </Link>
-          ) : null}
-          {contactHref ? (
-            <div
-              className="header-mobile-only"
-              data-testid="header-mobile-cta-wrapper"
-            >
-              <Link
-                href={contactHref}
-                prefetch={false}
-                data-testid="header-mobile-cta"
-                className={HEADER_CTA_CLASS}
-              >
-                <span data-testid="header-mobile-contact-label" translate="no">
-                  {contactSalesLabel}
-                </span>
-                <NavigationPending />
-              </Link>
-            </div>
-          ) : null}
+          </div>
           {/* 单语言配置没有可切换目标；多语言时由配置长度自动恢复。 */}
           {LOCALES_CONFIG.locales.length > 1 ? (
             <div className="header-full-desktop-only h-10 items-center">

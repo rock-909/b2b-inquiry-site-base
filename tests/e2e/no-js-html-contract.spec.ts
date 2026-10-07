@@ -1,6 +1,6 @@
 import { getOfferingPath, OFFERINGS } from "../../src/config/offerings";
 import { expect, test } from "@playwright/test";
-import { getSingleSitePublicStaticPages } from "@/config/single-site-seo";
+import { getStaticSitemapPages } from "@/config/pages.config";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { getHeaderMobileMenuButton } from "./helpers/navigation";
 
@@ -14,7 +14,7 @@ const site = {
 
 // 公开页面清单来自当前页面配置，避免新增页面后漏掉 no-JS 重复渲染检查。
 const canonicalPublicPaths = [
-  ...getSingleSitePublicStaticPages().map((path) => path || "/"),
+  ...getStaticSitemapPages().map((path) => path || "/"),
 ];
 
 function expectExactlyOneMain(html: string) {

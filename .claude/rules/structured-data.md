@@ -1,7 +1,6 @@
 ---
 paths:
   - "src/lib/structured-data*.ts"
-  - "src/lib/page-structured-data.ts"
   - "src/lib/content/faq.ts"
   - "src/components/seo/**"
   - "src/app/**/page.tsx"
@@ -16,8 +15,11 @@ All schema objects except FAQPage are built through
 `src/lib/structured-data-generators.ts`; FAQPage comes from
 `generateFaqSchemaFromItems()` (see FAQ schema).
 
-Pages and component shells may render `<JsonLdScript>` or `<JsonLdGraphScript>`,
-but they must not hand-roll schema objects inline.
+Pages and component shells render generated nodes through `<JsonLdGraphScript>`;
+generators return context-free nodes, and the graph renderer supplies the single
+top-level `@context`. Do not pass standalone nodes directly to `<JsonLdScript>`
+or hand-roll schema objects inline; `<JsonLdScript>` only serializes and escapes
+its input.
 
 ## Rendering and escaping
 

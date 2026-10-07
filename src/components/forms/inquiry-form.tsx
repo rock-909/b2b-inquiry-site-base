@@ -12,10 +12,7 @@ import {
 import { InquiryFormFields } from "@/components/forms/inquiry-form-fields";
 import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryFormStatus } from "@/components/forms/inquiry-form-status";
-import {
-  createInquiryPayload,
-  getInquiryMessageMaxLength,
-} from "@/components/forms/inquiry-payload";
+import { createInquiryPayload } from "@/components/forms/inquiry-payload";
 import {
   decodeInquirySubmitState,
   type InquirySubmitState,
@@ -476,7 +473,7 @@ function InquiryFormLive({
         <InquiryFormFields
           copy={copy}
           {...(initialMessage ? { initialMessage } : {})}
-          messageMaxLength={getInquiryMessageMaxLength()}
+          messageMaxLength={MAX_LEAD_MESSAGE_LENGTH}
           readOnly={displayState.status === "submitting"}
           {...(fieldDetails ? { fieldDetails } : {})}
         />
@@ -511,8 +508,8 @@ export function InquiryForm({
 }: InquiryFormProps) {
   // 与 MAX_LEAD_MESSAGE_LENGTH 对齐：超长初始值会先过浏览器再被服务端拒绝。
   const safeInitialMessage =
-    initialMessage && initialMessage.length > getInquiryMessageMaxLength()
-      ? initialMessage.slice(0, getInquiryMessageMaxLength())
+    initialMessage && initialMessage.length > MAX_LEAD_MESSAGE_LENGTH
+      ? initialMessage.slice(0, MAX_LEAD_MESSAGE_LENGTH)
       : initialMessage;
 
   const isHydrated = useSyncExternalStore(

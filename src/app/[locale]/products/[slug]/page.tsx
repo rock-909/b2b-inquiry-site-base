@@ -17,7 +17,6 @@ import { getCanonicalPath, type Locale } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
-import { getSourceMessages } from "@/lib/i18n/load-messages";
 import {
   buildCanonicalForPath,
   generateMetadataForPath,
@@ -117,7 +116,6 @@ export default async function ProductDetailPage({
     getTranslations({ locale, namespace: "inquiry.form" }),
     getTranslations({ locale, namespace: "navigation" }),
   ]);
-  const messages = getSourceMessages(locale);
   return (
     <>
       <JsonLdGraphScript
@@ -214,7 +212,7 @@ export default async function ProductDetailPage({
           initialMessage={tForm("productInterestTemplate", {
             productName: offering.name,
           })}
-          messages={messages}
+          locale={locale}
         />
       </article>
     </>

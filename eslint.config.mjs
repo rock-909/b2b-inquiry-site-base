@@ -119,11 +119,6 @@ const architectureRestrictedImports = {
         '🚫 Use { Link } from "@/i18n/routing" for locale-aware navigation.',
     },
     {
-      name: "@/lib/structured-data-types",
-      importNames: ["Locale"],
-      message: "🚫 Locale 必须从 canonical i18n/path 类型入口导入。",
-    },
-    {
       name: "@/lib/structured-data",
       importNames: ["Locale"],
       message: "🚫 Locale 必须从 canonical i18n/path 类型入口导入。",

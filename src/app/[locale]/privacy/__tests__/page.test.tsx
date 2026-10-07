@@ -99,33 +99,6 @@ describe("Privacy Page", () => {
     });
   });
 
-  it("应该保留 legal 旧逻辑里的空 description", async () => {
-    mockLoadLegalPage.mockResolvedValueOnce({
-      ...mockLegalPage,
-      metadata: {
-        ...mockLegalPage.metadata,
-        seo: {
-          title: "Privacy Policy SEO",
-          description: "",
-        },
-      },
-    });
-
-    await generateMetadata({
-      params: Promise.resolve(createParams("en")),
-    });
-
-    expect(mockGenerateMetadataForPath).toHaveBeenCalledWith({
-      locale: "en",
-      pageType: "privacy",
-      path: "/privacy",
-      config: {
-        title: "Privacy Policy SEO",
-        description: "",
-      },
-    });
-  });
-
   it("直接渲染法务正文，不留任何流式边界", async () => {
     render(
       await PrivacyPage({

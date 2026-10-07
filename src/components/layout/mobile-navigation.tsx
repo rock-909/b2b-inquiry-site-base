@@ -1,7 +1,7 @@
 import { NavigationPending } from "@/components/navigation/navigation-pending";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { SINGLE_SITE_HOME_LINK_TARGETS } from "@/config/single-site-links";
+import { PATHS_CONFIG } from "@/config/paths/paths-config";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 import { isActivePath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -28,7 +28,7 @@ export function MobileNavigationLinks({
   const t = useTranslations("navigation");
   const tAccessibility = useTranslations("accessibility");
   const resolvedContactSalesLabel = contactSalesLabel ?? t("contactSales");
-  const contactHref = SINGLE_SITE_HOME_LINK_TARGETS.contact;
+  const contactHref = PATHS_CONFIG.contact;
 
   return (
     <nav
@@ -62,19 +62,17 @@ export function MobileNavigationLinks({
             </li>
           );
         })}
-        {contactHref ? (
-          <li className="pt-4">
-            <Link
-              href={contactHref}
-              prefetch={false}
-              className="flex items-center rounded-md bg-[var(--button-primary-bg)] px-3 py-2 text-sm font-medium text-[var(--button-primary-fg)] transition-colors duration-200 hover:bg-[var(--button-primary-hover-bg)]"
-              onClick={onNavigate}
-            >
-              {resolvedContactSalesLabel}
-              <NavigationPending />
-            </Link>
-          </li>
-        ) : null}
+        <li className="pt-4">
+          <Link
+            href={contactHref}
+            prefetch={false}
+            className="flex items-center rounded-md bg-[var(--button-primary-bg)] px-3 py-2 text-sm font-medium text-[var(--button-primary-fg)] transition-colors duration-200 hover:bg-[var(--button-primary-hover-bg)]"
+            onClick={onNavigate}
+          >
+            {resolvedContactSalesLabel}
+            <NavigationPending />
+          </Link>
+        </li>
       </ul>
       {languageSwitcher ? (
         <div className="mt-4 border-t border-border pt-4">

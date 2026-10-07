@@ -48,8 +48,7 @@ export async function generateMetadata({
 }
 
 function ContactContentBody({ locale }: { locale: Locale }) {
-  const { page, messages, copy, faqItems, faqSectionTitle, faqSchema } =
-    getContactPageData(locale);
+  const { page, faqItems, faqSchema } = getContactPageData(locale);
 
   return (
     <div
@@ -71,23 +70,20 @@ function ContactContentBody({ locale }: { locale: Locale }) {
           {createStaticMarkdownContent(page.content)}
         </article>
 
-        <ContactInquiryHandoff messages={messages} />
+        <ContactInquiryHandoff locale={locale} />
 
         <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <ContactFormWithFallback messages={messages} />
+          <ContactFormWithFallback locale={locale} />
 
           <div className="space-y-4" data-testid="contact-confidence-column">
-            <ResponseExpectationsCard
-              responseCopy={copy.panel.response}
-              hoursCopy={copy.panel.hours}
-            />
-            <ContactMethodsCard copy={copy.panel.contact} />
+            <ResponseExpectationsCard locale={locale} />
+            <ContactMethodsCard locale={locale} />
           </div>
         </div>
       </div>
 
       {faqItems.length > 0 ? (
-        <ContactFaqSection faqItems={faqItems} title={faqSectionTitle} />
+        <ContactFaqSection faqItems={faqItems} locale={locale} />
       ) : null}
     </div>
   );

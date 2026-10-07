@@ -1,14 +1,11 @@
 import "server-only";
 
 import {
-  LAYER1_FACTS,
   extractFaqFromMetadata,
   generateFaqSchemaFromItems,
-  interpolateFaqAnswer,
 } from "@/lib/content/faq";
-import { getContactCopyFromMessages } from "@/lib/contact/getContactCopy";
-import { readRequiredMessagePath } from "@/lib/i18n/read-message-path";
-import { getSourceMessages } from "@/lib/i18n/load-messages";
+import { getSiteMessageValues } from "@/lib/i18n/site-message-values";
+import { interpolate } from "@/lib/interpolate";
 import { getStaticPage } from "@/lib/content/static-pages";
 import type {
   FaqItem,
@@ -19,10 +16,7 @@ import type {
 
 export interface ContactPageData {
   page: Page;
-  messages: Record<string, unknown>;
-  copy: ReturnType<typeof getContactCopyFromMessages>;
   faqItems: FaqItem[];
-  faqSectionTitle: string;
   faqSchema: ReturnType<typeof generateFaqSchemaFromItems> | null;
 }
 
@@ -59,27 +53,19 @@ export function getStaticContactPage(locale: Locale): Page {
 
 export function getContactPageData(locale: Locale): ContactPageData {
   const page = getStaticContactPage(locale);
-  const messages = getSourceMessages(locale);
-  const copy = getContactCopyFromMessages(messages);
+  const siteValues = getSiteMessageValues();
   const faqItems: FaqItem[] = extractFaqFromMetadata(page.metadata).map(
     (item) => ({
       ...item,
-      answer: interpolateFaqAnswer(item.answer, LAYER1_FACTS),
+      answer: interpolate(item.answer, siteValues),
     }),
   );
-  const faqSectionTitle = readRequiredMessagePath(messages, [
-    "faq",
-    "sectionTitle",
-  ]);
   const faqSchema =
     faqItems.length > 0 ? generateFaqSchemaFromItems(faqItems, locale) : null;
 
   return {
     page,
-    messages,
-    copy,
     faqItems,
-    faqSectionTitle,
     faqSchema,
   };
 }

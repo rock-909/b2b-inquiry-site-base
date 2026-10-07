@@ -21,10 +21,6 @@ const translations = {
   devDetails: "Error Details (Development Only)",
 } as const;
 
-function isDevelopmentRuntime(): boolean {
-  return isPublicRuntimeDevelopment();
-}
-
 async function reportGlobalError(error: Error): Promise<void> {
   const { logger } = await import("@/lib/logger");
   logger.error("Global error caught", error);
@@ -48,7 +44,7 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
             <p className="mb-6 text-muted-foreground">
               {translations.description}
             </p>
-            {isDevelopmentRuntime() && (
+            {isPublicRuntimeDevelopment() && (
               <details className="mb-6 text-left">
                 <summary className="cursor-pointer text-sm font-medium">
                   {translations.devDetails}
