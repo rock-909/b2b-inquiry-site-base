@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import baseEnglishMessages from "@messages/base/en/messages.json";
 import { EMAIL_COPY } from "@/emails/email-copy";
-import type { InquiryEmailData } from "@/lib/email/runtime-email-content";
+import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
 
 interface EmailTemplates {
   common: {
@@ -15,20 +15,17 @@ interface EmailTemplates {
   };
 }
 
-const inquiryEmailData: InquiryEmailData = {
+const inquiryEmailData: ValidatedInquiry = {
+  type: "inquiry",
   referenceId: "INQ-abc123-deadbeef",
-  firstName: "John",
-  lastName: "Doe",
+  fullName: "John Doe",
   email: "john.doe@example.com",
   message: "Need urgent delivery.",
 };
 
-const inquiryEmailDataWithPlaceholderLikeInput: InquiryEmailData = {
-  referenceId: "INQ-abc123-deadbeef",
-  firstName: "John",
-  lastName: "Doe",
-  email: "john.doe@example.com",
-  message: "Need {lastName}",
+const inquiryEmailDataWithPlaceholderLikeInput: ValidatedInquiry = {
+  ...inquiryEmailData,
+  message: "Need {fullName}",
 };
 
 const UNRESOLVED_PLACEHOLDER_PATTERN = /\{[^}]+\}/;
