@@ -499,6 +499,9 @@ const eslintConfig = [
     ignores: [
       "scripts/**/*.{js,ts}",
       "*.config.{js,ts,mjs}",
+      // 常量聚合入口：本块的 no-restricted-syntax 会整体替换 production-quality 的那条，
+      // 让该文件丢掉 ForInStatement 等禁令，所以必须排除在外
+      "src/constants/index.ts",
       // 测试文件豁免 - 允许相对路径导入
       "**/*.test.{js,jsx,ts,tsx}",
       "**/__tests__/**/*.{js,jsx,ts,tsx}",
