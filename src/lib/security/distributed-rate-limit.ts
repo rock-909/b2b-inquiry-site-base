@@ -8,7 +8,7 @@
  */
 
 import { MINUTE_MS } from "@/constants";
-import { getRuntimeEnvString } from "@/lib/env";
+import { getRuntimeEnvString, isRuntimeProduction } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import {
   MemoryRateLimitStore,
@@ -43,7 +43,7 @@ function getRateLimitStore(): MemoryRateLimitStore | RedisRateLimitStore {
     return rateLimitStore;
   }
 
-  if (getRuntimeEnvString("NODE_ENV") === "production") {
+  if (isRuntimeProduction()) {
     throw new Error(
       "[Rate Limit] Production requires Upstash Redis. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
     );

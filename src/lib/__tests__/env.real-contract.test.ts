@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as sharedEnvMock from "@/lib/env";
 import { captureExpectedConsoleErrors } from "@/test/console";
 
 const cloudflareContextSymbol = Symbol.for("__cloudflare-context__");
@@ -33,7 +34,6 @@ beforeEach(() => {
   vi.stubEnv("EMAIL_FROM", "sales@example.test");
   vi.stubEnv("UPSTASH_REDIS_REST_URL", "https://example.upstash.io");
   vi.stubEnv("TURNSTILE_BYPASS", "false");
-  vi.stubEnv("PLAYWRIGHT_TEST", "false");
   vi.stubEnv("SECURITY_HEADERS_ENABLED", "true");
 });
 
@@ -51,16 +51,105 @@ describe("real env contract", () => {
     expect(Object.keys(mocked).sort()).toEqual(Object.keys(actual).sort());
   });
 
+  it.each([
+    {
+      scenario: "process.env value",
+      processValue: "process-env-key",
+      binding: undefined,
+      expected: "process-env-key",
+    },
+    {
+      scenario: "Cloudflare binding over process.env",
+      processValue: "process-env-key",
+      binding: "cloudflare-binding-key",
+      expected: "cloudflare-binding-key",
+    },
+    {
+      scenario: "Cloudflare binding without process.env",
+      processValue: undefined,
+      binding: "cloudflare-binding-key",
+      expected: "cloudflare-binding-key",
+    },
+  ])(
+    "reads strings the same way in the shared env mock and the real module: $scenario",
+    async ({ processValue, binding, expected }) => {
+      const actual = await importActualEnv();
+      vi.stubEnv("RESEND_API_KEY", processValue);
+      if (binding !== undefined) {
+        (globalThis as typeof globalThis & Record<symbol, unknown>)[
+          cloudflareContextSymbol
+        ] = { env: { RESEND_API_KEY: binding } };
+      }
+
+      expect(actual.getRuntimeEnvString("RESEND_API_KEY")).toBe(expected);
+      expect(sharedEnvMock.getRuntimeEnvString("RESEND_API_KEY")).toBe(
+        expected,
+      );
+    },
+  );
+
+  it.each([
+    { key: "TURNSTILE_BYPASS", value: "true", expected: true },
+    { key: "TURNSTILE_BYPASS", value: "false", expected: false },
+    { key: "TURNSTILE_BYPASS", value: "yes", expected: false },
+  ])(
+    "reads $key=$value as a boolean the same way in the shared env mock and the real module",
+    async ({ key, value, expected }) => {
+      const actual = await importActualEnv();
+      vi.stubEnv(key, value);
+
+      expect(actual.getRuntimeEnvBoolean(key as "TURNSTILE_BYPASS")).toBe(
+        expected,
+      );
+      expect(
+        sharedEnvMock.getRuntimeEnvBoolean(key as "TURNSTILE_BYPASS"),
+      ).toBe(expected);
+    },
+  );
+
+  it.each([
+    { nodeEnv: "development", development: true, production: false },
+    { nodeEnv: "production", development: false, production: true },
+    { nodeEnv: "test", development: false, production: false },
+  ])(
+    "classifies NODE_ENV=$nodeEnv the same way in the shared env mock and the real module",
+    async ({ nodeEnv, development, production }) => {
+      const actual = await importActualEnv();
+      vi.stubEnv("NODE_ENV", nodeEnv);
+
+      expect([
+        actual.isRuntimeDevelopment(),
+        actual.isRuntimeProduction(),
+      ]).toEqual([development, production]);
+      expect([
+        sharedEnvMock.isRuntimeDevelopment(),
+        sharedEnvMock.isRuntimeProduction(),
+      ]).toEqual([development, production]);
+    },
+  );
+
+  it.each([
+    { appEnv: "preview", expected: "preview" },
+    { appEnv: "staging", expected: undefined },
+  ])(
+    "coerces APP_ENV=$appEnv the same way in the shared env mock and the real module",
+    async ({ appEnv, expected }) => {
+      const actual = await importActualEnv();
+      vi.stubEnv("APP_ENV", appEnv);
+
+      expect(actual.getRuntimeAppEnv()).toBe(expected);
+      expect(sharedEnvMock.getRuntimeAppEnv()).toBe(expected);
+    },
+  );
+
   it("parses real string and boolean values", async () => {
     vi.stubEnv("TURNSTILE_BYPASS", "true");
-    vi.stubEnv("PLAYWRIGHT_TEST", "true");
     vi.stubEnv("SECURITY_HEADERS_ENABLED", "false");
 
     const { env } = await importActualEnv();
 
     expect(env.NEXT_PUBLIC_BASE_URL).toBe("https://example.test");
     expect(env.TURNSTILE_BYPASS).toBe(true);
-    expect(env.PLAYWRIGHT_TEST).toBe(true);
     expect(env.SECURITY_HEADERS_ENABLED).toBe(false);
   });
 

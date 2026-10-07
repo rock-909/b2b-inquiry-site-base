@@ -11,6 +11,7 @@ function createEnvMock(runtimeValues: Record<string, string | undefined>) {
     runtimeEnv: env,
     getRuntimeEnvString: (key: string) => runtimeValues[key],
     getRuntimeEnvBoolean: (key: string) => runtimeValues[key] === "true",
+    isRuntimeDevelopment: () => false,
     isRuntimeProduction: () => false,
   };
 }
@@ -188,6 +189,7 @@ describe("Cloudflare runtime env timing", () => {
         return undefined;
       },
       getRuntimeEnvBoolean: () => undefined,
+      isRuntimeDevelopment: () => false,
     }));
     vi.doMock("@/config/single-site", () => ({
       SINGLE_SITE_CONFIG: { baseUrl: "https://example.com" },

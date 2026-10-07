@@ -58,7 +58,6 @@ vi.mock("next-intl/server", async () => {
     })),
     setRequestLocale: vi.fn(),
     getRequestConfig: vi.fn(() => ({})),
-    unstable_setRequestLocale: vi.fn(),
   };
 });
 

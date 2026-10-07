@@ -10,7 +10,12 @@ import {
   TURNSTILE_ALWAYS_PASS_TEST_SECRET,
   TURNSTILE_DUMMY_TEST_TOKEN,
 } from "@/constants/turnstile-constants";
-import { env, getRuntimeEnvBoolean, getRuntimeEnvString } from "@/lib/env";
+import {
+  env,
+  getRuntimeEnvBoolean,
+  getRuntimeEnvString,
+  isRuntimeDevelopment,
+} from "@/lib/env";
 import { logger, sanitizeIP } from "@/lib/logger";
 import {
   getAllowedTurnstileHosts,
@@ -136,7 +141,7 @@ function validateTurnstileActionResponse(
 }
 
 function shouldBypassTurnstile(ip: string): boolean {
-  const isDevelopment = getRuntimeEnvString("NODE_ENV") === "development";
+  const isDevelopment = isRuntimeDevelopment();
   const isBypassEnabled = getRuntimeEnvBoolean("TURNSTILE_BYPASS") === true;
 
   if (isDevelopment && isBypassEnabled) {

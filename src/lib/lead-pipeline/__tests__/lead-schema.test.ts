@@ -1,7 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { INQUIRY_LEAD_TYPE, inquiryLeadSchema } from "../lead-schema";
-
-vi.mock("@/config/offerings", async () => import("@/test/offerings"));
 
 const BASE_GENERAL_INQUIRY = {
   type: INQUIRY_LEAD_TYPE,
