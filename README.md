@@ -69,12 +69,14 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 
 - 品牌事实：`src/config/single-site.ts`
 - SEO / crawl：`src/config/single-site-seo.ts`
-- 导航和链接：`src/config/single-site-navigation.ts`、`src/config/single-site-links.ts`
+- 导航编写入口：见 `.claude/rules/content.md` 的 Authoring sources；首页 CTA 目标：`src/config/single-site-links.ts`
 - 页面正文：`src/content/pages/{locale}/*.ts`
 - Offering 数据：`src/config/offerings.ts`
 - UI 文案 authoring truth：`messages/base/{locale}/messages.json`
 
 修改 locale message pack 后运行 `pnpm content:check`。消息叶子值必须是字符串，允许有意义的空字符串；数字、布尔值、`null` 和数组会使检查失败，并输出对应语言文件和消息路径。
+
+UI 消息（含联系页和询盘表单）、联系页 FAQ 答案及 SEO 标题/描述共用站点占位符替换；可用键及其值来源以 `src/lib/i18n/site-message-values.ts` 的 `getSiteMessageValues()` 为准。调用时参数（如 `{productName}`、`{language}`）不在此阶段替换，仍由翻译调用方提供；不要据此假定普通页面正文或邮件文案也会自动替换站点占位符。
 
 ## AI 协作入口
 
