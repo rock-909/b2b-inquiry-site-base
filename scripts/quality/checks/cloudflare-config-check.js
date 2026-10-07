@@ -16,7 +16,9 @@ const WRANGLER_REQUIRED_COMPAT_FLAGS = [
   "global_fetch_strictly_public",
 ];
 const REQUIRED_R2_ENVIRONMENTS = ["preview", "production"];
-const OPEN_NEXT_STABLE_DEPENDENCY = "1.20.6";
+// docs/技术栈.md：Cloudflare 基线使用精确固定的 OpenNext 正式 stable。
+// 具体版本号以 package.json 和 lockfile 为准，这里只校验固定策略。
+const EXACT_STABLE_VERSION = /^\d+\.\d+\.\d+$/u;
 
 // Split-topology surfaces that a passing build + wrangler dry-run would not
 // catch. R2 is intentional; D1/DO/queue expansion still needs a new proof lane.
@@ -255,14 +257,18 @@ function checkPackageScripts(rootDir, failures) {
     readCloudflareConfigFile(rootDir, "package.json"),
   );
   const scripts = packageJson.scripts ?? {};
+  const openNextVersion =
+    packageJson.devDependencies?.["@opennextjs/cloudflare"];
   if (
-    packageJson.devDependencies?.["@opennextjs/cloudflare"] !==
-    OPEN_NEXT_STABLE_DEPENDENCY
+    typeof openNextVersion !== "string" ||
+    !EXACT_STABLE_VERSION.test(openNextVersion)
   ) {
     failures.push({
       file: "package.json",
-      label: "OpenNext stays pinned to the reviewed stable release",
-      missing: [`@opennextjs/cloudflare: ${OPEN_NEXT_STABLE_DEPENDENCY}`],
+      label: "OpenNext stays pinned to an exact stable release",
+      missing: [
+        "@opennextjs/cloudflare: exact x.y.z version (no range, tag, or prerelease)",
+      ],
       forbidden: [],
     });
   }

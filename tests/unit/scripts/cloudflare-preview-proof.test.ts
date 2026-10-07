@@ -45,7 +45,7 @@ function createProofFixture() {
     'echo "pnpm $*" >> "$FAKE_CALL_LOG"',
     'case "$1" in',
     '  website:build:cf) printf "%s\\n" "$FAKE_BUILD_OUTPUT"; exit "${FAKE_BUILD_EXIT:-0}" ;;',
-    `  exec) echo "Deployed to ${PREVIEW_URL}"; exit 0 ;;`,
+    `  exec) printf "%s\\n" "\${FAKE_DEPLOY_OUTPUT-Deployed to ${PREVIEW_URL}}"; exit 0 ;;`,
     "esac",
     "exit 1",
     "",
@@ -145,6 +145,50 @@ describe("cloudflare preview deploy proof", () => {
       stage: "build-log",
       commitSha: fixture.commitSha,
     });
+  });
+
+  it("blocks without smoke when the deploy output has no workers.dev URL", () => {
+    const fixture = createProofFixture();
+
+    const result = fixture.runLane({
+      FAKE_BUILD_OUTPUT: "build ok",
+      FAKE_DEPLOY_OUTPUT: "Uploaded, but no URL was printed",
+    });
+
+    expect(result.status).toBe(2);
+    expect(fixture.readCalls()).toEqual([
+      "pnpm website:build:cf",
+      "pnpm exec opennextjs-cloudflare deploy --env preview",
+    ]);
+    expect(fixture.readProof()).toMatchObject({
+      status: "blocked",
+      stage: "deploy-output-parse",
+      discoveredUrls: [],
+    });
+  });
+
+  it("smokes the first workers.dev URL in the deploy output and records all of them", () => {
+    const fixture = createProofFixture();
+    const otherUrl = "https://b2b-other.example.workers.dev";
+
+    const result = fixture.runLane({
+      FAKE_BUILD_OUTPUT: "build ok",
+      FAKE_DEPLOY_OUTPUT: `Deployed to ${PREVIEW_URL} and ${otherUrl}`,
+    });
+
+    expect(result.status).toBe(0);
+    expect(fixture.readCalls().at(-1)).toBe(
+      `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url ${PREVIEW_URL}`,
+    );
+    const proof = fixture.readProof() as {
+      baseUrl: string;
+      discoveredUrls: { url: string }[];
+    };
+    expect(proof.baseUrl).toBe(PREVIEW_URL);
+    expect(proof.discoveredUrls.map(({ url }) => url)).toEqual([
+      PREVIEW_URL,
+      otherUrl,
+    ]);
   });
 
   it("fails without deploying when the build itself fails", () => {

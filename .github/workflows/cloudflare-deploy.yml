@@ -62,7 +62,7 @@ jobs:
 
       - name: 阻断：当前提交必须通过 main CI
         if: ${{ inputs.environment == 'production' }}
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
             const {data} = await github.rest.actions.listWorkflowRuns({
@@ -90,7 +90,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: 设置 pnpm
-        uses: pnpm/action-setup@v5
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
         with:
           run_install: false
           standalone: true
@@ -324,6 +324,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: 设置 Node.js
         uses: actions/setup-node@v6
@@ -331,9 +333,11 @@ jobs:
           node-version-file: ".node-version"
 
       - name: 等待部署就绪
+        env:
+          DEPLOYMENT_URL: ${{ needs.build-and-deploy.outputs.deployment_url }}
         run: |
           set -euo pipefail
-          url="${{ needs.build-and-deploy.outputs.deployment_url }}"
+          url="$DEPLOYMENT_URL"
           echo "等待部署就绪: $url"
 
           max_tries=30
@@ -360,6 +364,8 @@ jobs:
           exit 1
 
       - name: 健康检查
+        env:
+          DEPLOYMENT_URL: ${{ needs.build-and-deploy.outputs.deployment_url }}
         run: |
           set -euo pipefail
           echo "Cloudflare deployed proof: running final post-deploy smoke against the deployed URL"
@@ -369,4 +375,4 @@ jobs:
             ls -la ./scripts/deploy || true
             exit 1
           fi
-          node ./scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url "${{ needs.build-and-deploy.outputs.deployment_url }}"
+          node ./scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url "$DEPLOYMENT_URL"

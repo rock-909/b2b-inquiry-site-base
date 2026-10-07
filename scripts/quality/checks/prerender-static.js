@@ -7,7 +7,6 @@ const {
   defaultLocale: DEFAULT_LOCALE,
 } = require("../../../i18n-locales.config");
 const DEFAULT_BUILD_DIR = ".next";
-const DEFAULT_SITE_URL = "https://example.invalid";
 const LOCALHOST_OG_IMAGE_PREFIX = "http://localhost:3000/opengraph-image";
 
 function readJson(filePath) {
@@ -90,17 +89,24 @@ function collectLocalizedRouteFindings({ buildRoot, localizedRoutes }) {
 }
 
 function loadExpectedOgImageUrl() {
-  require("tsx/cjs");
-  const { SINGLE_SITE_FACTS } = require("../../../src/config/single-site");
-  const configuredSiteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    process.env.NEXT_PUBLIC_BASE_URL?.trim();
-  const baseUrl =
-    configuredSiteUrl && configuredSiteUrl !== "http://localhost:3000"
-      ? configuredSiteUrl
-      : DEFAULT_SITE_URL;
-
-  return new URL(SINGLE_SITE_FACTS.brandAssets.ogImage, baseUrl).toString();
+  // 构建产物按 production 解析站点地址；加载 single-site 前设置相同环境，
+  // 以复用其地址解析规则，避免烟测期望值与构建产物不一致。
+  const previousNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  try {
+    require("tsx/cjs");
+    const {
+      SINGLE_SITE_CONFIG,
+      SINGLE_SITE_FACTS,
+    } = require("../../../src/config/single-site");
+    return new URL(
+      SINGLE_SITE_FACTS.brandAssets.ogImage,
+      SINGLE_SITE_CONFIG.baseUrl,
+    ).toString();
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  }
 }
 
 function hasMetaContent(html, attribute, name, expectedContent) {

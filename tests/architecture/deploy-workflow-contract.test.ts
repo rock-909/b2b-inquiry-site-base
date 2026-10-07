@@ -1,8 +1,19 @@
-import { readFileSync } from "node:fs";
+/* eslint-disable security/detect-non-literal-fs-filename -- 路径都位于本测试创建的临时 fixture 下 */
+import { spawnSync } from "node:child_process";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import path from "node:path";
 
 import { data, Evaluator, Lexer, Parser } from "@actions/expressions";
 import { load } from "js-yaml";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 interface DeployWorkflow {
   readonly concurrency?: {
@@ -12,6 +23,7 @@ interface DeployWorkflow {
     string,
     {
       readonly environment?: string;
+      readonly outputs?: Record<string, string>;
       readonly needs?: string | readonly string[];
       readonly "continue-on-error"?: boolean;
       readonly steps?: readonly {
@@ -20,12 +32,78 @@ interface DeployWorkflow {
         readonly name?: string;
         readonly run?: string;
         readonly uses?: string;
-        readonly with?: Record<string, string>;
+        readonly with?: Record<string, string | boolean>;
         readonly env?: Record<string, string>;
         readonly "continue-on-error"?: boolean;
       }[];
     }
   >;
+}
+
+const DEPLOYMENT_URL_EXPRESSION =
+  "${{ needs.build-and-deploy.outputs.deployment_url }}";
+const FIXTURE_PREFIX = "deploy-workflow-contract-";
+const tempDirs: string[] = [];
+
+afterEach(() => {
+  for (const tempDir of tempDirs.splice(0)) {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
+// 替身 curl/node 只记录收到的参数；curl 恒返回 200，让就绪探测一次通过。
+function createDeployFixture() {
+  const rootDir = mkdtempSync(path.join(process.cwd(), FIXTURE_PREFIX));
+  tempDirs.push(rootDir);
+  const binDir = path.join(rootDir, "bin");
+  mkdirSync(binDir);
+  const argLog = path.join(rootDir, "args.log");
+  const githubOutput = path.join(rootDir, "github-output");
+  writeFileSync(githubOutput, "");
+  const recorder = (output: string) =>
+    [
+      "#!/bin/sh",
+      'for arg in "$@"; do printf "%s\\n" "$arg" >> "$ARG_LOG"; done',
+      output,
+      "",
+    ].join("\n");
+  for (const [name, body] of [
+    ["curl", recorder('printf "200"')],
+    ["node", recorder("exit 0")],
+    ["pnpm", recorder('printf "%s\\n" "$DEPLOYMENT_URL"')],
+  ] as const) {
+    writeFileSync(path.join(binDir, name), body);
+    chmodSync(path.join(binDir, name), 0o755);
+  }
+  mkdirSync(path.join(rootDir, "scripts/quality/checks"), { recursive: true });
+  writeFileSync(
+    path.join(rootDir, "scripts/quality/checks/cloudflare-smoke.js"),
+    "",
+  );
+
+  return {
+    run: (
+      script: string,
+      deploymentUrl: string,
+      env: Record<string, string> = {},
+    ) =>
+      spawnSync("bash", ["-e", "-c", script], {
+        cwd: rootDir,
+        encoding: "utf8",
+        env: {
+          PATH: `${binDir}:/usr/bin:/bin`,
+          ARG_LOG: argLog,
+          DEPLOYMENT_URL: deploymentUrl,
+          NODE_ENV: "test",
+          GITHUB_OUTPUT: githubOutput,
+          ...env,
+        },
+      }),
+    output: () => readFileSync(githubOutput, "utf8"),
+    recordedArguments: () =>
+      existsSync(argLog) ? readFileSync(argLog, "utf8").split("\n") : [],
+    exists: (name: string) => existsSync(path.join(rootDir, name)),
+  };
 }
 
 function loadDeployWorkflow(): DeployWorkflow {
@@ -86,21 +164,108 @@ describe("Cloudflare deploy workflow contract", () => {
 
   it("keeps post-deploy verification serialized after the deploy job", () => {
     const workflow = loadDeployWorkflow();
-    const buildSteps = workflowSteps(workflow, "build-and-deploy");
-    const smokeStep = workflowSteps(workflow, "post-deploy-verification").find(
-      (step) => step.run?.includes("cloudflare-smoke.js deployed-smoke"),
-    );
-    const deployStep = buildSteps.find(
-      (step) => step.id === "deploy_production",
+    const verificationSteps = workflowSteps(
+      workflow,
+      "post-deploy-verification",
     );
 
     expect(
       normalizeNeeds(workflow.jobs?.["post-deploy-verification"]?.needs),
     ).toContain("build-and-deploy");
-    expect(smokeStep?.run).toContain(
-      "needs.build-and-deploy.outputs.deployment_url",
+    expect(
+      verificationSteps.filter(
+        (step) => step.env?.DEPLOYMENT_URL === DEPLOYMENT_URL_EXPRESSION,
+      ),
+    ).toHaveLength(2);
+    expect(workflow.jobs?.["build-and-deploy"]?.outputs?.deployment_url).toBe(
+      "${{ steps.resolve_urls.outputs.deployment-url }}",
     );
-    expect(deployStep?.run).toContain("worker-url=${DEPLOY_URL}");
+  });
+
+  it.each([
+    "https://fixture.workers.dev",
+    'https://$(touch${IFS}pwned-sub)`touch${IFS}pwned-bt`"quote.workers.dev',
+  ])("emits the deployed URL through both output handoffs: %s", (url) => {
+    const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+    const deploy = steps.find((step) => step.id === "deploy_production");
+    const resolve = steps.find((step) => step.id === "resolve_urls");
+
+    expect(resolve?.env?.WORKER_URL).toBe(
+      "${{ steps.deploy_production.outputs.worker-url }}",
+    );
+    expect(resolve?.env?.DEPLOY_ENVIRONMENT).toBe("${{ inputs.environment }}");
+    assertDeploymentOutput(deploy?.run ?? "", resolve?.run ?? "", url);
+  });
+
+  it.each(["deploy", "resolve"])(
+    "rejects a missing %s output even when the shell succeeds",
+    (stage) => {
+      const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+      const deploy = steps.find((step) => step.id === "deploy_production");
+      const resolve = steps.find((step) => step.id === "resolve_urls");
+
+      expect(() =>
+        assertDeploymentOutput(
+          stage === "deploy" ? ":" : (deploy?.run ?? ""),
+          stage === "resolve" ? ":" : (resolve?.run ?? ""),
+          "https://fixture.workers.dev",
+        ),
+      ).toThrow(/expected/u);
+    },
+  );
+
+  // 部署 URL 来自 wrangler 输出，被篡改的值必须始终只是数据：这里用替身
+  // curl/node 真实执行 post-deploy 的两个 shell 步骤，核对收到的参数，
+  // 并用带 shell 元字符的 URL 证明它不会被当作命令执行。
+  it("passes the deployed URL to post-deploy steps as data, never as shell", () => {
+    const steps = workflowSteps(
+      loadDeployWorkflow(),
+      "post-deploy-verification",
+    );
+    const urlSteps = steps.filter(
+      (step) => step.env?.DEPLOYMENT_URL === DEPLOYMENT_URL_EXPRESSION,
+    );
+    expect(urlSteps).toHaveLength(2);
+
+    const hostileUrl =
+      'https://x.workers.dev/$(touch pwned-sub)`touch pwned-bt`"; touch pwned-q';
+    for (const step of urlSteps) {
+      const fixture = createDeployFixture();
+      const result = fixture.run(step.run ?? "", hostileUrl);
+
+      expect(result.status, `${step.name}: ${result.stderr}`).toBe(0);
+      expect(fixture.recordedArguments(), step.name).toContain(hostileUrl);
+      for (const marker of ["pwned-sub", "pwned-bt", "pwned-q"]) {
+        expect(fixture.exists(marker), `${step.name} ran ${marker}`).toBe(
+          false,
+        );
+      }
+    }
+  });
+
+  it("does not persist checkout credentials in any deploy workflow job", () => {
+    const checkouts = Object.values(loadDeployWorkflow().jobs ?? {})
+      .flatMap((job) => job?.steps ?? [])
+      .filter((step) => step.uses?.startsWith("actions/checkout@"));
+
+    expect(checkouts.length).toBeGreaterThan(0);
+    for (const step of checkouts) {
+      expect(step.with?.["persist-credentials"], step.name).toBe(false);
+    }
+  });
+
+  it("pins third-party actions that run beside deploy secrets to commit SHAs", () => {
+    const uses = Object.values(loadDeployWorkflow().jobs ?? {})
+      .flatMap((job) => job?.steps ?? [])
+      .map((step) => step.uses ?? "");
+
+    for (const action of ["pnpm/action-setup", "actions/github-script"]) {
+      const references = uses.filter((value) => value.startsWith(`${action}@`));
+      expect(references.length, action).toBeGreaterThan(0);
+      for (const reference of references) {
+        expect(reference, action).toMatch(/@[0-9a-f]{40}$/u);
+      }
+    }
   });
 
   it("treats preview input as external smoke data, not deploy proof shell", () => {
@@ -229,5 +394,29 @@ function assertEnvironmentSelection(expression: string | undefined) {
     expect(selected, `environment for ${input}`).toEqual(
       new data.StringData(expected),
     );
+  }
+}
+
+function assertDeploymentOutput(
+  deployScript: string,
+  resolveScript: string,
+  url: string,
+) {
+  const deployment = createDeployFixture();
+  const deployed = deployment.run(deployScript, url);
+  expect(deployed.status, deployed.stderr).toBe(0);
+  expect(deployment.output()).toBe(`worker-url=${url}\n`);
+
+  const resolution = createDeployFixture();
+  const resolved = resolution.run(resolveScript, url, {
+    DEPLOY_ENVIRONMENT: "production",
+    WORKER_URL: deployment.output().trimEnd().slice("worker-url=".length),
+  });
+  expect(resolved.status, resolved.stderr).toBe(0);
+  expect(resolution.output()).toBe(`deployment-url=${url}\n`);
+  for (const fixture of [deployment, resolution]) {
+    for (const marker of ["pwned-sub", "pwned-bt"]) {
+      expect(fixture.exists(marker)).toBe(false);
+    }
   }
 }
