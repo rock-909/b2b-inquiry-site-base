@@ -166,6 +166,25 @@ describe("real env contract", () => {
     expect(consoleError).toHaveBeenCalledTimes(1);
   });
 
+  it.each(["DEPLOYMENT_PLATFORM", "NEXT_PUBLIC_DEPLOYMENT_PLATFORM"])(
+    "rejects %s=self-hosted, a platform no code path implements",
+    async (key) => {
+      const consoleError = captureExpectedConsoleErrors(
+        "❌ Invalid environment variables:",
+      );
+      vi.stubEnv(key, "self-hosted");
+
+      try {
+        await expect(importActualEnv()).rejects.toThrow(
+          "Invalid environment variables",
+        );
+        expect(consoleError).toHaveBeenCalledTimes(1);
+      } finally {
+        vi.unstubAllEnvs();
+      }
+    },
+  );
+
   it("prefers live Cloudflare bindings over process.env", async () => {
     vi.stubEnv("RESEND_API_KEY", "process-env-key");
     const actual = await importActualEnv();

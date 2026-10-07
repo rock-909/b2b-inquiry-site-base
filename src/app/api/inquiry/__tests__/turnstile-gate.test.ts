@@ -56,7 +56,7 @@ describe("/api/inquiry turnstile gate", () => {
 
   it("should return 400 when turnstile verification fails", async () => {
     routeMocks.verifyTurnstileDetailed.mockResolvedValueOnce({
-      success: false,
+      status: "failed",
     });
 
     const request = createInquiryRequest(JSON.stringify(validInquiryData));
@@ -71,8 +71,7 @@ describe("/api/inquiry turnstile gate", () => {
 
   it("should return 503 when turnstile verification is unavailable", async () => {
     routeMocks.verifyTurnstileDetailed.mockResolvedValueOnce({
-      success: false,
-      errorCodes: ["timeout"],
+      status: "service-unavailable",
     });
 
     const request = createInquiryRequest(JSON.stringify(validInquiryData));

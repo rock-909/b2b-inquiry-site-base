@@ -27,11 +27,7 @@ export const serverEnvSchema = {
 
   // Runtime and platform configuration
   LOG_LEVEL: zEnum(["error", "warn", "info", "debug"]).optional(),
-  DEPLOYMENT_PLATFORM: zEnum([
-    "cloudflare",
-    "development",
-    "self-hosted",
-  ]).optional(),
+  DEPLOYMENT_PLATFORM: zEnum(["cloudflare", "development"]).optional(),
   CF_PAGES: string().optional(),
   GOOGLE_SITE_VERIFICATION: string().min(1).optional(),
   YANDEX_VERIFICATION: string().min(1).optional(),
@@ -89,7 +85,6 @@ export const clientEnvSchema = {
   NEXT_PUBLIC_DEPLOYMENT_PLATFORM: zEnum([
     "cloudflare",
     "development",
-    "self-hosted",
   ]).optional(),
 };
 

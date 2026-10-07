@@ -30,7 +30,7 @@ export const routeMocks = {
     referenceId: "ref-123",
   })),
   verifyTurnstileDetailed: vi.fn<typeof verifyTurnstileDetailed>(async () => ({
-    success: true,
+    status: "verified",
   })),
 };
 

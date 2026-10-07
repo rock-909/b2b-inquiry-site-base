@@ -18,6 +18,7 @@ import {
   HTTP_BAD_REQUEST,
   HTTP_FORBIDDEN,
   HTTP_INTERNAL_ERROR,
+  HTTP_SERVICE_UNAVAILABLE,
   HTTP_TOO_MANY_REQUESTS,
   HTTP_UNSUPPORTED_MEDIA_TYPE,
 } from "@/constants";
@@ -40,10 +41,7 @@ import { logger, sanitizeIP } from "@/lib/logger";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { getClientIP } from "@/lib/security/client-ip";
 import { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
-import {
-  mapLeadTurnstileResultToResponse,
-  verifyLeadTurnstile,
-} from "@/lib/security/lead-turnstile";
+import { verifyLeadTurnstile } from "@/lib/security/lead-turnstile";
 import { getIPKey } from "@/lib/security/rate-limit-key-strategies";
 
 interface InquiryLeadValidationSuccess {
@@ -73,8 +71,29 @@ async function validateInquiryTurnstile(
     clientIP,
   });
 
-  const error = mapLeadTurnstileResultToResponse(verificationResult);
-  return error ? createApiErrorResponse(error.errorCode, error.status) : null;
+  switch (verificationResult.status) {
+    case "verified":
+      return null;
+    case "missing":
+      return createApiErrorResponse(
+        API_ERROR_CODES.TURNSTILE_REQUIRED,
+        HTTP_BAD_REQUEST,
+      );
+    case "service-unavailable":
+      return createApiErrorResponse(
+        API_ERROR_CODES.TURNSTILE_UNAVAILABLE,
+        HTTP_SERVICE_UNAVAILABLE,
+      );
+    case "failed":
+      return createApiErrorResponse(
+        API_ERROR_CODES.TURNSTILE_REJECTED,
+        HTTP_BAD_REQUEST,
+      );
+    default: {
+      const exhaustiveStatus: never = verificationResult;
+      return exhaustiveStatus;
+    }
+  }
 }
 
 function validateLeadData(
@@ -240,6 +259,7 @@ async function handleInquiryPost(request: NextRequest, clientIP: string) {
  */
 function rejectPlausiblyIllegitimateRequest(
   request: NextRequest,
+  clientIP: string,
 ): NextResponse | null {
   // 取分号前的媒体类型做精确比较：startsWith 会放过 application/jsonx
   // 这类前缀混淆头（R1 验收阻塞项）；charset 参数照常放行。
@@ -259,7 +279,7 @@ function rejectPlausiblyIllegitimateRequest(
 
   if (!isSameOrigin(origin, request.url)) {
     logger.warn("Inquiry request rejected by origin gate", {
-      ip: sanitizeIP(getClientIP(request)),
+      ip: sanitizeIP(clientIP),
     });
     return createApiErrorResponse(
       API_ERROR_CODES.INVALID_REQUEST,
@@ -276,13 +296,13 @@ function rejectPlausiblyIllegitimateRequest(
  * 缺配置由部署前的 production-config 检查拦截，运行时只记日志、不挡买家。
  */
 async function rejectIfRateLimited(
-  request: NextRequest,
+  clientIP: string,
 ): Promise<NextResponse | null> {
   let rateLimitKey: string;
   let result: Awaited<ReturnType<typeof checkInquiryRateLimit>>;
 
   try {
-    rateLimitKey = await getIPKey(request);
+    rateLimitKey = await getIPKey(clientIP);
     result = await checkInquiryRateLimit(rateLimitKey);
   } catch (error) {
     logger.error("Rate limit unavailable; allowing inquiry to proceed", {
@@ -320,15 +340,17 @@ async function rejectIfRateLimited(
 }
 
 async function handleRateLimitedInquiryPost(request: NextRequest) {
-  const gateRejection = rejectPlausiblyIllegitimateRequest(request);
+  // 每个请求只解析一次客户端 IP，准入闸门、限流 key 与后续日志共用同一个值。
+  const clientIP = getClientIP(request);
+  const gateRejection = rejectPlausiblyIllegitimateRequest(request, clientIP);
 
   if (gateRejection) return gateRejection;
 
-  const rateLimitRejection = await rejectIfRateLimited(request);
+  const rateLimitRejection = await rejectIfRateLimited(clientIP);
 
   if (rateLimitRejection) return rateLimitRejection;
 
-  return handleInquiryPost(request, getClientIP(request));
+  return handleInquiryPost(request, clientIP);
 }
 
 export function POST(request: NextRequest) {

@@ -6,7 +6,12 @@
  */
 
 import { NextRequest } from "next/server";
-import { getRuntimeEnvString, isRuntimeDevelopment } from "@/lib/env";
+import {
+  getRuntimeEnvString,
+  isRuntimeDevelopment,
+  isRuntimeProduction,
+} from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { isValidIP, parseFirstIP } from "@/lib/security/ip-parsing";
 
 const PLATFORM_CLOUDFLARE = "cloudflare";
@@ -115,6 +120,14 @@ function getRequestFallbackIP(platform: DeploymentPlatform | null): string {
 export function getClientIP(request: NextRequest): string {
   const platformContext = getPlatformContext();
   if (!platformContext) {
+    // 平台识别不到时所有访客共用 0.0.0.0 一个限流桶（fail closed）；静默共桶
+    // 会让配置错误无从察觉，所以生产环境必须留下一条错误日志。
+    if (isRuntimeProduction()) {
+      logger.error(
+        "Deployment platform unresolved; all clients share one rate-limit bucket",
+        { platform: getRuntimeEnvString("DEPLOYMENT_PLATFORM") ?? null },
+      );
+    }
     return getRequestFallbackIP(null);
   }
 

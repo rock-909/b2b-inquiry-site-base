@@ -20,13 +20,22 @@ const sentinelTurnstileLabels = {
 };
 
 function renderTurnstileWidget(
-  props: Omit<React.ComponentProps<typeof TurnstileWidget>, "labels"> & {
+  props: Partial<
+    Omit<React.ComponentProps<typeof TurnstileWidget>, "labels">
+  > & {
     labels?: React.ComponentProps<typeof TurnstileWidget>["labels"];
   } = {},
 ) {
   const { labels = defaultTestLabels, ...rest } = props;
   return render(
-    <TurnstileWidget onSuccess={vi.fn()} labels={labels} {...rest} />,
+    <TurnstileWidget
+      onSuccess={vi.fn()}
+      onError={vi.fn()}
+      onExpire={vi.fn()}
+      onReadyRef={vi.fn()}
+      labels={labels}
+      {...rest}
+    />,
   );
 }
 
@@ -114,28 +123,6 @@ describe("TurnstileWidget", () => {
   });
 
   describe("组件配置", () => {
-    it("应该处理自定义主题", () => {
-      renderTurnstileWidget({ theme: "dark" });
-
-      const mockCall = getMockTurnstile().mock.calls[0];
-      expect(mockCall?.[0]).toMatchObject({
-        options: {
-          theme: "dark",
-        },
-      });
-    });
-
-    it("应该处理自定义尺寸", () => {
-      renderTurnstileWidget({ size: "compact" });
-
-      const mockCall = getMockTurnstile().mock.calls[0];
-      expect(mockCall?.[0]).toMatchObject({
-        options: {
-          size: "compact",
-        },
-      });
-    });
-
     it("应该处理自定义className", () => {
       renderTurnstileWidget({ className: "custom-class" });
 
@@ -143,15 +130,6 @@ describe("TurnstileWidget", () => {
       const container = screen.getByTestId("turnstile-widget").parentElement;
       expect(container).toHaveClass("turnstile-container");
       expect(container).toHaveClass("custom-class");
-    });
-
-    it("应该处理自定义ID", () => {
-      renderTurnstileWidget({ id: "custom-id" });
-
-      const mockCall = getMockTurnstile().mock.calls[0];
-      expect(mockCall?.[0]).toMatchObject({
-        id: "custom-id",
-      });
     });
   });
 
@@ -213,37 +191,6 @@ describe("TurnstileWidget", () => {
 
       expect(onExpire).toHaveBeenCalled();
     });
-
-    it("应该处理没有onError回调的错误", () => {
-      const consoleError = captureExpectedConsoleErrors("Turnstile error:");
-      renderTurnstileWidget();
-
-      const mockCall = getMockTurnstile().mock.calls[0];
-      const handleError = mockCall?.[0]?.onError;
-
-      expect(() => act(() => handleError?.("test-error"))).not.toThrow();
-      expect(consoleError).toHaveBeenCalledWith(
-        "Turnstile error:",
-        "test-error",
-      );
-    });
-
-    it("应该处理没有onExpire回调的过期", () => {
-      renderTurnstileWidget();
-
-      const mockCall = getMockTurnstile().mock.calls[0];
-      const handleExpire = mockCall?.[0]?.onExpire;
-
-      expect(() => handleExpire?.()).not.toThrow();
-    });
-  });
-
-  describe("错误处理", () => {
-    it("应该处理空的onSuccess回调", () => {
-      expect(() => {
-        render(<TurnstileWidget labels={defaultTestLabels} />);
-      }).not.toThrow();
-    });
   });
 
   describe("降级后的邮件救援", () => {
@@ -295,7 +242,7 @@ describe("TurnstileWidget", () => {
     it("shows the unavailable message and email when the site key is missing", () => {
       vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "");
 
-      render(<TurnstileWidget labels={sentinelTurnstileLabels} />);
+      renderTurnstileWidget({ labels: sentinelTurnstileLabels });
 
       expect(screen.getByRole("status")).toHaveTextContent(
         sentinelTurnstileLabels.unavailable,
@@ -322,6 +269,8 @@ describe("TurnstileWidget", () => {
         <TurnstileWidget
           labels={sentinelTurnstileLabels}
           onSuccess={onSuccess}
+          onError={vi.fn()}
+          onExpire={vi.fn()}
           onReadyRef={(reset) => {
             resetWidget = reset;
           }}
@@ -349,6 +298,8 @@ describe("TurnstileWidget", () => {
         <TurnstileWidget
           labels={sentinelTurnstileLabels}
           onSuccess={onSuccess}
+          onError={vi.fn()}
+          onExpire={vi.fn()}
           onReadyRef={(reset) => {
             resetWidget = reset;
           }}
@@ -372,7 +323,15 @@ describe("TurnstileWidget", () => {
       vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "");
       const onSuccess = vi.fn();
 
-      render(<TurnstileWidget labels={labels} onSuccess={onSuccess} />);
+      render(
+        <TurnstileWidget
+          labels={labels}
+          onSuccess={onSuccess}
+          onError={vi.fn()}
+          onExpire={vi.fn()}
+          onReadyRef={vi.fn()}
+        />,
+      );
 
       expect(screen.getByTestId("turnstile-mock")).toHaveTextContent(
         labels.testMode,
@@ -389,7 +348,15 @@ describe("TurnstileWidget", () => {
       vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "production-site-key");
       const onSuccess = vi.fn();
 
-      render(<TurnstileWidget labels={labels} onSuccess={onSuccess} />);
+      render(
+        <TurnstileWidget
+          labels={labels}
+          onSuccess={onSuccess}
+          onError={vi.fn()}
+          onExpire={vi.fn()}
+          onReadyRef={vi.fn()}
+        />,
+      );
 
       expect(screen.getByTestId("turnstile-widget")).toHaveAttribute(
         "data-sitekey",
@@ -414,7 +381,15 @@ describe("TurnstileWidget", () => {
         vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "production-site-key");
         const onSuccess = vi.fn();
 
-        render(<TurnstileWidget labels={labels} onSuccess={onSuccess} />);
+        render(
+          <TurnstileWidget
+            labels={labels}
+            onSuccess={onSuccess}
+            onError={vi.fn()}
+            onExpire={vi.fn()}
+            onReadyRef={vi.fn()}
+          />,
+        );
 
         expect(screen.getByTestId("turnstile-widget")).toHaveAttribute(
           "data-sitekey",
@@ -433,7 +408,15 @@ describe("TurnstileWidget", () => {
       vi.stubEnv("NEXT_PUBLIC_TEST_MODE", "true");
       const onSuccess = vi.fn();
 
-      render(<TurnstileWidget labels={labels} onSuccess={onSuccess} />);
+      render(
+        <TurnstileWidget
+          labels={labels}
+          onSuccess={onSuccess}
+          onError={vi.fn()}
+          onExpire={vi.fn()}
+          onReadyRef={vi.fn()}
+        />,
+      );
 
       expect(screen.getByTestId("turnstile-mock")).toHaveTextContent(
         labels.testMode,
@@ -447,7 +430,7 @@ describe("TurnstileWidget", () => {
       vi.stubEnv("NODE_ENV", "development");
       vi.stubEnv("NEXT_PUBLIC_TURNSTILE_BYPASS", "true");
 
-      render(<TurnstileWidget labels={labels} />);
+      renderTurnstileWidget({ labels });
 
       expect(screen.getByTestId("turnstile-bypass")).toHaveTextContent(
         labels.devBypass,

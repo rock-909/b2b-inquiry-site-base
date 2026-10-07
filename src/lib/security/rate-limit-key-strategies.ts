@@ -5,26 +5,19 @@
  * offline correlation attacks. All keys use minimum 64-bit (16 hex chars)
  * truncation to balance collision resistance with storage efficiency.
  *
- * Priority hierarchy (per security spec):
- * API key > session ID > signed token > IP
- *
- * UserAgent is NOT used as primary shard (easily spoofed).
+ * The only identifier is the client IP; UserAgent is NOT used as a shard
+ * (easily spoofed).
  */
 
-import { NextRequest } from "next/server";
 import { getRuntimeEnvString, isRuntimeProduction } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { generateHMAC } from "@/lib/security/crypto";
-import { getClientIP } from "@/lib/security/client-ip";
 import {
   integerToIpv4,
   ipv4MappedEmbeddedAddress,
   ipv4ToInteger,
   ipv6NetworkPrefix64,
 } from "@/lib/security/ip-range";
-
-/** Key strategy function signature */
-export type KeyStrategy = (request: NextRequest) => Promise<string> | string;
 
 /** HMAC output length (64-bit = 16 hex chars) */
 const HMAC_OUTPUT_LENGTH = 16;
@@ -90,7 +83,7 @@ function getPepper(): string {
 /**
  * Generate HMAC key from input using server-side pepper
  *
- * @param input - The value to hash (IP, session ID, API key, etc.)
+ * @param input - The value to hash (the client IP)
  * @returns 16-character hex string (64-bit)
  */
 export async function hmacKey(input: string): Promise<string> {
@@ -119,16 +112,14 @@ function rateLimitIpInput(ip: string): string {
 }
 
 /**
- * Strategy 1: Pure IP with HMAC (default, backward compatible)
+ * 由调用方已解析好的客户端 IP 生成限流 key。
  *
- * Uses client IP as the sole identifier. Simple and effective for
- * low-traffic APIs where NAT false positives are acceptable.
+ * 客户端 IP 是唯一标识，适合 NAT 误伤可接受的低流量接口。
  *
- * @param request - Next.js request object
+ * @param clientIP - 调用方通过 `getClientIP` 解析一次得到的客户端 IP
  * @returns Rate limit key in format `ip:{hmacHash}`
  */
-export async function getIPKey(request: NextRequest): Promise<string> {
-  const clientIP = getClientIP(request);
+export async function getIPKey(clientIP: string): Promise<string> {
   return `ip:${await hmacKey(rateLimitIpInput(clientIP))}`;
 }
 

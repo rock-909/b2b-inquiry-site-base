@@ -51,20 +51,15 @@ interface TurnstileLabels {
 }
 
 interface TurnstileProps {
-  onSuccess?: (_token: string) => void;
-  onError?: (_error: string) => void;
-  onExpire?: () => void;
+  onSuccess: (_token: string) => void;
+  onError: (_error: string) => void;
+  onExpire: () => void;
   /**
    * Receives a widget `reset()` binder. May return an unregister/cleanup
    * function invoked when the widget unmounts or the binder changes.
    */
-  onReadyRef?: (reset: () => void) => (() => void) | void;
+  onReadyRef: (reset: () => void) => (() => void) | void;
   className?: string;
-  theme?: "light" | "dark" | "auto";
-  size?: "normal" | "compact";
-  tabIndex?: number;
-  id?: string;
-  cData?: string;
   labels: TurnstileLabels;
 }
 
@@ -168,11 +163,6 @@ export function TurnstileWidget({
   onExpire,
   onReadyRef,
   className,
-  theme = "auto",
-  size = "normal",
-  tabIndex,
-  id,
-  cData,
   labels,
 }: TurnstileProps) {
   const siteKey = getPublicRuntimeEnvString("NEXT_PUBLIC_TURNSTILE_SITE_KEY");
@@ -202,17 +192,13 @@ export function TurnstileWidget({
    * reset 后会出新挑战对齐。本地 E2E 与预览部署都跑在这个模式下。
    */
   useEffect(() => {
-    if (!onReadyRef) {
-      return undefined;
-    }
-
     const handleReset = () => {
       if (isBypassMode) {
-        onSuccess?.(TURNSTILE_BYPASS_TOKEN);
+        onSuccess(TURNSTILE_BYPASS_TOKEN);
         return;
       }
       if (isTestMode) {
-        onSuccess?.(TURNSTILE_DUMMY_TEST_TOKEN);
+        onSuccess(TURNSTILE_DUMMY_TEST_TOKEN);
         return;
       }
       turnstileRef.current?.reset();
@@ -229,11 +215,11 @@ export function TurnstileWidget({
     if (isBypassMode) {
       autoResolveTriggeredRef.current = true;
       logger.warn("[DEV] Turnstile bypass mode enabled");
-      onSuccess?.(TURNSTILE_BYPASS_TOKEN);
+      onSuccess(TURNSTILE_BYPASS_TOKEN);
     } else if (isTestMode) {
       autoResolveTriggeredRef.current = true;
       // eslint-disable-next-line react-you-might-not-need-an-effect/no-pass-data-to-parent -- Preview test mode must settle the same parent token contract as the external widget callback.
-      onSuccess?.(TURNSTILE_DUMMY_TEST_TOKEN);
+      onSuccess(TURNSTILE_DUMMY_TEST_TOKEN);
     }
   }, [isBypassMode, isTestMode, onSuccess]);
 
@@ -242,7 +228,7 @@ export function TurnstileWidget({
       logger.warn(
         "Turnstile site key not configured. Bot protection is disabled.",
       );
-      onError?.("Turnstile site key not configured");
+      onError("Turnstile site key not configured");
     }
   }, [isUnavailable, onError]);
 
@@ -267,16 +253,16 @@ export function TurnstileWidget({
   const widgetHandlers = {
     onSuccess: (token: string) => {
       fallback.setDegradedKind(null);
-      onSuccess?.(token);
+      onSuccess(token);
     },
     onError: (error: string) => {
       logger.error("Turnstile error:", error);
       fallback.setDegradedKind("failed");
-      onError?.(error);
+      onError(error);
     },
     onExpire: () => {
       logger.warn("Turnstile token expired");
-      onExpire?.();
+      onExpire();
     },
   };
 
@@ -289,13 +275,10 @@ export function TurnstileWidget({
           {...widgetHandlers}
           {...fallback.scriptHandlers}
           options={{
-            theme,
-            size,
-            tabIndex,
+            theme: "auto",
+            size: "normal",
             action: INQUIRY_TURNSTILE_ACTION,
-            cData,
           }}
-          id={id}
         />
       </div>
       {fallback.degradedKind ? (
