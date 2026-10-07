@@ -25,9 +25,6 @@ export const serverEnvSchema = {
     .optional()
     .transform((val) => val === "true"),
 
-  // Cloudflare deployment account metadata
-  CLOUDFLARE_ACCOUNT_ID: string().min(1).optional(),
-
   // Runtime and platform configuration
   LOG_LEVEL: zEnum(["error", "warn", "info", "debug"]).optional(),
   DEPLOYMENT_PLATFORM: zEnum([
@@ -53,13 +50,9 @@ export const serverEnvSchema = {
     "preview",
     "production",
   ]).optional(),
-  NEXT_PHASE: string().optional(),
 
   // CI/CD
   CI: string().optional(),
-  PLAYWRIGHT_TEST: string()
-    .optional()
-    .transform((val) => val === "true"),
   SKIP_ENV_VALIDATION: string()
     .optional()
     .transform((val) => val === "true"),
@@ -111,7 +104,6 @@ export const runtimeEnv = {
   TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
   TURNSTILE_ALLOWED_HOSTS: process.env.TURNSTILE_ALLOWED_HOSTS,
   TURNSTILE_BYPASS: process.env.TURNSTILE_BYPASS,
-  CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
   LOG_LEVEL: process.env.LOG_LEVEL,
   DEPLOYMENT_PLATFORM: process.env.DEPLOYMENT_PLATFORM,
   CF_PAGES: process.env.CF_PAGES,
@@ -122,9 +114,7 @@ export const runtimeEnv = {
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   NODE_ENV: process.env.NODE_ENV,
   APP_ENV: process.env.APP_ENV,
-  NEXT_PHASE: process.env.NEXT_PHASE,
   CI: process.env.CI,
-  PLAYWRIGHT_TEST: process.env.PLAYWRIGHT_TEST,
   SKIP_ENV_VALIDATION: process.env.SKIP_ENV_VALIDATION,
   SECURITY_HEADERS_ENABLED: process.env.SECURITY_HEADERS_ENABLED,
 

@@ -16,9 +16,6 @@ const isAirtableCanary = process.env.POST_DEPLOY_TEST === "1";
 const hasExternalBaseUrl = Boolean(
   process.env.STAGING_URL || process.env.PLAYWRIGHT_BASE_URL,
 );
-const defaultGrepInvertPatterns = [
-  ...(isCI && !isFullCoverage ? [/debug|diagnosis/i] : []),
-];
 const resolvedBaseUrl =
   process.env.STAGING_URL ||
   process.env.PLAYWRIGHT_BASE_URL ||
@@ -89,10 +86,6 @@ export default defineConfig({
     ["json", { outputFile: "reports/playwright-results.json" }],
     ["junit", { outputFile: "reports/playwright-results.xml" }],
   ],
-  // 非全量覆盖任务排除调试/诊断类用例，进一步收敛耗时。
-  ...(defaultGrepInvertPatterns.length > 0
-    ? { grepInvert: defaultGrepInvertPatterns }
-    : {}),
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -140,7 +133,6 @@ export default defineConfig({
           // NODE_ENV 必须为 production 以确保 React 19 正常工作
           env: {
             NODE_ENV: "production",
-            PLAYWRIGHT_TEST: "true",
             NEXT_PUBLIC_TEST_MODE: "true",
             NEXT_PUBLIC_BASE_URL: "http://localhost:3000",
             NEXT_PUBLIC_SITE_URL: "http://localhost:3000",

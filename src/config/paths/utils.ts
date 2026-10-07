@@ -46,7 +46,7 @@ export function getLocalizedPath(pageType: PageType, locale: Locale): string {
     throw new Error("Locale cannot be null or undefined");
   }
 
-  if (!Object.prototype.hasOwnProperty.call(PATHS_CONFIG, pageType)) {
+  if (!Object.hasOwn(PATHS_CONFIG, pageType)) {
     throw new Error(`Unknown page type: ${pageType}`);
   }
   return getLocalePath(locale, PATHS_CONFIG[pageType]);

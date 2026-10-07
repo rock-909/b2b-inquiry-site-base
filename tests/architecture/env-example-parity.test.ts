@@ -21,6 +21,7 @@ const DEPLOYMENT_CRITICAL_ENV_KEYS = [
   "DEPLOYMENT_PLATFORM",
 ] as const;
 const NON_RUNTIME_EXAMPLE_ENV_KEYS = new Set([
+  "CLOUDFLARE_ACCOUNT_ID",
   "CLOUDFLARE_API_TOKEN",
   "CI_FULL_COVERAGE",
   "CI_FLAKE_SAMPLING",
@@ -34,7 +35,7 @@ const NON_RUNTIME_EXAMPLE_ENV_KEYS = new Set([
   "POST_DEPLOY_TEST",
   "STAGING_URL",
 ]);
-const FRAMEWORK_MANAGED_RUNTIME_KEYS = new Set(["NEXT_PHASE", "NODE_ENV"]);
+const FRAMEWORK_MANAGED_RUNTIME_KEYS = new Set(["NODE_ENV"]);
 const PUBLIC_RUNTIME_ENV_SOURCE_PATH = "src/lib/public-runtime-env.ts";
 // NODE_ENV 由框架注入；NEXT_PUBLIC_APP_ENV 由 next.config.ts 在构建时从
 // APP_ENV 派生（映射本身由 next-config-contract 的行为断言证明）。两者都不是
