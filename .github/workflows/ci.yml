@@ -78,7 +78,6 @@ jobs:
   tests:
     name: L3 单元与集成测试
     runs-on: ubuntu-latest
-    needs: quality
     timeout-minutes: 25
 
     steps:
@@ -108,7 +107,6 @@ jobs:
   e2e:
     name: L3 浏览器冒烟
     runs-on: ubuntu-latest
-    needs: quality
     timeout-minutes: 35
 
     steps:
@@ -168,7 +166,6 @@ jobs:
   semgrep:
     name: L1/L2 Semgrep 安全扫描
     runs-on: ubuntu-latest
-    needs: quality
     timeout-minutes: 10
     container: semgrep/semgrep:1.162.0
 
@@ -186,7 +183,6 @@ jobs:
   cloudflare-build:
     name: L4 Cloudflare 构建合同
     runs-on: ubuntu-latest
-    needs: quality
     timeout-minutes: 25
 
     steps:
