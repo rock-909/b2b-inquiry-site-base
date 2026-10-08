@@ -44,14 +44,9 @@ export default defineConfig({
         "**/*.test.{js,jsx,ts,tsx}",
         "**/*.spec.{js,jsx,ts,tsx}",
         "src/test/**",
-        "**/__mocks__/**",
-        "**/test-utils/**",
         "src/proxy.ts",
         // 排除自动生成的文件
         "**/*.generated.*",
-        // 排除纯类型定义文件（无运行时代码）
-        "src/types/**/*.d.ts",
-        // 注意：src/types/index.ts, test-types.ts, react19.ts 包含运行时函数，不排除
       ],
       // 覆盖率为报告用途，不设阈值门禁；质量门禁是 type-check / lint / test / 架构测试
     },
@@ -76,7 +71,6 @@ export default defineConfig({
 
     // 性能配置 - 增强缓存和性能监控
     logHeapUsage: debugTestOutput,
-    isolate: true,
 
     // 依赖优化 - 提高模块解析性能
     deps: {
@@ -90,8 +84,7 @@ export default defineConfig({
       },
     },
 
-    // UI配置 - 默认关闭以避免端口监听需求
-    ui: false,
+    // 不自动打开浏览器（Vitest 默认会打开）
     open: false,
   },
 

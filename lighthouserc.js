@@ -10,19 +10,14 @@
  * 2. Bundle 大小监控 (total-byte-weight, bootup-time)
  * 3. 未使用 JavaScript 检测 (unused-javascript)
  *
- * 阶段性阈值规划：
- * - Phase 0: Performance 0.68, LCP 5200ms, TBT 800ms (已完成)
- * - Phase 1: Performance 0.85, LCP 4500ms, TBT 200ms (已完成)
- * - Phase 2: total-byte-weight 512KB→515KB 字体减重 (已完成)
- * - Phase 3: total-byte-weight 490KB 黄债治理 (当前)
+ * 阈值来源：下方各阈值旁记录的实测区间来源待核——本仓没有产生这些数值的
+ * CI 作业，Lighthouse 现在只是手动性能证明。阈值数值本身未在此处重新测量。
  *
  * Budget governance:
  * - 继续保留全局 total-byte-weight warning，作为当前黄债信号。
- * - 旧 route-class target 已退役；需要时按 docs/技术问题与决策.md 重建。
- * - route-class 目标升成硬断言前，必须先用多次 16 页 fresh sweep 证明不会制造
- *   false red。
- *
- * 更新时间：2026-05-24 (Wave 3 budget governance)
+ * - 旧 route-class target 已退役。
+ * - route-class 目标升成硬断言前，必须先多次测量下方 allUrls 覆盖的全部路由，
+ *   证明不会制造 false red。
  */
 
 // 关键 URL 优先策略：全量覆盖任务运行全部 URL，否则仅运行首页。
@@ -66,8 +61,8 @@ const allUrls = [
 ];
 
 const sharedLighthouseAssertions = {
-  // 当前 stacked PR 的 CI 里，/en 首页在 GitHub runner 上实际落在
-  // 0.75~0.79 区间；0.82 仍然会把 runner 抖动误判成产品回归。
+  // 此前记录称 /en 首页在 GitHub runner 上落在 0.75~0.79 区间（来源待核）。
+  // 提高门槛前需重新测量，确认不会把运行环境抖动误判成产品回归。
   // 暂时把硬门槛放到 0.78，继续保留 LCP / TBT / 字节预算等细项约束。
   // 这不是最终目标值，后续性能收口后仍应重新抬回 0.82+。
   "categories:performance": [
@@ -77,25 +72,24 @@ const sharedLighthouseAssertions = {
   "categories:accessibility": ["error", { minScore: 0.9 }],
   "categories:best-practices": ["error", { minScore: 0.9 }],
   "first-contentful-paint": ["error", { maxNumericValue: 2000 }],
-  // Phase 1: LCP ≤4500ms（实测 2429-4331ms，有安全余量）
+  // LCP ≤4500ms（记录的实测区间 2429-4331ms，来源待核）
   "largest-contentful-paint": ["error", { maxNumericValue: 4500 }],
-  // CLS ≤0.15（实测接近 0，符合 Good CWV 标准；Phase 3 可考虑收紧）
+  // 记录的 CLS 实测接近 0，来源待核；收紧阈值前需重新测量。
   "cumulative-layout-shift": ["error", { maxNumericValue: 0.15 }],
-  // GitHub runner 下 /en 页当前 best-run TBT 已实测到 259.5ms / 341ms。
-  // 250ms 继续作为硬门槛会把 CI 抖动放大成系统性红灯。
-  // 暂时放宽到 350ms，仍明显低于真正的坏值（>500ms），
-  // 并继续使用 median 聚合降低冷启动噪声。
+  // 此前记录称 GitHub runner 下 /en 页 best-run TBT 为 259.5ms / 341ms
+  // （来源待核）；恢复 250ms 门槛前需重新测量运行环境抖动。
+  // 保留 median 聚合以降低冷启动噪声。
   "total-blocking-time": [
     "error",
     { maxNumericValue: 350, aggregationMethod: "median" },
   ],
   "speed-index": ["error", { maxNumericValue: 3000 }],
   // 'first-meaningful-paint' 已废弃，Lighthouse 不再产出该数值，移除以避免 NaN 断言
-  // CI冷启动下TTI波动较大，允许最高6s，线下优化后可再收紧
+  // 冷启动下TTI波动较大，允许最高6s，优化后可再收紧
   interactive: ["error", { maxNumericValue: 6000 }],
 
   // ==================== Bundle 大小监控（替代 size-limit）====================
-  // Phase 3：总传输大小收紧至 490KB。
+  // 总传输大小 490KB。
   // 这条继续作为全局 yellow-debt 信号；旧 route-class target 已退役，
   // 需要时按性能记录重建，暂不升成硬失败。
   "total-byte-weight": ["warn", { maxNumericValue: 490000 }],
@@ -139,7 +133,7 @@ module.exports = {
         `--port ${LIGHTHOUSE_PORT}`,
       startServerReadyPattern: "Local:",
       startServerReadyTimeout: 60000,
-      // 使用 3 次运行配合 median 聚合，更好地过滤 CI 冷启动噪声
+      // 使用 3 次运行配合 median 聚合，更好地过滤冷启动噪声
       numberOfRuns: 3,
     },
     assert: {

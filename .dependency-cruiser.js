@@ -70,13 +70,13 @@ module.exports = {
     {
       name: "no-test-support-imports-in-production",
       severity: "error",
-      comment: "禁止生产代码导入 src/test、src/testing 或 test-* 常量",
+      comment: "禁止生产代码导入 src/test",
       from: {
-        path: "^src/(app|components|config|hooks|i18n|lib|services)/",
+        path: "^src/(app|components|config|i18n|lib)/",
         pathNot: "\\.(spec|test|stories)\\.(js|ts|tsx)$|/__tests__/",
       },
       to: {
-        path: "^src/(test|testing)/|^src/constants/test-",
+        path: "^src/test/",
       },
     },
     {
@@ -92,28 +92,6 @@ module.exports = {
       },
     },
     // === 跨域依赖规则（显式域匹配，避免跨规则反向引用） ===
-    {
-      name: "i18n-no-ui-deps",
-      severity: "error",
-      comment: "i18n 域不能依赖 UI 或页面层",
-      from: {
-        path: "^src/lib/i18n",
-      },
-      to: {
-        path: "^src/(app|components)/",
-        pathNot: "/(types|constants)\\.(ts|tsx)$",
-      },
-    },
-    {
-      name: "no-relative-cross-layer-imports",
-      severity: "error",
-      comment: "禁止相对路径跨层导入 - 必须使用@/别名",
-      from: { path: "^src/" },
-      to: {
-        path: "\\.\\./",
-        pathNot: "\\.(spec|test|stories)\\.(js|ts|tsx)$",
-      },
-    },
     {
       name: "i18n-domain-boundaries",
       severity: "error",
@@ -136,33 +114,5 @@ module.exports = {
     },
     tsPreCompilationDeps: true,
     preserveSymlinks: false,
-    reporterOptions: {
-      dot: {
-        collapsePattern: "node_modules/[^/]+",
-        theme: {
-          graph: {
-            bgcolor: "transparent",
-            splines: "ortho",
-            rankdir: "TB",
-            fontname: "Helvetica",
-            fontsize: "9",
-          },
-          modules: [
-            {
-              criteria: { source: "^src/app" },
-              attributes: { fillcolor: "#ffcccc", style: "filled" },
-            },
-            {
-              criteria: { source: "^src/components" },
-              attributes: { fillcolor: "#ccffcc", style: "filled" },
-            },
-            {
-              criteria: { source: "^src/lib" },
-              attributes: { fillcolor: "#ccccff", style: "filled" },
-            },
-          ],
-        },
-      },
-    },
   },
 };

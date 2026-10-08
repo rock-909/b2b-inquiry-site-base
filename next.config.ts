@@ -1,13 +1,8 @@
 import type { NextConfig } from "next";
-import bundleAnalyzer from "@next/bundle-analyzer";
 import createNextIntlPlugin from "next-intl/plugin";
 import { getSecurityHeaders } from "./src/config/security";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
-
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env["ANALYZE"] === "true",
-});
 
 const isCloudflare = process.env.DEPLOYMENT_PLATFORM === "cloudflare";
 const nextConfig: NextConfig = {
@@ -38,14 +33,9 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  /* config options here */
-
   // Compile all eligible components and hooks; Turbopack runs the native Rust
   // transform selected below instead of the Babel/Node.js implementation.
   reactCompiler: true,
-
-  // Keep HTTP compression enabled for `next start` and self-hosted previews.
-  compress: true,
 
   // Turbopack 配置 - 明确指定项目根目录
   turbopack: {
@@ -80,23 +70,16 @@ const nextConfig: NextConfig = {
     // Keep Next.js on its JavaScript compiler API path. The project uses the
     // same TypeScript 6.0.2 package for CLI checks and tooling.
     useTypeScriptCli: false,
-    // Next.js 16 已移除 testProxy 配置 - 使用 next/experimental/testing/server 替代
-    // 旧配置: testProxy: process.env.CI === 'true',
-    // 新方式: 在测试文件中使用 unstable_doesProxyMatch() 和相关 API
-    // 内联关键CSS（experimental.inlineCss）在当前构建链路下会引入 FOUC，导致首屏 CLS/Performance 显著劣化
-    // 先禁用以稳定 CI 的 Lighthouse 质量门禁（后续可在 Next.js/Turbopack 修复后再评估开启）
+    // 内联关键CSS（experimental.inlineCss）保持禁用：此前的记录称它在当前构建链路下
+    // 会引入 FOUC 和首屏 CLS 劣化（本次未重新测量）。Lighthouse 是手动性能证明
+    // （`pnpm website:lighthouse`），不是默认 CI 门禁；重新评估时请手动运行。
     inlineCss: false,
   },
-
-  // 解决 Turbopack + OpenTelemetry 依赖问题
-  // 这些包已经在 Next.js 15 的默认外部包列表中
-  // 但 Turbopack 在处理它们时遇到问题，所以我们暂时移除这个配置
-  // 让 Next.js 使用默认的外部包处理方式
 
   headers() {
     const securityHeaders = getSecurityHeaders();
 
-    // CDN 缓存策略（H-001 LCP 优化）
+    // CDN 缓存策略
     // 为静态资源设置长期缓存，提升性能和 LCP
     const cdnCacheHeaders = [
       {
@@ -145,5 +128,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-// Export final config with all plugins applied
-export default withBundleAnalyzer(withNextIntl(nextConfig));
+export default withNextIntl(nextConfig);
