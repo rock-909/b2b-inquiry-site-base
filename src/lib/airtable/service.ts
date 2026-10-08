@@ -2,24 +2,17 @@ import "server-only";
 
 import type { CreatedAirtableRecord } from "@/lib/airtable/types";
 import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
-import { env, getRuntimeEnvString } from "@/lib/env";
+import { getRuntimeEnvString } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { createLeadRecord } from "@/lib/airtable/service-internal/lead-records";
 
 export const AIRTABLE_REQUEST_TIMEOUT_MS = 8000;
 
-type AirtableEnvKey =
-  "AIRTABLE_API_KEY" | "AIRTABLE_BASE_ID" | "AIRTABLE_TABLE_NAME";
-
-function readAirtableEnv(key: AirtableEnvKey): string | undefined {
-  return getRuntimeEnvString(key) ?? env[key];
-}
-
 export function createAirtableLead(
   data: ValidatedInquiry,
 ): Promise<CreatedAirtableRecord> {
-  const apiKey = readAirtableEnv("AIRTABLE_API_KEY");
-  const baseId = readAirtableEnv("AIRTABLE_BASE_ID");
+  const apiKey = getRuntimeEnvString("AIRTABLE_API_KEY");
+  const baseId = getRuntimeEnvString("AIRTABLE_BASE_ID");
 
   if (!apiKey || !baseId) {
     logger.warn("Airtable configuration missing - service will be disabled", {
@@ -32,7 +25,7 @@ export function createAirtableLead(
   return createLeadRecord({
     apiKey,
     baseId,
-    tableName: readAirtableEnv("AIRTABLE_TABLE_NAME") || "Contacts",
+    tableName: getRuntimeEnvString("AIRTABLE_TABLE_NAME") || "Contacts",
     data,
     signal: AbortSignal.timeout(AIRTABLE_REQUEST_TIMEOUT_MS),
   });

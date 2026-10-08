@@ -333,7 +333,7 @@ async function rejectIfRateLimited(
   return response;
 }
 
-async function handleRateLimitedInquiryPost(request: NextRequest) {
+export async function POST(request: NextRequest) {
   // 每个请求只解析一次客户端 IP，准入闸门、限流 key 与后续日志共用同一个值。
   const clientIP = getClientIP(request);
   const gateRejection = rejectPlausiblyIllegitimateRequest(request, clientIP);
@@ -345,8 +345,4 @@ async function handleRateLimitedInquiryPost(request: NextRequest) {
   if (rateLimitRejection) return rateLimitRejection;
 
   return handleInquiryPost(request, clientIP);
-}
-
-export function POST(request: NextRequest) {
-  return handleRateLimitedInquiryPost(request);
 }

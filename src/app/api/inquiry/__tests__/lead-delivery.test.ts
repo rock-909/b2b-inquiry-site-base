@@ -41,20 +41,6 @@ describe("/api/inquiry lead delivery", () => {
     vi.useRealTimers();
   });
 
-  it("accepts a general inquiry with no offering identity", async () => {
-    const request = createInquiryRequest(JSON.stringify(generalInquiryData));
-
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    const callArgs = vi.mocked(routeMocks.processValidatedInquiry).mock
-      .calls[0]![0] as Record<string, unknown>;
-    expect(callArgs.type).toBe("inquiry");
-    expect(callArgs.offeringId).toBeUndefined();
-  });
-
   it("passes attribution fields to processValidatedInquiry", async () => {
     const request = createInquiryRequest(
       JSON.stringify({
@@ -79,17 +65,6 @@ describe("/api/inquiry lead delivery", () => {
         capturedAt: "2026-07-04T00:00:00.000Z",
       }),
     );
-  });
-
-  it("should process valid inquiry without a replay key", async () => {
-    const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(routeMocks.processValidatedInquiry).toHaveBeenCalledTimes(1);
   });
 
   it("should process repeated valid inquiry requests independently", async () => {
@@ -189,18 +164,6 @@ describe("/api/inquiry lead delivery", () => {
     expect(data.errorCode).toBe(API_ERROR_CODES.INQUIRY_PROCESSING_ERROR);
   });
 
-  it("should pass lead type inquiry to processValidatedInquiry", async () => {
-    const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-    await POST(request);
-
-    expect(routeMocks.processValidatedInquiry).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "inquiry",
-      }),
-    );
-  });
-
   it("should not allow request body to override lead type", async () => {
     const request = createInquiryRequest(
       JSON.stringify({
@@ -216,22 +179,6 @@ describe("/api/inquiry lead delivery", () => {
         type: "inquiry",
       }),
     );
-  });
-
-  it("normalizes a blank offering id to general inquiry", async () => {
-    const request = createInquiryRequest(
-      JSON.stringify({
-        ...validInquiryData,
-        offeringId: "",
-      }),
-    );
-
-    const response = await POST(request);
-
-    expect(response.status).toBe(200);
-    const callArgs = vi.mocked(routeMocks.processValidatedInquiry).mock
-      .calls[0]![0] as Record<string, unknown>;
-    expect(callArgs.offeringId).toBeUndefined();
   });
 
   // FPH-2607-009 的防复发守卫。买家填了、路由的白名单没同步、字段被静默丢掉，

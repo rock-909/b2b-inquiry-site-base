@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { sanitizePlainText } from "@/lib/security/validation";
+import {
+  sanitizeMultilineText,
+  sanitizePlainText,
+} from "@/lib/security/validation";
 
 describe("security-validation", () => {
   it("normalizes plain text input while preserving buyer characters", () => {
@@ -13,5 +16,9 @@ describe("security-validation", () => {
       "see product metadata: sheet",
     );
     expect(sanitizePlainText("  a\n\n b  ")).toBe("a b");
+  });
+
+  it("strips control characters from multiline text while keeping line breaks", () => {
+    expect(sanitizeMultilineText("a\u0007b\r\nc")).toBe("ab\nc");
   });
 });
