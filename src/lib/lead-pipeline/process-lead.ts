@@ -8,7 +8,7 @@ import {
 } from "@/lib/lead-pipeline/lead-schema";
 import { generateLeadReferenceId } from "@/lib/lead-pipeline/utils";
 import { logger, sanitizeEmail } from "@/lib/logger";
-import { ResendService } from "@/lib/resend-core";
+import { sendInquiryEmail } from "@/lib/resend-core";
 
 export type LeadResult =
   | {
@@ -26,7 +26,6 @@ export type LeadResult =
     };
 
 const LEAD_DELIVERY_POLICY = "email-primary-airtable-backup" as const;
-const resendService = new ResendService();
 
 function normalizeErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
@@ -44,7 +43,7 @@ function createProcessingFailureResult(referenceId?: string): LeadResult {
 
 async function sendOwnerEmail(lead: ValidatedInquiry): Promise<boolean> {
   try {
-    await resendService.sendInquiryEmail(lead);
+    await sendInquiryEmail(lead);
     return true;
   } catch (error) {
     logger.error("Owner inquiry email failed", {

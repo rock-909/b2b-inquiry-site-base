@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_CONFIG as SITE_CONFIG } from "@/config/single-site";
 import { inquiryLeadSchema } from "@/lib/lead-pipeline/lead-schema";
-import type { ResendService as ResendServiceInstance } from "../resend-core";
+import type { sendInquiryEmail as SendInquiryEmail } from "../resend-core";
 
-type ResendServiceConstructor = new () => ResendServiceInstance;
+type SendInquiryEmailFn = typeof SendInquiryEmail;
 
 const { mockRuntimeEnv } = vi.hoisted(() => ({
   mockRuntimeEnv: {
@@ -46,9 +46,19 @@ vi.mock("@/lib/logger", async () => {
   return mockLogger;
 });
 
+const validInquiryData = {
+  referenceId: "INQ-abc123-deadbeef",
+  ...inquiryLeadSchema.parse({
+    type: "inquiry",
+    fullName: "Jane Smith",
+    email: "jane.smith@example.com",
+    message: "Need bulk pricing",
+  }),
+};
+
 const setupResendTest = async (
   envOverrides: Partial<Record<string, string | undefined>> = {},
-): Promise<ResendServiceConstructor> => {
+): Promise<SendInquiryEmailFn> => {
   mockResendSend.mockReset();
   mockResendCtorCalls.mockClear();
   Object.assign(mockRuntimeEnv, {
@@ -59,41 +69,54 @@ const setupResendTest = async (
   });
   Object.assign(mockRuntimeEnv, envOverrides);
 
-  const { ResendService } = await import("../resend-core");
-  return ResendService;
+  const { sendInquiryEmail } = await import("../resend-core");
+  return sendInquiryEmail;
 };
 
-describe("resend - Service Initialization", () => {
-  let ResendServiceClass: ResendServiceConstructor;
+describe("resend - configuration", () => {
+  let sendInquiryEmail: SendInquiryEmailFn;
 
   beforeEach(async () => {
-    ResendServiceClass = await setupResendTest();
+    sendInquiryEmail = await setupResendTest();
   });
 
   afterEach(() => {
     vi.resetModules();
   });
 
-  it("initializes successfully with valid API key", async () => {
-    const service = new ResendServiceClass();
-    expect(service.isReady()).toBe(true);
-    expect(mockResendCtorCalls).toHaveBeenCalledWith("test-resend-key");
-    expect(typeof service.sendInquiryEmail).toBe("function");
-  });
-
-  it("falls back to the site contact email when email env is absent", async () => {
-    ResendServiceClass = await setupResendTest({
-      EMAIL_FROM: undefined,
-      INQUIRY_RECIPIENT_EMAIL: undefined,
-    });
-
-    const service = new ResendServiceClass();
+  it("creates the provider client with the configured API key", async () => {
     mockResendSend.mockResolvedValue({
       data: { id: "product-inquiry-id" },
       error: null,
     });
 
-    await service.sendInquiryEmail({
+    await sendInquiryEmail(validInquiryData);
+
+    expect(mockResendCtorCalls).toHaveBeenCalledWith("test-resend-key");
+  });
+
+  it("rejects without calling the provider when the API key is missing", async () => {
+    sendInquiryEmail = await setupResendTest({ RESEND_API_KEY: undefined });
+
+    await expect(sendInquiryEmail(validInquiryData)).rejects.toThrow(
+      "Resend service is not configured",
+    );
+    expect(mockResendCtorCalls).not.toHaveBeenCalled();
+    expect(mockResendSend).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the site contact email when email env is absent", async () => {
+    sendInquiryEmail = await setupResendTest({
+      EMAIL_FROM: undefined,
+      INQUIRY_RECIPIENT_EMAIL: undefined,
+    });
+
+    mockResendSend.mockResolvedValue({
+      data: { id: "product-inquiry-id" },
+      error: null,
+    });
+
+    await sendInquiryEmail({
       referenceId: "INQ-abc123-deadbeef",
       ...inquiryLeadSchema.parse({
         type: "inquiry",
@@ -114,20 +137,10 @@ describe("resend - Service Initialization", () => {
 });
 
 describe("resend - sendInquiryEmail", () => {
-  let ResendServiceClass: ResendServiceConstructor;
-
-  const validInquiryData = {
-    referenceId: "INQ-abc123-deadbeef",
-    ...inquiryLeadSchema.parse({
-      type: "inquiry",
-      fullName: "Jane Smith",
-      email: "jane.smith@example.com",
-      message: "Need bulk pricing",
-    }),
-  };
+  let sendInquiryEmail: SendInquiryEmailFn;
 
   beforeEach(async () => {
-    ResendServiceClass = await setupResendTest();
+    sendInquiryEmail = await setupResendTest();
   });
 
   afterEach(() => {
@@ -135,14 +148,12 @@ describe("resend - sendInquiryEmail", () => {
   });
 
   it("sends inquiry email successfully", async () => {
-    const service = new ResendServiceClass();
-
     mockResendSend.mockResolvedValue({
       data: { id: "product-inquiry-id" },
       error: null,
     });
 
-    const result = await service.sendInquiryEmail(validInquiryData);
+    const result = await sendInquiryEmail(validInquiryData);
 
     const payload = mockResendSend.mock.calls[0]?.[0];
 
@@ -173,14 +184,13 @@ describe("resend - sendInquiryEmail", () => {
     "R&D#Team@example.Xn--p1ai",
     "R&D#Team@example.xN--p1ai",
   ])("carries browser-valid address %s to the provider", async (email) => {
-    const service = new ResendServiceClass();
     mockResendSend.mockResolvedValue({
       data: { id: "edge-address-id" },
       error: null,
     });
     const buyerEmail = inquiryLeadSchema.shape.email.parse(email);
 
-    await service.sendInquiryEmail({ ...validInquiryData, email: buyerEmail });
+    await sendInquiryEmail({ ...validInquiryData, email: buyerEmail });
 
     expect(mockResendSend.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({ replyTo: "r&d#team@example.xn--p1ai" }),
@@ -188,7 +198,6 @@ describe("resend - sendInquiryEmail", () => {
   });
 
   it("escapes buyer text when rendering without expanding buyer placeholders", async () => {
-    const service = new ResendServiceClass();
     const emailData = {
       ...validInquiryData,
       ...inquiryLeadSchema.parse({
@@ -204,7 +213,7 @@ describe("resend - sendInquiryEmail", () => {
       error: null,
     });
 
-    await service.sendInquiryEmail(emailData);
+    await sendInquiryEmail(emailData);
 
     const payload = mockResendSend.mock.calls[0]?.[0];
 
@@ -218,23 +227,21 @@ describe("resend - sendInquiryEmail", () => {
   });
 
   it("handles API errors for inquiry", async () => {
-    const service = new ResendServiceClass();
     mockResendSend.mockResolvedValue({
       data: null,
       error: { message: "Product Inquiry API Error" },
     });
 
-    await expect(service.sendInquiryEmail(validInquiryData)).rejects.toThrow(
+    await expect(sendInquiryEmail(validInquiryData)).rejects.toThrow(
       "Failed to send inquiry email",
     );
     expect(mockResendSend).toHaveBeenCalledTimes(1);
   });
 
   it("handles network errors for inquiry", async () => {
-    const service = new ResendServiceClass();
     mockResendSend.mockRejectedValue(new Error("Network error"));
 
-    await expect(service.sendInquiryEmail(validInquiryData)).rejects.toThrow(
+    await expect(sendInquiryEmail(validInquiryData)).rejects.toThrow(
       "Failed to send inquiry email",
     );
     expect(mockResendSend).toHaveBeenCalledTimes(1);
@@ -242,13 +249,12 @@ describe("resend - sendInquiryEmail", () => {
 
   it("logs the reference on both delivery outcomes so a quoted reference is traceable", async () => {
     const { logger } = await import("@/lib/logger");
-    const service = new ResendServiceClass();
 
     mockResendSend.mockResolvedValue({
       data: { id: "product-inquiry-id" },
       error: null,
     });
-    await service.sendInquiryEmail(validInquiryData);
+    await sendInquiryEmail(validInquiryData);
 
     expect(logger.info).toHaveBeenCalledWith(
       "Inquiry email sent successfully",
@@ -256,7 +262,7 @@ describe("resend - sendInquiryEmail", () => {
     );
 
     mockResendSend.mockRejectedValue(new Error("Network error"));
-    await expect(service.sendInquiryEmail(validInquiryData)).rejects.toThrow(
+    await expect(sendInquiryEmail(validInquiryData)).rejects.toThrow(
       "Failed to send inquiry email",
     );
 

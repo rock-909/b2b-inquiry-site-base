@@ -36,7 +36,9 @@ describe("Cloudflare runtime env timing", () => {
 
     vi.doMock("@/lib/email/resend-http-client", () => ({
       ResendHttpEmailClient: class {
-        public readonly send = vi.fn();
+        public readonly send = vi
+          .fn()
+          .mockResolvedValue({ data: { id: "runtime-email-id" }, error: null });
 
         constructor(apiKey: string) {
           constructorCalls(apiKey);
@@ -50,16 +52,27 @@ describe("Cloudflare runtime env timing", () => {
         value ? "[REDACTED_EMAIL]" : "[NO_EMAIL]",
     }));
 
-    const { ResendService } = await import("@/lib/resend-core");
-    const service = new ResendService();
+    const { sendInquiryEmail } = await import("@/lib/resend-core");
+    const lead = {
+      referenceId: "INQ-runtime-deadbeef",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "Runtime Buyer",
+        email: "runtime@example.com",
+        message: "Secrets arrive after module load",
+      }),
+    };
 
-    expect(service.isReady()).toBe(false);
+    await expect(sendInquiryEmail(lead)).rejects.toThrow(
+      "Resend service is not configured",
+    );
+    expect(constructorCalls).not.toHaveBeenCalled();
 
     runtimeValues.RESEND_API_KEY = "runtime-resend-key";
     runtimeValues.EMAIL_FROM = "noreply@mail.reference-site.test";
     runtimeValues.INQUIRY_RECIPIENT_EMAIL = "sales@reference-site.test";
 
-    expect(service.isReady()).toBe(true);
+    await expect(sendInquiryEmail(lead)).resolves.toBe("runtime-email-id");
     expect(constructorCalls).toHaveBeenCalledWith("runtime-resend-key");
   });
 

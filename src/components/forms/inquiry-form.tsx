@@ -88,16 +88,26 @@ function readInquiryDraft(): InquiryDraft | null {
   }
 }
 
-function getVisibleFormValue(
+type InquiryTextFieldName = "fullName" | "email" | "message";
+
+/** 三个可见文本控件的唯一查找入口：读取、恢复草稿、清空都走这里。 */
+function getTextControl(
   form: HTMLFormElement,
-  name: "fullName" | "email" | "message",
-  maxLength: number,
-): string {
+  name: InquiryTextFieldName,
+): HTMLInputElement | HTMLTextAreaElement | null {
   const control = form.elements.namedItem(name);
   return control instanceof HTMLInputElement ||
     control instanceof HTMLTextAreaElement
-    ? control.value.slice(0, maxLength)
-    : "";
+    ? control
+    : null;
+}
+
+function getVisibleFormValue(
+  form: HTMLFormElement,
+  name: InquiryTextFieldName,
+  maxLength: number,
+): string {
+  return getTextControl(form, name)?.value.slice(0, maxLength) ?? "";
 }
 
 /** textarea 的 defaultValue 就是当前页面的产品预填（无预填时为空）。 */
@@ -138,17 +148,12 @@ function restoreInquiryDraft(form: HTMLFormElement | null) {
   // 留言与保存时的预填相同，说明买家没改过：保留当前页面的预填，
   // 否则在 A 产品页留下的草稿会把 B 产品页的留言覆盖成对 A 感兴趣。
   for (const name of ["fullName", "email"] as const) {
-    const control = form.elements.namedItem(name);
-    if (control instanceof HTMLInputElement) {
-      control.value = draft[name];
-    }
+    const control = getTextControl(form, name);
+    if (control) control.value = draft[name];
   }
 
-  const message = form.elements.namedItem("message");
-  if (
-    draft.message !== draft.prefill &&
-    message instanceof HTMLTextAreaElement
-  ) {
+  const message = getTextControl(form, "message");
+  if (message && draft.message !== draft.prefill) {
     message.value = draft.message;
   }
 }
@@ -328,13 +333,8 @@ function clearSubmittedFields(form: HTMLFormElement | null) {
 
   form.reset();
   for (const name of ["fullName", "email", "message"] as const) {
-    const control = form.elements.namedItem(name);
-    if (
-      control instanceof HTMLInputElement ||
-      control instanceof HTMLTextAreaElement
-    ) {
-      control.value = "";
-    }
+    const control = getTextControl(form, name);
+    if (control) control.value = "";
   }
 }
 

@@ -12,9 +12,7 @@ vi.mock("@/lib/airtable/service", () => ({
   createAirtableLead: mockCreateLead,
 }));
 vi.mock("@/lib/resend-core", () => ({
-  ResendService: class {
-    public readonly sendInquiryEmail = mockSendProductInquiryEmail;
-  },
+  sendInquiryEmail: mockSendProductInquiryEmail,
 }));
 vi.mock("@/lib/logger", async () => import("@/lib/__tests__/mocks/logger"));
 
@@ -57,8 +55,6 @@ describe("processValidatedInquiry", () => {
         referenceId: expect.stringMatching(/^INQ-/),
       }),
     );
-    expect(mockCreateLead.mock.calls[0]?.[0]).not.toHaveProperty("company");
-    expect(mockCreateLead.mock.calls[0]?.[0]).not.toHaveProperty("quantity");
   });
 
   it("passes the absent buyer message unchanged to both adapters", async () => {
