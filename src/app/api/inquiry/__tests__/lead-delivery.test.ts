@@ -260,7 +260,7 @@ describe("/api/inquiry lead delivery", () => {
 
   it("keeps a sample value for every field the schema declares", () => {
     expect([...Object.keys(SAMPLE_VALUE_PER_SCHEMA_FIELD)].sort()).toEqual(
-      [...Object.keys(leadSchemaModule.inquiryLeadObjectSchema.shape)].sort(),
+      [...Object.keys(leadSchemaModule.inquiryLeadSchema.shape)].sort(),
     );
   });
 

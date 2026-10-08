@@ -1,21 +1,11 @@
 "use client";
 
-import { ATTRIBUTION_FIELD_NAMES } from "@/lib/marketing/attribution-fields";
+import {
+  ATTRIBUTION_FIELD_NAMES,
+  type MarketingAttributionFields,
+} from "@/lib/marketing/attribution-fields";
 
 const UTM_STORAGE_KEY = "inquiry_attribution";
-
-export interface UtmParams {
-  utmSource?: string;
-  utmMedium?: string;
-  utmCampaign?: string;
-  utmTerm?: string;
-  utmContent?: string;
-}
-
-export interface AttributionData extends UtmParams {
-  landingPage?: string;
-  capturedAt?: string;
-}
 
 function sanitizeParam(value: string | null): string | undefined {
   if (!value) return undefined;
@@ -27,11 +17,11 @@ function sanitizeParam(value: string | null): string | undefined {
     : undefined;
 }
 
-export function captureUtmParams(): UtmParams {
+export function captureUtmParams(): MarketingAttributionFields {
   if (typeof window === "undefined") return {};
 
   const searchParams = new URLSearchParams(window.location.search);
-  const params: UtmParams = {};
+  const params: MarketingAttributionFields = {};
 
   // Use explicit property assignment to avoid object injection
   const utmSource = sanitizeParam(searchParams.get("utm_source"));
@@ -62,7 +52,7 @@ export function storeAttributionData(): void {
   if (!Object.values(utmParams).some(Boolean)) return;
 
   // Safe: UTM values are derived from sanitizeParam(), which blocks control chars and dangerous HTML delimiters.
-  const data: AttributionData = {
+  const data: MarketingAttributionFields = {
     ...utmParams,
     landingPage: window.location.pathname,
     capturedAt: new Date().toISOString(),
@@ -71,7 +61,7 @@ export function storeAttributionData(): void {
   sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(data));
 }
 
-export function getAttributionSnapshot(): AttributionData {
+export function getAttributionSnapshot(): MarketingAttributionFields {
   if (typeof window === "undefined") return {};
 
   try {
@@ -85,7 +75,7 @@ export function getAttributionSnapshot(): AttributionData {
     ) {
       return captureUtmParams();
     }
-    const result: AttributionData = {};
+    const result: MarketingAttributionFields = {};
     for (const fieldName of ATTRIBUTION_FIELD_NAMES) {
       const value = (parsed as Record<string, unknown>)[fieldName];
       const sanitized = sanitizeParam(typeof value === "string" ? value : null);
@@ -98,24 +88,4 @@ export function getAttributionSnapshot(): AttributionData {
 
   // Fallback to current URL params if no stored data
   return captureUtmParams();
-}
-
-export function getAttributionAsObject(): Record<string, string> {
-  const attribution = getAttributionSnapshot();
-  const result: Record<string, string> = {};
-
-  for (const fieldName of ATTRIBUTION_FIELD_NAMES) {
-    const value = attribution[fieldName];
-    if (value) {
-      result[fieldName] = value;
-    }
-  }
-
-  return result;
-}
-
-export function appendAttributionToFormData(formData: FormData): void {
-  for (const [key, value] of Object.entries(getAttributionAsObject())) {
-    formData.append(key, value);
-  }
 }

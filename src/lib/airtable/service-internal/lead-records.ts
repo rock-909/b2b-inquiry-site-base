@@ -1,9 +1,8 @@
+import { splitName } from "@/lib/lead-pipeline/utils";
 import "server-only";
 
-import type {
-  CreatedAirtableRecord,
-  InquiryLeadData,
-} from "@/lib/airtable/types";
+import type { CreatedAirtableRecord } from "@/lib/airtable/types";
+import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
 import { sanitizeAirtableTextField } from "@/lib/airtable/service-internal/field-sanitization";
 import { logger, sanitizeEmail } from "@/lib/logger";
 import {
@@ -29,24 +28,25 @@ const AIRTABLE_ATTRIBUTION_FIELD_NAMES = {
 
 function buildBaseFields(email: string, now: string): AirtableFields {
   return {
-    Email: email.toLowerCase().trim(),
+    Email: email,
     "Submitted At": now,
     Status: "New",
     Source: INQUIRY_SOURCE,
   };
 }
 
-function addReferenceId(fields: AirtableFields, referenceId?: string): void {
-  if (!referenceId) return;
-  fields["Reference ID"] = referenceId;
-}
-
-function addInquiryFields(fields: AirtableFields, data: InquiryLeadData): void {
-  fields["First Name"] = sanitizeAirtableTextField(data.firstName);
-  fields["Last Name"] = sanitizeAirtableTextField(data.lastName);
-  fields["Message"] = sanitizeAirtableTextField(data.message);
-  if (data.requirements) {
-    fields["Requirements"] = sanitizeAirtableTextField(data.requirements);
+function addInquiryFields(
+  fields: AirtableFields,
+  data: ValidatedInquiry,
+): void {
+  const { firstName, lastName } = splitName(data.fullName);
+  fields["First Name"] = sanitizeAirtableTextField(firstName);
+  fields["Last Name"] = sanitizeAirtableTextField(lastName);
+  fields["Message"] = sanitizeAirtableTextField(
+    data.message ? `Requirements: ${data.message}` : "General inquiry",
+  );
+  if (data.message) {
+    fields["Requirements"] = sanitizeAirtableTextField(data.message);
   }
 }
 
@@ -63,9 +63,9 @@ function addAttributionFields(
   }
 }
 
-function buildLeadFields(data: InquiryLeadData, now: string): AirtableFields {
+function buildLeadFields(data: ValidatedInquiry, now: string): AirtableFields {
   const fields = buildBaseFields(data.email, now);
-  addReferenceId(fields, data.referenceId);
+  fields["Reference ID"] = data.referenceId;
   addInquiryFields(fields, data);
   addAttributionFields(fields, data);
   return fields;
@@ -134,7 +134,7 @@ export async function createLeadRecord(params: {
   apiKey: string;
   baseId: string;
   tableName: string;
-  data: InquiryLeadData;
+  data: ValidatedInquiry;
   signal: AbortSignal;
 }): Promise<CreatedAirtableRecord> {
   const { apiKey, baseId, tableName, data, signal } = params;

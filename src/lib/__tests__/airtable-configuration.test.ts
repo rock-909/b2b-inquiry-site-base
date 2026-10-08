@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
 
 const mocks = vi.hoisted(() => ({
   envValues: {
@@ -34,12 +35,12 @@ vi.mock("@/lib/logger", () => ({
     value ? "[REDACTED_EMAIL]" : "[NO_EMAIL]",
 }));
 
-const validLeadData = {
-  firstName: "Config",
-  lastName: "Tester",
+const validLeadData: ValidatedInquiry = {
+  type: "inquiry",
+  fullName: "Config Tester",
   email: "config@example.com",
   message: "Configuration test inquiry",
-  interest: "Configuration check",
+  referenceId: "INQ-abc123-deadbeef",
 };
 
 async function createService() {

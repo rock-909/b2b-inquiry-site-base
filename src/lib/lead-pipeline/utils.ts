@@ -2,8 +2,6 @@
  * Lead Pipeline Utility Functions
  */
 
-import { randomBytes } from "crypto";
-
 export interface SplitNameResult {
   firstName: string;
   lastName: string;
@@ -21,30 +19,10 @@ export function splitName(fullName: string): SplitNameResult {
   return { firstName: parts.join(" "), lastName };
 }
 
-export interface InquiryMessageParts {
-  requirements?: string | undefined;
-}
-
-export function generateInquiryMessage(parts: InquiryMessageParts): string {
-  const lines: string[] = [];
-
-  if (parts.requirements?.trim()) {
-    lines.push(`Requirements: ${parts.requirements.trim()}`);
-  }
-
-  return lines.length > 0 ? lines.join("\n") : "General inquiry";
-}
-
-export function resolveBuyerMessage(parts: {
-  message?: string | undefined;
-}): string | undefined {
-  const message = parts.message?.trim();
-  return message ? message : undefined;
-}
-
-export function generateLeadReferenceId(type: string): string {
+export function generateLeadReferenceId(): string {
   const timestamp = Date.now().toString(36);
-  const random = randomBytes(4).toString("hex");
-  const prefix = type.substring(0, 3).toUpperCase();
-  return `${prefix}-${timestamp}-${random}`;
+  const random = Array.from(crypto.getRandomValues(new Uint8Array(4)), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+  return `INQ-${timestamp}-${random}`;
 }

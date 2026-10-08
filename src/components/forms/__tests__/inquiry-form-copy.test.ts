@@ -20,24 +20,28 @@ describe("inquiry form copy", () => {
   it("reads all eight visible field error leaves from inquiry.form.errors", () => {
     const copy = createTestInquiryFormCopy();
 
-    expect(copy.errors.fullName.required).toBe("Full name is required");
-    expect(copy.errors.fullName.invalid).toBe(
+    expect(copy.errors.fields["errors.fullName.required"]).toBe(
+      "Full name is required",
+    );
+    expect(copy.errors.fields["errors.fullName.invalid"]).toBe(
       "Full name contains invalid characters",
     );
-    expect(copy.errors.fullName.tooLong).toBe(
+    expect(copy.errors.fields["errors.fullName.tooLong"]).toBe(
       `Full name must be ${MAX_LEAD_NAME_LENGTH} characters or fewer`,
     );
-    expect(copy.errors.email.required).toBe("Email address is required");
-    expect(copy.errors.email.invalid).toBe(
+    expect(copy.errors.fields["errors.email.required"]).toBe(
+      "Email address is required",
+    );
+    expect(copy.errors.fields["errors.email.invalid"]).toBe(
       "Please enter a valid email address",
     );
-    expect(copy.errors.email.tooLong).toBe(
+    expect(copy.errors.fields["errors.email.tooLong"]).toBe(
       `Email must be ${MAX_LEAD_EMAIL_LENGTH} characters or fewer`,
     );
-    expect(copy.errors.message.invalid).toBe(
+    expect(copy.errors.fields["errors.message.invalid"]).toBe(
       "Message contains invalid characters",
     );
-    expect(copy.errors.message.tooLong).toBe(
+    expect(copy.errors.fields["errors.message.tooLong"]).toBe(
       "Message must be 2000 characters or fewer",
     );
   });

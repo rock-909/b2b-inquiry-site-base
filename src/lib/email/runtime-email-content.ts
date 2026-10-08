@@ -1,3 +1,5 @@
+import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
+import { splitName } from "@/lib/lead-pipeline/utils";
 import { EMAIL_COPY } from "@/emails/email-copy";
 import {
   COLORS,
@@ -6,7 +8,6 @@ import {
   SIZES,
   SPACING,
 } from "@/emails/theme";
-import type { InquiryEmailData } from "@/lib/email/email-data-schema";
 
 export interface RuntimeEmailContent {
   html: string;
@@ -115,19 +116,20 @@ function renderEmailDocument({
 }
 
 export function buildInquiryEmailContent(
-  data: InquiryEmailData,
+  data: ValidatedInquiry,
 ): RuntimeEmailContent {
+  const { firstName, lastName } = splitName(data.fullName);
   const fields = compactFields([
     { label: EMAIL_COPY.common.fields.reference, value: data.referenceId },
     {
       label: EMAIL_COPY.common.fields.contactName,
-      value: `${data.firstName} ${data.lastName}`,
+      value: `${firstName} ${lastName}`,
     },
     { label: EMAIL_COPY.common.fields.email, value: data.email },
-    data.requirements
+    data.message
       ? {
           label: EMAIL_COPY.common.fields.requirements,
-          value: data.requirements,
+          value: data.message,
           multiline: true,
         }
       : null,

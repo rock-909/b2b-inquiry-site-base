@@ -365,15 +365,15 @@ describe("InquiryForm contract", () => {
     expect(
       await screen.findByText(copy.errors.fieldSummary),
     ).toBeInTheDocument();
-    expect(screen.getByText(copy.errors.fullName.invalid)).toHaveClass(
-      "text-[var(--error-foreground)]",
-    );
-    expect(screen.getByText(copy.errors.email.invalid)).toHaveClass(
-      "text-[var(--error-foreground)]",
-    );
-    expect(screen.getByText(copy.errors.message.tooLong)).toHaveClass(
-      "text-[var(--error-foreground)]",
-    );
+    expect(
+      screen.getByText(copy.errors.fields["errors.fullName.invalid"]),
+    ).toHaveClass("text-[var(--error-foreground)]");
+    expect(
+      screen.getByText(copy.errors.fields["errors.email.invalid"]),
+    ).toHaveClass("text-[var(--error-foreground)]");
+    expect(
+      screen.getByText(copy.errors.fields["errors.message.tooLong"]),
+    ).toHaveClass("text-[var(--error-foreground)]");
     expect(screen.queryByText("errors.phone.invalid")).not.toBeInTheDocument();
 
     expect(fullName).toHaveAttribute("aria-invalid", "true");

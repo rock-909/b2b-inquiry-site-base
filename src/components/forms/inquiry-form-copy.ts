@@ -1,7 +1,4 @@
-import {
-  type InquiryFieldErrorCopyMap,
-  type InquiryFieldErrorDetail,
-} from "@/constants/inquiry-field-error-protocol";
+import { type InquiryFieldErrorDetail } from "@/constants/inquiry-field-error-protocol";
 
 type InquiryFormMessageKey =
   | "optional"
@@ -38,24 +35,17 @@ export function createInquiryFormCopy(
   t: InquiryTranslate,
   rescueEmail: string,
 ) {
-  // 字段错误文案的完整性由协议模块的 satisfies 合同在编译期封口：协议新增
-  // detail 而这里漏写时，type-check 直接红，不再依赖人工同步。
+  // 以 wire detail 为键：协议新增 detail 而这里漏写时，type-check 直接红。
   const fieldErrors = {
-    fullName: {
-      required: t("errors.fullName.required"),
-      invalid: t("errors.fullName.invalid"),
-      tooLong: t("errors.fullName.tooLong"),
-    },
-    email: {
-      required: t("errors.email.required"),
-      invalid: t("errors.email.invalid"),
-      tooLong: t("errors.email.tooLong"),
-    },
-    message: {
-      invalid: t("errors.message.invalid"),
-      tooLong: t("errors.message.tooLong"),
-    },
-  } satisfies InquiryFieldErrorCopyMap;
+    "errors.fullName.required": t("errors.fullName.required"),
+    "errors.fullName.invalid": t("errors.fullName.invalid"),
+    "errors.fullName.tooLong": t("errors.fullName.tooLong"),
+    "errors.email.required": t("errors.email.required"),
+    "errors.email.invalid": t("errors.email.invalid"),
+    "errors.email.tooLong": t("errors.email.tooLong"),
+    "errors.message.invalid": t("errors.message.invalid"),
+    "errors.message.tooLong": t("errors.message.tooLong"),
+  } satisfies Record<InquiryFieldErrorDetail, string>;
 
   return {
     optional: t("optional"),
@@ -88,7 +78,7 @@ export function createInquiryFormCopy(
       serverSummary: t("errors.serverSummary"),
       rateLimitSummary: t("errors.rateLimitSummary"),
       rateLimitReady: t("errors.rateLimitReady"),
-      ...fieldErrors,
+      fields: fieldErrors,
     },
   } as const;
 }
