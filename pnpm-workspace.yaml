@@ -9,6 +9,12 @@ allowBuilds:
   unrs-resolver: true
   workerd: true
 engineStrict: true
+# keeps pnpm's default cooldown; do not set minimumReleaseAge explicitly (it would switch pnpm to strict)
+minimumReleaseAgeExclude:
+  # owner decision: formal Next.js releases are not held by the cooldown; the name-level exemption also admits canary/beta/rc, which still stay out of main
+  - next
+  - '@next/*'
+  - eslint-config-next
 overrides:
   # version floor; reached via @babel/helper-compilation-targets, update-browserslist-db
   browserslist@<=4.28.6: '>=4.28.7'
@@ -74,11 +80,12 @@ overrides:
   uuid: '>=14.0.0'
 peerDependencyRules:
   allowedVersions:
-    '@tailwindcss/typography>tailwindcss': '4'
+    # latest still declares eslint <=9
     eslint-plugin-import>eslint: '10'
+    # latest still declares eslint <=9; reached via eslint-config-next
     eslint-plugin-jsx-a11y>eslint: '10'
+    # latest still declares eslint <=9
     eslint-plugin-react>eslint: '10'
-    tailwindcss-animate>tailwindcss: '4'
 sharedWorkspaceLockfile: true
 trustPolicy: no-downgrade
 verifyDepsBeforeRun: true
