@@ -1,7 +1,7 @@
 {
   "$schema": "https://react.doctor/schema/config.json",
   "ignore": {
-    "files": [".open-next/**", ".next/**", ".next-lighthouse/**"],
+    "files": [".open-next/**", ".next/**", ".next-lighthouse/**", ".lavish/**"],
     "overrides": [
       {
         "files": ["src/lib/content/legal-page.ts"],

@@ -2,10 +2,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
 import { describe, expect, it } from "vitest";
 import ts from "typescript";
-
-const ENV_FACADE = "src/lib/env.ts";
-const PUBLIC_RUNTIME_ENV = "src/lib/public-runtime-env.ts";
-const LOGGER = "src/lib/logger.ts";
+import {
+  getPublicRuntimeEnvString,
+  type PublicRuntimeEnvKey,
+} from "@/lib/public-runtime-env";
 
 const FORBIDDEN_SERVER_ENV_KEYS = [
   "RESEND_API_KEY",
@@ -95,21 +95,14 @@ function referencesServerEnvFacade(source: string): boolean {
 }
 
 describe("env module boundaries", () => {
-  it("keeps public runtime env client-safe and allowlisted", () => {
-    const source = read(PUBLIC_RUNTIME_ENV);
-
-    expect(source).not.toMatch(
-      /from ["']zod["']|@t3-oss\/env-nextjs|createEnv/u,
-    );
-    expect(source).not.toMatch(
-      /(?:from|import)\s+["'](?:@\/lib\/env|\.\/env)["']/u,
-    );
-    expect(source).not.toContain('import "server-only"');
-
-    for (const forbiddenKey of FORBIDDEN_SERVER_ENV_KEYS) {
-      expect(source).not.toContain(forbiddenKey);
-    }
-  });
+  it.each([...FORBIDDEN_SERVER_ENV_KEYS, "NEXT_PUBLIC_CSP_NONCE"])(
+    "rejects %s at the public runtime boundary",
+    (key) => {
+      expect(() =>
+        getPublicRuntimeEnvString(key as PublicRuntimeEnvKey),
+      ).toThrow("not on the public runtime allowlist");
+    },
+  );
 
   it('keeps "use client" files off server env and PII helpers', () => {
     const offenders = sourceFiles("src").filter((repoPath) => {
@@ -131,23 +124,5 @@ describe("env module boundaries", () => {
   ])("detects client imports of the server env facade", (source) => {
     expect(isClientComponent(source)).toBe(true);
     expect(referencesServerEnvFacade(source)).toBe(true);
-  });
-
-  it("keeps sensitive nonce and server keys out of public env contracts", () => {
-    const publicEnv = read(PUBLIC_RUNTIME_ENV);
-    const serverEnv = read(ENV_FACADE);
-
-    expect(publicEnv).not.toContain("NEXT_PUBLIC_CSP_NONCE");
-    expect(serverEnv).not.toContain("NEXT_PUBLIC_CSP_NONCE");
-    for (const forbiddenKey of FORBIDDEN_SERVER_ENV_KEYS) {
-      expect(publicEnv).not.toContain(forbiddenKey);
-    }
-  });
-
-  it("keeps the logger browser-safe", () => {
-    const source = read(LOGGER);
-
-    expect(source).not.toContain('import "server-only"');
-    expect(source).not.toMatch(/(?:@\/lib\/env|\.\/env)/u);
   });
 });

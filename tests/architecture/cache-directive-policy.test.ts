@@ -29,6 +29,14 @@ function hasRuntimeCacheUsage(source: string): boolean {
 
   function visit(node: ts.Node): void {
     if (
+      ts.isExpressionStatement(node) &&
+      ts.isStringLiteral(node.expression) &&
+      /^use cache(?:$|:)/u.test(node.expression.text)
+    ) {
+      found = true;
+      return;
+    }
+    if (
       ts.isImportDeclaration(node) &&
       ts.isStringLiteral(node.moduleSpecifier) &&
       node.moduleSpecifier.text === "next/cache"
@@ -73,17 +81,24 @@ describe("cache directive policy", () => {
       // eslint-disable-next-line security/detect-non-literal-fs-filename -- 测试只读取上方固定的仓库文件
       const source = readFileSync(filePath, "utf8");
 
-      expect(source, filePath).not.toMatch(/["']use\s+cache["']/iu);
       expect(hasRuntimeCacheUsage(source), filePath).toBe(false);
     }
   });
 
   it.each([
+    '"use cache";',
+    'async function cached() { "use cache: private"; }',
     'import { revalidatePath } from "next/cache";',
     'const { revalidatePath } = await import("next/cache");',
     'cacheTag("inquiry");',
     'cache.revalidateTag("inquiry");',
   ])("detects forbidden runtime cache usage: %s", (source) => {
     expect(hasRuntimeCacheUsage(source)).toBe(true);
+  });
+
+  it("ignores comments and ordinary strings mentioning caching", () => {
+    expect(
+      hasRuntimeCacheUsage('// "use cache"\nconst description = "use cache";'),
+    ).toBe(false);
   });
 });

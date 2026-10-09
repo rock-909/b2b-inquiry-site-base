@@ -1,0 +1,16 @@
+# 明确覆盖测试代码，不继承 Semgrep 默认的 tests/ 排除。
+.git/
+node_modules/
+.next/
+.next-lighthouse/
+.open-next/
+.wrangler/
+.lavish/
+reports/
+test-results/
+coverage/
+backups/
+dist/
+# 这些目录中的代码是供真实扫描器/依赖图使用的负向输入，不是运行代码。
+tests/fixtures/semgrep/
+tests/architecture/fixtures/

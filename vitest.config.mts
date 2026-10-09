@@ -5,24 +5,44 @@ const debugTestOutput = process.env.VITEST_DEBUG_OUTPUT === "true";
 
 export default defineConfig({
   test: {
-    // 测试环境配置 - 使用标准 jsdom 环境
-    environment: "jsdom",
-    environmentOptions: {
-      jsdom: {
-        url: "http://localhost:3000",
-        pretendToBeVisual: true,
-      },
-    },
-
     // 全局设置
     globals: true,
 
-    // 设置文件
-    setupFiles: ["./src/test/setup.ts"],
+    // Node 集成不继承浏览器/env 桩；两个项目仍由默认 pnpm test 一起执行。
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "unit",
+          environment: "jsdom",
+          environmentOptions: {
+            jsdom: { url: "http://localhost:3000", pretendToBeVisual: true },
+          },
+          setupFiles: ["./src/test/setup.ts"],
+          exclude: ["tests/integration/api/lead-pipeline-in-process.test.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "inquiry-integration",
+          environment: "node",
+          include: ["tests/integration/api/lead-pipeline-in-process.test.ts"],
+          setupFiles: [
+            "./src/test/setup.console.ts",
+            "./tests/integration/setup.ts",
+          ],
+          restoreMocks: true,
+          unstubEnvs: true,
+          unstubGlobals: true,
+        },
+      },
+    ],
 
     // 使用 Vitest 默认 test/spec discovery，只排除非 Vitest 输入。
     exclude: [
       ...configDefaults.exclude,
+      ".lavish/**",
       "tests/e2e/**",
       "**/{fixtures,__fixtures__}/**",
       "**/setup.{js,jsx,ts,tsx}",

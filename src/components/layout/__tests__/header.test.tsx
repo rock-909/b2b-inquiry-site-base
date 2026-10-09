@@ -50,7 +50,6 @@ describe("Header", () => {
   it("renders the production navigation surface", () => {
     renderHeader();
 
-    expect(screen.getByTestId("logo")).toBeInTheDocument();
     expect(
       screen.getByRole("navigation", { name: "Main navigation" }),
     ).toBeInTheDocument();

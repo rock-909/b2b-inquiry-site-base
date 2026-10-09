@@ -736,7 +736,7 @@ describe("deployed smoke", () => {
     const fixtureRoot = createMinimalCloudflareSmokeFixture();
 
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- fixed child path under a test-owned fixture root
-    expect(existsSync(path.join(fixtureRoot, "node_modules"))).toBe(false);
+    expect(existsSync(path.join(fixtureRoot, "node_modules"))).toBe(false); // nosemgrep: test-no-file-existence-assertion -- 验证 smoke 无依赖运行的前提，不是锁定源码布局。
 
     const result = await runNodeCommand(
       [

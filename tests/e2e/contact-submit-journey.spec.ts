@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { buildCanarySelectors } from "./smoke/canary-selectors";
 import { checkA11y } from "./helpers/axe";
+import { checkedInquiryStub } from "../helpers/inquiry-contract";
 
 test("buyer fills contact form, clicks submit, sees success", async ({
   page,
@@ -9,14 +10,15 @@ test("buyer fills contact form, clicks submit, sees success", async ({
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.route("**/api/inquiry", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        success: true,
-        data: { referenceId: "e2e-ref-1" },
+    route.fulfill(
+      checkedInquiryStub({
+        status: 200,
+        body: {
+          success: true,
+          data: { referenceId: "e2e-ref-1" },
+        },
       }),
-    }),
+    ),
   );
   await page.goto("/contact");
 
@@ -63,15 +65,19 @@ test("buyer retries a failed inquiry without losing the draft", async ({
   // 仅替换 API 响应；保留真实表单、草稿和 test-mode 控件重置链路。
   await page.route("**/api/inquiry", async (route) => {
     submissions.push(route.request().postDataJSON());
-    await route.fulfill({
-      status: submissions.length === 1 ? 500 : 200,
-      contentType: "application/json",
-      body: JSON.stringify(
+    await route.fulfill(
+      checkedInquiryStub(
         submissions.length === 1
-          ? { success: false, errorCode: "INQUIRY_PROCESSING_ERROR" }
-          : { success: true, data: { referenceId: "e2e-retry-ref" } },
+          ? {
+              status: 500,
+              body: { success: false, errorCode: "INQUIRY_PROCESSING_ERROR" },
+            }
+          : {
+              status: 200,
+              body: { success: true, data: { referenceId: "e2e-retry-ref" } },
+            },
       ),
-    });
+    );
   });
   await page.goto("/contact");
   const form = page.getByTestId("inquiry-form");
@@ -123,20 +129,21 @@ test("buyer retries a failed inquiry without losing the draft", async ({
 async function expectAccessibleServerFieldErrors(page: Page, path: string) {
   const selectors = buildCanarySelectors();
   await page.route("**/api/inquiry", (route) =>
-    route.fulfill({
-      status: 400,
-      contentType: "application/json",
-      body: JSON.stringify({
-        success: false,
-        errorCode: "INQUIRY_VALIDATION_FAILED",
-        details: [
-          "errors.fullName.invalid",
-          "errors.email.invalid",
-          "errors.message.tooLong",
-          "errors.unregistered.invalid",
-        ],
+    route.fulfill(
+      checkedInquiryStub({
+        status: 400,
+        body: {
+          success: false,
+          errorCode: "INQUIRY_VALIDATION_FAILED",
+          details: [
+            "errors.fullName.invalid",
+            "errors.email.invalid",
+            "errors.message.tooLong",
+            "errors.unregistered.invalid",
+          ],
+        },
       }),
-    }),
+    ),
   );
   await page.goto(path);
 
@@ -226,6 +233,105 @@ for (const path of ["/contact"] as const) {
     page,
   }) => {
     await expectAccessibleServerFieldErrors(page, path);
+  });
+}
+
+for (const failure of ["turnstile", "rate-limit"] as const) {
+  test(`${failure} rejection preserves the draft and permits only a manual retry`, async ({
+    page,
+  }) => {
+    const selectors = buildCanarySelectors();
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    const submissions: unknown[] = [];
+    const rejected = checkedInquiryStub(
+      failure === "turnstile"
+        ? {
+            status: 400,
+            body: { success: false, errorCode: "TURNSTILE_REJECTED" },
+          }
+        : {
+            status: 429,
+            headers: { "Retry-After": "2" },
+            body: { success: false, errorCode: "RATE_LIMIT_EXCEEDED" },
+          },
+    );
+    const accepted = checkedInquiryStub({
+      status: 200,
+      body: {
+        success: true,
+        data: { referenceId: "e2e-recovered-ref" },
+      },
+    });
+    await page.route("**/api/inquiry", async (route) => {
+      submissions.push(route.request().postDataJSON());
+      await route.fulfill(submissions.length === 1 ? rejected : accepted);
+    });
+    await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+    await page.goto("/contact");
+    const form = page.getByTestId("inquiry-form");
+    await form.scrollIntoViewIfNeeded();
+    const [fullName, email, message] = [
+      form.getByLabel(/^full name/i),
+      form.getByLabel(/^email address/i),
+      form.getByLabel(/message/i),
+    ] as const;
+    const draft = {
+      fullName: "Recovery Buyer",
+      email: "recover@example.com",
+      message: "Please quote our next order.",
+    };
+    await fullName.fill(draft.fullName);
+    await email.fill(draft.email);
+    await message.fill(draft.message);
+    const submit = form.getByRole("button", { name: selectors.submitLabel });
+    await expect(submit).toBeEnabled();
+    // 控件就绪后固定时钟，避免自动时间流逝掩盖两秒冷却门控。
+    await page.clock.pauseAt(new Date("2026-01-01T00:01:00Z"));
+    await submit.click();
+    const summary = form.getByText(
+      failure === "turnstile"
+        ? "Security verification did not complete. Please try again."
+        : "Too many attempts. Please wait before sending your inquiry again.",
+    );
+    await expect(summary).toBeVisible();
+    await expect(form.getByText(selectors.successPrefix)).toHaveCount(0);
+    await expect(fullName).toHaveValue(draft.fullName);
+    await expect(email).toHaveValue(draft.email);
+    await expect(message).toHaveValue(draft.message);
+    if (failure === "rate-limit") {
+      await expect(submit).toBeDisabled();
+      await page.clock.runFor(1000);
+      await expect(submit).toBeDisabled();
+      await fullName.press("Enter");
+      expect(submissions).toHaveLength(1);
+      await page.clock.runFor(1000);
+      await expect(
+        form.getByText("You can send your inquiry again now."),
+      ).toBeVisible();
+    } else {
+      // 只推进控件自身的恢复定时器，不写入 token，也不刷新页面。
+      await page.clock.runFor(1000);
+    }
+    await expect(submit).toBeEnabled();
+    expect(submissions).toHaveLength(1);
+    await submit.click();
+    await expect(form.getByText(/e2e-recovered-ref/)).toBeVisible();
+    await expect(summary).toHaveCount(0);
+    expect(submissions).toHaveLength(2);
+    for (const submission of submissions) {
+      expect(submission).toMatchObject({
+        ...draft,
+        turnstileToken: expect.any(String),
+      });
+    }
+    await page.reload();
+    await form.scrollIntoViewIfNeeded();
+    await expect(fullName).toBeEditable();
+    for (const field of [fullName, email, message]) {
+      await expect(field).toHaveValue("");
+    }
+    expect(pageErrors).toEqual([]);
   });
 }
 

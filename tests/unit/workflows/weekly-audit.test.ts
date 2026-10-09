@@ -89,13 +89,15 @@ describe("weekly dependency audit workflow", () => {
       throw new Error("Weekly audit issue step has no script");
     }
     // 执行 YAML 中的真实脚本，只替换 GitHub 客户端。
-    // eslint-disable-next-line no-new-func -- 执行已检入的 workflow 脚本，不执行网络输入。
+    /* eslint-disable no-new-func -- 仅执行已检入的 workflow 脚本，不执行网络输入。 */
+    // nosemgrep: unsafe-eval-usage -- 执行仓库 workflow，外部 API 全部为测试桩。
     const execute = new Function(
       "github",
       "context",
       "core",
       `return (async () => { ${script} })()`,
     );
+    /* eslint-enable no-new-func -- workflow 执行器以外恢复禁令。 */
     const title = "Weekly production dependency audit failed";
     const context = {
       repo: { owner: "owner", repo: "repo" },

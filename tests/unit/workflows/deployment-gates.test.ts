@@ -74,13 +74,15 @@ describe("production admission", () => {
       (step) => step.name === "阻断：当前提交必须通过 main CI",
     )!.with!.script!;
     // 执行 YAML 中的真实检查，替换网络而非检查逻辑。
-    // eslint-disable-next-line no-new-func -- 执行已检入的 workflow 检查，不执行网络输入。
+    /* eslint-disable no-new-func -- 仅执行已检入的 workflow 脚本，不执行网络输入。 */
+    // nosemgrep: unsafe-eval-usage -- 执行仓库 workflow，外部 API 由假客户端接管。
     const execute = new Function(
       "github",
       "context",
       "core",
       `return (async () => { ${script} })()`,
     );
+    /* eslint-enable no-new-func -- workflow 执行器以外恢复禁令。 */
     for (const run of [
       undefined,
       { head_sha: "other", conclusion: "success" },

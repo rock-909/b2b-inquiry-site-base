@@ -1,4 +1,59 @@
 rules:
+  - id: test-no-file-existence-assertion
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Test observable behavior, not repository file existence. Use a narrow exception for filesystem tools.
+    paths:
+      include: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts"]
+    pattern-either:
+      - pattern: expect(existsSync(...), ...)
+      - pattern: expect($FS.existsSync(...), ...)
+
+  - id: architecture-no-source-string-assertion
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Replace source spelling assertions with an import graph, AST policy or observable behavior.
+    paths:
+      include: ["**/tests/architecture/**"]
+    mode: taint
+    pattern-sources:
+      - pattern: readFileSync(...)
+      - pattern: $FS.readFileSync(...)
+      - pattern: read(...)
+    pattern-sinks:
+      - pattern: expect($SOURCE, ...).toContain(...)
+      - pattern: expect($SOURCE, ...).not.toContain(...)
+      - pattern: expect($SOURCE, ...).toMatch(...)
+      - pattern: expect($SOURCE, ...).not.toMatch(...)
+
+  - id: inquiry-integration-no-business-replacement
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Keep inquiry integration business modules real; stub outbound fetch instead.
+    paths:
+      include: ["**/tests/integration/**"]
+    patterns:
+      - pattern-either:
+          - pattern: vi.mock($MODULE, ...)
+          - pattern: vi.doMock($MODULE, ...)
+          - pattern: vi.mock(import($MODULE), ...)
+          - pattern: vi.doMock(import($MODULE), ...)
+      - metavariable-regex:
+          metavariable: $MODULE
+          regex: '.*(lead-pipeline|lead-schema|turnstile|distributed-rate-limit|rate-limit-key-strategies|resend-core|resend-http-client|airtable|/lib/env).*'
+
+  - id: inquiry-integration-no-business-spy
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Keep these business functions real in the inquiry integration proof.
+    paths:
+      include: ["**/tests/integration/**"]
+    patterns:
+      - pattern: vi.spyOn($MODULE, $METHOD)
+      - metavariable-regex:
+          metavariable: $METHOD
+          regex: '.*(processValidatedInquiry|verifyTurnstileDetailed|checkInquiryRateLimit|sendInquiryEmail|createAirtableLead).*'
+
   - id: nextjs-unsafe-dangerouslySetInnerHTML
     # 匹配任意 JSX 元素上的 dangerouslySetInnerHTML（含带空格/模板串/obj.prop 形态）。
     # 旧的 pattern-regex 把 Semgrep 元变量语法 $VAR 误写进正则，\$ 只匹配字面美元符号，

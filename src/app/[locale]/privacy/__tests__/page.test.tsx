@@ -12,8 +12,8 @@ vi.mock("@/lib/content/legal-page", () => ({
   loadLegalPage: mockLoadLegalPage,
 }));
 
-vi.mock("@/lib/seo-metadata", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/seo-metadata")>();
+vi.mock(import("@/lib/seo-metadata"), async (importOriginal) => {
+  const actual = await importOriginal();
   return {
     ...actual,
     generateMetadataForPath: mockGenerateMetadataForPath,

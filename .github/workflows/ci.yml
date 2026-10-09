@@ -180,6 +180,9 @@ jobs:
         # 扫描全仓，包括实际执行的脚本和根配置。
         run: semgrep scan --error --severity ERROR --config semgrep.yml .
 
+      - name: 验证测试治理规则的正反例与扫描范围
+        run: python3 tests/fixtures/semgrep/check.py
+
   cloudflare-build:
     name: L4 Cloudflare 构建合同
     runs-on: ubuntu-latest

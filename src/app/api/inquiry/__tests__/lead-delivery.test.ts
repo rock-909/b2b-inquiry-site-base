@@ -1,5 +1,5 @@
 /**
- * 投递 lane：成功路径、部分失败、处理错误、蜜罐与 schema 字段覆盖合同。
+ * 路由编排：字段转发、异常映射和蜜罐；真实投递容灾由 Node 集成证明。
  */
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
@@ -36,7 +36,7 @@ vi.mock("@/lib/security/turnstile", async () => {
   return { verifyTurnstileDetailed: routeMocks.verifyTurnstileDetailed };
 });
 
-describe("/api/inquiry lead delivery", () => {
+describe("/api/inquiry delivery orchestration", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -83,52 +83,6 @@ describe("/api/inquiry lead delivery", () => {
     expect(firstData.success).toBe(true);
     expect(secondData.success).toBe(true);
     expect(routeMocks.processValidatedInquiry).toHaveBeenCalledTimes(2);
-  });
-
-  it("should return success when the record is created but email fails", async () => {
-    routeMocks.processValidatedInquiry.mockResolvedValueOnce({
-      success: true,
-      emailSent: false,
-      recordCreated: true,
-      referenceId: "ref-record-123",
-    });
-
-    const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data).toEqual({
-      success: true,
-      data: {
-        referenceId: "ref-record-123",
-      },
-    });
-    expect(data.errorCode).toBeUndefined();
-    expect(data.data).not.toHaveProperty("partialSuccess");
-  });
-
-  it("should return processing error when the record is not created", async () => {
-    routeMocks.processValidatedInquiry.mockResolvedValueOnce({
-      success: false,
-      emailSent: false,
-      recordCreated: false,
-      error: "PROCESSING_FAILED",
-    });
-
-    const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(500);
-    expect(data).toEqual({
-      success: false,
-      errorCode: API_ERROR_CODES.INQUIRY_PROCESSING_ERROR,
-    });
-    expect(response.headers.get("x-request-id")).toBeNull();
-    expect(response.headers.get("x-observability-surface")).toBeNull();
   });
 
   it("returns a success-shaped reference for a filled website honeypot", async () => {
