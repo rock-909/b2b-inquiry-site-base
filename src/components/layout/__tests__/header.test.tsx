@@ -1,10 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/layout/header";
-
-vi.mock("@/components/layout/logo", () => ({
-  Logo: () => <div data-testid="logo">Logo</div>,
-}));
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 
 vi.mock("@/components/layout/header-client", () => ({
   LanguageToggleIsland: () => (
@@ -50,6 +47,9 @@ describe("Header", () => {
   it("renders the production navigation surface", () => {
     renderHeader();
 
+    expect(
+      screen.getByRole("link", { name: SINGLE_SITE_CONFIG.name }),
+    ).toHaveAttribute("href", "/");
     expect(
       screen.getByRole("navigation", { name: "Main navigation" }),
     ).toBeInTheDocument();

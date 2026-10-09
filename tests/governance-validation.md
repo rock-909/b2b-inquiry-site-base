@@ -109,3 +109,60 @@ blocks the aggregate CI job. All changed `src/` paths are test files.
 
 No check here proves Worker bindings, real Airtable persistence, Resend delivery
 or inbox receipt. Those remain production acceptance work, not mocked evidence.
+
+## Follow-up: composition and replacement negative checks
+
+A subsequent review correctly noted that removing the fake-Logo assertion
+without a replacement lost Header composition coverage. The Logo mock is now
+removed; the Header test renders the real Logo and asserts the accessible
+brand link points home. The existing routing test adapter is unchanged.
+
+The following focused checks were executed in an archived disposable copy,
+`/tmp/b2b-governance-negative-KjkMzJ`, with installed dependencies linked from
+the delivery worktree. No production file in either Git worktree was edited.
+Each unit mutant was restored before applying the next one.
+
+```sh
+pnpm exec vitest run --configLoader=native \
+  src/components/layout/__tests__/header.test.tsx \
+  tests/architecture/env-boundary.test.ts \
+  tests/architecture/runtime-dependencies.test.ts \
+  --reporter=json --outputFile=evidence/baseline.json
+```
+
+Baseline: 17 passed. For each row below, ran the same Vitest invocation with
+only that row's test file and `--outputFile=evidence/<name>-mutant.json`.
+
+| Name | Test file | Isolated fault | Observed result (exit 1) |
+| --- | --- | --- | --- |
+| header | `src/components/layout/__tests__/header.test.tsx` | Replace Header's `<Logo locale={locale} />` with `{null}` | 1 failed / 3 passed; accessible brand link not found |
+| env | `tests/architecture/env-boundary.test.ts` | Replace getter allowlist check/read with `return process.env[key]` | 6 failed; expected function to throw |
+| graph | `tests/architecture/runtime-dependencies.test.ts` | Add `import "zod"` to logger | 2 failed / 5 passed; public/logger and transitive form dependency sets contain a forbidden entry |
+| deferred | `tests/architecture/runtime-dependencies.test.ts` | Replace deferred form's lazy import with static `import { InquiryForm }` | 1 failed / 6 passed; expected dynamic=true, received false |
+
+After restoring all four source changes, the baseline command with
+`--outputFile=evidence/restored.json` passed all 17 cases (exit 0).
+
+Browser fault injection used copies of the two specs, against the already-built
+local delivery server (not providers). Executed before injection, with injection,
+and after removal:
+
+```sh
+env PLAYWRIGHT_BASE_URL=http://localhost:3000 pnpm exec playwright test \
+  tests/e2e/seo-validation.spec.ts tests/e2e/not-found-status.spec.ts \
+  --project chromium --workers 1 --grep 'homepage OG|root 404' --reporter=list
+```
+
+- Baseline: 2 passed (exit 0).
+- OG fault: after navigation, change the rendered `og:image` URL to local
+  `/missing-og-negative.png`. The real image HTTP check fails: expected 200,
+  received 404.
+- Root-404 fault: after navigation, append a `meta[property="og:image"]` to
+  the actual document head. The DOM assertion fails: expected 0, received 1.
+- Injected run: both assertions fail (exit 1), not a navigation/build error.
+- Restored run: 2 passed (exit 0).
+
+These browser checks prove sensitivity to broken observable output; they are
+not claimed as production-source mutants. No fault-injection code is committed.
+`pnpm lint:check`, `pnpm format:check`, and `git diff --check` also passed for
+the preceding review correction.
