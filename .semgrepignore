@@ -5,7 +5,6 @@ node_modules/
 .next-lighthouse/
 .open-next/
 .wrangler/
-.lavish/
 reports/
 test-results/
 coverage/

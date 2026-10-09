@@ -25,6 +25,15 @@ const MISSING_PATHS = [
 // PNG 在 firefox 上等不到 domcontentloaded，会顶满 30s 超时——测的东西跟浏览器怎么
 // 展示这个响应无关，不该受它影响。
 test.describe("Missing URLs answer 404", () => {
+  test("root 404 does not publish inherited OG image metadata", async ({
+    page,
+  }) => {
+    // 带点路径跳过 locale proxy，真实根 404 不应继承缺少 metadataBase 的图片。
+    const response = await page.goto("/random.txt");
+    expect(response?.status()).toBe(404);
+    await expect(page.locator('meta[property="og:image"]')).toHaveCount(0);
+    await expect(page.locator('meta[name="twitter:image"]')).toHaveCount(0);
+  });
   for (const path of MISSING_PATHS) {
     test(`${path} returns 404`, async ({ request }) => {
       const response = await request.get(`http://localhost:3000${path}`);

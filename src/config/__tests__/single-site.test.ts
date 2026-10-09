@@ -1,4 +1,3 @@
-import { existsSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_FACTS } from "@/config/single-site";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
@@ -31,16 +30,8 @@ describe("single-site", () => {
     expect(SINGLE_SITE_CONFIG.baseUrl).toBe(TEMPLATE_BASE_URL);
   });
 
-  it("publishes the configured OG image from a real public asset", () => {
+  it("publishes the configured OG image in generated metadata", () => {
     const REFERENCE_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Checked-in asset configuration, not request input.
-    expect(existsSync(`public${REFERENCE_OG_IMAGE}`)).toBe(true); // nosemgrep: test-no-file-existence-assertion -- 公开 metadata 指向的资源必须可用。
-
-    // A root App Router metadata file also applies to Next's root 404, which
-    // sits above the locale layout's metadataBase and falls back to localhost.
-    // eslint-disable-next-line security/detect-non-literal-fs-filename -- Checked-in asset configuration, not request input.
-    expect(existsSync(`src/app${REFERENCE_OG_IMAGE}`)).toBe(false); // nosemgrep: test-no-file-existence-assertion -- 防止 Next 文件约定覆写 root 404 metadata 的 localhost OG 回归。
-
     const metadata = generateMetadataForPath({
       locale: "en",
       pageType: "home",

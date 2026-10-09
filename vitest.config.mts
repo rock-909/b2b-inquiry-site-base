@@ -42,7 +42,6 @@ export default defineConfig({
     // 使用 Vitest 默认 test/spec discovery，只排除非 Vitest 输入。
     exclude: [
       ...configDefaults.exclude,
-      ".lavish/**",
       "tests/e2e/**",
       "**/{fixtures,__fixtures__}/**",
       "**/setup.{js,jsx,ts,tsx}",

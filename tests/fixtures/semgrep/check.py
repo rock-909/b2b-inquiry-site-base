@@ -8,7 +8,7 @@ import subprocess
 
 fixture_root = Path(__file__).resolve().parent
 repo = fixture_root.parents[2]
-targets = sorted(fixture_root.rglob("*.test.ts"))
+targets = sorted([*fixture_root.rglob("*.ts"), *fixture_root.rglob("*.js")])
 expected = set()
 for target in targets:
     for index, line in enumerate(target.read_text().splitlines()):

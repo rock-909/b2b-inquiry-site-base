@@ -12,7 +12,7 @@ rules:
   - id: architecture-no-source-string-assertion
     languages: [typescript, javascript]
     severity: ERROR
-    message: Replace source spelling assertions with an import graph, AST policy or observable behavior.
+    message: Test observable behavior; enforce static dependency policies with their actual gate.
     paths:
       include: ["**/tests/architecture/**"]
     mode: taint
@@ -53,6 +53,58 @@ rules:
       - metavariable-regex:
           metavariable: $METHOD
           regex: '.*(processValidatedInquiry|verifyTurnstileDetailed|checkInquiryRateLimit|sendInquiryEmail|createAirtableLead).*'
+
+  - id: critical-route-no-runtime-cache
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Keep critical inquiry/health/contact entrypoints uncached. This is a static policy, not runtime proof.
+    paths:
+      include:
+        - "**/src/app/api/inquiry/route.*"
+        - "**/src/app/api/health/route.*"
+        - "**/src/app/*/contact/page.*"
+        - "**/src/app/*/contact/contact-page-data.*"
+    pattern-either:
+      - patterns:
+          - pattern-either:
+              - pattern: '"use cache";'
+              - pattern: '"use cache: private";'
+              - pattern: '"use cache: remote";'
+          - pattern-regex: '(?m)(?:^|(?<=[;{}]))\s*["'']use cache(?:: (?:private|remote))?["'']\s*;?'
+      - pattern: import { ... } from "next/cache"
+      - pattern: import $DEFAULT from "next/cache"
+      - pattern: import * as $CACHE from "next/cache"
+      - pattern: import "next/cache"
+      - pattern: import("next/cache")
+
+  - id: client-no-server-env-or-pii
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: Client entrypoints must use public runtime env and must not call server PII helpers.
+    paths:
+      include: ["**/src/**"]
+      exclude: ["**/__tests__/**", "**/*.test.*", "**/*.spec.*", "**/src/test/**"]
+    patterns:
+      - pattern-inside: |
+          "use client";
+          ...
+      - pattern-either:
+          - pattern: import { ... } from "@/lib/env"
+          - pattern: import $DEFAULT from "@/lib/env"
+          - pattern: import * as $ENV from "@/lib/env"
+          - pattern: import { ... } from "./env"
+          - pattern: import $DEFAULT from "./env"
+          - pattern: import * as $ENV from "./env"
+          - pattern: import("@/lib/env")
+          - pattern: import("./env")
+          - pattern: import { sanitizeEmail as $LOCAL, ... } from "@/lib/logger"
+          - pattern: import { sanitizeIP as $LOCAL, ... } from "@/lib/logger"
+          - pattern: import { sanitizeEmail, ... } from "@/lib/logger"
+          - pattern: import { sanitizeIP, ... } from "@/lib/logger"
+          - pattern: sanitizeEmail(...)
+          - pattern: sanitizeIP(...)
+          - pattern: $LOGGER.sanitizeEmail(...)
+          - pattern: $LOGGER.sanitizeIP(...)
 
   - id: nextjs-unsafe-dangerouslySetInnerHTML
     # 匹配任意 JSX 元素上的 dangerouslySetInnerHTML（含带空格/模板串/obj.prop 形态）。
