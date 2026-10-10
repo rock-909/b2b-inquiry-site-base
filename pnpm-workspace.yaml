@@ -72,6 +72,8 @@ overrides:
   undici@>=7.0.0 <7.29.0: 7.29.0
   # version floor; reached via @lhci/cli
   uuid: '>=14.0.0'
+  # version floor; reached via @tailwindcss/typography
+  postcss-selector-parser@<7.1.6: '>=7.1.6'
 peerDependencyRules:
   allowedVersions:
     '@tailwindcss/typography>tailwindcss': '4'
