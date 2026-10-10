@@ -2,6 +2,7 @@ import { getOfferingPath, OFFERINGS } from "../../src/config/offerings";
 import messages from "../../messages/base/en/messages.json";
 import { expect, test } from "@playwright/test";
 import { buildCanarySelectors } from "./smoke/canary-selectors";
+import { checkedInquiryStub } from "../helpers/inquiry-contract";
 
 /**
  * 内嵌表单面（首页内容区 / 产品详情页）的转化 journey。
@@ -14,14 +15,15 @@ test("product page CTA anchors to #inquiry with prefilled product context", asyn
 }) => {
   const selectors = buildCanarySelectors();
   await page.route("**/api/inquiry", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        success: true,
-        data: { referenceId: "e2e-ref-product" },
+    route.fulfill(
+      checkedInquiryStub({
+        status: 200,
+        body: {
+          success: true,
+          data: { referenceId: "e2e-ref-product" },
+        },
       }),
-    }),
+    ),
   );
   const offering = OFFERINGS[0]!;
   await page.goto(getOfferingPath(offering.id));
@@ -74,14 +76,15 @@ test("product page CTA anchors to #inquiry with prefilled product context", asyn
 test("home content section embeds a working inquiry form", async ({ page }) => {
   const selectors = buildCanarySelectors();
   await page.route("**/api/inquiry", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        success: true,
-        data: { referenceId: "e2e-ref-home" },
+    route.fulfill(
+      checkedInquiryStub({
+        status: 200,
+        body: {
+          success: true,
+          data: { referenceId: "e2e-ref-home" },
+        },
       }),
-    }),
+    ),
   );
   await page.goto("/");
 

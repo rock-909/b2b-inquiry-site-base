@@ -60,8 +60,8 @@ vi.mock("@/i18n/routing", () => ({
     <a href={href}>{children}</a>
   ),
 }));
-vi.mock("@/lib/seo-metadata", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/seo-metadata")>()),
+vi.mock(import("@/lib/seo-metadata"), async (importOriginal) => ({
+  ...(await importOriginal()),
   generateMetadataForPath: mockGenerateMetadataForPath,
 }));
 vi.mock("@/components/seo/json-ld-script", () => ({

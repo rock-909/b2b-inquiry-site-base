@@ -21,7 +21,6 @@ interface CloudflareArtifactConfigModule {
 }
 
 function loadChecker(): CloudflareArtifactConfigModule {
-  expect(fs.existsSync(SCRIPT_PATH), "checked-in artifact proof").toBe(true);
   return requireModule(SCRIPT_PATH) as CloudflareArtifactConfigModule;
 }
 

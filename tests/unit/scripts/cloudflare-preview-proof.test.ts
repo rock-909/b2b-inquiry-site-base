@@ -234,6 +234,7 @@ describe("runChildCommand", () => {
     );
     expect(result.status).toBeNull();
     expect(result.signal).toBe("SIGKILL");
+    // nosemgrep: test-no-file-existence-assertion -- 观察被终止子进程没有写出副作用，不是锁定仓库文件形状。
     expect(existsSync(marker)).toBe(false);
   });
 });

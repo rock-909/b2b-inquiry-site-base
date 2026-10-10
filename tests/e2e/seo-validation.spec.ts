@@ -12,6 +12,20 @@ function collectSchemaTypes(value: unknown): string[] {
 }
 
 test.describe("Rendered SEO contract", () => {
+  test("the homepage OG image is served as a real image", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/");
+    const image = page.locator('meta[property="og:image"]');
+    await expect(image).toHaveCount(1);
+    const imageUrl = new URL((await image.getAttribute("content"))!);
+    // 只验证本地构建服务的资源，不向 canonical 域名发请求。
+    const response = await request.get(imageUrl.pathname);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toMatch(/^image\//);
+    expect((await response.body()).length).toBeGreaterThan(0);
+  });
   for (const path of pages) {
     test(`${path} exposes canonical English metadata and valid JSON-LD`, async ({
       page,

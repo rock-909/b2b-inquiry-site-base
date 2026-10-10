@@ -200,13 +200,4 @@ describe("proxy next-intl boundary", () => {
     expect(config.matcher.join(" ")).not.toContain("admin");
     expect(config.matcher.join(" ")).not.toContain("ops");
   });
-
-  it("keeps proxy as the Cloudflare runtime entrypoint", async () => {
-    const fs = await import("node:fs");
-    const path = await import("node:path");
-    const repoRoot = path.resolve(__dirname, "../..");
-
-    expect(fs.existsSync(path.join(repoRoot, "src/proxy.ts"))).toBe(true);
-    expect(fs.existsSync(path.join(repoRoot, "src/middleware.ts"))).toBe(false);
-  });
 });
