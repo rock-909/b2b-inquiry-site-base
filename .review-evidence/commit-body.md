@@ -1,19 +1,23 @@
-# Review fix record / commit body
+# Change record / commit body
 
-R2: Derive both footer columns from the existing literal-typed page definitions, preserving all six routes, labels and ordering. Remove the rendering assertion without changing PATHS_CONFIG or its other consumers. R1's contact read entries remain unchanged under the owner's approved scope reduction.
+Exempt the Next.js release family from pnpm's default release cooldown and align `docs/技术栈.md` with reality. No dependency version or lockfile change.
 
-R3: Existing behavioral tests lacked deliberate negative-check evidence. No tests or SEO implementation changes were necessary. Each mutation below was applied independently, executed, and restored in a finally block before the next run.
+- `pnpm-workspace.yaml`: `minimumReleaseAgeExclude` lists `next`, `@next/*`, `eslint-config-next`; `minimumReleaseAge` stays unset (pnpm default, non-strict).
+- `pnpm-workspace.yaml`: drop the two Tailwind `allowedVersions` entries (`@tailwindcss/typography>tailwindcss`, `tailwindcss-animate>tailwindcss`); keep the three eslint-plugin entries.
+- `docs/技术栈.md`: cooldown policy, the allowed-exceptions list, and the OpenNext Node proxy bundler labelled experimental.
 
-## Executed verification
+## Executed verification (pnpm 11.24.0, serial)
 
-- `pnpm install --frozen-lockfile`: passed before editing or testing; lockfile unchanged.
-- `pnpm exec vitest run src/components/seo/__tests__/json-ld-script.test.ts -t 'renders one @context'`: failed with exit 1 after replacing the graph context with `https://invalid.example`; expected `https://schema.org`.
-- Same command: failed with exit 1 after replacing generated identity nodes with an empty array; actual graph types were `[FAQPage]` instead of `[Organization, WebSite, FAQPage]`.
-- `pnpm exec vitest run src/components/seo/__tests__/json-ld-script.test.ts -t 'treats identity schema failures'`: failed with exit 1 after changing the identity-generation catch to rethrow; rejected with `Error: boom` instead of resolving to null.
-- `pnpm exec vitest run src/lib/__tests__/seo-metadata.test.ts -t 'falls back to the site default description when seo.description is empty'`: failed with exit 1 after replacing the default-description return with an empty string; expected `Default Description`.
-- After restoring all mutations, `pnpm exec vitest run src/components/footer/__tests__/footer.test.tsx src/components/seo/__tests__/json-ld-script.test.ts src/lib/__tests__/seo-metadata.test.ts`: passed, 3 files / 32 tests, exit 0.
-- Required React skill gate `pnpm react:doctor`: passed, zero diagnostics. The changed-scope wrapper selected full mode in this checkout.
+- `pnpm install --frozen-lockfile`: passed; `git status` clean afterwards (pnpm-lock.yaml and pnpm-workspace.yaml unchanged).
+- `pnpm install` (plain): "Already up to date"; `git status` clean (lockfile and workspace file unchanged, no auto-appended `minimumReleaseAgeExclude` entry).
+- `pnpm peers check`: "No peer dependency issues found" (exit 0) with the two Tailwind entries removed. Lockfile peer ranges: `@tailwindcss/typography@0.5.20` tailwindcss `>=3.0.0 || >=4.0.0 || insiders`; `tailwindcss-animate@1.0.7` tailwindcss `>=3.0.0 || insiders`; both resolve to tailwindcss 4.3.3.
+- `pnpm format:check`: "All matched files use Prettier code style!".
 
-## Outer executor handoff
+## Reference searches
 
-`pnpm type-check` and `pnpm lint:check` were not run in this review phase: the active phase boundary reserves the independent validation phases to the outer executor and explicitly prohibits the complete lint suite here. Run those gates there and append their actual results to the commit body; this record does not claim they passed. No commit, push, PR, CI, or pipeline-control action was performed here.
+- `minimumReleaseAge`: only `pnpm-workspace.yaml` (comment, `minimumReleaseAgeExclude`) and `docs/技术栈.md`; no explicit `minimumReleaseAge` anywhere, so the default non-strict behavior holds.
+- `allowedVersions` / Tailwind peer keys: no remaining reference outside `pnpm-workspace.yaml` and the docs bullet, which lists only the three eslint plugins.
+- `pnpm view <pkg>@latest peerDependencies.eslint`: eslint-plugin-import `^2 || … || ^9`, eslint-plugin-react `… || ^9.7`, eslint-plugin-jsx-a11y `… || ^9`; none declares eslint 10, so the three remaining entries are still needed.
+- `turbopackRustReactCompiler`: enabled at `next.config.ts:69` and asserted in `tests/architecture/next-config-contract.test.ts`; matches the docs exception.
+- miniflare alpha: `pnpm-lock.yaml` resolves `miniflare@5.20260903.0-alpha` under wrangler 4.129.0; matches the docs statement.
+- OpenNext experimental: `node_modules/@opennextjs/cloudflare/dist/cli/build/build.js:68` warns "Node.js middleware support is experimental in cloudflare, and not officially maintained by OpenNext maintainers"; matches the docs statement.
