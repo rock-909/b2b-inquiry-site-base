@@ -68,7 +68,7 @@ const nextConfig: NextConfig = {
   experimental: {
     turbopackRustReactCompiler: true,
     // Keep Next.js on its JavaScript compiler API path. The project uses the
-    // same TypeScript 6.0.2 package for CLI checks and tooling.
+    // same TypeScript 6.x package for CLI checks and tooling.
     useTypeScriptCli: false,
     // 内联关键CSS（experimental.inlineCss）保持禁用：此前的记录称它在当前构建链路下
     // 会引入 FOUC 和首屏 CLS 劣化（本次未重新测量）。Lighthouse 是手动性能证明
