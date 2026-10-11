@@ -54,7 +54,9 @@ Keep `src/proxy.ts` as the runtime entrypoint. Do not restore
 The exact stable OpenNext dependency owns the Node.js proxy bundling and
 instrumentation compatibility path. Keep `nodejs_compat` enabled, and do not
 replace the stable package with `pkg.pr.new`, a canary, or a local package patch
-without a separate compatibility experiment.
+without a separate compatibility experiment. The one recorded exception is the
+temporary `preview-props` patch documented in `docs/技术栈.md`, with its
+compatibility experiment and removal condition.
 
 The matcher must remain static string literals.
 
