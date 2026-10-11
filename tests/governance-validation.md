@@ -30,7 +30,7 @@ Delivery worktree: `/tmp/b2b-test-governance-delivery`.
 | `pnpm exec playwright test tests/e2e/seo-validation.spec.ts tests/e2e/not-found-status.spec.ts --project chromium --workers 1` | 15 passed, no retry |
 | `pnpm exec semgrep scan --config semgrep.yml --error --strict --metrics=off --disable-version-check` | 417 files, 0 findings, no parse errors |
 | `python3 tests/fixtures/semgrep/check.py` | 5 scanned fixture files, 19 exact findings, no unexpected matches (Semgrep 1.176.0) |
-| `uv tool run --from semgrep==1.162.0 --python 3.12 python tests/fixtures/semgrep/check.py` | Same scanner-fixture proof under the CI version |
+| `uv tool run --from semgrep==1.162.0 --python 3.12 python tests/fixtures/semgrep/check.py` | Same scanner-fixture proof under the CI version pinned at that date |
 
 During development the scanner fixture check failed on invalid import patterns,
 then caught a missing unaliased import and a false positive for an ordinary
