@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { load } from "js-yaml";
 import { describe, expect, it } from "vitest";
 
@@ -79,6 +79,28 @@ function executableLines(run: string): string[] {
 }
 
 describe("CI workflow contract", () => {
+  // 任何 workflow 的第三方 action 都必须固定到完整 commit SHA，避免浮动 tag 被改写后进入 CI。
+  it("pins every workflow action to a full commit SHA", () => {
+    const workflowDir = ".github/workflows";
+    const files = readdirSync(workflowDir).filter((name) =>
+      /\.ya?ml$/u.test(name),
+    );
+    const unpinned = files.flatMap((file) => {
+      const workflow = load(readRepoFile(`${workflowDir}/${file}`)) as {
+        jobs?: Record<string, { steps?: readonly { uses?: string }[] }>;
+      };
+      return Object.values(workflow.jobs ?? {})
+        .flatMap((job) => job.steps ?? [])
+        .map((step) => step.uses)
+        .filter((uses): uses is string => uses !== undefined)
+        .filter((uses) => !/@[0-9a-f]{40}$/u.test(uses))
+        .map((uses) => `${file}: ${uses}`);
+    });
+
+    expect(files.length).toBeGreaterThan(0);
+    expect(unpinned).toEqual([]);
+  });
+
   // CI 作业和步骤都必须传播失败；其他工作流有自己的契约。
   it("keeps no ci.yml step or job that can never fail", () => {
     const jobs = Object.entries(readCiWorkflowConfig().jobs ?? {});
