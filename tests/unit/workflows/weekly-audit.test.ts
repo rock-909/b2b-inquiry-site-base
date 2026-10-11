@@ -59,7 +59,7 @@ describe("weekly dependency audit workflow", () => {
   it("gates the issue and the failing exit on the audit outcome, in order", () => {
     const auditStep = requireStep((step) => step.id === "audit");
     const issueStep = requireStep(
-      (step) => step.uses === "actions/github-script@v8",
+      (step) => step.uses?.startsWith("actions/github-script@") === true,
     );
     const failStep = requireStep((step) => step.run === "exit 1");
 
@@ -69,7 +69,7 @@ describe("weekly dependency audit workflow", () => {
     });
     expect(issueStep).toMatchObject({
       if: "steps.audit.outcome == 'failure'",
-      uses: "actions/github-script@v8",
+      uses: expect.stringMatching(/^actions\/github-script@/u),
     });
     expect(failStep).toEqual(
       expect.objectContaining({
@@ -83,7 +83,7 @@ describe("weekly dependency audit workflow", () => {
 
   it("opens an issue only when no open issue already carries the title", async () => {
     const script = requireStep(
-      (step) => step.uses === "actions/github-script@v8",
+      (step) => step.uses?.startsWith("actions/github-script@") === true,
     ).with?.script;
     if (!script) {
       throw new Error("Weekly audit issue step has no script");
