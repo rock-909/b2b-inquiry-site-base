@@ -74,9 +74,6 @@ export default defineConfig({
     testTimeout: 12000, // 从 8000ms 增加到 12000ms，适应 CI 环境资源限制
     hookTimeout: 6000, // 从 4000ms 增加到 6000ms
 
-    // 并发设置 - 优化 CI 环境性能
-    pool: "threads",
-
     // 添加测试重试机制 - 仅用于已知 flaky 测试，应在具体测试上使用 test.retry()
     // retry: 2, // 已移除全局 retry，遇到 flaky 测试应修复根因或局部声明
 
