@@ -1,72 +1,53 @@
-# Stable dependency refresh — 2026-10-17
+# Browser recovery fixes — 2026-10-17
 
-Refresh the current single-site stack after the previous upgrade PRs. Registry checks cover all 63 direct dependencies; 26 declarations change, and `pnpm update --depth Infinity` refreshes compatible transitive dependencies. No production source or inquiry contract changes.
+Restore the complete browser matrix and server-rendered recovery content for ordinary missing public routes. No dependency changes, deployment, real inquiry or provider calls. The user authorized Codex to execute the remaining delivery gates while retaining an independent GPT-6 review; the repository's trusted no-mistakes configuration is unchanged. This is not a claim that the Claude-backed no-mistakes pipeline passed.
 
-## Selected versions and limits
+## Observed failures and changes
 
-- Next / eslint-config-next 16.4.2, React / React DOM 19.3.1, OpenNext Cloudflare 1.20.12 (AWS adapter 4.1.11), Wrangler 4.151.0.
-- Node 24.22.0 LTS in `.node-version`; the supported minimum stays 24.20.0. pnpm 11.28.6 updates the project pin and minimum.
-- TypeScript stays 6.0.3: typescript-eslint 8.71.2 supports `<6.1.0`, and TypeScript 7.0.2 has no JavaScript compiler API entry used by this project.
-- Node 26 and its types are outside the current Node 24 LTS line; `@types/node` moves to 24.19.2.
-- At 2026-10-17 07:08 UTC, ESLint 10.13.0, Wrangler 4.151.1 and Lucide 1.59.0 were younger than the existing 24-hour cooldown. Keep ESLint 10.12.0; select Wrangler 4.151.0 and Lucide 1.58.0. The established Next-family cooldown exception remains unchanged.
-- Lefthook 2.2.2 installation failed with `ERR_PNPM_TRUST_DOWNGRADE`: the release lacks the stronger publication evidence of earlier releases. Select 2.2.1, which has GitHub trusted-publisher / SLSA provenance. No trust-policy exception.
-- pnpm 12.14.0 starts through a temporary dlx / newer launcher, but the project's existing pnpm 11.24 bootstrap twice failed with `spawnSync .../12.14.0/bin/pnpm ENOEXEC`. Use the latest working 11.x release; no global tool replacement or private bootstrap wrapper.
-- All five GitHub Actions latest release tags still match the current pins. Semgrep moves from 1.180.0 to 1.181.0.
-- Existing overrides, peer exceptions and Cloudflare compatibility date are unchanged. The Miniflare exception now describes the upstream beta dependency carried by Wrangler.
-
-## Reproduced native test failure and correction
-
-On the upgraded graph, `pnpm test --reporter=json --outputFile=reports/dependency-upgrade-vitest.json` exited 139 (`Segmentation fault: 11`) with the existing forced `pool: "threads"`. A second run with `--maxWorkers=2` also exited 139. macOS crash evidence identifies a WorkerThread native-module registration stack through `swc.darwin-arm64.node` and its decoded native carrier. The isolated Node inquiry suite (28 tests) and Next-config suite (7 tests) pass.
-
-The same complete suite with `--pool=forks` passed: 175 files / 1203 tests. Remove the explicit threads override to use Vitest's default process isolation. Then the original command, without `--pool` or `--maxWorkers`, passed all 175 files / 1203 tests. Discovery, assertions and retries are unchanged.
-
-The official Vitest native-code troubleshooting guide recommends process isolation for this failure class: https://github.com/vitest-dev/vitest/blob/main/docs/guide/common-errors.md . The exact underlying upstream native defect is not claimed as proven.
+- Both original mobile failures reproduce: the forced-colors test opens a desktop-only language menu that is hidden at mobile widths. Mobile Chrome and Mobile Safari each time out waiting for that dropdown. The production mobile drawer instead contains native details / summary and language links.
+- The test now opens the actual mobile drawer, activates its language disclosure with Enter, and uses keyboard navigation to focus Español. It still requires the correct link destination and a visible outline at least 2px wide. The desktop highlighted-item assertions remain intact. On macOS WebKit, ordinary Tab skips links; an actual diagnostic showed Tab focusing the close button and Option-Tab focusing Español. Only that platform uses Alt+Tab. Apple documents this shortcut: https://support.apple.com/en-gb/guide/safari/cpsh003/mac .
+- Without JavaScript, English and Spanish ordinary missing pages and missing products return HTTP 404 but no lang, heading or recovery link. The existing proxy already rewrites these requests to a per-locale placeholder with status 404. Render the existing localized recovery view directly at that placeholder instead of throwing into a client-only error recovery path. Keep noindex metadata, the existing route table and proxy unchanged. Remove the obsolete i18n rule exemption for this page.
+- Direct catch-all requests excluded by the proxy (for example /es/random.txt) still call notFound(); rendering them normally would produce an incorrect HTTP 200. Two added HTTP tests reproduced that intermediate regression before adding the guard. Dotted URLs retain their prior framework/error-boundary behavior; their no-JavaScript empty HTML remains outside this bounded fix and is not presented as resolved. Repairing that boundary requires a separate root-layout / framework-error design decision.
 
 ## Executed verification
 
-Commands ran on Node 24.22.0 / pnpm 11.28.6. Builds and Playwright ran serially against `.next`.
+Node 24.22.0 / pnpm 11.28.6. Builds, OpenNext and Playwright servers run serially.
 
-| Command | Observed result |
+| Command / controlled check | Observed result |
 | --- | --- |
-| `pnpm install`, then `pnpm update --depth Infinity` | Passed; no new overrides or policy exclusions |
-| Move node_modules to Trash, then `pnpm install --frozen-lockfile` | Passed, fresh installation |
-| `pnpm peers check` | No peer dependency issues |
-| `pnpm content:check` | Both locales valid, 154 keys each |
-| `pnpm type-check` / `pnpm type-check:tests` | Passed |
-| `pnpm lint:check` / `pnpm format:check` | Passed |
-| `pnpm knip:check` / `pnpm knip:check:production` | Passed; existing CSS configuration hints only |
-| `pnpm exec dependency-cruiser src --config .dependency-cruiser.js -T err` | Passed, 200 modules / 445 dependencies |
-| `pnpm react:doctor` | complete=true, 0 errors / 0 warnings; no production-source diff to scan |
-| `pnpm test --reporter=json --outputFile=reports/dependency-upgrade-vitest.json` | Passed, 175 files / 1203 tests after removing forced threads |
-| `uv tool run --from semgrep==1.181.0 --python 3.12 python tests/fixtures/semgrep/check.py` | Passed, 5 fixtures / 19 exact findings / no extras |
-| Same tool environment: `semgrep scan --config semgrep.yml --error --strict --metrics=off --disable-version-check --quiet --json-output reports/semgrep-upgrade.json` | Passed, 417 files / 0 findings / 0 parse errors |
-| `pnpm build` with preview + local URL + test-mode public variables | Passed, 24 static pages |
-| `node scripts/quality/checks/client-boundary.js --build-artifacts` | Passed; individual marker chunk observation, not total browser transfer |
-| `NEXT_PUBLIC_SITE_URL=http://localhost:3000 node scripts/quality/checks/prerender-static.js` | Passed |
-| `CI=1 CI_FLAKE_SAMPLING=1 pnpm exec playwright test --project=chromium` | 79 passed, zero retries |
-| `pnpm website:build:cf` with preview + sentinel URL + test mode false | Passed, Next16.4.2 / OpenNext1.20.12 / AWS4.1.11 |
-| `node scripts/quality/checks/cloudflare-config-check.js` | Passed |
-| `node scripts/quality/checks/cloudflare-artifact-config.js` | Passed, 3 artifacts |
-| `node scripts/quality/checks/cloudflare-static-asset-headers.js` | Passed |
-| `APP_ENV=preview pnpm exec wrangler deploy --dry-run --env preview` | Passed; Total Upload 5735.58 KiB / gzip 1672.85 KiB; no upload |
-| `pnpm exec opennextjs-cloudflare preview --env preview` | Local Worker started; 21 local R2 entries populated |
-| `node scripts/quality/checks/cloudflare-smoke.js cf-preview-smoke --include-api-health --rounds 2` | Passed against local Worker |
-| `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url http://127.0.0.1:8787` | Passed against local Worker, including 415 inquiry admission probe |
-| Extra local HTTP probes | All 7 Spanish public page / product routes return 200 and lang=es; cross-origin JSON inquiry rejected with 403 before delivery |
-| `pnpm exec eslint vitest.config.mts` and focused Prettier after pool edit | Passed |
+| Original forced-colors spec, grep `highlighted language`, Mobile Chrome then Mobile Safari | Each failed before the test correction: desktop dropdown never appears |
+| New 4 no-JavaScript cases on original page behavior, Chromium | 4 failed: HTTP 404 with missing lang and recovery content |
+| New catch-all behavior unit test with original page function | Failed before the page fix; original function does not return visible recovery content |
+| Temporarily disable `*:focus-visible` outline only in the test browser and run mobile language case | Fails at the explicit outline assertion; restore the override and it passes. No production CSS change |
+| Added /en/random.txt and /es/random.txt request tests against intermediate direct-render build | Both failed with actual 200; guard restores notFound for non-placeholder catch-all requests |
+| `pnpm type-check` and `pnpm type-check:tests` | Passed |
+| `pnpm lint:check` and `pnpm format:check` | Passed |
+| `pnpm test src/__tests__/proxy-locale-cookie.test.ts 'src/app/[locale]/__tests__/not-found.test.tsx' 'src/app/[locale]/[...rest]/__tests__/not-found.test.tsx' 'src/app/[locale]/[...rest]/__tests__/page.test.tsx'` | 4 files / 18 tests passed |
+| `pnpm react:doctor` | complete=true, 0 errors / 0 warnings |
+| `CI=1 CI_FULL_COVERAGE=true CI_FLAKE_SAMPLING=1 PLAYWRIGHT_REBUILD_SERVER=true pnpm exec playwright test tests/e2e/forced-colors-focus.spec.ts tests/e2e/not-found-recovery.spec.ts --project=chromium --project=webkit --project='Mobile Chrome' --project='Mobile Safari'` | Final code: 40 passed, zero retries |
+| `APP_ENV=preview NEXT_PUBLIC_SITE_URL=https://example.invalid NEXT_PUBLIC_BASE_URL=https://example.invalid NEXT_PUBLIC_TEST_MODE=false NODE_ENV=production pnpm website:build:cf` | Final code: passed, 24 static pages |
+| `node scripts/quality/checks/cloudflare-config-check.js`, `cloudflare-artifact-config.js`, `cloudflare-static-asset-headers.js` | All passed against final Cloudflare artifact |
+| `APP_ENV=preview pnpm exec wrangler deploy --dry-run --env preview` | Passed; no upload |
+| `pnpm exec opennextjs-cloudflare preview --env preview`, then `node scripts/quality/checks/cloudflare-smoke.js cf-preview-smoke --include-api-health --rounds 2` | Local Worker: passed |
+| `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url http://127.0.0.1:8787` | Local Worker: passed, including 415 inquiry admission probe |
+| `CI=1 CI_FLAKE_SAMPLING=1 PLAYWRIGHT_BASE_URL=http://localhost:8787 pnpm exec playwright test tests/e2e/not-found-recovery.spec.ts --project=chromium` | Final local Worker: all 8 passed, including no-JS documents and direct catch-all status guard |
 | `git diff --check` | Passed |
 
-## Security report boundary
+Local logs, traces and controlled-check artifacts are retained under the original checkout's ignored `.planning/browser-recovery-2026-10-17/evidence/`; CI independently runs the tracked tests. Local evidence does not establish a live deployment.
 
-`pnpm audit --prod --json` reports zero vulnerabilities. Full `pnpm audit --json` moves from baseline 37 (1 critical / 18 high / 15 moderate / 3 low) to 4 (3 high / 1 moderate), all development-only and already present in the baseline. No audit ignore was added. The remaining reports have no published patched version:
+## Remaining development dependency advisories
 
-- extract-zip via Lighthouse / Puppeteer: GHSA-jmr9-qjv8-65gv and GHSA-7pqw-9j4j-h8q3.
-- braces via eslint-config-next / fast-glob / micromatch: GHSA-vfj7-8cjw-p6xm.
-- sprintf-js via Lighthouse / js-yaml / argparse: GHSA-hp3w-g68c-fv3c.
+Fresh `pnpm audit --prod --json`: 0. Full `pnpm audit --json`: 3 high / 1 moderate. All four advisories remain unpatched in current registry releases; no audit ignore, private patch, new override or removal of a check tool was introduced.
 
-This is local engineering / local Worker evidence. It does not prove production deployment, real provider writes, email delivery, or owner inbox receipt. No real inquiry, provider call, deployment, or full mutation suite ran.
+| Advisory | Current consumer and risk |
+| --- | --- |
+| https://github.com/advisories/GHSA-jmr9-qjv8-65gv | extract-zip 2.0.1 via Lighthouse / Puppeteer browser installer: malicious symlink archive traversal |
+| https://github.com/advisories/GHSA-7pqw-9j4j-h8q3 | Same installed extract-zip: archive symlinks can cause writes outside the destination |
+| https://github.com/advisories/GHSA-vfj7-8cjw-p6xm | braces 3.0.3 via Next ESLint / fast-glob / micromatch: deeply nested glob patterns exhaust the stack |
+| https://github.com/advisories/GHSA-hp3w-g68c-fv3c | sprintf-js 1.1.3 via LHCI utils / js-yaml / argparse: precision specifiers exhaust resources |
 
+Current consumer inspection: Next ESLint passes its own rootDir setting (not inquiry input) to glob; this repository does not configure rootDir. LHCI custom Puppeteer startup requires puppeteerScript, which this repository does not configure; ordinary LHCI uses chrome-launcher. Argparse formats its own CLI help. These observations limit the observed exposure; they do not eliminate the advisories. A compatible upstream fix is still required. No malicious archive / denial-of-service proof was executed.
 
-## Existing 404 HTML boundary
+## Existing user-owned mutation work
 
-An extra raw-HTML probe requiring `lang="es"`, H1 and main content on `/es/nope` and `/es/products/not-real` failed: these responses are 404 with an `__next_error__` shell and localized content in the hydration payload. A fresh archive of `origin/main@8fed5b47` with its own frozen install, Next16.3.8 / OpenNext1.20.9 build and local Worker reproduced the same shell on both paths and `/nope`. The generated placeholder artifacts agree. This pre-existing no-JavaScript 404 limitation is not fixed or presented as passing here; browser recovery coverage still passes with JavaScript. Normal Spanish public pages contain server-rendered lang=es HTML. The upgrade does not introduce this observed boundary.
+Preserve the original checkout's `test:mutation`, `scripts/quality/checks/mutation-audit.mjs` and all 26 `.lavish` files byte-for-byte; none is part of this change. The mutation script is an unintegrated draft, not a trustworthy gate: it edits production source in place, has only in-memory restoration, does not verify a clean baseline or set a timeout, treats every child-process failure as a killed mutant, excludes skips from its denominator, and does not fail the process when mutants survive. Some mutant labels do not match their edits. Do not run or publish it as validation evidence in this delivery. Before adoption it needs an isolated disposable copy, baseline proof, assertion-versus-infrastructure error classification, accurate mutations, and failing exit status for survivors / invalid runs. `.lavish` contains historical drafts and evidence; its old checkpoint is not current project status.

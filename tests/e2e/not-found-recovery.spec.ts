@@ -1,5 +1,33 @@
 import { expect, test } from "@playwright/test";
 
+test.describe("404 recovery without JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  for (const [locale, prefix, title, homeLabel] of [
+    ["en", "", "Page not found", "Back to homepage"],
+    ["es", "/es", "Página no encontrada", "Volver al inicio"],
+  ] as const) {
+    for (const path of ["/this-page-does-not-exist", "/products/not-real"]) {
+      test(`${prefix}${path} serves a localized recovery document`, async ({
+        page,
+      }) => {
+        const response = await page.goto(`${prefix}${path}`, {
+          waitUntil: "domcontentloaded",
+        });
+        expect(response?.status()).toBe(404);
+        await expect(page.locator("html")).toHaveAttribute("lang", locale);
+        const main = page.getByRole("main");
+        await expect(
+          main.getByRole("heading", { level: 1, name: title, exact: true }),
+        ).toBeVisible();
+        const home = main.getByRole("link", { name: homeLabel, exact: true });
+        await expect(home).toBeVisible();
+        await expect(home).toHaveAttribute("href", prefix || "/");
+      });
+    }
+  }
+});
+
 test("unknown routes render the site 404 with a homepage recovery link", async ({
   page,
 }) => {
@@ -34,3 +62,13 @@ test("dotted unknown URLs still answer 404, on the framework fallback page", asy
   expect(response?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
 });
+
+// 这些地址跳过 proxy，不能依赖其 rewrite 设置状态码。
+for (const locale of ["en", "es"]) {
+  test(`/${locale}/random.txt remains HTTP 404 when bypassing the proxy`, async ({
+    request,
+  }) => {
+    const response = await request.get(`/${locale}/random.txt`);
+    expect(response.status()).toBe(404);
+  });
+}
