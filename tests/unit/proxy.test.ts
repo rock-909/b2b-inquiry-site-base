@@ -1,3 +1,4 @@
+import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest, NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,11 +27,19 @@ vi.mock("@/i18n/routing-config", () => ({
 
 vi.mock("@/config/offerings", () => ({
   getOfferingById: (id: string) =>
-    id === "sample-offering" ? { id } : undefined,
+    ["sample-offering", "sample.v2"].includes(id) ? { id } : undefined,
 }));
 
 describe("proxy next-intl boundary", () => {
   beforeEach(() => {
+    vi.stubEnv(
+      "PUBLIC_ASSET_PATHS",
+      JSON.stringify([
+        "/opengraph-image.png",
+        "/.well-known/security.txt",
+        "/images/real.photo.jpg",
+      ]),
+    );
     vi.resetModules();
     vi.clearAllMocks();
     createMiddlewareMock.mockReturnValue(intlMiddlewareMock);
@@ -193,11 +202,54 @@ describe("proxy next-intl boundary", () => {
     expect(response.headers.get("x-health-status")).toBeNull();
   });
 
-  it("keeps matcher out of api, _next, and static files only", async () => {
-    const { config } = await import("@/proxy");
+  it("preserves actual assets but not missing siblings", async () => {
+    const { proxy } = await import("@/proxy");
+    for (const path of [
+      "/opengraph-image.png",
+      "/.well-known/security.txt",
+      "/images/real.photo.jpg",
+    ]) {
+      const response = proxy(new NextRequest(`http://localhost:3000${path}`));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+    }
+    expect(
+      proxy(new NextRequest("http://localhost:3000/images/missing.jpg")).status,
+    ).toBe(404);
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
 
-    expect(config.matcher).toEqual(["/", "/((?!api|_next|.*\\..*).*)"]);
-    expect(config.matcher.join(" ")).not.toContain("admin");
-    expect(config.matcher.join(" ")).not.toContain("ops");
+  it("delegates an existing dotted product to locale routing", async () => {
+    const { proxy } = await import("@/proxy");
+    const request = new NextRequest(
+      "http://localhost:3000/es/products/sample.v2",
+    );
+    proxy(request);
+    expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
+  });
+
+  it("matches missing dotted pages while preserving framework and metadata routes", async () => {
+    const { config } = await import("@/proxy");
+    for (const url of [
+      "/random.txt",
+      "/en/random.txt",
+      "/es/random.txt",
+      "/images/retired-asset.jpg",
+      "/apiary.txt",
+    ]) {
+      expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
+    }
+    for (const url of [
+      "/api/inquiry",
+      "/api/health",
+      "/_next/static/test.js",
+      "/_next/image",
+      "/robots.txt",
+      "/sitemap.xml",
+      "/icon.svg",
+      "/security-policy.txt",
+    ]) {
+      expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
+    }
   });
 });

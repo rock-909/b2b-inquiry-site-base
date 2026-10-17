@@ -5,9 +5,16 @@ test.describe("404 recovery without JavaScript", () => {
 
   for (const [locale, prefix, title, homeLabel] of [
     ["en", "", "Page not found", "Back to homepage"],
+    ["en", "/en", "Page not found", "Back to homepage"],
     ["es", "/es", "Página no encontrada", "Volver al inicio"],
   ] as const) {
-    for (const path of ["/this-page-does-not-exist", "/products/not-real"]) {
+    for (const path of [
+      "/this-page-does-not-exist",
+      "/products/not-real",
+      "/random.txt",
+      "/images/retired-asset.jpg",
+      "/__not-found-placeholder",
+    ]) {
       test(`${prefix}${path} serves a localized recovery document`, async ({
         page,
       }) => {
@@ -17,12 +24,16 @@ test.describe("404 recovery without JavaScript", () => {
         expect(response?.status()).toBe(404);
         await expect(page.locator("html")).toHaveAttribute("lang", locale);
         const main = page.getByRole("main");
+        await expect(main.locator("p").first()).toBeVisible();
         await expect(
           main.getByRole("heading", { level: 1, name: title, exact: true }),
         ).toBeVisible();
         const home = main.getByRole("link", { name: homeLabel, exact: true });
         await expect(home).toBeVisible();
-        await expect(home).toHaveAttribute("href", prefix || "/");
+        await expect(home).toHaveAttribute(
+          "href",
+          locale === "en" ? "/" : prefix,
+        );
       });
     }
   }
@@ -46,29 +57,67 @@ test("unknown routes render the site 404 with a homepage recovery link", async (
   ).toBeVisible();
 });
 
-// 带点的地址走不到品牌 404 页，这是结构限制，不是漏测：proxy matcher 把它们
-// 排除，`random.txt` 会被当作 locale 值落到 `[locale]` 段上，而品牌 404 页本身就
-// 住在这个段里、需要一个合法 locale 才能渲染。它们拿到的是 Next 自带的那张
-// "This page could not be found."，状态码仍然是 404（由 not-found-status.spec.ts
-// 守住）。这类地址基本只有爬虫和旧资源链接会访问，真人打错的路径不带点。
-// 要让它们也进品牌页，得加一层根级 layout + not-found，代价远大于收益。
-test("dotted unknown URLs still answer 404, on the framework fallback page", async ({
-  page,
-}) => {
-  const response = await page.goto("/random.txt", {
-    waitUntil: "domcontentloaded",
-  });
-
-  expect(response?.status()).toBe(404);
-  await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
-});
-
-// 这些地址跳过 proxy，不能依赖其 rewrite 设置状态码。
-for (const locale of ["en", "es"]) {
-  test(`/${locale}/random.txt remains HTTP 404 when bypassing the proxy`, async ({
-    request,
+for (const [path, title, homeLabel, homePath] of [
+  ["/random.txt", "Page not found", "Back to homepage", "/"],
+  ["/es/random.txt", "Página no encontrada", "Volver al inicio", "/es"],
+] as const) {
+  test(`${path} recovers through client navigation`, async ({
+    page,
+    baseURL,
   }) => {
-    const response = await request.get(`/${locale}/random.txt`);
-    expect(response.status()).toBe(404);
+    await page.goto(path);
+    const main = page.getByRole("main");
+    await expect(main.getByRole("heading", { name: title })).toBeVisible();
+    await main.getByRole("link", { name: homeLabel }).click();
+    await expect(page).toHaveURL(new URL(homePath, baseURL).href);
+    await expect(
+      page.getByRole("main").getByRole("heading", { level: 1 }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("main").getByRole("heading", { name: title }),
+    ).toHaveCount(0);
   });
 }
+
+test("real resources retain their response bodies and MIME types", async ({
+  page,
+  request,
+}) => {
+  for (const [path, mime, marker] of [
+    ["/.well-known/security.txt", "text/plain", "Contact:"],
+    ["/robots.txt", "text/plain", "User-Agent:"],
+    ["/sitemap.xml", "application/xml", "<urlset"],
+    ["/icon.svg", "image/svg+xml", "<svg"],
+    ["/api/health", "application/json", "status"],
+  ]) {
+    const response = await request.get(path!);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain(mime);
+    expect(await response.text()).toContain(marker);
+  }
+  const image = await request.get("/opengraph-image.png");
+  expect(image.status()).toBe(200);
+  expect(image.headers()["content-type"]).toContain("image/png");
+  expect((await image.body()).subarray(0, 8).toString("hex")).toBe(
+    "89504e470d0a1a0a",
+  );
+  const policy = await request.get("/security-policy.txt");
+  expect(policy.status()).toBe(404);
+  expect(await policy.text()).toBe("");
+
+  await page.goto("/");
+  // 当前站点使用系统字体，无字体文件请求；保留该基线而不虚构资源。
+  await expect(page.locator('link[as="font"]')).toHaveCount(0);
+  for (const [selector, attribute, mime] of [
+    ['link[rel="stylesheet"]', "href", "text/css"],
+    ['script[src^="/_next/"]', "src", "javascript"],
+  ]) {
+    const path = await page.locator(selector!).first().getAttribute(attribute!);
+    expect(path).toBeTruthy();
+    const response = await request.get(path!);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain(mime);
+    expect((await response.body()).length).toBeGreaterThan(0);
+    expect(await response.text()).not.toContain("<!DOCTYPE html>");
+  }
+});

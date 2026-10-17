@@ -1,8 +1,22 @@
+import { readdirSync } from "node:fs";
+import { join, relative } from "node:path";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import { getSecurityHeaders } from "./src/config/security";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+// proxy 在文件路由前运行；构建时记录真实文件，不能凭扩展名放行缺失资源。
+const publicDirectory = join(__dirname, "public");
+const publicAssetPaths = readdirSync(publicDirectory, {
+  recursive: true,
+  withFileTypes: true,
+})
+  .filter((entry) => entry.isFile() && entry.name !== "_headers")
+  .map(
+    (entry) =>
+      `/${relative(publicDirectory, join(entry.parentPath, entry.name)).split("/").map(encodeURIComponent).join("/")}`,
+  );
 
 const isCloudflare = process.env.DEPLOYMENT_PLATFORM === "cloudflare";
 const nextConfig: NextConfig = {
@@ -18,6 +32,7 @@ const nextConfig: NextConfig = {
   // distinguish a production build from an actual production deployment.
   env: {
     NEXT_PUBLIC_APP_ENV: process.env.APP_ENV ?? "local",
+    PUBLIC_ASSET_PATHS: JSON.stringify(publicAssetPaths),
   },
 
   // Exclude test/report artifacts from OpenNext bundle

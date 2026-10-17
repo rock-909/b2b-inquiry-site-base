@@ -1,65 +1,35 @@
-# Browser recovery fixes — 2026-10-17
+# Restore no-JavaScript recovery for missing dotted URLs
 
-Restore the complete browser matrix and server-rendered recovery content for ordinary missing public routes. No dependency changes, deployment, real inquiry or provider calls. The user authorized Codex to execute the remaining delivery gates while retaining an independent GPT-6 review; the repository's trusted no-mistakes configuration is unchanged. This is not a claim that the Claude-backed no-mistakes pipeline passed.
+Missing `/random.txt`, `/en/random.txt`, `/es/random.txt` and `/images/retired-asset.jpg` returned HTTP 404 with no HTML language, H1 or main body on the actual local Cloudflare Worker. The proxy matcher excluded all dotted paths, bypassing the existing localized rewrite; dynamic layout/catch-all `notFound()` emitted an error shell requiring JavaScript.
 
-## Observed failures and changes
+The proxy now uses the existing known-page/product classification for dotted business URLs and the existing explicit HTTP 404 rewrite for missing URLs. Next config builds an exact public-file list and inlines it as a build constant for the proxy, whose real consumer needs to distinguish an existing resource from a missing sibling before filesystem routing. No operator environment configuration is added. API/framework routes and the currently implemented metadata/security-policy routes retain their handlers. There is no extension whitelist, whole-directory bypass, self-request, dependency addition or root-layout reconstruction.
 
-- Both original mobile failures reproduce: the forced-colors test opens a desktop-only language menu that is hidden at mobile widths. Mobile Chrome and Mobile Safari each time out waiting for that dropdown. The production mobile drawer instead contains native details / summary and language links.
-- The test now opens the actual mobile drawer, activates its language disclosure with Enter, and uses keyboard navigation to focus Español. It still requires the correct link destination and a visible outline at least 2px wide. The desktop highlighted-item assertions remain intact. On macOS WebKit, ordinary Tab skips links; an actual diagnostic showed Tab focusing the close button and Option-Tab focusing Español. Only that platform uses Alt+Tab. Apple documents this shortcut: https://support.apple.com/en-gb/guide/safari/cpsh003/mac .
-- The first complete remote matrix at commit 037703c7 passed 424/425 but exposed a desktop WebKit focus-readiness race: the menu is visible before its animation-frame focus handoff completes. The remote failure snapshot shows the menu container active with no highlighted item. With a controlled 300ms delay in requestAnimationFrame callbacks, the unchanged test reproduces the failure: ArrowDown targets BODY, then focus enters the menu. Add an assertion that focus has entered the menu before sending the single ArrowDown. Under the identical frame delay it passes. No production focus code, retries, highlighted count or visibility assertion is changed. Diagnostic timing overrides are not committed.
-- A second full remote matrix at 12f46041 passed 424/425: forced-colors now passes, but the keyboard contrast test in internationalization.spec.ts hits the same focus handoff race. With the identical controlled 300ms frame delay, both ArrowDown events target BODY before menu focus; the original highlighted-language assertion fails. Move the focus-readiness assertion into the existing navigation helper module and call it from both actual keyboard-menu consumers. The contrast test still requires Español highlighted and runs the same axe color-contrast check. No key count or protected behavior changes. A reference search confirms these are the only ArrowDown menu consumers in tests/e2e.
-- Without JavaScript, English and Spanish ordinary missing pages and missing products return HTTP 404 but no lang, heading or recovery link. The existing proxy already rewrites these requests to a per-locale placeholder with status 404. Render the existing localized recovery view directly at that placeholder instead of throwing into a client-only error recovery path. Keep noindex metadata, the existing route table and proxy unchanged. Remove the obsolete i18n rule exemption for this page.
-- Direct catch-all requests excluded by the proxy (for example /es/random.txt) still call notFound(); rendering them normally would produce an incorrect HTTP 200. Two added HTTP tests reproduced that intermediate regression before adding the guard. Dotted URLs retain their prior framework/error-boundary behavior; their no-JavaScript empty HTML remains outside this bounded fix and is not presented as resolved. Repairing that boundary requires a separate root-layout / framework-error design decision.
+Tests verify server-rendered localized recovery with JavaScript disabled, ordinary missing pages/products, direct placeholder URLs, client recovery, asset bodies/MIME, and absence of inherited OG/Twitter image metadata. Status tests now use the configured Playwright base URL instead of hard-coded port 3000.
 
-## Executed verification
+## Actual validation
 
-Node 24.22.0 / pnpm 11.28.6. Builds, OpenNext and Playwright servers run serially.
+Installed versions: Next 16.4.2, OpenNext Cloudflare 1.20.12, Node 24.20.0.
 
-| Command / controlled check | Observed result |
-| --- | --- |
-| Original forced-colors spec, grep `highlighted language`, Mobile Chrome then Mobile Safari | Each failed before the test correction: desktop dropdown never appears |
-| New 4 no-JavaScript cases on original page behavior, Chromium | 4 failed: HTTP 404 with missing lang and recovery content |
-| New catch-all behavior unit test with original page function | Failed before the page fix; original function does not return visible recovery content |
-| Temporarily disable `*:focus-visible` outline only in the test browser and run mobile language case | Fails at the explicit outline assertion; restore the override and it passes. No production CSS change |
-| Added /en/random.txt and /es/random.txt request tests against intermediate direct-render build | Both failed with actual 200; guard restores notFound for non-placeholder catch-all requests |
-| `pnpm type-check` and `pnpm type-check:tests` | Passed |
-| `pnpm lint:check` and `pnpm format:check` | Passed |
-| `pnpm test src/__tests__/proxy-locale-cookie.test.ts 'src/app/[locale]/__tests__/not-found.test.tsx' 'src/app/[locale]/[...rest]/__tests__/not-found.test.tsx' 'src/app/[locale]/[...rest]/__tests__/page.test.tsx'` | 4 files / 18 tests passed |
-| `pnpm react:doctor` | complete=true, 0 errors / 0 warnings |
-| `CI=1 CI_FULL_COVERAGE=true CI_FLAKE_SAMPLING=1 PLAYWRIGHT_REBUILD_SERVER=true pnpm exec playwright test tests/e2e/forced-colors-focus.spec.ts tests/e2e/not-found-recovery.spec.ts --project=chromium --project=webkit --project='Mobile Chrome' --project='Mobile Safari'` | Final code: 40 passed, zero retries |
-| `APP_ENV=preview NEXT_PUBLIC_SITE_URL=https://example.invalid NEXT_PUBLIC_BASE_URL=https://example.invalid NEXT_PUBLIC_TEST_MODE=false NODE_ENV=production pnpm website:build:cf` | Final code: passed, 24 static pages |
-| `node scripts/quality/checks/cloudflare-config-check.js`, `cloudflare-artifact-config.js`, `cloudflare-static-asset-headers.js` | All passed against final Cloudflare artifact |
-| `APP_ENV=preview pnpm exec wrangler deploy --dry-run --env preview` | Passed; no upload |
-| `pnpm exec opennextjs-cloudflare preview --env preview`, then `node scripts/quality/checks/cloudflare-smoke.js cf-preview-smoke --include-api-health --rounds 2` | Local Worker: passed |
-| `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url http://127.0.0.1:8787` | Local Worker: passed, including 415 inquiry admission probe |
-| `CI=1 CI_FLAKE_SAMPLING=1 PLAYWRIGHT_BASE_URL=http://localhost:8787 pnpm exec playwright test tests/e2e/not-found-recovery.spec.ts --project=chromium` | Final local Worker: all 8 passed, including no-JS documents and direct catch-all status guard |
-| `git diff --check` | Passed |
+- Baseline production Worker: requested four paths all 404, raw HTML parsed without executing scripts has empty lang and no H1/main. Added browser cases: **6 failed / 10 passed**, failures are the missing dotted documents.
+- `APP_ENV=preview NEXT_PUBLIC_SITE_URL=https://example.invalid NEXT_PUBLIC_BASE_URL=https://example.invalid NEXT_PUBLIC_TEST_MODE=false NODE_ENV=production pnpm build`: passed.
+- `APP_ENV=preview NEXT_PUBLIC_SITE_URL=https://example.invalid NEXT_PUBLIC_BASE_URL=https://example.invalid NEXT_PUBLIC_TEST_MODE=false NODE_ENV=production pnpm website:build:cf`: passed, both baseline and repaired Worker.
+- `pnpm exec opennextjs-cloudflare preview --env preview`: actual local Worker on port 8787.
+- `CI=1 CI_FLAKE_SAMPLING=1 PLAYWRIGHT_BASE_URL=http://localhost:8787 pnpm exec playwright test tests/e2e/not-found-recovery.spec.ts --project=chromium`: **19/19 passed**, zero retries.
+- `CI=1 CI_FLAKE_SAMPLING=1 PLAYWRIGHT_BASE_URL=http://localhost:8787 pnpm exec playwright test tests/e2e/not-found-status.spec.ts --project=chromium`: **8/8 passed**, zero retries.
+- Raw repaired HTML: all four paths remain404 and contain correct language, H1, description and locale homepage link. All23 baseline resource status/MIME pairs unchanged; actual resource bodies unchanged. The missing `_next` asset retains404/MIME with dynamic error-document bytes differing. This repository serves system/local fonts and has no webfont file payload, confirmed by current CSS and existing layout-fonts contract.
+- `node scripts/quality/checks/cloudflare-smoke.js cf-preview-smoke --include-api-health --rounds 2`: passed. Its malformed inquiry admission probe cannot reach delivery providers.
+- `pnpm exec vitest run tests/unit/proxy.test.ts`: **14/14 passed**, also independently run by reviewer.
+- `pnpm type-check`, `pnpm type-check:tests`: passed.
+- Scoped ESLint and Prettier for changed source/tests: passed.
+- `pnpm content:check`, dependency-cruiser, `pnpm knip:check`, `pnpm knip:check:production`: passed.
+- Authorized full `pnpm test`: 174/175 files and1204/1205 tests passed; one Playwright config-loading test timed out under concurrent local checks. Isolated `pnpm exec vitest run tests/unit/playwright-config.test.ts`:8/8 passed; CI must pass without weakening the test.
 
-Additional executed checks after the remote race was found:
+The first sandbox build failed on a denied internal port and cached that failure; the failed `.next` was moved to Trash and the authorized rebuild passed. The first full test attempt encountered sandbox-denied Trash renames and localhost listeners; authorized retry is recorded separately. An initial new resource test incorrectly expected a font preload; inspection confirmed the existing system-font contract, and the test now checks the actual baseline.
 
-- `CI=1 CI_FULL_COVERAGE=true CI_FLAKE_SAMPLING=1 pnpm exec playwright test tests/e2e/forced-colors-focus.spec.ts --project=webkit --grep 'language choice' --repeat-each=12`: 12/12 pass locally, so a green local repeat was not treated as evidence that the remote failure disappeared.
-- Final readiness assertion, same four-browser focused command without rebuilding (production source unchanged): 40/40 passed; focused ESLint, Prettier and test TypeScript checks passed.
-- Same single desktop WebKit case with a temporary 300ms requestAnimationFrame delay and key/focus event logging: before readiness assertion, 1 failure at unchanged highlighted-count assertion; event order is Enter on trigger, ArrowDown on BODY, focus on menu. After readiness assertion with identical delay, 1 pass, focus enters menu before item navigation. The temporary instrumentation is restored after each run.
+## Independent review and preservation
 
-- `CI=1 CI_FULL_COVERAGE=true CI_FLAKE_SAMPLING=1 pnpm exec playwright test tests/e2e/internationalization.spec.ts --project='Mobile Safari' --grep keyboard-highlighted --reporter=line`, with the same temporary 300ms frame delay: before shared readiness assertion, 1 failure (both ArrowDown events to BODY); after shared readiness assertion, 1 pass (focus enters menu, then English and Español items). Instrumentation is restored, not committed.
+Independent GPT-6 review requested through the `gpt-6-astra`/medium dispatch: PASS on initial and final six-file diff, no findings. Reviewer independently ran proxy tests14/14; it did not build or alter files. The reviewer session self-identifies the GPT-6 family; exact requested model is dispatch metadata.
 
-- Final shared helper: `CI=1 CI_FULL_COVERAGE=true CI_FLAKE_SAMPLING=1 pnpm exec playwright test tests/e2e/forced-colors-focus.spec.ts tests/e2e/internationalization.spec.ts --grep 'language choice|keyboard-highlighted' --project=chromium --project=webkit --project='Mobile Chrome' --project='Mobile Safari'`: 8/8 pass, zero retries. Focused ESLint, Prettier and `pnpm type-check:tests` pass. Only test readiness and documentation changed since the previous production-source proof.
+Original user work in `package.json` (`test:mutation`), `.lavish/`, and `scripts/quality/checks/mutation-audit.mjs` is excluded and preserved by SHA256. A concurrent documentation-only update to `docs/技术栈.md` appeared during execution and is likewise excluded and preserved. Whole-working-tree lint/format/React Doctor include those pre-existing drafts: mutation script complexity warning and `.lavish` formatting/one async-loop warning prevent a clean whole-directory result. No original files or gate configuration were changed to hide them. The same React Doctor gate on tracked changes reports0 errors/0 warnings; clean-checkout CI remains required before merge.
 
-Local logs, traces and controlled-check artifacts are retained under the original checkout's ignored `.planning/browser-recovery-2026-10-17/evidence/`; CI independently runs the tracked tests. Local evidence does not establish a live deployment.
-
-## Remaining development dependency advisories
-
-Fresh `pnpm audit --prod --json`: 0. Full `pnpm audit --json`: 3 high / 1 moderate. All four advisories remain unpatched in current registry releases; no audit ignore, private patch, new override or removal of a check tool was introduced.
-
-| Advisory | Current consumer and risk |
-| --- | --- |
-| https://github.com/advisories/GHSA-jmr9-qjv8-65gv | extract-zip 2.0.1 via Lighthouse / Puppeteer browser installer: malicious symlink archive traversal |
-| https://github.com/advisories/GHSA-7pqw-9j4j-h8q3 | Same installed extract-zip: archive symlinks can cause writes outside the destination |
-| https://github.com/advisories/GHSA-vfj7-8cjw-p6xm | braces 3.0.3 via Next ESLint / fast-glob / micromatch: deeply nested glob patterns exhaust the stack |
-| https://github.com/advisories/GHSA-hp3w-g68c-fv3c | sprintf-js 1.1.3 via LHCI utils / js-yaml / argparse: precision specifiers exhaust resources |
-
-Current consumer inspection: Next ESLint passes its own rootDir setting (not inquiry input) to glob; this repository does not configure rootDir. LHCI custom Puppeteer startup requires puppeteerScript, which this repository does not configure; ordinary LHCI uses chrome-launcher. Argparse formats its own CLI help. These observations limit the observed exposure; they do not eliminate the advisories. A compatible upstream fix is still required. No malicious archive / denial-of-service proof was executed.
-
-## Existing user-owned mutation work
-
-Preserve the original checkout's `test:mutation`, `scripts/quality/checks/mutation-audit.mjs` and all 26 `.lavish` files byte-for-byte; none is part of this change. The mutation script is an unintegrated draft, not a trustworthy gate: it edits production source in place, has only in-memory restoration, does not verify a clean baseline or set a timeout, treats every child-process failure as a killed mutant, excludes skips from its denominator, and does not fail the process when mutants survive. Some mutant labels do not match their edits. Do not run or publish it as validation evidence in this delivery. Before adoption it needs an isolated disposable copy, baseline proof, assertion-versus-infrastructure error classification, accurate mutations, and failing exit status for survivors / invalid runs. `.lavish` contains historical drafts and evidence; its old checkpoint is not current project status.
+Local evidence: `.planning/dotted-404-2026-10-17/` (before/after HTML, browser reports, resource comparisons, builds, checks and review record). No deployment, real inquiry, or delivery-provider call was performed. Failed build cache cleanup used Trash, not permanent deletion. Development dependency advisories are outside this change.

@@ -29,7 +29,7 @@ export default async function CatchAllNotFound({
   params: Promise<{ locale: string; rest: string[] }>;
 }) {
   const routeParams = await params;
-  // 带点路径跳过 proxy，仍须由 Next 设置 404，不能渲染成 HTTP 200。
+  // 非占位请求仍由 Next 设置 404，不能直接渲染成 HTTP 200。
   if (
     routeParams.rest.length !== 1 ||
     routeParams.rest[0] !== "__not-found-placeholder"
