@@ -116,6 +116,10 @@
     "description": "Sitio de referencia neutral para consultas B2B."
   },
   "home": {
+    "metadata": {
+      "title": "{siteName} - Plantilla de consultas B2B",
+      "description": "Un sitio de referencia de consultas B2B no destinado a producción, con identidad, dominio y datos de contacto de ejemplo."
+    },
     "hero": {
       "eyebrow": "Referencia de consultas B2B",
       "title": "Convierte el interés cualificado en una conversación útil.",

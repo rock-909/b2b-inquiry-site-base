@@ -606,6 +606,29 @@ describe("lead pipeline (in-process integration)", () => {
     expect(fetchMock).toHaveBeenCalledTimes(count);
   });
 
+  it("keeps Cloudflare clients on independent rate-limit quotas", async () => {
+    vi.stubEnv("DEPLOYMENT_PLATFORM", "cloudflare");
+    const requestFor = (ip: string) => {
+      const request = makeInquiryRequest(VALID_INQUIRY_BODY);
+      request.headers.set("cf-connecting-ip", ip);
+      return request;
+    };
+
+    for (let index = 0; index < 10; index += 1) {
+      expect(
+        (await inquiryRoute.POST(requestFor("198.51.100.10"))).status,
+      ).toBe(200);
+    }
+    const count = fetchMock.mock.calls.length;
+    expect((await inquiryRoute.POST(requestFor("198.51.100.10"))).status).toBe(
+      429,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(count);
+    expect((await inquiryRoute.POST(requestFor("198.51.100.20"))).status).toBe(
+      200,
+    );
+  });
+
   it.each([true, false])(
     "Upstash failure stays fail-open but Turnstile verified=%s",
     async (verified) => {

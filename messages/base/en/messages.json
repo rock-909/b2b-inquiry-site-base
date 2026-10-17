@@ -116,6 +116,10 @@
     "description": "A neutral B2B inquiry site reference."
   },
   "home": {
+    "metadata": {
+      "title": "{siteName} - B2B Inquiry Template",
+      "description": "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details."
+    },
     "hero": {
       "eyebrow": "B2B inquiry reference",
       "title": "Turn qualified interest into a useful conversation.",

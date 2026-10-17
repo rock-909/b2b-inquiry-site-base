@@ -26,7 +26,7 @@ import {
 
 /**
  * `failed` 是买家令牌被拒（400）；`service-unavailable` 是我们或 Cloudflare 一侧
- * 的故障（503）——缺密钥、网络、超时、provider 的 `internal-error`。
+ * 的故障（503）——缺密钥、密钥无效、网络、超时、provider 的 `internal-error`。
  */
 export type TurnstileVerification =
   | { status: "verified" }
@@ -184,10 +184,15 @@ function classifyProviderFailure(
 ): TurnstileVerification {
   const errorCodes = result["error-codes"];
 
-  // Cloudflare siteverify returns `internal-error` for a retryable server-side
-  // fault. Treating it as a service failure (503) avoids rejecting a genuine
-  // buyer's lead with a 400 when the fault is on Cloudflare's side.
-  if (errorCodes?.includes("internal-error")) {
+  // 服务端密钥或 Cloudflare 内部故障归为 503，买家更换令牌无法修复这些问题。
+  if (
+    errorCodes?.some(
+      (code) =>
+        code === "internal-error" ||
+        code === "invalid-input-secret" ||
+        code === "missing-input-secret",
+    )
+  ) {
     logger.error("Turnstile verification unavailable", {
       errorCodes,
       clientIP: sanitizeIP(ip),
