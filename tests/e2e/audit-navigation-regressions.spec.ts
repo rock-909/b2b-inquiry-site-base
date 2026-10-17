@@ -48,6 +48,53 @@ for (const input of ["mouse", "keyboard"] as const) {
   });
 }
 
+for (const initiallyOpen of [false, true]) {
+  test(`native language menu preserves ${initiallyOpen ? "open" : "closed"} focused state until idle`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    let releaseScripts!: () => void;
+    const scriptsReady = new Promise<void>((resolve) => {
+      releaseScripts = resolve;
+    });
+    await page.route("**/*", async (route) => {
+      if (route.request().resourceType() === "script") await scriptsReady;
+      await route.continue();
+    });
+    try {
+      await page.goto("/contact", { waitUntil: "domcontentloaded" });
+      const summary = page.locator(
+        "header summary[data-testid='language-toggle-button']",
+      );
+      const details = summary.locator("..");
+      await summary.focus();
+      if (initiallyOpen) await page.keyboard.press("Enter");
+      releaseScripts();
+      await expect(page.locator('input[name="fullName"]')).toBeEditable();
+      await page.waitForLoadState("networkidle");
+      await expect(summary).toBeFocused();
+      await expect(details).toHaveJSProperty("open", initiallyOpen);
+      if (initiallyOpen) await page.keyboard.press("Enter");
+      await expect(details).toHaveJSProperty("open", false);
+      await expect(summary).toBeFocused();
+      await page.keyboard.press("Tab");
+      const enhanced = page.locator(
+        "header button[data-testid='language-toggle-button']",
+      );
+      await expect(enhanced).toBeVisible();
+      await expect(summary).toHaveCount(0);
+      await page.keyboard.press("Shift+Tab");
+      await expect(enhanced).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(page.getByTestId("language-dropdown-content")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(enhanced).toBeFocused();
+    } finally {
+      releaseScripts();
+    }
+  });
+}
+
 for (const locale of ["en", "es"] as const) {
   const path = locale === "en" ? "/contact" : "/es/contact";
   test(`desktop ${locale} language choice works without JavaScript`, async ({

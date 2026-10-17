@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../../../../messages/base/en/messages.json";
 import es from "../../../../messages/base/es/messages.json";
@@ -67,11 +68,17 @@ describe("Locale layout metadata", () => {
     expect(metadata.openGraph).toBeUndefined();
   });
 
-  it("falls back to default locale when locale is invalid", async () => {
-    const params = Promise.resolve({ locale: "invalid" });
-    const metadata = await generateLocaleMetadata({ params });
+  it("rejects an invalid locale through notFound", async () => {
+    const notFoundError = new Error("NEXT_HTTP_ERROR_FALLBACK;404");
+    vi.mocked(notFound).mockImplementationOnce(() => {
+      throw notFoundError;
+    });
 
-    expect(metadata.openGraph).toBeUndefined();
+    await expect(
+      generateLocaleMetadata({
+        params: Promise.resolve({ locale: "invalid" }),
+      }),
+    ).rejects.toBe(notFoundError);
   });
 
   it("noindexes non-production layout metadata", async () => {
