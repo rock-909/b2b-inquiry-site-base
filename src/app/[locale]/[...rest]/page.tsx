@@ -1,5 +1,8 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { setRequestLocale } from "next-intl/server";
+import { LocalizedNotFoundView } from "@/components/errors/localized-not-found-view";
+import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { routing } from "@/i18n/routing";
 
 export function generateMetadata(): Metadata {
@@ -11,16 +14,8 @@ export function generateMetadata(): Metadata {
   };
 }
 
-/**
- * Catch-all route for unmatched paths under /[locale]/...
- *
- * Without this, Next.js renders its default 404 page instead of
- * the custom not-found.tsx in the [locale] segment. This ensures
- * users see the localized 404 page with a "Go Home" button.
- *
- * The placeholder paths call notFound() during prerender so the localized
- * custom 404 output is generated for each configured locale.
- */
+// proxy 将未知公开路径改写到占位页，并设置 HTTP 404。
+// 页面直接渲染恢复内容，避免 notFound() 只输出空壳、等待客户端恢复。
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({
     locale,
@@ -28,6 +23,19 @@ export function generateStaticParams() {
   }));
 }
 
-export default function CatchAllNotFound() {
-  notFound();
+export default async function CatchAllNotFound({
+  params,
+}: {
+  params: Promise<{ locale: string; rest: string[] }>;
+}) {
+  const routeParams = await params;
+  // 带点路径跳过 proxy，仍须由 Next 设置 404，不能渲染成 HTTP 200。
+  if (
+    routeParams.rest.length !== 1 ||
+    routeParams.rest[0] !== "__not-found-placeholder"
+  ) {
+    notFound();
+  }
+  setRequestLocale(resolveLocaleParam(routeParams));
+  return <LocalizedNotFoundView />;
 }

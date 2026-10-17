@@ -1,4 +1,8 @@
 import { expect, test, type Locator } from "@playwright/test";
+import {
+  expectDesktopLanguageMenuKeyboardReady,
+  getHeaderMobileMenuButton,
+} from "./helpers/navigation";
 import { acceptCookieBannerIfVisible } from "./test-environment-setup";
 
 // Windows 高对比度（forced-colors）下 box-shadow 会被系统去掉，Tailwind 的
@@ -41,9 +45,38 @@ test.describe("forced-colors keyboard indicators", () => {
     expect(outline.width).toBeGreaterThan(0);
   });
 
-  test("highlighted language menu item has a visible indicator", async ({
+  test("language choice keeps a visible keyboard indicator", async ({
     page,
+    browserName,
   }) => {
+    const mobileMenuButton = getHeaderMobileMenuButton(page);
+    if (await mobileMenuButton.isVisible()) {
+      // 手机使用抽屉内的原生 details 和链接，不存在桌面菜单的高亮状态。
+      await mobileMenuButton.click();
+      const drawer = page.getByRole("dialog", { name: "Mobile navigation" });
+      await expect(drawer).toBeVisible();
+      const languageTrigger = drawer.getByTestId("mobile-language-trigger");
+      await languageTrigger.focus();
+      await expect(languageTrigger).toBeFocused();
+      await page.keyboard.press("Enter");
+
+      const spanish = drawer.getByRole("link", { name: "Español" });
+      await expect(spanish).toBeVisible();
+      // macOS Safari 默认用 Option-Tab 访问链接；普通 Tab 会跳过链接。
+      const nextLinkKey =
+        browserName === "webkit" && process.platform === "darwin"
+          ? "Alt+Tab"
+          : "Tab";
+      await page.keyboard.press(nextLinkKey);
+      await expect(spanish).toBeFocused();
+      await expect(spanish).toHaveAttribute("href", "/es/contact");
+
+      const outline = await visibleOutline(spanish);
+      expect(outline.style).not.toBe("none");
+      expect(outline.width).toBeGreaterThanOrEqual(2);
+      return;
+    }
+
     const toggle = page.getByTestId("language-toggle-button");
     const menu = page.getByTestId("language-dropdown-content");
     // 水合前按下的 Enter 会被吞掉，所以只在菜单还没开时重按，避免把已开的菜单关掉。
@@ -54,6 +87,7 @@ test.describe("forced-colors keyboard indicators", () => {
       }
       await expect(menu).toBeVisible({ timeout: 1_000 });
     }).toPass();
+    await expectDesktopLanguageMenuKeyboardReady(page);
     await page.keyboard.press("ArrowDown");
 
     const highlighted = page

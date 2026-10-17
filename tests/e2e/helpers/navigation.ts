@@ -80,3 +80,16 @@ export async function clickNavLinkByName(
   const link = nav.getByRole("link", { name: linkName });
   await link.click();
 }
+
+// 语言菜单可见时，下一帧的自动聚焦可能尚未完成；方向键必须发给菜单。
+export async function expectDesktopLanguageMenuKeyboardReady(
+  page: Page,
+): Promise<void> {
+  const menu = page.getByTestId("language-dropdown-content");
+  await expect(menu).toBeVisible();
+  await expect
+    .poll(() =>
+      menu.evaluate((element) => element.contains(document.activeElement)),
+    )
+    .toBe(true);
+}

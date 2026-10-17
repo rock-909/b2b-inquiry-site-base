@@ -6,6 +6,7 @@ import {
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { checkA11y } from "./helpers/axe";
 import {
+  expectDesktopLanguageMenuKeyboardReady,
   expectHtmlLang,
   getHeaderMobileMenuButton,
 } from "./helpers/navigation";
@@ -111,6 +112,7 @@ test.describe("Language switcher journey", () => {
     await page.keyboard.press("Enter");
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
 
+    await expectDesktopLanguageMenuKeyboardReady(page);
     const spanish = page.getByRole("menuitem", { name: "Español" });
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
