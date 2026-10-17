@@ -1,6 +1,15 @@
 "use client";
 
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useSyncExternalStore,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { ChevronDown, Globe } from "lucide-react";
 import { usePathname } from "@/i18n/routing";
 import {
@@ -77,12 +86,16 @@ function LanguageToggleTrigger({
 function LanguageToggleStaticFallback({
   ariaLabel,
   locale,
-}: Pick<LanguageToggleIslandProps, "ariaLabel" | "locale">) {
+  detailsRef,
+}: Pick<LanguageToggleIslandProps, "ariaLabel" | "locale"> & {
+  detailsRef?: Ref<HTMLDetailsElement>;
+}) {
   const localeSwitchHref = useLocaleSwitchHref(usePathname());
 
   return (
-    <details className="relative" translate="no">
+    <details ref={detailsRef} className="relative" translate="no">
       <summary
+        data-testid="language-toggle-button"
         aria-label={ariaLabel}
         className="inline-flex h-9 cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&::-webkit-details-marker]:hidden"
       >
@@ -153,6 +166,41 @@ export function LanguageToggleIsland({
   const [activationPathname, setActivationPathname] = useState<string | null>(
     null,
   );
+  const nativeDetails = useRef<HTMLDetailsElement>(null);
+  const subscribeToNativeMenu = useCallback((onChange: () => void) => {
+    const details = nativeDetails.current;
+    if (!details) return () => undefined;
+    // focusout 时 activeElement 尚未更新；下一微任务再读取真实焦点。
+    const handleFocusOut = () => queueMicrotask(onChange);
+    details.addEventListener("toggle", onChange);
+    details.addEventListener("focusout", handleFocusOut);
+    return () => {
+      details.removeEventListener("toggle", onChange);
+      details.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
+  const isEnhanced = useSyncExternalStore(
+    subscribeToNativeMenu,
+    () => {
+      const details = nativeDetails.current;
+      // 水合前的展开和焦点属于用户；空闲后才替换，替换后 ref 为 null。
+      return (
+        !details || (!details.open && !details.contains(document.activeElement))
+      );
+    },
+    () => false,
+  );
+
+  if (!isEnhanced) {
+    return (
+      <LanguageToggleStaticFallback
+        ariaLabel={ariaLabel}
+        locale={locale}
+        detailsRef={nativeDetails}
+      />
+    );
+  }
+
   const isActivated = activationPathname !== null;
   const isActivationCurrent = activationPathname === pathname;
   const fallback = (

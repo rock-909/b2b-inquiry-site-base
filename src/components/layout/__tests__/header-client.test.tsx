@@ -171,6 +171,20 @@ describe("MobileNavigationIsland", () => {
 });
 
 describe("LanguageToggleIsland", () => {
+  it("server-renders native language choices before hydration", () => {
+    const html = renderToStaticMarkup(
+      <LanguageToggleIsland ariaLabel="Languages: English" locale="en" />,
+    );
+    const container = document.createElement("div");
+    container.innerHTML = html;
+    expect(container.querySelector("details > summary")).not.toBeNull();
+    expect(container.querySelector('a[hreflang="es"]')).toHaveAttribute(
+      "href",
+      "/es",
+    );
+    expect(container.querySelector("button")).toBeNull();
+  });
+
   it("renders the localized fallback trigger before loading the menu", () => {
     render(<LanguageToggleIsland ariaLabel="Languages: English" locale="en" />);
 

@@ -175,7 +175,11 @@ export async function ContactFormWithFallback({ locale }: { locale: Locale }) {
   const inquiryFallback = <InquiryFormStaticFallback copy={inquiryCopy} />;
 
   return (
-    <div className="min-w-0 space-y-6" data-testid="contact-form-column">
+    <div
+      id="inquiry"
+      className="min-w-0 scroll-mt-24 space-y-6"
+      data-testid="contact-form-column"
+    >
       <InquiryForm copy={inquiryCopy} fallback={inquiryFallback} />
     </div>
   );

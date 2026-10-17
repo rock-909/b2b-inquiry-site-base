@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import en from "../../../../messages/base/en/messages.json";
+import es from "../../../../messages/base/es/messages.json";
 import { generateLocaleMetadata } from "@/app/[locale]/layout-metadata";
 
 const { mockSiteConfig } = vi.hoisted(() => ({
@@ -34,10 +36,10 @@ describe("Locale layout metadata", () => {
     const metadata = await generateLocaleMetadata({ params });
 
     expect(metadata.title).toEqual({
-      default: "Default Title",
+      default: en.home.metadata.title,
       template: "%s | Test Site",
     });
-    expect(metadata.description).toBe("Default Description");
+    expect(metadata.description).toBe(en.home.metadata.description);
     expect(metadata.alternates).toBeUndefined();
     expect(metadata.openGraph).toBeUndefined();
 
@@ -50,6 +52,19 @@ describe("Locale layout metadata", () => {
       googleBot?: { "max-video-preview"?: number };
     };
     expect(robots.googleBot?.["max-video-preview"]).toBe(-1);
+  });
+
+  it("localizes inherited Spanish metadata without publishing page URLs", async () => {
+    const metadata = await generateLocaleMetadata({
+      params: Promise.resolve({ locale: "es" }),
+    });
+    expect(metadata.title).toEqual({
+      default: es.home.metadata.title,
+      template: "%s | Test Site",
+    });
+    expect(metadata.description).toBe(es.home.metadata.description);
+    expect(metadata.alternates).toBeUndefined();
+    expect(metadata.openGraph).toBeUndefined();
   });
 
   it("falls back to default locale when locale is invalid", async () => {

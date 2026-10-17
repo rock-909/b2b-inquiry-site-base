@@ -21,7 +21,7 @@ const contactPage = {
   content: String.raw`
 Esta página es una **referencia no destinada a producción**. Sustituye la identidad, el correo, la ubicación y el plazo de respuesta por datos confirmados por el responsable.
 
-La vía más rápida es el **[formulario de consulta](/contact)**. Una solicitud útil suele incluir el requisito, la cantidad o el alcance, el mercado de destino y los plazos.
+La vía más rápida es el **[formulario de consulta](/contact#inquiry)**. Una solicitud útil suele incluir el requisito, la cantidad o el alcance, el mercado de destino y los plazos.
 `,
 } satisfies Page;
 
