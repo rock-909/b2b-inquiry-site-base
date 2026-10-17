@@ -1,5 +1,8 @@
 import { expect, test, type Locator } from "@playwright/test";
-import { getHeaderMobileMenuButton } from "./helpers/navigation";
+import {
+  expectDesktopLanguageMenuKeyboardReady,
+  getHeaderMobileMenuButton,
+} from "./helpers/navigation";
 import { acceptCookieBannerIfVisible } from "./test-environment-setup";
 
 // Windows 高对比度（forced-colors）下 box-shadow 会被系统去掉，Tailwind 的
@@ -84,12 +87,7 @@ test.describe("forced-colors keyboard indicators", () => {
       }
       await expect(menu).toBeVisible({ timeout: 1_000 });
     }).toPass();
-    // 菜单可见时，下一帧的自动聚焦可能尚未完成；方向键必须发给菜单。
-    await expect
-      .poll(() =>
-        menu.evaluate((element) => element.contains(document.activeElement)),
-      )
-      .toBe(true);
+    await expectDesktopLanguageMenuKeyboardReady(page);
     await page.keyboard.press("ArrowDown");
 
     const highlighted = page
