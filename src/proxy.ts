@@ -4,9 +4,17 @@ import { getOfferingById } from "@/config/offerings";
 import { routing } from "@/i18n/routing-config";
 
 const intlMiddleware = createMiddleware(routing);
+// next.config 在构建时内联公开资源清单，不读取运行时环境或文件系统。
+const publicAssetPaths = new Set<string>(
+  // eslint-disable-next-line no-process-env -- Next 构建常量必须使用直接属性访问才能内联
+  JSON.parse(process.env.PUBLIC_ASSET_PATHS ?? "[]"),
+);
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname.replace(/\/+$/u, "") || "/";
+  if (publicAssetPaths.has(pathname)) {
+    return NextResponse.next();
+  }
   const localePrefix = routing.locales.find(
     (locale) => pathname === `/${locale}` || pathname.startsWith(`/${locale}/`),
   );
@@ -28,5 +36,8 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/((?!api|_next|.*\\..*).*)"],
+  matcher: [
+    "/",
+    "/((?!api(?:/|$)|_next(?:/|$)|robots\\.txt$|sitemap\\.xml$|icon\\.svg$|security-policy\\.txt$).*)",
+  ],
 };

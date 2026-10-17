@@ -7,9 +7,6 @@ import { expect, test } from "@playwright/test";
  * site is broken rather than the page is gone, which is a far more damaging
  * signal, and it shows buyers a server error when they follow a stale link.
  *
- * Paths containing a dot skip the proxy matcher, so they never reach the
- * locale routing that the [locale] segment's not-found page depends on. They
- * are the cases that regress silently.
  */
 
 const MISSING_PATHS = [
@@ -28,7 +25,7 @@ test.describe("Missing URLs answer 404", () => {
   test("root 404 does not publish inherited OG image metadata", async ({
     page,
   }) => {
-    // 带点路径跳过 locale proxy，真实根 404 不应继承缺少 metadataBase 的图片。
+    // 缺失带点路径的 404 不应继承页面图片元数据。
     const response = await page.goto("/random.txt");
     expect(response?.status()).toBe(404);
     await expect(page.locator('meta[property="og:image"]')).toHaveCount(0);
@@ -36,16 +33,14 @@ test.describe("Missing URLs answer 404", () => {
   });
   for (const path of MISSING_PATHS) {
     test(`${path} returns 404`, async ({ request }) => {
-      const response = await request.get(`http://localhost:3000${path}`);
+      const response = await request.get(path);
 
       expect(response.status(), `${path} should be 404`).toBe(404);
     });
   }
 
   test("a served asset still returns 200", async ({ request }) => {
-    const response = await request.get(
-      "http://localhost:3000/.well-known/security.txt",
-    );
+    const response = await request.get("/.well-known/security.txt");
 
     expect(response.status()).toBe(200);
   });
