@@ -84,6 +84,12 @@ test.describe("forced-colors keyboard indicators", () => {
       }
       await expect(menu).toBeVisible({ timeout: 1_000 });
     }).toPass();
+    // 菜单可见时，下一帧的自动聚焦可能尚未完成；方向键必须发给菜单。
+    await expect
+      .poll(() =>
+        menu.evaluate((element) => element.contains(document.activeElement)),
+      )
+      .toBe(true);
     await page.keyboard.press("ArrowDown");
 
     const highlighted = page
