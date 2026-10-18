@@ -56,6 +56,92 @@ describe("React Doctor gate contract", () => {
     ).toBe(true);
   });
 
+  // 来自 #115 的 0.9.18 CI 报告；省略不参与门禁判断的路径、耗时与版本信息。
+  const emptyBaseline = {
+    schemaVersion: 3,
+    mode: "baseline",
+    ok: true,
+    error: null,
+    diff: {
+      baseBranch: "origin/main",
+      currentBranch: null,
+      changedFileCount: 9,
+      isCurrentChanges: false,
+    },
+    baseline: {
+      baseRef: "7591e3e76d048fe7873ec1c3b5db3254bbf3f8ba",
+      source: "base",
+      matchedCount: 0,
+      newCount: 0,
+      fixedCount: 0,
+      baseTotalCount: 0,
+    },
+    projects: [],
+    diagnostics: [],
+    summary: {
+      errorCount: 0,
+      warningCount: 0,
+      affectedFileCount: 0,
+      totalDiagnosticCount: 0,
+    },
+  };
+
+  it("accepts the successful empty baseline comparison returned by the CLI", () => {
+    expect(isCompleteCleanReport(emptyBaseline)).toBe(true);
+  });
+
+  const rejectedBaselines: [string, object][] = [
+    ["failed report", { ok: false }],
+    ["unknown schema", { schemaVersion: 4 }],
+    ["malformed skipped projects", { skippedProjects: {} }],
+    ["tool error", { error: "scan failed" }],
+    ["missing diff", { diff: null }],
+    [
+      "missing base branch",
+      { diff: { ...emptyBaseline.diff, baseBranch: "" } },
+    ],
+    [
+      "invalid change count",
+      { diff: { ...emptyBaseline.diff, changedFileCount: -1 } },
+    ],
+    ["missing baseline", { baseline: null }],
+    [
+      "missing base ref",
+      { baseline: { ...emptyBaseline.baseline, baseRef: "" } },
+    ],
+    [
+      "unknown baseline source",
+      { baseline: { ...emptyBaseline.baseline, source: "unknown" } },
+    ],
+    ["degraded comparison", { baselineDegraded: true }],
+    ["skipped project", { skippedProjects: [{ directory: "." }] }],
+    ["diagnostic", { diagnostics: [{ message: "warning" }] }],
+    ["missing diagnostics", { diagnostics: undefined }],
+    ["full scan", { mode: "full" }],
+    ["unknown mode", { mode: "unknown" }],
+    ["incomplete project", { projects: [{ complete: false }] }],
+    ...["matchedCount", "newCount", "fixedCount", "baseTotalCount"].map<
+      [string, object]
+    >((key) => [key, { baseline: { ...emptyBaseline.baseline, [key]: 1 } }]),
+    ...[
+      "errorCount",
+      "warningCount",
+      "affectedFileCount",
+      "totalDiagnosticCount",
+    ].map<[string, object]>((key) => [
+      key,
+      { summary: { ...emptyBaseline.summary, [key]: 1 } },
+    ]),
+  ];
+  it.each(rejectedBaselines)(
+    "rejects an empty baseline with %s",
+    (_name, override) => {
+      expect(isCompleteCleanReport({ ...emptyBaseline, ...override })).toBe(
+        false,
+      );
+    },
+  );
+
   it("pins an exact react-doctor version in devDependencies", () => {
     const { devDependencies } = readPackageJson();
     const version = devDependencies["react-doctor"];
