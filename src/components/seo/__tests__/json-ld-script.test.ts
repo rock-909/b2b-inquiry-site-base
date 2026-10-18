@@ -119,11 +119,7 @@ describe("createJsonLdGraphData", () => {
     };
 
     expect(graphData["@context"]).toBe("https://schema.org");
-    expect(graphTypes(graphData)).toEqual([
-      "Organization",
-      "WebSite",
-      "FAQPage",
-    ]);
+    expect(graphTypes(graphData)).toEqual(["WebSite", "FAQPage"]);
     expect(graphData["@graph"].some((node) => "@context" in node)).toBe(false);
   });
 

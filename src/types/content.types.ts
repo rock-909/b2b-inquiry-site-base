@@ -35,9 +35,7 @@ export interface FaqItem {
   answer: string;
 }
 
-export interface LegalPageMetadata extends PageMetadata {
-  lastReviewed: string;
-}
+export type LegalPageMetadata = PageMetadata;
 
 // Content with parsed frontmatter and content
 export interface ParsedContent<T extends ContentMetadata = ContentMetadata> {

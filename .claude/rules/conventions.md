@@ -60,7 +60,7 @@ The inquiry form handles expected validation and provider failures locally.
 Do not add another boundary solely because a route has parameters or a form.
 
 User-interaction-triggered lazy loading is the exception: a `React.lazy()` island
-that loads on scroll, hover or click (deferred inquiry form, mobile navigation,
+that loads on scroll, hover or click (mobile navigation,
 language menu) sits under a `[locale]` layout, so a failed `import()` would
 otherwise reach `global-error` and replace the whole page. Wrap each such island
 in `LazyIslandBoundary` and fall back to usable static markup (the island's

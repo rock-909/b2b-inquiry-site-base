@@ -21,7 +21,6 @@ describe("load-messages canonical runtime source", () => {
     expect(messages).not.toHaveProperty("blog");
     expect(messages).not.toHaveProperty("customProject");
     expect(messages).not.toHaveProperty("language");
-    expect(messages).toHaveProperty("products");
   });
 
   it("uses the canonical source without site-specific overlay drift", async () => {
@@ -29,12 +28,10 @@ describe("load-messages canonical runtime source", () => {
 
     const messages = (await loadCompleteMessages("en")) as {
       seo?: unknown;
-      footer?: { description?: string };
-      home?: { hero?: { title?: string } };
+      home?: { title?: string };
     };
 
     expect(messages.seo).toBeUndefined();
-    expect(messages.footer?.description).toBeTruthy();
-    expect(messages.home?.hero?.title).toBeTruthy();
+    expect(messages.home?.title).toBeTruthy();
   });
 });

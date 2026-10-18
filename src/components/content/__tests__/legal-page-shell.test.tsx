@@ -60,11 +60,10 @@ describe("LegalPageShell structured data", () => {
       "@id": pageUrl,
       url: pageUrl,
       isPartOf: { "@id": "https://www.example.com#website" },
-      about: {
-        "@id": "https://www.example.com#organization",
-      },
+
     });
     expect(schema).not.toHaveProperty("additionalType");
+    expect(schema).not.toHaveProperty("about");
   });
 
   it("Given terms legal metadata, When the shell renders, Then WebPage JSON-LD has no additionalType", async () => {
@@ -90,6 +89,7 @@ describe("LegalPageShell structured data", () => {
       url: pageUrl,
     });
     expect(schema).not.toHaveProperty("additionalType");
+    expect(schema).not.toHaveProperty("about");
   });
 
 });

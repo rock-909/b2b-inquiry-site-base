@@ -4,43 +4,22 @@ const termsPage = {
   slug: "terms",
   filePath: "/src/content/pages/es/terms.ts",
   metadata: {
-    title: "Referencia de condiciones del sitio web",
-    description:
-      "Texto de referencia no destinado a producción sobre el uso del sitio y los límites de la fase de consulta B2B.",
+    title: "Condiciones — pendientes de completar",
+    description: "Texto provisional incompleto. El responsable debe sustituirlo antes del lanzamiento.",
     slug: "terms",
     publishedAt: "2026-08-06",
     updatedAt: "2026-08-06",
     author: "B2B Inquiry Site Base",
-    lastReviewed: "2026-08-06",
     draft: false,
     seo: {
-      title: "Referencia de condiciones del sitio web",
-      description:
-        "Texto de referencia que debe revisarse y sustituirse según la empresa y la oferta reales.",
+      title: "Condiciones — pendientes de completar",
+      description: "Texto provisional incompleto. El responsable debe sustituirlo antes del lanzamiento.",
     },
   },
   content: String.raw`
-> Solo como referencia. Esto no es asesoramiento jurídico ni un documento de condiciones para producción. Sustitúyelo por condiciones revisadas para la empresa, la oferta y la jurisdicción reales.
+Estas condiciones están incompletas. Antes del lanzamiento, el responsable debe indicar su identidad, el uso del sitio, la gestión de consultas, las condiciones aplicables y un medio de contacto operativo.
 
-## Responsable del sitio
-
-Identifica la entidad legal responsable del sitio web y proporciona un medio de contacto operativo.
-
-## Información del sitio web
-
-Explica si las páginas, descargas y ejemplos son información general, especificaciones, presupuestos o compromisos contractuales. No prometas garantías que la empresa no haya aprobado.
-
-## Consultas y presupuestos
-
-Indica que una consulta no crea un pedido. Define qué documento escrito confirma el precio, el alcance, los plazos, la entrega, el pago y cualquier requisito personalizado.
-
-## Responsabilidades del comprador y del proveedor
-
-Describe los límites reales respecto a la selección, instalación, cumplimiento, operación, mantenimiento y aprobaciones locales cuando corresponda.
-
-## Actualizaciones
-
-Explica cuándo entran en vigor las condiciones actualizadas del sitio y qué documentos comerciales firmados tienen prioridad en una operación real.
+Sustituye este texto provisional por condiciones revisadas para la actividad real y la legislación aplicable.
 `,
 } satisfies Page;
 

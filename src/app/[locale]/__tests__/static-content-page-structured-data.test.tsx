@@ -11,7 +11,6 @@ import { StaticContentPage } from "@/app/[locale]/static-content-page";
  */
 
 const ES_PAGES = [
-  { pageType: "about", slug: "about", path: "/es/about" },
   { pageType: "privacy", slug: "privacy", path: "/es/privacy" },
   { pageType: "terms", slug: "terms", path: "/es/terms" },
 ] as const;

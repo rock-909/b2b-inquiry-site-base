@@ -6,8 +6,7 @@ import {
   type LocaleParam,
 } from "@/app/[locale]/generate-static-params";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
-import { HeroSection } from "@/components/sections/hero-section";
-import { EmbeddedInquiryFormSection } from "@/components/sections/inquiry-form-embed";
+import { Link } from "@/i18n/routing";
 import { getCanonicalPath } from "@/config/paths";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
@@ -45,20 +44,19 @@ export default async function HomePage({ params }: HomePageProps) {
   return (
     <>
       <JsonLdGraphScript locale={locale} />
-      <HeroSection />
-      <section className="section-divider px-6 py-14 md:py-[72px]">
-        <div className="mx-auto max-w-[720px]">
-          <h2 className="text-section text-balance">{t("value.title")}</h2>
-          <p className="mt-3 text-pretty text-muted-foreground">
-            {t("value.description")}
-          </p>
-        </div>
+      <section className="mx-auto max-w-[720px] px-6 py-12 md:py-16">
+        <h1 className="text-heading text-balance">{t("title")}</h1>
+        <p className="text-body mt-4 text-pretty text-muted-foreground">
+          {t("description")}
+        </p>
+        <Link
+          href={getCanonicalPath("contact")}
+          className="mt-6 inline-block py-2 text-[var(--primary-text)] underline underline-offset-4"
+          prefetch={false}
+        >
+          {t("contactLink")}
+        </Link>
       </section>
-      <EmbeddedInquiryFormSection
-        title={t("finalCta.title")}
-        description={t("finalCta.description")}
-        locale={locale}
-      />
     </>
   );
 }

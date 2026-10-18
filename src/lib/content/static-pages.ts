@@ -1,8 +1,6 @@
-import aboutPage from "@/content/pages/en/about";
 import contactPage from "@/content/pages/en/contact";
 import privacyPage from "@/content/pages/en/privacy";
 import termsPage from "@/content/pages/en/terms";
-import aboutPageEs from "@/content/pages/es/about";
 import contactPageEs from "@/content/pages/es/contact";
 import privacyPageEs from "@/content/pages/es/privacy";
 import termsPageEs from "@/content/pages/es/terms";
@@ -10,13 +8,11 @@ import type { Locale, Page } from "@/types/content.types";
 
 const STATIC_PAGES: Record<Locale, Record<string, Page>> = {
   en: {
-    about: aboutPage,
     contact: contactPage,
     privacy: privacyPage,
     terms: termsPage,
   },
   es: {
-    about: aboutPageEs,
     contact: contactPageEs,
     privacy: privacyPageEs,
     terms: termsPageEs,

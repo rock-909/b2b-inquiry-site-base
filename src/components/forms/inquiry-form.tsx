@@ -31,7 +31,7 @@ export interface InquiryFormProps {
   readonly copy: InquiryFormCopy;
   readonly fallback: ReactNode;
   /**
-   * 产品语境预填：仅产品详情页传入（来源为编译期 offerings 配置，非用户输入）。
+   * 通用留言预填：由调用方提供可信的初始上下文。
    * 走 textarea defaultValue——React 文本渲染不是 HTML sink；提交仍经
    * inquiryLeadSchema 校验。传入前截断到 message 上限，
    * 避免超长初始值先过浏览器 maxLength 再被服务端 400。

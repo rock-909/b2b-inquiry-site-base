@@ -49,12 +49,7 @@ vi.mock("@/i18n/routing", () => ({
   ),
 }));
 
-const EXPECTED_ITEM_LABELS = [
-  "Home",
-  "Products",
-  "About",
-  "Start an inquiry",
-] as const;
+const EXPECTED_ITEM_LABELS = ["Home", "Start an inquiry"] as const;
 const CTA_LABEL = "Start an inquiry";
 
 describe("MobileNavigationLinks", () => {
@@ -71,8 +66,7 @@ describe("MobileNavigationLinks", () => {
     const html = renderToStaticMarkup(<MobileNavigationLinks />);
 
     expect(html).toContain("Home");
-    expect(html).toContain("Products");
-    expect(html).toContain("About");
+    expect(html).toContain("Start an inquiry");
     expect(html).toContain('href="/"');
     expect(html).not.toContain("aria-expanded");
   });
@@ -116,12 +110,11 @@ describe("MobileNavigationLinks", () => {
   });
 
   it("marks the active item with aria-current and leaves others unset", () => {
-    render(<MobileNavigationLinks currentPathname="/about" />);
+    render(<MobileNavigationLinks currentPathname="/contact" />);
 
-    expect(screen.getByRole("link", { name: "About" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
+    expect(
+      screen.getByRole("link", { name: "Start an inquiry", current: "page" }),
+    ).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
       "aria-current",
     );

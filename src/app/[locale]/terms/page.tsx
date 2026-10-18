@@ -25,7 +25,7 @@ export function generateMetadata(props: {
 }
 
 // 本页在构建期就整页预渲染，没有请求期数据可等；经 StaticContentPage 统一
-// 渲染（与 about 一致），禁用脚本访客由 fallback 承载。
+// 渲染，禁用脚本访客由 fallback 承载。
 export default async function TermsPage({
   params,
 }: {

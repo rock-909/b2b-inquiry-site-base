@@ -3,11 +3,7 @@ import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setRequestLocale } from "next-intl/server";
 import ContactPage, { generateMetadata } from "@/app/[locale]/contact/page";
-import {
-  getContactPageData,
-  getStaticContactPage,
-} from "@/app/[locale]/contact/contact-page-data";
-import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
+import { getStaticContactPage } from "@/app/[locale]/contact/contact-page-data";
 import * as staticPages from "@/lib/content/static-pages";
 import { renderAsyncPage } from "@/test/render-async-page";
 
@@ -122,24 +118,6 @@ describe("ContactPage static content", () => {
     expect(vi.mocked(setRequestLocale)).toHaveBeenCalledWith("en");
   });
 
-  it("renders English contact panel copy from the top-level contact namespace", async () => {
-    const page = await ContactPage({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    await renderAsyncPage(page as React.JSX.Element);
-
-    expect(
-      screen.getByRole("heading", { name: "Email & inquiry" }),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/Email & WhatsApp/i)).not.toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "What happens next" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Response target")).toBeInTheDocument();
-    expect(screen.getAllByText("Set before launch").length).toBeGreaterThan(0);
-  });
-
   it("renders the public email and hides the owner TODO phone", async () => {
     const { ContactMethodsCard } = await import("../contact-page-sections");
 
@@ -152,32 +130,6 @@ describe("ContactPage static content", () => {
     expect(screen.queryByText(/WhatsApp/i)).not.toBeInTheDocument();
   });
 
-  it("interpolates site placeholders in FAQ answers", () => {
-    const page = staticPages.getStaticPage("contact", "en");
-    vi.spyOn(staticPages, "getStaticPage").mockReturnValue({
-      ...page,
-      metadata: {
-        ...page.metadata,
-        faq: [
-          {
-            id: "who",
-            question: "Who are we?",
-            answer: "{siteName} ({companyName}) since {established}. {unknown}",
-          },
-        ],
-      },
-    });
-
-    const { faqItems, faqSchema } = getContactPageData("en");
-
-    expect(faqItems[0]?.answer).toBe(
-      `${SINGLE_SITE_CONFIG.name} (${SINGLE_SITE_FACTS.company.name}) since ${SINGLE_SITE_FACTS.company.established}. {unknown}`,
-    );
-    expect(faqSchema?.mainEntity[0]?.acceptedAnswer.text).toContain(
-      SINGLE_SITE_CONFIG.name,
-    );
-  });
-
   it("does not render starter FAQ from page metadata", async () => {
     const page = await ContactPage({
       params: Promise.resolve({ locale: "en" }),
@@ -186,89 +138,6 @@ describe("ContactPage static content", () => {
     await renderAsyncPage(page as React.JSX.Element);
 
     expect(screen.queryByTestId("faq-section")).not.toBeInTheDocument();
-  });
-
-  it("renders the inquiry handoff before the form", async () => {
-    const page = await ContactPage({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    await renderAsyncPage(page as React.JSX.Element);
-
-    const handoff = screen.getByTestId("contact-inquiry-handoff");
-    const formColumn = screen.getByTestId("contact-form-column");
-
-    expect(
-      within(handoff).getByRole("heading", {
-        level: 2,
-        name: "Start with the essentials",
-      }),
-    ).toBeInTheDocument();
-    expect(handoff).toHaveTextContent(
-      "A focused inquiry gives the business enough context",
-    );
-    expect(handoff).toHaveTextContent("What you need");
-    expect(handoff).toHaveTextContent("Scope and quantity");
-    expect(handoff).toHaveTextContent("Timing and destination");
-    expect(formColumn.compareDocumentPosition(handoff)).toBe(
-      Node.DOCUMENT_POSITION_PRECEDING,
-    );
-  });
-
-  it("keeps the form as the main action with response expectations beside it", async () => {
-    const page = await ContactPage({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    await renderAsyncPage(page as React.JSX.Element);
-
-    // h1 contact/inquiry heading.
-    expect(
-      screen.getByRole("heading", { level: 1, name: /contact|inquiry/i }),
-    ).toBeInTheDocument();
-
-    // The form is present via the shared InquiryForm composition.
-    expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
-
-    // Confidence (response expectations) sits in the column beside the form,
-    // and leads with the response/expect/prepare copy rather than the
-    // contact-methods fallback.
-    const confidenceColumn = screen.getByTestId("contact-confidence-column");
-    const formColumn = screen.getByTestId("contact-form-column");
-
-    // Response / expect / prepare confidence copy the page actually renders
-    // from existing contact panel content, scoped to the confidence column.
-    expect(
-      within(confidenceColumn).getAllByText(/response|step|requirement/i)
-        .length,
-    ).toBeGreaterThan(0);
-    expect(
-      within(confidenceColumn).getAllByText("Set before launch").length,
-    ).toBeGreaterThan(0);
-    expect(
-      within(confidenceColumn).getByText("The next confirmed step"),
-    ).toBeInTheDocument();
-    expect(confidenceColumn).not.toContainElement(
-      screen.getByTestId("inquiry-form"),
-    );
-    expect(formColumn.compareDocumentPosition(confidenceColumn)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
-  });
-
-  it("keeps the inquiry handoff as static guidance without extra routes or downloads", async () => {
-    const page = await ContactPage({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    await renderAsyncPage(page as React.JSX.Element);
-
-    const handoff = screen.getByTestId("contact-inquiry-handoff");
-
-    expect(within(handoff).queryByRole("link")).not.toBeInTheDocument();
-    expect(handoff.textContent).not.toContain(".pdf");
-    expect(handoff.textContent).not.toContain("/api/");
-    expect(handoff.textContent).not.toContain("login");
   });
 
   it("does not protect the entire Contact page from browser translation", async () => {

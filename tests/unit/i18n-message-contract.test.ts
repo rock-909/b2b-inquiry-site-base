@@ -15,9 +15,7 @@ const enMessages = getSourceMessages("en") as JsonObject & {
 
 const CONTACT_PANEL_KEYS = [
   "contact.panel.contactTitle",
-  "contact.panel.email",
-  "contact.inquiryHandoff.title",
-  "contact.inquiryHandoff.description",
+  "contact.panel.emailUnavailable",
 ] as const;
 
 function isJsonObject(value: unknown): value is JsonObject {
@@ -50,7 +48,7 @@ describe("real i18n runtime message contract", () => {
     assertNonEmptyStringLeaves(copy, "inquiry.form");
   });
 
-  it("keeps contact panel and inquiry handoff owners", () => {
+  it("keeps contact fallback copy", () => {
     for (const keyPath of CONTACT_PANEL_KEYS) {
       const value = getMessageValue(enMessages, keyPath);
 

@@ -51,6 +51,9 @@ describe("single-site", () => {
       isPublicPhoneConfigured,
     } = await import("@/config/public-trust");
 
+    expect(getPublicContactEmail("not-an-email")).toBeUndefined();
+    expect(getPublicContactPhone("call me")).toBeUndefined();
+    expect(getPublicContactPhone("-------")).toBeUndefined();
     expect(isPublicEmailConfigured("sales@example.com")).toBe(false);
     expect(isPublicEmailConfigured("sales@asterconveyor.example")).toBe(false);
     expect(isPublicEmailConfigured("hello@starter.dev")).toBe(true);
@@ -71,17 +74,67 @@ describe("single-site", () => {
     );
     expect(
       getPublicLogoPath({
-        ...SINGLE_SITE_FACTS.brandAssets.logo,
+        width: 240,
+        height: 72,
         horizontal: "/logo.svg",
         status: "pending",
       }),
     ).toBeUndefined();
     expect(
       getPublicLogoPath({
-        ...SINGLE_SITE_FACTS.brandAssets.logo,
+        width: 240,
+        height: 72,
         horizontal: "/logo.svg",
         status: "ready",
       }),
     ).toBe("/logo.svg");
+  });
+  it("accepts real names and profiles containing Northstar or Todo", async () => {
+    const { getPublicFact, getPublicSocialUrl } =
+      await import("@/config/public-trust");
+    for (const name of [
+      "Northstar Manufacturing",
+      "Todo Industries",
+      "Todo-Industries",
+      "Todorov Engineering",
+    ])
+      expect(getPublicFact(name)).toBe(name);
+    for (const url of [
+      "https://linkedin.com/company/northstar-manufacturing",
+      "https://linkedin.com/company/todo-industries",
+      "https://todo.com/profile",
+    ])
+      expect(getPublicSocialUrl(url)).toBe(url);
+  });
+
+  it("still rejects known sentinel names and explicit TODO markers", async () => {
+    const { getPublicFact, getPublicSocialUrl } =
+      await import("@/config/public-trust");
+    for (const value of [
+      "Northstar Industrial Reference",
+      "B2B Inquiry Template",
+      "Replace before launch",
+      "TODO",
+      "TODO-OWNER",
+      "TODO: company name",
+      "[TODO]",
+    ])
+      expect(getPublicFact(value)).toBeUndefined();
+    expect(getPublicSocialUrl("https://x.com/example")).toBeUndefined();
+  });
+
+  it("accepts local logos but rejects paths that resolve across origins", async () => {
+    const { getPublicLogoPath } = await import("@/config/public-trust");
+    const logo = { status: "ready" as const, width: 240, height: 72 };
+    expect(getPublicLogoPath({ ...logo, horizontal: "/images/logo.svg" })).toBe(
+      "/images/logo.svg",
+    );
+    for (const horizontal of [
+      String.raw`/\cdn.invalid/logo.svg`,
+      "//cdn.invalid/logo.svg",
+      "https://cdn.invalid/logo.svg",
+      String.raw`/images\logo.svg`,
+    ])
+      expect(getPublicLogoPath({ ...logo, horizontal })).toBeUndefined();
   });
 });

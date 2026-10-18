@@ -1,14 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // 尺寸与官方 compact 一致；单元测试另守真实封装的 size 选项，CI 不请求外部服务。
-for (const path of [
-  "/",
-  "/es",
-  "/products/sample-offering",
-  "/es/products/sample-offering",
-  "/contact",
-  "/es/contact",
-]) {
+for (const path of ["/contact", "/es/contact"]) {
   for (const initialWidth of [320, 390, 640, 768]) {
     test(`compact bot-check footprint fits ${path} from ${initialWidth}px`, async ({
       page,

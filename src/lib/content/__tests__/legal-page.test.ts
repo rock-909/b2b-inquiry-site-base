@@ -48,7 +48,7 @@ describe("loadLegalPage", () => {
     expect(result.metadata.lastReviewed).toBe("2024-04-01");
   });
 
-  it("falls back to updatedAt when lastReviewed is absent", async () => {
+  it("does not infer a review from updatedAt", async () => {
     mockGetStaticPage.mockReturnValueOnce({
       metadata: {
         title: "Terms",
@@ -62,10 +62,10 @@ describe("loadLegalPage", () => {
     });
 
     const result = await loadLegalPage("terms", "en");
-    expect(result.metadata.lastReviewed).toBe("2024-06-15");
+    expect(result.metadata.lastReviewed).toBeUndefined();
   });
 
-  it("falls back to publishedAt when both lastReviewed and updatedAt are absent", async () => {
+  it("does not infer a review from publishedAt", async () => {
     mockGetStaticPage.mockReturnValueOnce({
       metadata: {
         title: "Terms",
@@ -78,7 +78,7 @@ describe("loadLegalPage", () => {
     });
 
     const result = await loadLegalPage("terms", "en");
-    expect(result.metadata.lastReviewed).toBe("2024-01-01");
+    expect(result.metadata.lastReviewed).toBeUndefined();
   });
 });
 

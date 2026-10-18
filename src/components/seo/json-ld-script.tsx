@@ -61,7 +61,11 @@ export async function JsonLdGraphScript({
       locale,
       namespace: "structured-data",
     });
-    identity = [generateOrganizationData(t), generateWebSiteData(t)];
+    const organization = generateOrganizationData();
+    identity = [
+      ...(organization ? [organization] : []),
+      generateWebSiteData(t),
+    ];
   } catch {
     return null;
   }

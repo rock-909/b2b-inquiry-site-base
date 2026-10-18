@@ -7,12 +7,7 @@ const CLIENT_SAFE_ENTRIES = [
   "src/lib/logger.ts",
   "src/lib/public-runtime-env.ts",
 ];
-const FORM_ENTRIES = [
-  "src/components/sections/inquiry-form-embed.tsx",
-  "src/components/forms/deferred-inquiry-form.tsx",
-  "src/components/sections/immediate-inquiry-form-section.tsx",
-  "src/app/[locale]/contact/contact-page-sections.tsx",
-];
+const FORM_ENTRIES = ["src/app/[locale]/contact/contact-page-sections.tsx"];
 const CLIENT_FORBIDDEN =
   /(?:^|\/)zod(?:\/|$)|src\/lib\/env(?:\.|$)|public-trust|single-site(?:-|\.|$)|inquiry-form-static-fallback/u;
 const INQUIRY_ROUTE = "src/app/api/inquiry/route.ts";
@@ -88,23 +83,6 @@ describe("runtime dependency boundaries", () => {
         forbidden.test(file),
       ),
     ).toEqual([]);
-  });
-  it("keeps the home form deferred and product/contact forms immediate", () => {
-    const importsForm = (entry: string, target: string) =>
-      modules
-        .get(entry)!
-        .dependencies.filter((dependency) => dependency.resolved === target);
-    expect(importsForm(FORM_ENTRIES[0]!, FORM_ENTRIES[1]!)).toHaveLength(1);
-    expect(importsForm(FORM_ENTRIES[0]!, CLIENT_ENTRY)).toEqual([]);
-    const deferred = importsForm(FORM_ENTRIES[1]!, CLIENT_ENTRY);
-    expect(deferred).toHaveLength(1);
-    expect(deferred[0]!.dynamic).toBe(true);
-    for (const entry of FORM_ENTRIES.slice(2)) {
-      const immediate = importsForm(entry, CLIENT_ENTRY);
-      expect(immediate).toHaveLength(1);
-      expect(immediate[0]!.dynamic).toBe(false);
-      expect(importsForm(entry, FORM_ENTRIES[1]!)).toEqual([]);
-    }
   });
   it("keeps inquiry as the only API route reaching lead delivery", () => {
     const writers = routes.filter((route) => {

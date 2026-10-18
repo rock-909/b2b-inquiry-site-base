@@ -1,24 +1,6 @@
 import "server-only";
-
-import {
-  extractFaqFromMetadata,
-  generateFaqSchemaFromItems,
-} from "@/lib/content/faq";
-import { getSiteMessageValues } from "@/lib/i18n/site-message-values";
-import { interpolate } from "@/lib/interpolate";
 import { getStaticPage } from "@/lib/content/static-pages";
-import type {
-  FaqItem,
-  Locale,
-  Page,
-  PageMetadata,
-} from "@/types/content.types";
-
-export interface ContactPageData {
-  page: Page;
-  faqItems: FaqItem[];
-  faqSchema: ReturnType<typeof generateFaqSchemaFromItems> | null;
-}
+import type { Locale, Page, PageMetadata } from "@/types/content.types";
 
 function assertContactPageMetadata(
   metadata: unknown,
@@ -49,23 +31,4 @@ export function getStaticContactPage(locale: Locale): Page {
   assertContactPageMetadata(page.metadata, locale);
 
   return page;
-}
-
-export function getContactPageData(locale: Locale): ContactPageData {
-  const page = getStaticContactPage(locale);
-  const siteValues = getSiteMessageValues();
-  const faqItems: FaqItem[] = extractFaqFromMetadata(page.metadata).map(
-    (item) => ({
-      ...item,
-      answer: interpolate(item.answer, siteValues),
-    }),
-  );
-  const faqSchema =
-    faqItems.length > 0 ? generateFaqSchemaFromItems(faqItems, locale) : null;
-
-  return {
-    page,
-    faqItems,
-    faqSchema,
-  };
 }

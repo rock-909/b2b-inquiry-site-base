@@ -22,20 +22,9 @@
     "rejectAll": "No thanks"
   },
   "structured-data": {
-    "organization": {
-      "name": "{companyName}",
-      "description": "B2B inquiry site reference",
-      "social": {
-        "twitter": "",
-        "linkedin": ""
-      }
-    },
     "website": {
       "name": "{siteName}",
       "description": "B2B inquiry site reference"
-    },
-    "article": {
-      "defaultAuthor": "{companyName}"
     }
   },
   "apiErrors": {
@@ -90,8 +79,6 @@
   },
   "navigation": {
     "home": "Home",
-    "products": "Products",
-    "about": "About",
     "contactSales": "Start an inquiry",
     "language": "Languages",
     "siteName": "{siteName}",
@@ -102,8 +89,6 @@
       "navigation": {
         "title": "Navigation",
         "home": "Home",
-        "products": "Products",
-        "about": "About",
         "contact": "Contact"
       },
       "support": {
@@ -112,89 +97,23 @@
         "terms": "Terms of Service"
       }
     },
-    "copyright": "© {currentYear} {siteName}. All rights reserved.",
-    "description": "A neutral B2B inquiry site reference."
+    "copyright": "© {currentYear} {siteName}. All rights reserved."
   },
   "home": {
     "metadata": {
-      "title": "{siteName} - B2B Inquiry Template",
+      "title": "{siteName}",
       "description": "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details."
     },
-    "hero": {
-      "eyebrow": "B2B inquiry reference",
-      "title": "Turn qualified interest into a useful conversation.",
-      "subtitle": "A neutral starting point for businesses that need a clear offer, credible proof and a focused inquiry path.",
-      "cta": {
-        "primary": "Start an inquiry",
-        "secondary": "Learn about the site"
-      }
-    },
-    "value": {
-      "title": "A small site with the pieces that matter",
-      "description": "Use the structure as-is, then replace the identity, offer, proof and content for the next business."
-    },
-    "finalCta": {
-      "title": "Have a requirement to discuss?",
-      "description": "Share the essentials and the team can follow up with the next useful question."
-    }
-  },
-  "products": {
-    "metadata": {
-      "title": "Products",
-      "description": "Review the configured product range and continue to the inquiry path with the relevant product context."
-    },
-    "page": {
-      "eyebrow": "Product catalog",
-      "heading": "Products built around real buyer requirements",
-      "description": "Replace the reference entry with verified product facts before launch.",
-      "viewDetails": "View details"
-    },
-    "detail": {
-      "backToProducts": "Back to products",
-      "factsEyebrow": "Product facts",
-      "applicationsTitle": "Applications and buyer fit",
-      "specificationsTitle": "Technical specifications",
-      "materialsTitle": "Materials and construction",
-      "configurationTitle": "Configuration and selection",
-      "deliveryTitle": "Delivery boundary",
-      "evidenceTitle": "Verifiable evidence",
-      "startInquiry": "Get a quote",
-      "inquirySectionTitle": "Inquire about {productName}"
-    }
+    "title": "B2B inquiry site",
+    "description": "A starting point for a business website. Visit the contact page to prepare an inquiry.",
+    "contactLink": "Contact"
   },
   "contact": {
     "title": "Contact",
     "description": "Share the essentials so the business can identify the next useful step.",
-    "inquiryHandoff": {
-      "title": "Start with the essentials",
-      "description": "A focused inquiry gives the business enough context to respond with a useful next step.",
-      "items": {
-        "need": {
-          "title": "What you need",
-          "description": "The product, service, application or problem you want to discuss."
-        },
-        "context": {
-          "title": "Scope and quantity",
-          "description": "Quantity, dimensions, specifications, location or project scope, plus photos or drawings when useful."
-        },
-        "timing": {
-          "title": "Timing and destination",
-          "description": "Target date, destination market and any delivery or implementation constraints."
-        }
-      }
-    },
     "panel": {
       "contactTitle": "Email & inquiry",
-      "email": "Email",
-      "emailUnavailable": "Use the inquiry form if email is unavailable.",
-      "phone": "Phone",
-      "responseTitle": "What happens next",
-      "responseTimeLabel": "Response target",
-      "responseTimeValue": "Set before launch",
-      "bestForLabel": "Useful first reply",
-      "bestForValue": "The next confirmed step",
-      "prepareLabel": "Help the team respond",
-      "prepareValue": "Share the requirement, scope, timing and destination."
+      "emailUnavailable": "A contact email has not been configured."
     }
   },
   "inquiry": {
@@ -242,12 +161,7 @@
         },
         "rateLimitSummary": "Too many attempts. Please wait before sending your inquiry again.",
         "rateLimitReady": "You can send your inquiry again now."
-      },
-      "productInterestTemplate": "I'm interested in {productName}."
+      }
     }
-  },
-  "faq": {
-    "sectionTitle": "Frequently Asked Questions",
-    "items": {}
   }
 }

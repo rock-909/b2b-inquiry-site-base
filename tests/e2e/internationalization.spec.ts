@@ -1,8 +1,4 @@
 import { getSitePageCases } from "./site-page-cases";
-import {
-  getOfferingPath,
-  getOfferingsForLocale,
-} from "../../src/config/offerings";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { checkA11y } from "./helpers/axe";
 import {
@@ -11,13 +7,7 @@ import {
   getHeaderMobileMenuButton,
 } from "./helpers/navigation";
 
-const SPANISH_PAGES = [
-  ...getSitePageCases("es"),
-  ...getOfferingsForLocale("es").map(
-    (offering) =>
-      [`/es${getOfferingPath(offering.id)}`, offering.name] as const,
-  ),
-];
+const SPANISH_PAGES = getSitePageCases("es");
 
 const INQUIRY_DRAFT = {
   fullName: "Language Switch Buyer",

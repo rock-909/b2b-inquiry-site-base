@@ -8,11 +8,11 @@ import {
 } from "@/lib/content/page-dates";
 describe("page-dates", () => {
   it("does not let an invalid locale date poison the sitemap date", async () => {
-    const metadata = getStaticPage("about", "es").metadata;
+    const metadata = getStaticPage("privacy", "es").metadata;
     const original = metadata.updatedAt;
     try {
       metadata.updatedAt = "not-a-date";
-      await expect(getStaticContentPageLastModified("/about")).resolves.toEqual(
+      await expect(getStaticContentPageLastModified("/privacy")).resolves.toEqual(
         new Date("2026-08-06T00:00:00Z"),
       );
     } finally {
@@ -24,11 +24,10 @@ describe("page-dates", () => {
   it("keeps sitemap content page detection aligned with public static routes", () => {
     const pagesWithoutStaticContent = new Set([
       "",
-      getCanonicalPath("products"),
     ]);
     const representativePageContracts = [
       { path: "", hasStaticContent: false },
-      { path: "/about", hasStaticContent: true },
+      { path: "/privacy", hasStaticContent: true },
       { path: "/contact", hasStaticContent: true },
       { path: "/privacy", hasStaticContent: true },
       { path: "/terms", hasStaticContent: true },
@@ -48,7 +47,7 @@ describe("page-dates", () => {
 
   it("loads updatedAt from the statically imported en-only content", async () => {
     const lastModified = await getStaticContentPageLastModified(
-      getCanonicalPath("about"),
+      getCanonicalPath("privacy"),
     );
 
     expect(lastModified).toEqual(new Date("2026-08-06T00:00:00Z"));

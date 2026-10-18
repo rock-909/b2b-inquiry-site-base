@@ -275,22 +275,21 @@ describe("MobileNavigationInteractive", () => {
       fireEvent.click(trigger);
       expect(trigger).toHaveAttribute("aria-expanded", "true");
 
-      mockPathname.current = "/about";
+      mockPathname.current = "/contact";
       rerender(<MobileNavigation {...MOBILE_NAV_LABELS} />);
 
       expect(trigger).toHaveAttribute("aria-expanded", "false");
     });
 
     it("marks the current route's item with aria-current", () => {
-      mockPathname.current = "/about";
+      mockPathname.current = "/contact";
       render(<MobileNavigation {...MOBILE_NAV_LABELS} />);
 
       fireEvent.click(screen.getByRole("button", { name: /menu/i }));
 
-      expect(screen.getByRole("link", { name: "About" })).toHaveAttribute(
-        "aria-current",
-        "page",
-      );
+      expect(
+        screen.getByRole("link", { name: "Start an inquiry", current: "page" }),
+      ).toHaveAttribute("aria-current", "page");
       expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
         "aria-current",
       );
@@ -302,7 +301,7 @@ describe("MobileNavigationInteractive", () => {
       (useTranslations as ReturnType<typeof vi.fn>).mockImplementation(
         createMockUseTranslations({
           "navigation.home": "首页",
-          "navigation.about": "关于我们",
+          "navigation.contactSales": "联系销售",
           "accessibility.openMenu": "打开菜单",
           "accessibility.closeMenu": "关闭菜单",
           "accessibility.mobileNavigation": "TEST mobile nav landmark",
@@ -330,7 +329,7 @@ describe("MobileNavigationInteractive", () => {
         screen.getByRole("navigation", { name: "TEST mobile nav landmark" }),
       ).toBeInTheDocument();
       expect(screen.getByText("首页")).toBeInTheDocument();
-      expect(screen.getByText("关于我们")).toBeInTheDocument();
+      expect(screen.getAllByText("联系销售")).toHaveLength(2);
     });
 
     it("renders the translated site description inside the drawer", () => {
@@ -360,7 +359,7 @@ describe("MobileNavigationInteractive", () => {
       fireEvent.click(screen.getByRole("button", { name: /menu/i }));
 
       expect(screen.getByText("navigation.home")).toBeInTheDocument();
-      expect(screen.getByText("navigation.about")).toBeInTheDocument();
+      expect(screen.getAllByText("navigation.contactSales")).toHaveLength(2);
     });
 
     it("renders without marking any item active when the pathname is undefined", () => {

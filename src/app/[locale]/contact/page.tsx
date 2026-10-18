@@ -14,16 +14,10 @@ import {
 } from "@/lib/seo-metadata";
 import type { Locale } from "@/types/content.types";
 import {
-  ContactFaqSection,
   ContactFormWithFallback,
-  ContactInquiryHandoff,
   ContactMethodsCard,
-  ResponseExpectationsCard,
 } from "@/app/[locale]/contact/contact-page-sections";
-import {
-  getContactPageData,
-  getStaticContactPage,
-} from "@/app/[locale]/contact/contact-page-data";
+import { getStaticContactPage } from "@/app/[locale]/contact/contact-page-data";
 
 interface ContactPageProps {
   params: Promise<LocaleParam>;
@@ -48,16 +42,13 @@ export async function generateMetadata({
 }
 
 function ContactContentBody({ locale }: { locale: Locale }) {
-  const { page, faqItems, faqSchema } = getContactPageData(locale);
+  const page = getStaticContactPage(locale);
 
   return (
-    <div
-      className="min-h-[80dvh] px-6 py-14 md:py-[72px]"
-      data-testid="contact-page-content"
-    >
-      <JsonLdGraphScript locale={locale} data={faqSchema ? [faqSchema] : []} />
-      <div className="mx-auto max-w-[1080px]">
-        <header className="mb-10 max-w-2xl min-w-0">
+    <div className="px-6 py-10 md:py-12" data-testid="contact-page-content">
+      <JsonLdGraphScript locale={locale} />
+      <div className="mx-auto max-w-[720px]">
+        <header className="mb-6 max-w-2xl min-w-0">
           <h1 className="text-heading mb-4">{page.metadata.title}</h1>
           {page.metadata.description ? (
             <p className="text-body text-muted-foreground">
@@ -66,25 +57,15 @@ function ContactContentBody({ locale }: { locale: Locale }) {
           ) : null}
         </header>
 
-        <article className="prose mb-10 max-w-3xl prose-neutral dark:prose-invert">
+        <article className="prose mb-6 max-w-3xl prose-neutral dark:prose-invert">
           {createStaticMarkdownContent(page.content)}
         </article>
 
-        <ContactInquiryHandoff locale={locale} />
-
-        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="min-w-0 space-y-8">
           <ContactFormWithFallback locale={locale} />
-
-          <div className="space-y-4" data-testid="contact-confidence-column">
-            <ResponseExpectationsCard locale={locale} />
-            <ContactMethodsCard locale={locale} />
-          </div>
+          <ContactMethodsCard locale={locale} />
         </div>
       </div>
-
-      {faqItems.length > 0 ? (
-        <ContactFaqSection faqItems={faqItems} locale={locale} />
-      ) : null}
     </div>
   );
 }

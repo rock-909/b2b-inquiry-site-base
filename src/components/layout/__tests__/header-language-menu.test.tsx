@@ -21,7 +21,7 @@ vi.mock("next-intl", () => ({
     },
 }));
 
-const mockPathname = vi.hoisted(() => ({ current: "/products" }));
+const mockPathname = vi.hoisted(() => ({ current: "/contact" }));
 
 vi.mock("@/i18n/routing", () => ({
   FinalUrlLink: (props: ComponentProps<"a">) => <a {...props} />,
@@ -30,8 +30,8 @@ vi.mock("@/i18n/routing", () => ({
 
 describe("HeaderLanguageMenu", () => {
   beforeEach(() => {
-    mockPathname.current = "/products";
-    window.history.replaceState({}, "", "/products");
+    mockPathname.current = "/contact";
+    window.history.replaceState({}, "", "/contact");
   });
 
   it("opens from pointer hover", async () => {
@@ -69,7 +69,7 @@ describe("HeaderLanguageMenu", () => {
     window.history.replaceState(
       {},
       "",
-      "/products?source=trade-show&tag=one&tag=two#inquiry",
+      "/contact?source=trade-show&tag=one&tag=two#inquiry",
     );
     render(<HeaderLanguageMenu initialOpen locale="en" />);
 
@@ -80,7 +80,7 @@ describe("HeaderLanguageMenu", () => {
     expect(spanishLink).toHaveAttribute("hreflang", "es");
     expect(spanishLink).toHaveAttribute(
       "href",
-      "/es/products?source=trade-show&tag=one&tag=two#inquiry",
+      "/es/contact?source=trade-show&tag=one&tag=two#inquiry",
     );
   });
 
@@ -88,7 +88,7 @@ describe("HeaderLanguageMenu", () => {
     window.history.replaceState(
       {},
       "",
-      "/es/products?source=trade-show&tag=one&tag=two#inquiry",
+      "/es/contact?source=trade-show&tag=one&tag=two#inquiry",
     );
     render(<HeaderLanguageMenu initialOpen locale="es" />);
 
@@ -96,7 +96,7 @@ describe("HeaderLanguageMenu", () => {
       await screen.findByRole("menuitem", { name: "English" }),
     ).toHaveAttribute(
       "href",
-      "/products?source=trade-show&tag=one&tag=two#inquiry",
+      "/contact?source=trade-show&tag=one&tag=two#inquiry",
     );
   });
 
@@ -107,13 +107,13 @@ describe("HeaderLanguageMenu", () => {
       screen.getByRole("button", { name: "Languages: English" }),
     ).toHaveAttribute("aria-expanded", "true");
 
-    mockPathname.current = "/about";
+    mockPathname.current = "/privacy";
     rerender(<HeaderLanguageMenu initialOpen locale="en" />);
     expect(
       screen.getByRole("button", { name: "Languages: English" }),
     ).toHaveAttribute("aria-expanded", "false");
 
-    mockPathname.current = "/products";
+    mockPathname.current = "/contact";
     rerender(<HeaderLanguageMenu initialOpen locale="en" />);
     expect(
       screen.getByRole("button", { name: "Languages: English" }),

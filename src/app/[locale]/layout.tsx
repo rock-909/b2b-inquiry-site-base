@@ -87,7 +87,7 @@ async function AsyncLocaleLayoutContent({
             {children}
           </main>
 
-          {/* 页脚：发丝线三列 + 法务条，法务信息在 Footer 内部取自 single-site 配置 */}
+          {/* 页脚：核心导航与主题选择 */}
           <Footer
             themeToggleSlot={
               <ThemeSwitcher data-testid="footer-theme-toggle" />

@@ -93,21 +93,6 @@ export async function LegalPageShell({
           )}
         </header>
 
-        <section className="mb-8 flex flex-wrap gap-4 text-xs text-muted-foreground sm:text-sm">
-          {metadata.publishedAt !== undefined && (
-            <div>
-              <span className="font-medium">{t("effectiveDate")}:</span>{" "}
-              <span>{metadata.publishedAt}</span>
-            </div>
-          )}
-          {metadata.updatedAt !== undefined && (
-            <div>
-              <span className="font-medium">{t("lastUpdated")}:</span>{" "}
-              <span>{metadata.updatedAt}</span>
-            </div>
-          )}
-        </section>
-
         <div
           className={
             hasToc

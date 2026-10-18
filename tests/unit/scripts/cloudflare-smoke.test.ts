@@ -22,14 +22,7 @@ const tempDirs: string[] = [];
 const FIXTURE_PREFIX = "b2b-minimal-cloudflare-smoke-";
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
 const MISSING_OFFERING_PATH = "/products/__smoke-missing-offering__";
-const CORE_PUBLIC_PAGE_PATHS = [
-  "/",
-  "/products",
-  "/about",
-  "/contact",
-  "/privacy",
-  "/terms",
-] as const;
+const CORE_PUBLIC_PAGE_PATHS = ["/", "/contact", "/privacy", "/terms"] as const;
 
 interface ChildProcessResult {
   status: number | null;
@@ -640,7 +633,7 @@ describe("deployed smoke", () => {
   it("retries transient deployed 5xx responses before failing the proof", async () => {
     vi.useFakeTimers();
 
-    let aboutAttempts = 0;
+    let privacyAttempts = 0;
     const deployedFetchMock = createDeployedFetchMock();
     const fetchMock = vi.fn(
       async (
@@ -649,9 +642,9 @@ describe("deployed smoke", () => {
       ): Promise<Response> => {
         const pathname = getRequestPath(input);
 
-        if (pathname === "/about") {
-          aboutAttempts += 1;
-          return aboutAttempts === 1
+        if (pathname === "/privacy") {
+          privacyAttempts += 1;
+          return privacyAttempts === 1
             ? response(500, "temporary failure")
             : response(200, HEALTHY_HTML, {
                 "content-type": "text/html; charset=utf-8",
@@ -676,7 +669,7 @@ describe("deployed smoke", () => {
     await vi.runAllTimersAsync();
 
     await expect(smokePromise).resolves.toBe(true);
-    expect(aboutAttempts).toBe(2);
+    expect(privacyAttempts).toBe(2);
   });
 
   it.each([
@@ -811,7 +804,7 @@ describe("deployed smoke", () => {
     ]);
 
     await vi.waitFor(() => {
-      expect(requested.has("/about")).toBe(true);
+      expect(requested.has("/privacy")).toBe(true);
       expect(requested.has("/contact")).toBe(true);
       expect(requested.has("/api/health")).toBe(true);
     });

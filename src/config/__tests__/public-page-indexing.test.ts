@@ -4,10 +4,7 @@ import { shouldIndexPublicPage } from "@/config/single-site-seo";
 
 const CORE_PAGE_TYPES = [
   "home",
-  "about",
   "contact",
-  "privacy",
-  "terms",
 ] as const satisfies readonly PageType[];
 
 describe("public page indexing", () => {
@@ -19,7 +16,12 @@ describe("public page indexing", () => {
     }
   });
 
+  it("excludes incomplete legal pages", () => {
+    expect(shouldIndexPublicPage("privacy", "/privacy")).toBe(false);
+    expect(shouldIndexPublicPage("terms", "/terms")).toBe(false);
+  });
+
   it("does not index a core page under another path", () => {
-    expect(shouldIndexPublicPage("about", "/products")).toBe(false);
+    expect(shouldIndexPublicPage("privacy", "/products")).toBe(false);
   });
 });

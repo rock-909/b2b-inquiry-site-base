@@ -6,6 +6,11 @@ import path from "node:path";
 import { load } from "js-yaml";
 import ts from "typescript";
 import { afterEach, describe, expect, it } from "vitest";
+import {
+  STARTER_PUBLIC_LAUNCH_FIXTURE,
+  READY_PUBLIC_LAUNCH_FIXTURE,
+  type PublicLaunchFixture,
+} from "./production-config-fixtures";
 import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
   isSentinelBlocker,
@@ -66,77 +71,6 @@ const SAFE_PRODUCTION_PUBLIC_KEYS = [
 const ROOT_DIR = path.resolve(import.meta.dirname, "../../..");
 const tempDirs: string[] = [];
 const FIXTURE_PREFIX = "b2b-inquiry-production-";
-
-const STARTER_PUBLIC_LAUNCH_FIXTURE = {
-  getPublicContactEmail: () => undefined,
-  getPublicContactPhone: () => undefined,
-  getPublicLogoPath: () => undefined,
-  SINGLE_SITE_CONFIG: {
-    baseUrl: "https://example.com",
-    name: "Showcase Website Starter",
-    description:
-      "Public demo starter for launching a showcase website foundation",
-    seo: {
-      titleTemplate: "%s | Showcase Website Starter",
-      defaultTitle: "Showcase Website Starter - Public Demo Starter Site",
-      defaultDescription:
-        "A public demo starter site for teams that need a deployable showcase website foundation before they have a real website.",
-    },
-    social: {
-      twitter: "https://x.com/example",
-      linkedin: "https://www.linkedin.com/company/example",
-    },
-    contact: {
-      phone: "+86-518-0000-0000",
-      email: "starter-contact@example.com",
-    },
-  },
-  SINGLE_SITE_FACTS: {
-    company: {
-      name: "Showcase Website Starter",
-      location: {
-        city: "Replace before launch",
-        address: "Replace before launch",
-      },
-    },
-    contact: { phone: "+86-518-0000-0000" },
-    brandAssets: { logo: { status: "pending" } },
-  },
-};
-
-const READY_PUBLIC_LAUNCH_FIXTURE = {
-  getPublicContactEmail: (email: string) => email,
-  getPublicContactPhone: (phone: string) => phone,
-  getPublicLogoPath: (logo: { horizontal: string }) => logo.horizontal,
-  SINGLE_SITE_CONFIG: {
-    baseUrl: "https://reference-site.com",
-    name: "Reference Industrial",
-    description: "Industrial products and buyer support.",
-    seo: {
-      titleTemplate: "%s | Reference Industrial",
-      defaultTitle: "Reference Industrial",
-      defaultDescription: "Industrial products and buyer support.",
-    },
-    social: { twitter: "", linkedin: "" },
-    contact: {
-      phone: "+1 212 555 0199",
-      email: "sales@reference-site.com",
-    },
-  },
-  SINGLE_SITE_FACTS: {
-    company: {
-      name: "Reference Industrial LLC",
-      location: { city: "New York", address: "1 Industrial Way" },
-    },
-    contact: { phone: "+1 212 555 0199" },
-    brandAssets: {
-      logo: { status: "ready", horizontal: "/images/logo.svg" },
-    },
-  },
-};
-
-type PublicLaunchFixture =
-  typeof STARTER_PUBLIC_LAUNCH_FIXTURE | typeof READY_PUBLIC_LAUNCH_FIXTURE;
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
@@ -636,6 +570,72 @@ describe("public launch trust content guard", () => {
 
     expect(result.errors).toEqual([]);
     expect(result.warnings).toEqual([]);
+  });
+
+  it("allows a text-only site without optional company, phone, social or logo facts", () => {
+    const fixture: PublicLaunchFixture = {
+      ...READY_PUBLIC_LAUNCH_FIXTURE,
+      SINGLE_SITE_CONFIG: {
+        ...READY_PUBLIC_LAUNCH_FIXTURE.SINGLE_SITE_CONFIG,
+        contact: { email: "sales@reference-site.com" },
+        social: {},
+      },
+      SINGLE_SITE_FACTS: { contact: {}, brandAssets: {} },
+    };
+    const result = validateProductionConfig(
+      {
+        ...createValidProductionEnv(),
+        APP_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+      },
+      createPublicLaunchInput(fixture),
+    );
+    expect(result.errors).toEqual([]);
+  });
+
+  it("blocks supplied malformed optional facts with real public-trust validators", () => {
+    const fixture: PublicLaunchFixture = {
+      ...READY_PUBLIC_LAUNCH_FIXTURE,
+      SINGLE_SITE_CONFIG: {
+        ...READY_PUBLIC_LAUNCH_FIXTURE.SINGLE_SITE_CONFIG,
+        social: { twitter: "javascript:alert(1)", linkedin: "" },
+      },
+      SINGLE_SITE_FACTS: {
+        company: {
+          name: "TODO",
+          established: 9999,
+          location: { country: "Replace before launch" },
+        },
+        contact: { phone: "call me" },
+        brandAssets: {
+          logo: {
+            status: "ready" as const,
+            horizontal: "javascript:alert(1)",
+            width: 240,
+            height: 72,
+          },
+        },
+      },
+    };
+    const result = validateProductionConfig(
+      {
+        ...createValidProductionEnv(),
+        APP_ENV: "production",
+        PUBLIC_LAUNCH_STRICT: "true",
+      },
+      createPublicLaunchInput(fixture),
+    );
+    for (const field of [
+      "social.twitter",
+      "company.name",
+      "company.established",
+      "company.location.country",
+      "contact.phone",
+      "brandAssets.logo",
+    ])
+      expect(result.errors.some((error: string) => error.includes(field))).toBe(
+        true,
+      );
   });
 
   it("rejects explicit non-launch Wrangler production URLs", () => {
