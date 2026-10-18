@@ -21,13 +21,13 @@ B2B 询盘站模板，提供联系和询盘转化基础能力，内置英语/西
 
 ```bash
 pnpm install
-pnpm hooks:install                # 启用本地 Git hook（每个 worktree 一次）
 cp .env.example .env.local        # Next.js 本地开发环境变量
-cp .dev.vars.example .dev.vars    # Cloudflare 本地预览环境变量
 pnpm dev
 ```
 
-询盘表单需要在 `.env.local` 里填入真实服务配置。服务端密钥包括 `AIRTABLE_API_KEY`、`RESEND_API_KEY` 和 `TURNSTILE_SECRET_KEY`；`NEXT_PUBLIC_TURNSTILE_SITE_KEY` 是浏览器侧公开站点 key。完整键位以 `.env.example` 为准，派生和上线见 [派生项目交接](docs/派生项目交接.md)。
+本地设计保留示例中的服务密钥为空即可，无需创建 Cloudflare、邮件或 CRM 资源；未配置 Turnstile 时表单显示不可用状态，不能据此验证真实提交。首次提交前运行 `pnpm hooks:install`（每个 worktree 一次）。只有验证本地 Worker 时才复制 `.dev.vars.example` 为 `.dev.vars`。
+
+真实询盘验证再配置独立测试服务或明确授权的真实服务：`AIRTABLE_API_KEY`、`RESEND_API_KEY`、`TURNSTILE_SECRET_KEY` 等服务端配置，以及公开的 `NEXT_PUBLIC_TURNSTILE_SITE_KEY`。完整键位以 `.env.example` 为准；生产双通道交付、安全配置和上线证明见 [派生项目交接](docs/派生项目交接.md)。
 
 联系页在无 JavaScript 时显示静态说明，配置有效公开邮箱后提供邮件入口。移动导航或语言菜单的按需加载失败时，移动导航保留普通链接，语言菜单改用当前页面的语言链接。需要重新加载交互功能时，请刷新页面。
 
@@ -57,7 +57,7 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 | 了解项目用途和边界 | [项目](docs/项目.md) |
 | 开发、升级或排查技术限制 | [技术栈](docs/技术栈.md) → [技术债](docs/技术债.md) |
 | 选择检查、准备 PR 或发布 | [质量门禁](docs/质量门禁.md) |
-| 研究并制作派生站 | [派生站工作流](docs/派生站工作流.md) → [派生项目交接](docs/派生项目交接.md) |
+| 理解建站方法、底座位置与后续工作 | [派生站工作流](docs/派生站工作流.md) |
 | 创建、fork 或接手派生站 | [派生项目交接](docs/派生项目交接.md) |
 | 调整视觉或比较参考 | [设计真相](docs/design/设计真相.md) → 按任务查[设计参考](docs/design/设计参考.md) |
 

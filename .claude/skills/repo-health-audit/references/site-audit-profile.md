@@ -5,7 +5,7 @@ legacy starter profiles that do not describe this repository.
 
 ## Critical chains
 
-1. Offering discovery: offering truth -> public page -> SEO metadata ->
+1. Public content: current page facts -> public page -> SEO metadata ->
    JSON-LD -> sitemap -> CTA.
 2. Buyer inquiry: form -> `/api/inquiry` -> lead pipeline -> owner email +
    Airtable -> buyer feedback (gate order is owned by `.claude/rules/security.md`).

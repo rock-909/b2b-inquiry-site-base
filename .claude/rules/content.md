@@ -29,7 +29,7 @@ Every content field has one authoring source.
 
 ## Page content
 
-- Page titles, descriptions, FAQ items, and legal/About prose live in the
+- Page titles, descriptions, FAQ items, and legal prose (and any derived business-page prose) live in the
   locale's static page module.
 - FAQ belongs to the page that renders it. Do not create a shared FAQ pool.
 - Home is a minimal entry page: its short localized copy stays in i18n.
