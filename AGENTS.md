@@ -1,7 +1,7 @@
 # AGENTS.md
 
 这是一个英文 B2B 询盘站模板，使用 Next.js App Router 和
-Cloudflare/OpenNext，支持 offering 展示、联系和报价询盘转化。
+Cloudflare/OpenNext，默认提供首页、联系与法务骨架和询盘链路；业务页面按派生需求建立。
 
 ## 默认实现策略
 

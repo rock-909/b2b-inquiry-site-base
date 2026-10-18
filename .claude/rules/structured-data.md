@@ -30,6 +30,8 @@ escaping behavior covered by tests.
 
 - Shared graph: `JsonLdGraphScript` merges stable `#organization` and `#website`
   identity nodes with page-specific schemas on pages that render structured data.
+  Organization and its references are omitted when valid company facts are absent;
+  do not require company details merely to populate schema.
 - Page: page-specific schemas such as FAQPage, Article, Product, WebPage,
   ItemList, and BreadcrumbList.
 - Component shell: only when the shell owns page-level rendering, and the
@@ -40,7 +42,8 @@ escaping behavior covered by tests.
 When changing public page schema output, keep focused tests for the expected
 schema types.
 
-Product detail pages that represent one catalog item should emit a single
+There are no default product routes. If a derived site adds product detail
+pages that represent one catalog item, they should emit a single
 `Product` node plus supporting graph nodes such as `BreadcrumbList` and
 `FAQPage` when those concepts apply.
 

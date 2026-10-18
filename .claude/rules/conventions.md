@@ -55,7 +55,7 @@ and only auto-open when the current pathname still matches.
 ## Error boundaries
 
 Add route-level `error.tsx` when a route needs its own recovery UI. Currently
-`contact` has one; product and static content pages rely on the global fallback.
+`contact` has one; the other current pages rely on the global fallback.
 The inquiry form handles expected validation and provider failures locally.
 Do not add another boundary solely because a route has parameters or a form.
 
