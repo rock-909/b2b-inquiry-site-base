@@ -131,17 +131,6 @@ function validateNoStarterMarker(target, markerPath, value, reason) {
   }
 }
 
-function validateOptionalSocialProfile(target, markerPath, value) {
-  if (!value) return;
-
-  validateNoStarterMarker(
-    target,
-    markerPath,
-    value,
-    "remove starter social profiles or replace them with owner-confirmed profiles before client launch",
-  );
-}
-
 function validateWranglerSentinelResources(target, config) {
   if (!config) return;
 
@@ -299,6 +288,53 @@ function validateProductionRuntimeContract(env) {
   return { errors };
 }
 
+function validateOptionalPublicFacts(
+  target,
+  facts,
+  {
+    getPublicFact,
+    getPublicFoundingYear,
+    getPublicContactPhone,
+    getPublicLogoPath,
+  },
+) {
+  const { company, contact, brandAssets } = facts;
+  if (company) {
+    if (!getPublicFact(company.name) || containsStarterMarker(company.name)) {
+      target.push(
+        "SITE_CONFIG.facts.company.name is not public-launch ready (supply a real company name or omit the company).",
+      );
+    }
+    if (
+      company.established !== undefined &&
+      !getPublicFoundingYear(company.established)
+    ) {
+      target.push(
+        "SITE_CONFIG.facts.company.established is not public-launch ready.",
+      );
+    }
+    for (const [key, value] of Object.entries(company.location ?? {})) {
+      if (value && !getPublicFact(value)) {
+        target.push(
+          `SITE_CONFIG.facts.company.location.${key} is not public-launch ready.`,
+        );
+      }
+    }
+  }
+  // 可选事实可以省略；已填写的占位或无效值不能获得上线许可。
+  // 法律正文由业主判断，不用审核布尔值代替内容复核。
+  if (contact.phone && !getPublicContactPhone(contact.phone)) {
+    target.push(
+      "SITE_CONFIG.contact.phone is not public-launch ready. Remove it or supply a valid public phone.",
+    );
+  }
+  if (brandAssets.logo && !getPublicLogoPath(brandAssets.logo)) {
+    target.push(
+      "brandAssets.logo.status is pending or invalid. Remove it for a text-only brand or supply a ready logo with a local path and dimensions.",
+    );
+  }
+}
+
 function validatePublicLaunchTrustContent(env, input) {
   const warnings = [];
   const errors = [];
@@ -315,6 +351,9 @@ function validatePublicLaunchTrustContent(env, input) {
     getPublicContactEmail,
     getPublicContactPhone,
     getPublicLogoPath,
+    getPublicFact,
+    getPublicFoundingYear,
+    getPublicSocialUrl,
     SINGLE_SITE_CONFIG,
     SINGLE_SITE_FACTS,
   } = input?.publicLaunch ?? loadPublicLaunchInput();
@@ -363,16 +402,13 @@ function validatePublicLaunchTrustContent(env, input) {
     SINGLE_SITE_CONFIG.seo.defaultDescription,
     "replace starter SEO description defaults before client launch",
   );
-  validateOptionalSocialProfile(
-    target,
-    "SITE_CONFIG.social.twitter",
-    SINGLE_SITE_CONFIG.social.twitter,
-  );
-  validateOptionalSocialProfile(
-    target,
-    "SITE_CONFIG.social.linkedin",
-    SINGLE_SITE_CONFIG.social.linkedin,
-  );
+  for (const [key, value] of Object.entries(SINGLE_SITE_CONFIG.social)) {
+    if (value && (!getPublicSocialUrl(value) || containsStarterMarker(value))) {
+      target.push(
+        `SITE_CONFIG.social.${key} is not public-launch ready (remove or supply a valid public profile URL).`,
+      );
+    }
+  }
   validateNoStarterMarker(
     target,
     "SITE_CONFIG.seo.titleTemplate",
@@ -385,35 +421,12 @@ function validatePublicLaunchTrustContent(env, input) {
     SINGLE_SITE_CONFIG.description,
     "replace the starter company description before client launch",
   );
-  validateNoStarterMarker(
-    target,
-    "SITE_CONFIG.facts.company.name",
-    SINGLE_SITE_FACTS.company.name,
-    "replace the starter legal/company name before client launch",
-  );
-  validateNoStarterMarker(
-    target,
-    "SITE_CONFIG.facts.company.location",
-    `${SINGLE_SITE_FACTS.company.location.city} ${SINGLE_SITE_FACTS.company.location.address ?? ""}`,
-    "replace starter city/address before client launch",
-  );
-  // 这里原本要求 PUBLIC_LAUNCH_LEGAL_CONTENT_REVIEWED=true，声称证明业主复核过
-  // about/contact/privacy/terms 四个页面。它证明的只是有人设置了一个字符串——
-  // 跟那四个文件的内容没有任何耦合，设完之后内容随便改也不会再问。
-  // 业主 2026-07-27 裁决：这几页的内容由他自己判断，不用脚本约束。
-  // 这个文件里剩下的检查都是机器能自己判断的事实（域名还是不是占位符、电话是不是
-  // starter 留下的、logo 有没有给），那些留着。
-  if (!getPublicContactPhone(SINGLE_SITE_FACTS.contact.phone)) {
-    target.push(
-      "SITE_CONFIG.contact.phone is not public-launch ready. Hide it from runtime now and replace it with the owner-confirmed public phone before launch.",
-    );
-  }
-
-  if (!getPublicLogoPath(SINGLE_SITE_FACTS.brandAssets.logo)) {
-    target.push(
-      "brandAssets.logo.status is pending. Header falls back to text-only now; owner-confirmed logo files must be supplied before launch.",
-    );
-  }
+  validateOptionalPublicFacts(target, SINGLE_SITE_FACTS, {
+    getPublicFact,
+    getPublicFoundingYear,
+    getPublicContactPhone,
+    getPublicLogoPath,
+  });
 
   return { warnings, errors };
 }

@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 import type { SiteNavigationItem } from "@/config/site-types";
-import { TEST_COUNT_CONSTANTS } from "@/test/constants/test-constants";
 import { isActivePath } from "../navigation";
 
 // Use vi.hoisted to ensure proper mock setup
@@ -43,8 +42,6 @@ describe("navigation", () => {
     it("uses the configured public navigation", () => {
       expect(SINGLE_SITE_NAVIGATION).toEqual([
         { key: "home", href: "/", messageKey: "home" },
-        { key: "products", href: "/products", messageKey: "products" },
-        { key: "about", href: "/about", messageKey: "about" },
         { key: "contact", href: "/contact", messageKey: "contactSales" },
       ]);
     });
@@ -151,19 +148,17 @@ describe("navigation", () => {
 
   describe("integration tests", () => {
     it("should work with real navigation items", () => {
-      const aboutItem = SINGLE_SITE_NAVIGATION.find(
-        (item) => item.key === "about",
+      const contactItem = SINGLE_SITE_NAVIGATION.find(
+        (item) => item.key === "contact",
       );
-      expect(aboutItem).toBeDefined();
+      expect(contactItem).toBeDefined();
 
-      const isActive = isActivePath("/about", aboutItem!.href);
+      const isActive = isActivePath("/contact", contactItem!.href);
       expect(isActive).toBe(true);
     });
 
     it("should handle all navigation items correctly", () => {
-      expect(SINGLE_SITE_NAVIGATION.length).toBeGreaterThan(
-        TEST_COUNT_CONSTANTS.SMALL,
-      );
+      expect(SINGLE_SITE_NAVIGATION.length).toBeGreaterThan(0);
 
       SINGLE_SITE_NAVIGATION.forEach((item) => {
         // Test active path detection for each navigation target.

@@ -19,9 +19,7 @@ const contactPage = {
     },
   },
   content: String.raw`
-This page is a **non-production reference**. Replace the identity, email, location and response time with owner-confirmed details.
-
-The fastest route is the **[inquiry form](/contact#inquiry)**. A useful request normally includes the requirement, quantity or scope, destination market and timing.
+Use the **[inquiry form](/contact#inquiry)** below. This reference site is not ready to receive business inquiries until its owner configures delivery and contact details.
 `,
 } satisfies Page;
 

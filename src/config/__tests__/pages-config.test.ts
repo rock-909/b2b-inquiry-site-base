@@ -5,31 +5,16 @@ import {
   getStaticSitemapPages,
 } from "@/config/pages.config";
 
-const CORE_PAGE_TYPES = [
-  "home",
-  "products",
-  "about",
-  "contact",
-  "privacy",
-  "terms",
-] as const;
+const CORE_PAGE_TYPES = ["home", "contact", "privacy", "terms"] as const;
 
 describe("pages.config", () => {
-  it("registers the catalog index with the core public pages", () => {
+  it("registers the core public pages", () => {
     expect(PUBLIC_STATIC_PAGE_TYPES).toEqual(CORE_PAGE_TYPES);
-    expect(getStaticSitemapPages()).toEqual([
-      "",
-      "/products",
-      "/about",
-      "/contact",
-      "/privacy",
-      "/terms",
-    ]);
+    expect(getStaticSitemapPages()).toEqual(["", "/contact"]);
   });
 
   it("keeps static content ownership explicit", () => {
     expect(getStaticContentPageSlugByPath()).toEqual({
-      "/about": "about",
       "/contact": "contact",
       "/privacy": "privacy",
       "/terms": "terms",

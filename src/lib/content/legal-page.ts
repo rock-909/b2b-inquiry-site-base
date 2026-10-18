@@ -31,13 +31,7 @@ export function loadLegalPage(
 ): LegalPageData {
   const page = getStaticPage(slug, locale);
 
-  const metadata: LegalPageMetadata = {
-    ...page.metadata,
-    lastReviewed:
-      page.metadata.lastReviewed ??
-      page.metadata.updatedAt ??
-      page.metadata.publishedAt,
-  };
+  const { metadata } = page;
 
   // 单次 parse：blocks 直接交给正文渲染，headings 是同一批块的投影。
   const blocks = parseStaticMarkdownBlocks(page.content);

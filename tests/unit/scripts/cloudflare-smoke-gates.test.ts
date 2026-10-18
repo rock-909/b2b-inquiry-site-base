@@ -7,14 +7,7 @@ import {
 
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
 const MISSING_OFFERING_PATH = "/products/__smoke-missing-offering__";
-const CORE_PUBLIC_PAGE_PATHS = [
-  "/",
-  "/products",
-  "/about",
-  "/contact",
-  "/privacy",
-  "/terms",
-];
+const CORE_PUBLIC_PAGE_PATHS = ["/", "/contact", "/privacy", "/terms"];
 
 const SECURITY_HEADERS = {
   "x-frame-options": "DENY",

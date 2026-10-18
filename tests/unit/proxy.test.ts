@@ -17,17 +17,11 @@ vi.mock("@/i18n/routing-config", () => ({
     locales: ["en", "es"],
     pathnames: {
       "/": "/",
-      "/about": "/about",
+      "/privacy": "/privacy",
       "/contact": "/contact",
-      "/products": "/products",
     },
     localeCookie: { maxAge: 60 * 60 * 24 * 365 },
   },
-}));
-
-vi.mock("@/config/offerings", () => ({
-  getOfferingById: (id: string) =>
-    ["sample-offering", "sample.v2"].includes(id) ? { id } : undefined,
 }));
 
 describe("proxy next-intl boundary", () => {
@@ -48,7 +42,7 @@ describe("proxy next-intl boundary", () => {
 
   it("creates one next-intl middleware and delegates the request", async () => {
     const { proxy } = await import("@/proxy");
-    const request = new NextRequest("http://localhost:3000/en/about");
+    const request = new NextRequest("http://localhost:3000/en/privacy");
     const intlResponse = NextResponse.next();
     intlMiddlewareMock.mockReturnValue(intlResponse);
 
@@ -68,7 +62,7 @@ describe("proxy next-intl boundary", () => {
 
   it("does not manually set NEXT_LOCALE for localized requests", async () => {
     const { proxy } = await import("@/proxy");
-    const request = new NextRequest("http://localhost:3000/en/about", {
+    const request = new NextRequest("http://localhost:3000/en/privacy", {
       headers: {
         cookie: "NEXT_LOCALE=en",
       },
@@ -160,15 +154,15 @@ describe("proxy next-intl boundary", () => {
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
-  it("delegates a configured product to next-intl", async () => {
+  it("returns 404 for a removed catalog route", async () => {
     const { proxy } = await import("@/proxy");
     const request = new NextRequest(
       "http://localhost:3000/products/sample-offering",
     );
 
-    proxy(request);
+    expect(proxy(request).status).toBe(404);
 
-    expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
   it("does not clean up next-intl response headers", async () => {
@@ -177,7 +171,7 @@ describe("proxy next-intl boundary", () => {
     intlResponse.headers.set("x-middleware-set-cookie", "next-intl-owned");
     intlMiddlewareMock.mockReturnValue(intlResponse);
 
-    const response = proxy(new NextRequest("http://localhost:3000/en/about"));
+    const response = proxy(new NextRequest("http://localhost:3000/en/privacy"));
 
     expect(response.headers.get("x-middleware-set-cookie")).toBe(
       "next-intl-owned",
@@ -219,13 +213,17 @@ describe("proxy next-intl boundary", () => {
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
-  it("delegates an existing dotted product to locale routing", async () => {
+  it("returns a localized 404 for a dotted unknown route", async () => {
     const { proxy } = await import("@/proxy");
     const request = new NextRequest(
       "http://localhost:3000/es/products/sample.v2",
     );
-    proxy(request);
-    expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
+    const response = proxy(request);
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "http://localhost:3000/es/__not-found-placeholder",
+    );
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
   it("matches missing dotted pages while preserving framework and metadata routes", async () => {

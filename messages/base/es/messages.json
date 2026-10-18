@@ -22,20 +22,9 @@
     "rejectAll": "No, gracias"
   },
   "structured-data": {
-    "organization": {
-      "name": "{companyName}",
-      "description": "Sitio de referencia para consultas B2B",
-      "social": {
-        "twitter": "",
-        "linkedin": ""
-      }
-    },
     "website": {
       "name": "{siteName}",
       "description": "Sitio de referencia para consultas B2B"
-    },
-    "article": {
-      "defaultAuthor": "{companyName}"
     }
   },
   "apiErrors": {
@@ -90,8 +79,6 @@
   },
   "navigation": {
     "home": "Inicio",
-    "products": "Productos",
-    "about": "Sobre nosotros",
     "contactSales": "Iniciar una consulta",
     "language": "Idiomas",
     "siteName": "{siteName}",
@@ -102,8 +89,6 @@
       "navigation": {
         "title": "Navegación",
         "home": "Inicio",
-        "products": "Productos",
-        "about": "Sobre nosotros",
         "contact": "Contacto"
       },
       "support": {
@@ -112,89 +97,23 @@
         "terms": "Condiciones del servicio"
       }
     },
-    "copyright": "© {currentYear} {siteName}. Todos los derechos reservados.",
-    "description": "Sitio de referencia neutral para consultas B2B."
+    "copyright": "© {currentYear} {siteName}. Todos los derechos reservados."
   },
   "home": {
     "metadata": {
       "title": "{siteName} - Plantilla de consultas B2B",
       "description": "Un sitio de referencia de consultas B2B no destinado a producción, con identidad, dominio y datos de contacto de ejemplo."
     },
-    "hero": {
-      "eyebrow": "Referencia de consultas B2B",
-      "title": "Convierte el interés cualificado en una conversación útil.",
-      "subtitle": "Un punto de partida neutral para empresas que necesitan una oferta clara, pruebas fiables y un proceso de consulta enfocado.",
-      "cta": {
-        "primary": "Iniciar una consulta",
-        "secondary": "Conocer el sitio"
-      }
-    },
-    "value": {
-      "title": "Un sitio pequeño con lo que realmente importa",
-      "description": "Usa esta estructura y sustituye después la identidad, la oferta, las pruebas y el contenido para el siguiente negocio."
-    },
-    "finalCta": {
-      "title": "¿Tienes un requisito que comentar?",
-      "description": "Comparte lo esencial y el equipo podrá responder con la siguiente pregunta útil."
-    }
-  },
-  "products": {
-    "metadata": {
-      "title": "Productos",
-      "description": "Consulta la gama de productos configurada y continúa con el proceso de consulta usando el contexto del producto relevante."
-    },
-    "page": {
-      "eyebrow": "Catálogo de productos",
-      "heading": "Productos basados en requisitos reales de los compradores",
-      "description": "Sustituye la entrada de referencia por datos de producto verificados antes del lanzamiento.",
-      "viewDetails": "Ver detalles"
-    },
-    "detail": {
-      "backToProducts": "Volver a productos",
-      "factsEyebrow": "Datos del producto",
-      "applicationsTitle": "Aplicaciones y adecuación",
-      "specificationsTitle": "Especificaciones técnicas",
-      "materialsTitle": "Materiales y construcción",
-      "configurationTitle": "Configuración y selección",
-      "deliveryTitle": "Alcance de la entrega",
-      "evidenceTitle": "Pruebas verificables",
-      "startInquiry": "Solicitar presupuesto",
-      "inquirySectionTitle": "Consultar sobre {productName}"
-    }
+    "title": "Sitio de consultas B2B",
+    "description": "Un punto de partida para un sitio web empresarial. Visita la página de contacto para preparar una consulta.",
+    "contactLink": "Contacto"
   },
   "contact": {
     "title": "Contacto",
     "description": "Comparte lo esencial para que la empresa pueda identificar el siguiente paso útil.",
-    "inquiryHandoff": {
-      "title": "Empieza por lo esencial",
-      "description": "Una consulta enfocada proporciona el contexto necesario para responder con un siguiente paso útil.",
-      "items": {
-        "need": {
-          "title": "Qué necesitas",
-          "description": "El producto, servicio, aplicación o problema que quieres comentar."
-        },
-        "context": {
-          "title": "Alcance y cantidad",
-          "description": "Cantidad, dimensiones, especificaciones, ubicación o alcance del proyecto, además de fotos o planos cuando sean útiles."
-        },
-        "timing": {
-          "title": "Plazos y destino",
-          "description": "Fecha prevista, mercado de destino y cualquier limitación de entrega o implementación."
-        }
-      }
-    },
     "panel": {
       "contactTitle": "Correo y consulta",
-      "email": "Correo electrónico",
-      "emailUnavailable": "Usa el formulario de consulta si el correo no está disponible.",
-      "phone": "Teléfono",
-      "responseTitle": "Qué ocurre después",
-      "responseTimeLabel": "Objetivo de respuesta",
-      "responseTimeValue": "Definir antes del lanzamiento",
-      "bestForLabel": "Primera respuesta útil",
-      "bestForValue": "El siguiente paso confirmado",
-      "prepareLabel": "Ayuda al equipo a responder",
-      "prepareValue": "Comparte el requisito, el alcance, los plazos y el destino."
+      "emailUnavailable": "No se ha configurado un correo de contacto."
     }
   },
   "inquiry": {
@@ -242,12 +161,7 @@
         },
         "rateLimitSummary": "Demasiados intentos. Espera antes de volver a enviar la consulta.",
         "rateLimitReady": "Ya puedes volver a enviar la consulta."
-      },
-      "productInterestTemplate": "Me interesa {productName}."
+      }
     }
-  },
-  "faq": {
-    "sectionTitle": "Preguntas frecuentes",
-    "items": {}
   }
 }

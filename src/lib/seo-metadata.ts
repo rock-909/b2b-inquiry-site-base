@@ -15,7 +15,7 @@ interface SEOConfig {
   title?: string;
   description?: string;
   image?: string;
-  type?: "website" | "article" | "product";
+  type?: "website" | "article";
 }
 
 interface StaticPageMetadata {
@@ -147,8 +147,7 @@ export function generateMetadataForPath(
   const title = resolveMetadataTitle(seoConfig);
   const description = resolveMetadataDescription(seoConfig);
   const siteName = SINGLE_SITE_CONFIG.name;
-  const openGraphType =
-    (seoConfig.type === "product" ? "website" : seoConfig.type) || "website";
+  const openGraphType = seoConfig.type || "website";
 
   const metadata: Metadata = {
     title,

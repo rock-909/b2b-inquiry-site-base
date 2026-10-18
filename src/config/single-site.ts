@@ -53,8 +53,6 @@ type FooterLinkPage =
 
 const FOOTER_TRANSLATION_KEYS = {
   home: "footer.sections.navigation.home",
-  products: "footer.sections.navigation.products",
-  about: "footer.sections.navigation.about",
   contact: "footer.sections.navigation.contact",
   privacy: "footer.sections.support.privacy",
   terms: "footer.sections.support.terms",
@@ -86,26 +84,23 @@ export const SINGLE_SITE_FOOTER_COLUMNS = [
   },
 ] as const;
 
-export const TEMPLATE_REGISTERED_ADDRESS = "Replace before launch";
-
 const contact = {
-  phone: "",
   email: "sales@example.invalid",
 } as const;
 
-const establishedYear = 2026;
+const siteName = "B2B Inquiry Template";
 
 /**
  * Single-site canonical source for the current cutover phase.
  */
 export const SINGLE_SITE_CONFIG: SiteConfig = {
   baseUrl,
-  name: "Northstar Industrial Reference",
+  name: siteName,
   description:
     "Neutral B2B inquiry reference site that must be replaced before launch",
   seo: {
-    titleTemplate: "%s | Northstar Industrial Reference",
-    defaultTitle: "Northstar Industrial Reference - B2B Inquiry Template",
+    titleTemplate: `%s | ${siteName}`,
+    defaultTitle: siteName,
     defaultDescription:
       "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details.",
   },
@@ -114,27 +109,9 @@ export const SINGLE_SITE_CONFIG: SiteConfig = {
 };
 
 export const SINGLE_SITE_FACTS: SiteFacts = {
-  company: {
-    name: "Northstar Industrial Reference",
-    established: establishedYear,
-    location: {
-      country: "Replace before launch",
-      city: "Replace before launch",
-      address: TEMPLATE_REGISTERED_ADDRESS,
-    },
-  },
-  contact: {
-    phone: contact.phone,
-    email: contact.email,
-  },
+  contact,
   social,
   brandAssets: {
-    logo: {
-      status: "pending",
-      horizontal: "/icon.svg",
-      width: 240,
-      height: 72,
-    },
     ogImage: "/opengraph-image.png",
     favicon: "/icon.svg",
   },

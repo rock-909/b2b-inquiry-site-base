@@ -10,20 +10,20 @@ test("shows real pending feedback while a navigation response is delayed", async
   });
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
-  await page.route("**/products?**", async (route) => {
+  await page.route("**/contact?**", async (route) => {
     await responseGate;
     await route.continue();
   });
-  const products = page
+  const contact = page
     .getByTestId("header-desktop-nav")
-    .getByRole("link", { name: "Products", exact: true });
+    .getByRole("link", { name: "Start an inquiry", exact: true });
   try {
-    await products.click();
-    await expect(products.getByTestId("navigation-pending")).toBeVisible();
+    await contact.click();
+    await expect(contact.getByTestId("navigation-pending")).toBeVisible();
   } finally {
     release();
   }
-  await expect(page).toHaveURL(/\/products$/);
+  await expect(page).toHaveURL(/\/contact$/);
   await expect(page.getByTestId("navigation-pending")).toHaveCount(0);
 });
 
@@ -50,6 +50,7 @@ test.describe("Preserved navigation state", () => {
     test("traps focus and locks keyboard page scrolling while open", async ({
       page,
     }) => {
+      await page.goto("/contact", { waitUntil: "networkidle" });
       const trigger = getHeaderMobileMenuButton(page);
       await trigger.click();
 
@@ -113,8 +114,11 @@ test.describe("Preserved navigation state", () => {
       await trigger.click();
 
       const dialog = page.getByRole("dialog", { name: /mobile navigation/i });
-      await dialog.getByRole("link", { exact: true, name: "About" }).click();
-      await page.waitForURL(/\/about$/, { waitUntil: "domcontentloaded" });
+      await dialog
+        .getByRole("link", { exact: true, name: "Start an inquiry" })
+        .first()
+        .click();
+      await page.waitForURL(/\/contact$/, { waitUntil: "domcontentloaded" });
       await expect(getHeaderMobileMenuButton(page)).toHaveAttribute(
         "aria-expanded",
         "false",
@@ -128,7 +132,7 @@ test.describe("Preserved navigation state", () => {
       );
 
       await page.goForward({ waitUntil: "domcontentloaded" });
-      await expect(page).toHaveURL(/\/about$/);
+      await expect(page).toHaveURL(/\/contact$/);
       await expect(getHeaderMobileMenuButton(page)).toHaveAttribute(
         "aria-expanded",
         "false",

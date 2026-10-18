@@ -11,14 +11,7 @@ const HTML_HEADERS = {
   "referrer-policy": "strict-origin-when-cross-origin",
   "content-security-policy": "default-src 'self'",
 };
-const PAGE_PATHS = [
-  "/",
-  "/products",
-  "/about",
-  "/contact",
-  "/privacy",
-  "/terms",
-];
+const PAGE_PATHS = ["/", "/contact", "/privacy", "/terms"];
 
 const openServers: http.Server[] = [];
 

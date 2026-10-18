@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -18,8 +18,6 @@ describe("site message values", () => {
 
     expect(values).toEqual({
       siteName: SINGLE_SITE_CONFIG.name,
-      companyName: SINGLE_SITE_FACTS.company.name,
-      established: String(SINGLE_SITE_FACTS.company.established),
       currentYear: "2030",
     });
   });

@@ -2,8 +2,6 @@ import type { PageType } from "@/config/paths/types";
 
 export const NAVIGATION_MESSAGE_KEYS = [
   "navigation.home",
-  "navigation.products",
-  "navigation.about",
   "navigation.contactSales",
 ] as const;
 
@@ -50,20 +48,6 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = [
     contentSlug: null,
   },
   {
-    pageType: "products",
-    path: "/products",
-    navigationKey: "navigation.products",
-    sitemap: { include: true, changeFrequency: "monthly", priority: 0.9 },
-    contentSlug: null,
-  },
-  {
-    pageType: "about",
-    path: "/about",
-    navigationKey: "navigation.about",
-    sitemap: { include: true, changeFrequency: "monthly", priority: 0.8 },
-    contentSlug: "about",
-  },
-  {
     pageType: "contact",
     path: "/contact",
     navigationKey: "navigation.contactSales",
@@ -74,14 +58,14 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = [
     pageType: "privacy",
     path: "/privacy",
     navigationKey: null,
-    sitemap: { include: true, changeFrequency: "yearly", priority: 0.5 },
+    sitemap: { include: false, changeFrequency: "yearly", priority: 0.5 },
     contentSlug: "privacy",
   },
   {
     pageType: "terms",
     path: "/terms",
     navigationKey: null,
-    sitemap: { include: true, changeFrequency: "yearly", priority: 0.5 },
+    sitemap: { include: false, changeFrequency: "yearly", priority: 0.5 },
     contentSlug: "terms",
   },
 ] as const satisfies readonly PublicStaticPageDefinition[];

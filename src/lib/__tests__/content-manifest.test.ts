@@ -3,16 +3,16 @@ import { getStaticPage, STATIC_PAGES } from "@/lib/content/static-pages";
 
 describe("static content source", () => {
   it("resolves imported page content", () => {
-    expect(getStaticPage("about", "en")).toMatchObject({
-      slug: "about",
-      filePath: "/src/content/pages/en/about.ts",
+    expect(getStaticPage("privacy", "en")).toMatchObject({
+      slug: "privacy",
+      filePath: "/src/content/pages/en/privacy.ts",
     });
   });
 
   it("resolves the Spanish example page content", () => {
-    expect(getStaticPage("about", "es")).toMatchObject({
-      slug: "about",
-      filePath: "/src/content/pages/es/about.ts",
+    expect(getStaticPage("privacy", "es")).toMatchObject({
+      slug: "privacy",
+      filePath: "/src/content/pages/es/privacy.ts",
     });
   });
 

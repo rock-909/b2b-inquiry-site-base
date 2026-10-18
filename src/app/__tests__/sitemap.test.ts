@@ -1,53 +1,42 @@
 import { describe, expect, it } from "vitest";
 import sitemap from "@/app/sitemap";
-import { OFFERINGS } from "@/config/offerings";
+import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
+import { getLocalePath, LOCALES_CONFIG } from "@/config/paths";
 
 describe("sitemap", () => {
-  it("contains the public pages and configured product routes once", async () => {
+  it("publishes each indexable page in every locale once", async () => {
     const entries = await sitemap();
     const paths = entries.map((entry) => new URL(entry.url).pathname);
-
-    expect(paths).toEqual([
-      "/",
-      "/products",
-      "/products/sample-offering",
-      "/about",
-      "/contact",
-      "/privacy",
-      "/terms",
-      "/es",
-      "/es/products",
-      "/es/products/sample-offering",
-      "/es/about",
-      "/es/contact",
-      "/es/privacy",
-      "/es/terms",
-    ]);
+    const pages = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+      (page) => page.sitemap.include,
+    );
+    expect(pages.length).toBeGreaterThan(0);
+    expect(paths).toEqual(
+      LOCALES_CONFIG.locales.flatMap((locale) =>
+        pages.map((page) => getLocalePath(locale, page.path)),
+      ),
+    );
     expect(new Set(paths).size).toBe(paths.length);
+    expect(paths).toContain("/contact");
+    expect(paths).toContain("/es/contact");
+    expect(paths).not.toContain("/products/sample-offering");
+    expect(paths).not.toContain("/about");
+    for (const path of ["/privacy", "/terms", "/es/privacy", "/es/terms"])
+      expect(paths).not.toContain(path);
   });
 
-  it("only publishes supported lastmod values", async () => {
+  it("publishes reciprocal alternates and only supported content dates", async () => {
     const entries = await sitemap();
-    const byPath = Object.fromEntries(
-      entries.map((entry) => [new URL(entry.url).pathname, entry]),
-    );
-
     for (const entry of entries) {
       expect(entry.priority).toBeGreaterThan(0);
-      expect(entry.alternates?.languages).toHaveProperty("en");
-      expect(entry.alternates?.languages).toHaveProperty("es");
+      for (const locale of LOCALES_CONFIG.locales) {
+        expect(entry.alternates?.languages).toHaveProperty(locale);
+      }
       expect(entry.alternates?.languages).toHaveProperty("x-default");
-    }
-
-    expect(byPath["/"]).not.toHaveProperty("lastModified");
-    expect(byPath["/products"]).not.toHaveProperty("lastModified");
-    // 验证接线（lastmod 来自 offering.updatedAt），不锁死具体日期字面量：
-    // 业主更新内容并 bump updatedAt 时测试仍然有效。
-    expect(byPath["/products/sample-offering"]?.lastModified).toEqual(
-      new Date(OFFERINGS[0]!.updatedAt),
-    );
-    for (const path of ["/about", "/contact", "/privacy", "/terms"]) {
-      expect(byPath[path]?.lastModified).toBeInstanceOf(Date);
+      const path =
+        new URL(entry.url).pathname.replace(/^\/es(?=\/|$)/u, "") || "/";
+      if (path === "/") expect(entry).not.toHaveProperty("lastModified");
+      else expect(entry.lastModified).toBeInstanceOf(Date);
     }
   });
 });

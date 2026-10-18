@@ -27,10 +27,9 @@ legacy starter profiles that do not describe this repository.
 - Launch/release proof:
   - `docs/派生项目交接.md`
   - `docs/质量门禁.md`
-- Canonical offering and route truth:
+- Canonical content and route truth:
   - `src/config/pages.config.ts`
   - `src/config/single-site*.ts`
-  - `src/config/offerings.ts`
   - content config used by active pages
 
 ## Noise to classify first

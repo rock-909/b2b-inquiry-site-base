@@ -11,14 +11,7 @@ const DEPLOY_SMOKE_REQUEST_TIMEOUT_MS = 30000;
 const DEPLOY_SMOKE_REQUEST_RETRIES = 2;
 const DEPLOY_SMOKE_RETRY_DELAY_MS = 1000;
 const MIN_HTML_BODY_LENGTH = 1024;
-const CORE_PUBLIC_PAGE_PATHS = [
-  "/",
-  "/products",
-  "/about",
-  "/contact",
-  "/privacy",
-  "/terms",
-];
+const CORE_PUBLIC_PAGE_PATHS = ["/", "/contact", "/privacy", "/terms"];
 const EXTERNAL_URL_SMOKE_EXPECTATIONS = CORE_PUBLIC_PAGE_PATHS.map(
   (pathname) => ({ pathname, status: 200 }),
 );

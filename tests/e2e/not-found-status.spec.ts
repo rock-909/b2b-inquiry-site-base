@@ -11,6 +11,10 @@ import { expect, test } from "@playwright/test";
 
 const MISSING_PATHS = [
   "/nope",
+  "/about",
+  "/es/about",
+  "/products",
+  "/products/sample-offering",
   "/products/not-a-real-product",
   "/random.txt",
   "/does-not-exist.svg",

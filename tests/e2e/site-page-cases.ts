@@ -6,9 +6,8 @@ export function getSitePageCases(locale: "en" | "es") {
   const messages = locale === "es" ? es : en;
   const prefix = locale === "es" ? "/es" : "";
   return [
-    [prefix || "/", messages.home.hero.title],
-    [`${prefix}/products`, messages.products.page.heading],
-    ...(["about", "contact", "privacy", "terms"] as const).map(
+    [prefix || "/", messages.home.title],
+    ...(["contact", "privacy", "terms"] as const).map(
       (slug) =>
         [
           `${prefix}/${slug}`,

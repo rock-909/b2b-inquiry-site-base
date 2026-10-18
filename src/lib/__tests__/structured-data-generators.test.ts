@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { generateJSONLD } from "@/lib/structured-data";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   SINGLE_SITE_CONFIG as SITE_CONFIG,
   SINGLE_SITE_FACTS,
@@ -6,10 +7,8 @@ import {
 import {
   buildWebPageSchema,
   generateOrganizationData,
-  generateProductData,
   generateWebSiteData,
   organizationStructuredDataId,
-  websiteStructuredDataId,
 } from "@/lib/structured-data-generators";
 
 const mockTranslator = ((key: string) => {
@@ -48,7 +47,6 @@ describe("structured-data generators", () => {
         url: pageUrl,
         datePublished: "2024-01-01",
         isPartOf: { "@id": "https://example.com#website" },
-        about: { "@id": "https://example.com#organization" },
       });
       expect(schema).not.toHaveProperty("additionalType");
     });
@@ -68,7 +66,6 @@ describe("structured-data generators", () => {
         url: pageUrl,
         dateModified: "2024-02-01",
         isPartOf: { "@id": "https://example.com#website" },
-        about: { "@id": "https://example.com#organization" },
       });
       expect(schema).not.toHaveProperty("datePublished");
       expect(schema).not.toHaveProperty("additionalType");
@@ -88,54 +85,84 @@ describe("structured-data generators", () => {
         "@id": pageUrl,
         url: pageUrl,
         isPartOf: { "@id": "https://example.com#website" },
-        about: { "@id": "https://example.com#organization" },
       });
     });
   });
 
-  describe("Given Article pages publish under the company brand", () => {
-    it("When generating Organization data, Then real contact facts and stable @id are present", () => {
-      const schema = generateOrganizationData(mockTranslator);
+  const originalFacts = structuredClone(SINGLE_SITE_FACTS);
+  afterEach(() => {
+    delete SINGLE_SITE_FACTS.company;
+    Object.assign(SINGLE_SITE_FACTS, structuredClone(originalFacts));
+  });
 
-      expect(schema).toMatchObject({
-        "@type": "Organization",
-        "@id": organizationStructuredDataId(SITE_CONFIG.baseUrl),
-        email: SITE_CONFIG.contact.email,
-        foundingDate: String(SINGLE_SITE_FACTS.company.established),
-      });
-      expect(schema.address).toMatchObject({
-        "@type": "PostalAddress",
-        streetAddress: SINGLE_SITE_FACTS.company.location.address,
-        addressLocality: SINGLE_SITE_FACTS.company.location.city,
-        addressCountry: SINGLE_SITE_FACTS.company.location.country,
-      });
+  it("omits unconfigured organizations and their references", () => {
+    expect(generateOrganizationData()).toBeUndefined();
+    expect(generateWebSiteData(mockTranslator)).not.toHaveProperty("publisher");
+    expect(
+      buildWebPageSchema({ locale: "en", name: "Contact", url: "/contact" }),
+    ).not.toHaveProperty("about");
+  });
+
+  it("publishes only configured valid facts from the shared source", () => {
+    SINGLE_SITE_FACTS.company = {
+      name: "Acme Manufacturing",
+      established: 2001,
+      location: { city: "London", address: "Replace before launch" },
+    };
+    SINGLE_SITE_FACTS.contact = {
+      email: "info@acme.co.uk",
+      phone: "invalid phone",
+    };
+    SINGLE_SITE_FACTS.social = {
+      linkedin: "https://linkedin.com/company/acme",
+      twitter: "javascript:alert(1)",
+    };
+    const schema = generateOrganizationData();
+    expect(schema).toMatchObject({
+      "@type": "Organization",
+      name: "Acme Manufacturing",
+      email: "info@acme.co.uk",
+      foundingDate: "2001",
+      address: { addressLocality: "London" },
+      sameAs: ["https://linkedin.com/company/acme"],
     });
-
-    it("When generating WebSite data, Then stable @id and publisher reference are present", () => {
-      const schema = generateWebSiteData(mockTranslator);
-
-      expect(schema).toMatchObject({
-        "@type": "WebSite",
-        "@id": websiteStructuredDataId(SITE_CONFIG.baseUrl),
-        publisher: {
-          "@id": organizationStructuredDataId(SITE_CONFIG.baseUrl),
-        },
-      });
+    expect(JSON.parse(generateJSONLD(schema)).address).not.toHaveProperty(
+      "streetAddress",
+    );
+    expect(schema).not.toHaveProperty("telephone");
+    expect(schema).not.toHaveProperty("logo");
+    expect(generateWebSiteData(mockTranslator).publisher).toEqual({
+      "@id": organizationStructuredDataId(),
     });
   });
 
-  describe("Given a product detail page represents one catalog item", () => {
-    it("When generating product schema, Then only one Product node shape is emitted", () => {
-      const schema = generateProductData({
-        name: "Modular Sample Product",
-        description: "A configurable product for B2B purchasing.",
-        url: `${SITE_CONFIG.baseUrl}/products/sample-offering`,
-        brand: SITE_CONFIG.name,
-      });
-
-      expect(schema["@type"]).toBe("Product");
-      expect(schema).not.toHaveProperty("hasVariant");
-      expect(schema["@type"]).not.toBe("ProductGroup");
-    });
+  it("does not manufacture optional company facts or publish a placeholder email", () => {
+    SINGLE_SITE_FACTS.company = { name: "Acme Manufacturing" };
+    const schema = generateOrganizationData();
+    for (const key of [
+      "foundingDate",
+      "address",
+      "logo",
+      "email",
+      "telephone",
+      "sameAs",
+    ])
+      expect(schema).not.toHaveProperty(key);
+    SINGLE_SITE_FACTS.company = { name: "Replace before launch" };
+    expect(generateOrganizationData()).toBeUndefined();
+  });
+  it("publishes only same-origin logo URLs for a configured company", () => {
+    SINGLE_SITE_FACTS.company = { name: "Acme Manufacturing" };
+    SINGLE_SITE_FACTS.brandAssets.logo = {
+      status: "ready",
+      width: 240,
+      height: 72,
+      horizontal: "/images/logo.svg",
+    };
+    expect(generateOrganizationData()?.logo).toBe(
+      new URL("/images/logo.svg", SITE_CONFIG.baseUrl).href,
+    );
+    SINGLE_SITE_FACTS.brandAssets.logo.horizontal = String.raw`/\cdn.invalid/logo.svg`;
+    expect(generateOrganizationData()).not.toHaveProperty("logo");
   });
 });

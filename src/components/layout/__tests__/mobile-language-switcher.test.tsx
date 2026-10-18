@@ -35,12 +35,12 @@ vi.mock("@/i18n/routing", () => ({
       }}
     />
   ),
-  usePathname: () => "/products",
+  usePathname: () => "/contact",
 }));
 
 describe("MobileLanguageSwitcher", () => {
   beforeEach(() => {
-    window.history.replaceState({}, "", "/products");
+    window.history.replaceState({}, "", "/contact");
   });
 
   it("shows the current language and a real Spanish switch target", async () => {
@@ -66,7 +66,7 @@ describe("MobileLanguageSwitcher", () => {
     window.history.replaceState(
       {},
       "",
-      "/products?source=mobile&tag=one&tag=two#inquiry",
+      "/contact?source=mobile&tag=one&tag=two#inquiry",
     );
     const user = userEvent.setup();
     render(<MobileLanguageSwitcher locale="en" />);
@@ -75,7 +75,7 @@ describe("MobileLanguageSwitcher", () => {
 
     expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
       "href",
-      "/es/products?source=mobile&tag=one&tag=two#inquiry",
+      "/es/contact?source=mobile&tag=one&tag=two#inquiry",
     );
   });
 

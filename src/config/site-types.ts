@@ -5,12 +5,12 @@ export interface SiteSeoConfig {
 }
 
 export interface SiteSocialConfig {
-  twitter: string;
-  linkedin: string;
+  twitter?: string;
+  linkedin?: string;
 }
 
 export interface SiteContactConfig {
-  phone: string;
+  phone?: string;
   email: string;
 }
 
@@ -25,16 +25,16 @@ export interface SiteConfig {
 
 export interface CompanyInfo {
   name: string;
-  established: number;
-  location: {
-    country: string;
-    city: string;
+  established?: number;
+  location?: {
+    country?: string;
+    city?: string;
     address?: string;
   };
 }
 
 export interface ContactInfo {
-  phone: string;
+  phone?: string;
   email: string;
 }
 
@@ -46,7 +46,7 @@ export interface SocialLinks {
 export type PublicAssetStatus = "pending" | "ready";
 
 export interface BrandAssets {
-  logo: {
+  logo?: {
     status: PublicAssetStatus;
     horizontal: string;
     width: number;
@@ -57,7 +57,7 @@ export interface BrandAssets {
 }
 
 export interface SiteFacts {
-  company: CompanyInfo;
+  company?: CompanyInfo;
   contact: ContactInfo;
   social: SocialLinks;
   brandAssets: BrandAssets;

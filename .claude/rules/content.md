@@ -3,7 +3,6 @@ paths:
   - "messages/**/*.json"
   - "src/content/**/*"
   - "src/config/single-site*.ts"
-  - "src/config/offerings.ts"
   - "src/lib/content/**"
   - "src/lib/content-query/**"
   - "src/app/**/page.tsx"
@@ -25,19 +24,14 @@ Every content field has one authoring source.
 | Page route, content slug, main navigation, and footer navigation column | `src/config/pages.config.ts` (`navigationKey` selects pages in definition order) | Page modules or independent navigation lists |
 | Crawl/indexing policy | `src/config/single-site-seo.ts` | Page components |
 | Shared labels/nav/buttons/form chrome | `messages/base/{locale}/messages.json` | Page metadata |
-| Offering names and reviewed offering copy | `src/config/offerings.ts` and active content | Component literals or translation JSON |
 
-When a locale is configured, offering pages must render that locale's reviewed
-copy through the offering locale helper. Do not silently render the default
-language's product name, summary, specifications or evidence on a localized
-route.
+派生站新增业务页面时，应明确其内容来源并提供各语言的完整正文，不以默认语言内容冒充本地化页面。
 
 ## Page content
 
 - Page titles, descriptions, FAQ items, and legal/About prose live in the
   locale's static page module.
 - FAQ belongs to the page that renders it. Do not create a shared FAQ pool.
-- Home is a structured campaign landing exception: current section order and
-  reusable section copy can stay in config/i18n.
+- Home is a minimal entry page: its short localized copy stays in i18n.
 - Generated workflow/plan context under root `plans/**` can explain work,
   but it is not a content authoring source.

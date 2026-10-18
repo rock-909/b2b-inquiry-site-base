@@ -52,7 +52,7 @@ export function Logo({
   ariaLabel = SINGLE_SITE_CONFIG.name,
   constrainText = false,
 }: LogoProps) {
-  const { width, height } = SINGLE_SITE_FACTS.brandAssets.logo;
+  const { logo } = SINGLE_SITE_FACTS.brandAssets;
   const logoPath = getPublicLogoPath();
   const shouldShowText = showText || !logoPath;
 
@@ -66,12 +66,12 @@ export function Logo({
       )}
       aria-label={ariaLabel}
     >
-      {logoPath ? (
+      {logoPath && logo ? (
         <Image
           src={logoPath}
           alt={`${SINGLE_SITE_CONFIG.name} Logo`}
-          width={width}
-          height={height}
+          width={logo.width}
+          height={logo.height}
           className={cn(
             "transition-[filter,opacity] duration-200 dark:invert",
             getSizeClass(size),

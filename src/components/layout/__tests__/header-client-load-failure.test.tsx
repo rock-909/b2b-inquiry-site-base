@@ -3,15 +3,15 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageToggleIsland, MobileNavigationIsland } from "../header-client";
 
-const mockPathname = vi.hoisted(() => ({ current: "/products/widget" }));
+const mockPathname = vi.hoisted(() => ({ current: "/contact" }));
 
 vi.mock("@/i18n/routing", () => ({
   usePathname: () => mockPathname.current,
 }));
 
 beforeEach(() => {
-  mockPathname.current = "/products/widget";
-  window.history.replaceState(null, "", "/products/widget?ref=buyer#specs");
+  mockPathname.current = "/contact";
+  window.history.replaceState(null, "", "/contact?ref=buyer#specs");
 });
 
 vi.mock("@/components/layout/mobile-navigation-interactive", () => {
@@ -33,7 +33,7 @@ describe("header islands when their chunk fails to load", () => {
         openMenuLabel="Open navigation menu"
         closeMenuLabel="Close navigation menu"
       >
-        <a href="/products">Products</a>
+        <a href="/contact">Contact</a>
       </MobileNavigationIsland>,
     );
 
@@ -43,9 +43,9 @@ describe("header islands when their chunk fails to load", () => {
     });
 
     expect(screen.getByTestId("header-mobile-menu-button")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Products" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Contact" })).toHaveAttribute(
       "href",
-      "/products",
+      "/contact",
     );
     consoleError.mockRestore();
   });
@@ -73,25 +73,25 @@ describe("header islands when their chunk fails to load", () => {
       );
       expect(screen.getByRole("link", { name: "English" })).toHaveAttribute(
         "href",
-        "/products/widget?ref=buyer#specs",
+        "/contact?ref=buyer#specs",
       );
       expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
         "href",
-        "/es/products/widget?ref=buyer#specs",
+        "/es/contact?ref=buyer#specs",
       );
 
-      mockPathname.current = "/about";
-      window.history.replaceState(null, "", "/about");
+      mockPathname.current = "/privacy";
+      window.history.replaceState(null, "", "/privacy");
       rerender(
         <LanguageToggleIsland ariaLabel="Language: Español" locale="es" />,
       );
       expect(screen.getByRole("link", { name: "English" })).toHaveAttribute(
         "href",
-        "/about",
+        "/privacy",
       );
       expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
         "href",
-        "/es/about",
+        "/es/privacy",
       );
       consoleError.mockRestore();
     },

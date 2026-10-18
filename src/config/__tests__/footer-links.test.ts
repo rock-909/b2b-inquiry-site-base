@@ -13,8 +13,6 @@ describe("footer links", () => {
         key: "navigation",
         links: [
           ["home", "/"],
-          ["products", "/products"],
-          ["about", "/about"],
           ["contact", "/contact"],
         ],
       },

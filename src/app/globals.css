@@ -516,7 +516,10 @@
   }
 
   .header-nav-layout {
-    @apply grid h-16 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center;
+    @apply grid h-16 grid-cols-[minmax(0,1fr)_auto_auto] items-center;
+    @media (min-width: 840px) {
+      @apply grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)];
+    }
   }
 
   .header-nav-left {

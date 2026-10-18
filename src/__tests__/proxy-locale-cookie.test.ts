@@ -31,7 +31,7 @@ describe("proxy locale cookie", () => {
   });
 
   it("delegates localized requests to next-intl without manually setting NEXT_LOCALE", () => {
-    const request = new NextRequest("http://localhost/en/about", {
+    const request = new NextRequest("http://localhost/en/privacy", {
       headers: {
         cookie: "NEXT_LOCALE=zh",
       },

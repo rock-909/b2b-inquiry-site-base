@@ -3,8 +3,6 @@ import {
   getStaticContentPageLastModified,
   isStaticContentPage,
 } from "@/lib/content/page-dates";
-import type { Locale } from "@/config/paths";
-import { OFFERINGS, getOfferingPath } from "@/config/offerings";
 import { getStaticSitemapPages } from "@/config/pages.config";
 import {
   getSingleSiteSitemapPageConfig,
@@ -40,21 +38,6 @@ function createSitemapEntry(
   };
 }
 
-function createProductEntries(
-  locale: Locale,
-  config: PageConfig,
-): MetadataRoute.Sitemap {
-  return OFFERINGS.map((offering) => {
-    const productPath = getOfferingPath(offering.id);
-    return createSitemapEntry({
-      url: buildCanonicalForPath(productPath, locale),
-      lastModified: new Date(offering.updatedAt),
-      config,
-      alternates: buildLanguagesForPath(productPath),
-    });
-  });
-}
-
 // Generate static page entries for all locales
 async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
   const publicStaticPages = getStaticSitemapPages();
@@ -78,10 +61,6 @@ async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
       entries.push(
         createSitemapEntry({ url, lastModified, config, alternates }),
       );
-
-      if (page === "/products") {
-        entries.push(...createProductEntries(locale, config));
-      }
     }
   }
 
@@ -90,7 +69,7 @@ async function generateStaticPageEntries(): Promise<MetadataRoute.Sitemap> {
 
 /**
  * Dynamic sitemap generation for Next.js.
- * Includes the template's public pages and configured products.
+ * 按当前公开页面配置生成条目。
  */
 export default function sitemap(): Promise<MetadataRoute.Sitemap> {
   return generateStaticPageEntries();

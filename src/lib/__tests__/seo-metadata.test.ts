@@ -40,7 +40,9 @@ describe("SEO Metadata", () => {
 
   describe("buildCanonicalForPath", () => {
     it("builds canonical URLs from the route path without locale prefixes", () => {
-      expect(buildCanonicalForPath("/about")).toBe("https://example.com/about");
+      expect(buildCanonicalForPath("/privacy")).toBe(
+        "https://example.com/privacy",
+      );
       expect(buildCanonicalForPath("/")).toBe("https://example.com/");
     });
 
@@ -90,41 +92,41 @@ describe("SEO Metadata", () => {
       });
     });
 
-    it("interpolates established-year placeholders in custom titles", () => {
+    it("interpolates the site name in custom titles", () => {
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "about",
-        path: "/about",
+        pageType: "privacy",
+        path: "/privacy",
         config: {
-          title: "Established in {established}",
+          title: "About {siteName}",
         },
       });
 
-      expect(metadata.title).toBe("Established in 2021");
+      expect(metadata.title).toBe("About Test Site");
     });
 
     it("interpolates every site placeholder in titles and descriptions", () => {
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "about",
-        path: "/about",
+        pageType: "privacy",
+        path: "/privacy",
         config: {
-          title: "{siteName} by {companyName}",
-          description: "© {currentYear} {siteName}, since {established}.",
+          title: "{siteName}",
+          description: "© {currentYear} {siteName}.",
         },
       });
 
-      expect(metadata.title).toBe("Test Site by Test Company");
+      expect(metadata.title).toBe("Test Site");
       expect(metadata.description).toBe(
-        `© ${new Date().getUTCFullYear()} Test Site, since 2021.`,
+        `© ${new Date().getUTCFullYear()} Test Site.`,
       );
     });
 
     it("leaves non-site placeholders untouched", () => {
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "about",
-        path: "/about",
+        pageType: "privacy",
+        path: "/privacy",
         config: { title: "About {productName}" },
       });
 
@@ -134,34 +136,36 @@ describe("SEO Metadata", () => {
     it("renders canonical, hreflang and openGraph.url from the actual route path", () => {
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "about",
-        path: "/about",
+        pageType: "privacy",
+        path: "/privacy",
         config: {
           title: "Custom About",
           description: "Custom About Description",
         },
       });
 
-      expect(metadata.alternates?.canonical).toBe("https://example.com/about");
+      expect(metadata.alternates?.canonical).toBe(
+        "https://example.com/privacy",
+      );
       expect(metadata.alternates?.languages).toEqual({
-        en: "https://example.com/about",
-        es: "https://example.com/es/about",
-        "x-default": "https://example.com/about",
+        en: "https://example.com/privacy",
+        es: "https://example.com/es/privacy",
+        "x-default": "https://example.com/privacy",
       });
-      expect(metadata.openGraph?.url).toBe("https://example.com/about");
+      expect(metadata.openGraph?.url).toBe("https://example.com/privacy");
     });
 
     it("builds locale-specific canonical and alternate URLs", () => {
       const metadata = generateMetadataForPath({
         locale: "es",
-        pageType: "about",
-        path: "/about",
+        pageType: "privacy",
+        path: "/privacy",
       });
 
       expect(metadata.alternates?.canonical).toBe(
-        "https://example.com/es/about",
+        "https://example.com/es/privacy",
       );
-      expect(metadata.openGraph?.url).toBe("https://example.com/es/about");
+      expect(metadata.openGraph?.url).toBe("https://example.com/es/privacy");
       expect(metadata.openGraph?.locale).toBe("es");
     });
 
@@ -170,8 +174,8 @@ describe("SEO Metadata", () => {
 
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "about",
-        path: "/about",
+        pageType: "privacy",
+        path: "/privacy",
       });
 
       expect(metadata.robots).toMatchObject({
@@ -189,8 +193,8 @@ describe("SEO Metadata", () => {
 
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "about",
-        path: "/about",
+        pageType: "contact",
+        path: "/contact",
       });
 
       expect(metadata.robots).toMatchObject({
@@ -199,11 +203,33 @@ describe("SEO Metadata", () => {
       });
     });
 
+    it("keeps incomplete legal pages noindex even in production, with localized canonical URLs", () => {
+      process.env.APP_ENV = "production";
+      for (const pageType of ["privacy", "terms"] as const) {
+        for (const locale of ["en", "es"] as const) {
+          const metadata = generateMetadataForPath({
+            locale,
+            pageType,
+            path: `/${pageType}`,
+          });
+          expect(metadata.robots).toMatchObject({
+            index: false,
+            follow: false,
+            googleBot: { index: false },
+          });
+          expect(metadata.alternates?.canonical).toBe(
+            `https://example.com${locale === "es" ? "/es" : ""}/${pageType}`,
+          );
+          expect(metadata.alternates?.languages).toHaveProperty("x-default");
+        }
+      }
+    });
+
     it("noindexes a core page type on a non-canonical path", () => {
       process.env.APP_ENV = "production";
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "about",
+        pageType: "privacy",
         path: "/products",
       });
 
@@ -216,8 +242,8 @@ describe("SEO Metadata", () => {
     it("renders default OG and Twitter images from page defaults", () => {
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "about",
-        path: "/about",
+        pageType: "privacy",
+        path: "/privacy",
         config: {
           title: "About Reference Industries",
           description: "About page description",
@@ -228,19 +254,6 @@ describe("SEO Metadata", () => {
         { url: "/images/facts-og.png" },
       ]);
       expect(metadata.twitter?.images).toEqual(["/images/facts-og.png"]);
-    });
-
-    it("maps product-shaped openGraph metadata to website", () => {
-      const metadata = generateMetadataForPath({
-        locale: "en",
-        pageType: "about",
-        path: "/about",
-        config: {
-          type: "product",
-        },
-      });
-
-      expect(metadata.openGraph).toMatchObject({ type: "website" });
     });
   });
 

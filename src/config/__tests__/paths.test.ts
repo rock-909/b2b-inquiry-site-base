@@ -9,8 +9,6 @@ import {
 
 const CORE_PATHS = {
   home: "/",
-  products: "/products",
-  about: "/about",
   contact: "/contact",
   privacy: "/privacy",
   terms: "/terms",
@@ -43,6 +41,6 @@ describe("paths", () => {
   });
 
   it("builds and resolves the Spanish locale prefix", () => {
-    expect(getLocalizedPath("about", "es")).toBe("/es/about");
+    expect(getLocalizedPath("privacy", "es")).toBe("/es/privacy");
   });
 });

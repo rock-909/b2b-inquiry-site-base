@@ -1,7 +1,6 @@
 ---
 paths:
   - "src/lib/structured-data*.ts"
-  - "src/lib/content/faq.ts"
   - "src/components/seo/**"
   - "src/app/**/page.tsx"
   - "src/app/**/*jsonld.ts"
@@ -11,9 +10,7 @@ paths:
 
 # Structured Data / JSON-LD Rules
 
-All schema objects except FAQPage are built through
-`src/lib/structured-data-generators.ts`; FAQPage comes from
-`generateFaqSchemaFromItems()` (see FAQ schema).
+Schema objects are built through `src/lib/structured-data-generators.ts`.
 
 Pages and component shells render generated nodes through `<JsonLdGraphScript>`;
 generators return context-free nodes, and the graph renderer supplies the single
@@ -37,14 +34,6 @@ escaping behavior covered by tests.
   ItemList, and BreadcrumbList.
 - Component shell: only when the shell owns page-level rendering, and the
   schema still comes from the shared generators.
-
-## FAQ schema
-
-FAQ content comes from the page-owned static content module.
-
-Use `generateFaqSchemaFromItems()` from `src/lib/content/faq.ts`.
-
-Do not add another FAQ helper for the same item shape.
 
 ## Public page schema coverage
 

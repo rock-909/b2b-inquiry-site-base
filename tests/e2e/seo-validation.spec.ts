@@ -78,6 +78,7 @@ test.describe("Rendered SEO contract", () => {
       expect(await scripts.count()).toBeGreaterThan(0);
       const schemaTypes = new Set<string>();
       for (const raw of await scripts.allTextContents()) {
+        expect(raw).not.toContain("#organization");
         const parsed = JSON.parse(raw) as Record<string, unknown>;
         const nodes = Array.isArray(parsed["@graph"])
           ? parsed["@graph"]
@@ -91,7 +92,8 @@ test.describe("Rendered SEO contract", () => {
           }
         }
       }
-      expect(schemaTypes).toContain("Organization");
+      expect(schemaTypes).not.toContain("Organization");
+
       expect(schemaTypes).toContain("WebSite");
     });
   }

@@ -1,6 +1,10 @@
 import { getTranslations } from "next-intl/server";
 import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import {
+  getPublicContactEmail,
+  getPublicFact,
+  getPublicFoundingYear,
+  getPublicSocialUrl,
   getPublicContactPhone,
   getPublicLogoPath,
 } from "@/config/public-trust";
@@ -10,14 +14,6 @@ const FALLBACK_BASE_URL = SINGLE_SITE_CONFIG.baseUrl;
 type StructuredDataTranslator = Awaited<
   ReturnType<typeof getTranslations<"structured-data">>
 >;
-
-interface ProductInput {
-  name: string;
-  description: string;
-  url: string;
-  brand: string;
-  image?: string;
-}
 
 interface WebPageSchemaInput {
   locale: string;
@@ -38,50 +34,38 @@ export function websiteStructuredDataId(baseUrl: string = FALLBACK_BASE_URL) {
   return `${baseUrl}#website`;
 }
 
-function getSocialProfileUrls(t: StructuredDataTranslator): string[] {
-  return [
-    t("organization.social.twitter"),
-    t("organization.social.linkedin"),
-  ].filter((url) => /^https?:\/\//iu.test(url));
-}
-
-function buildOrganizationPostalAddress() {
-  return {
-    "@type": "PostalAddress" as const,
-    streetAddress: SINGLE_SITE_FACTS.company.location.address,
-    addressLocality: SINGLE_SITE_FACTS.company.location.city,
-    addressCountry: SINGLE_SITE_FACTS.company.location.country,
-  };
-}
-
-/**
- * 生成组织结构化数据
- */
-export function generateOrganizationData(t: StructuredDataTranslator) {
+export function generateOrganizationData() {
+  const { company } = SINGLE_SITE_FACTS;
+  if (!company) return undefined;
+  const name = getPublicFact(company.name);
+  if (!name) return undefined;
   const logoPath = getPublicLogoPath();
-  const telephone = getPublicContactPhone(SINGLE_SITE_CONFIG.contact.phone);
-  const sameAs = getSocialProfileUrls(t);
-  const { email } = SINGLE_SITE_CONFIG.contact;
-
+  const telephone = getPublicContactPhone();
+  const email = getPublicContactEmail();
+  const foundingYear = getPublicFoundingYear(company.established);
+  const address = {
+    streetAddress: getPublicFact(company.location?.address),
+    addressLocality: getPublicFact(company.location?.city),
+    addressCountry: getPublicFact(company.location?.country),
+  };
+  const sameAs = Object.values(SINGLE_SITE_FACTS.social)
+    .map(getPublicSocialUrl)
+    .filter(Boolean);
   return {
     "@type": "Organization",
     "@id": organizationStructuredDataId(),
-    name: t("organization.name"),
-    description: t("organization.description"),
+    name,
     url: FALLBACK_BASE_URL,
     ...(email ? { email } : {}),
-    foundingDate: String(SINGLE_SITE_FACTS.company.established),
-    address: buildOrganizationPostalAddress(),
+    ...(foundingYear ? { foundingDate: String(foundingYear) } : {}),
+    ...(Object.values(address).some(Boolean)
+      ? { address: { "@type": "PostalAddress", ...address } }
+      : {}),
     ...(logoPath
       ? { logo: new URL(logoPath, FALLBACK_BASE_URL).toString() }
       : {}),
-    contactPoint: {
-      "@type": "ContactPoint",
-      ...(telephone ? { telephone } : {}),
-      contactType: "customer service",
-      availableLanguage: routing.locales,
-    },
-    ...(sameAs.length > 0 ? { sameAs } : {}),
+    ...(telephone ? { telephone } : {}),
+    ...(sameAs.length ? { sameAs } : {}),
   };
 }
 
@@ -95,26 +79,10 @@ export function generateWebSiteData(t: StructuredDataTranslator) {
     name: t("website.name"),
     description: t("website.description"),
     url: FALLBACK_BASE_URL,
-    publisher: {
-      "@id": organizationStructuredDataId(),
-    },
+    ...(generateOrganizationData()
+      ? { publisher: { "@id": organizationStructuredDataId() } }
+      : {}),
     inLanguage: routing.locales,
-  };
-}
-
-export function generateProductData(
-  data: ProductInput,
-): Record<string, unknown> {
-  return {
-    "@type": "Product",
-    name: data.name,
-    description: data.description,
-    url: data.url,
-    brand: {
-      "@type": "Brand",
-      name: data.brand,
-    },
-    ...(data.image ? { image: data.image } : {}),
   };
 }
 
@@ -133,9 +101,9 @@ export function buildWebPageSchema(
     isPartOf: {
       "@id": websiteStructuredDataId(FALLBACK_BASE_URL),
     },
-    about: {
-      "@id": organizationStructuredDataId(FALLBACK_BASE_URL),
-    },
+    ...(generateOrganizationData()
+      ? { about: { "@id": organizationStructuredDataId(FALLBACK_BASE_URL) } }
+      : {}),
   };
 }
 

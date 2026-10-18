@@ -22,7 +22,6 @@ Before creating a component, check existing folders:
 src/components/ui
 src/components/sections
 src/components/forms
-src/components/products
 src/components/layout
 src/components/navigation
 src/components/footer
@@ -148,7 +147,7 @@ Website design values live in `src/app/theme.css`.
   surfaces.
 
 Brand color, theme, token structure, and page-level visual patterns are design
-decisions. Ordinary section H2 uses `.text-section` via `SectionHead`.
+decisions. Ordinary section H2 may use `.text-section`.
 
 ## Tailwind CSS v4
 
