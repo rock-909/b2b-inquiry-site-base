@@ -276,7 +276,7 @@ export function TurnstileWidget({
           {...fallback.scriptHandlers}
           options={{
             theme: "auto",
-            size: "normal",
+            size: "compact",
             action: INQUIRY_TURNSTILE_ACTION,
           }}
         />

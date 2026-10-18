@@ -18,7 +18,7 @@ const InquiryForm = lazy(() =>
 );
 
 const RESERVE_CLASS_NAME =
-  "min-h-[660px] min-[390px]:min-h-[600px] sm:min-h-[560px] md:min-h-[480px]";
+  "min-h-[820px] min-[390px]:min-h-[760px] sm:min-h-[720px] md:min-h-[660px]";
 
 export function DeferredInquiryForm({
   copy,

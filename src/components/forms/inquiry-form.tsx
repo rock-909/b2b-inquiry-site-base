@@ -513,15 +513,15 @@ export function InquiryForm({
   );
 
   if (!isHydrated) {
-    // The static card is ~160px; the live form is ~470-700px depending on
-    // width. Without reserved space the swap pushes everything below it down
+    // 静态卡片约 160px；compact 表单按断点实测约 624–804px。
+    // Without reserved space the swap pushes everything below it down
     // (measured CLS 0.203 on the inquiry form swap). The bands track the live form's
     // measured height per breakpoint; tests/e2e/layout-stability.spec.ts fails
     // if they drift far enough to move the page.
     return (
       <div
         data-inquiry-form-reserve
-        className="min-h-[660px] min-[390px]:min-h-[600px] sm:min-h-[560px] md:min-h-[480px]"
+        className="min-h-[820px] min-[390px]:min-h-[760px] sm:min-h-[720px] md:min-h-[660px]"
       >
         {/* Without JavaScript the swap never happens, so reserving space would
             leave a permanent gap under the card. */}

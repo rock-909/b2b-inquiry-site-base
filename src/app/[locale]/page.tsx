@@ -24,10 +24,16 @@ export async function generateMetadata({
   params,
 }: HomePageProps): Promise<Metadata> {
   const locale = resolveLocaleParam(await params);
+  const t = await getTranslations({ locale, namespace: "home.metadata" });
+
   return generateMetadataForPath({
     locale,
     pageType: "home",
     path: getCanonicalPath("home"),
+    config: {
+      title: t("title"),
+      description: t("description"),
+    },
   });
 }
 

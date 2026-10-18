@@ -124,13 +124,25 @@ describe("verifyTurnstileDetailed server-side guards", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("treats a Cloudflare internal-error as service-unavailable, not a buyer rejection", async () => {
-    stubSiteverify({ success: false, "error-codes": ["internal-error"] });
+  it.each(["internal-error", "invalid-input-secret", "missing-input-secret"])(
+    "treats provider %s as service-unavailable with one error log",
+    async (errorCode) => {
+      stubSiteverify({ success: false, "error-codes": [errorCode] });
 
-    await expect(
-      verifyTurnstileDetailed("widget-token", "203.0.113.10"),
-    ).resolves.toEqual({ status: "service-unavailable" });
-  });
+      await expect(
+        verifyLeadTurnstile({
+          token: "widget-token",
+          clientIP: "203.0.113.10",
+        }),
+      ).resolves.toEqual({ status: "service-unavailable" });
+      expect(errorLog).toHaveBeenCalledTimes(1);
+      expect(errorLog).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ errorCodes: [errorCode] }),
+      );
+      expect(warnLog).not.toHaveBeenCalled();
+    },
+  );
 
   it("rejects a token Cloudflare itself refuses as failed", async () => {
     stubSiteverify({

@@ -108,6 +108,8 @@ test.describe("Language switcher journey", () => {
     await page.goto("/contact", { waitUntil: "domcontentloaded" });
 
     const trigger = page.getByRole("button", { name: "Languages: English" });
+    // 此用例检查增强菜单的对比度；水合前单次激活由专门回归覆盖。
+    await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(trigger).toHaveAttribute("aria-expanded", "true");

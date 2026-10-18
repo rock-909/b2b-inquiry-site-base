@@ -79,7 +79,7 @@ test.describe("No-JS HTML contract (default locale)", () => {
     // 本来就该隐藏。不钉的话这条用例在 Mobile 项目里必然红。移动端的等价
     // 契约由下面那条 mobile 用例覆盖。
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("http://localhost:3000/", {
+    await page.goto("/", {
       waitUntil: "domcontentloaded",
     });
 
@@ -107,7 +107,7 @@ test.describe("No-JS HTML contract (default locale)", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("http://localhost:3000/", {
+    await page.goto("/", {
       waitUntil: "domcontentloaded",
     });
 
@@ -162,7 +162,7 @@ test.describe("No-JS HTML contract (default locale)", () => {
     // 本来就该隐藏。不钉的话这条用例在 Mobile 项目里必然红。移动端的等价
     // 契约由第 73 行那条 mobile 用例覆盖。
     await page.setViewportSize({ width: 1280, height: 800 });
-    await page.goto("http://localhost:3000/contact", {
+    await page.goto("/contact", {
       waitUntil: "domcontentloaded",
     });
 
@@ -212,7 +212,7 @@ test.describe("No-JS HTML contract (default locale)", () => {
     expect(canonicalPublicPaths.length).toBeGreaterThan(0);
 
     for (const path of canonicalPublicPaths) {
-      await page.goto(`http://localhost:3000${path}`, {
+      await page.goto(path, {
         waitUntil: "domcontentloaded",
       });
 
@@ -224,7 +224,7 @@ test.describe("No-JS HTML contract (default locale)", () => {
   test("rendered <title> carries exactly one brand suffix", async ({
     page,
   }) => {
-    await page.goto("http://localhost:3000/about", {
+    await page.goto("/about", {
       waitUntil: "domcontentloaded",
     });
     const title = await page.title();

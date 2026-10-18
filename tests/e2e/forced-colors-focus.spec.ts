@@ -79,14 +79,11 @@ test.describe("forced-colors keyboard indicators", () => {
 
     const toggle = page.getByTestId("language-toggle-button");
     const menu = page.getByTestId("language-dropdown-content");
-    // 水合前按下的 Enter 会被吞掉，所以只在菜单还没开时重按，避免把已开的菜单关掉。
-    await expect(async () => {
-      if (!(await menu.isVisible())) {
-        await toggle.focus();
-        await page.keyboard.press("Enter");
-      }
-      await expect(menu).toBeVisible({ timeout: 1_000 });
-    }).toPass();
+    // 等待增强菜单入口后只激活一次，不再重按 Enter 掩盖水合问题。
+    await expect(toggle).toHaveAttribute("aria-haspopup", "menu");
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    await expect(menu).toBeVisible();
     await expectDesktopLanguageMenuKeyboardReady(page);
     await page.keyboard.press("ArrowDown");
 

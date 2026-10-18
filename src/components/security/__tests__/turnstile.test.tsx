@@ -110,12 +110,13 @@ describe("TurnstileWidget", () => {
       });
     });
 
-    it("uses INQUIRY_TURNSTILE_ACTION for the widget action", () => {
+    it("uses compact dimensions and INQUIRY_TURNSTILE_ACTION", () => {
       renderTurnstileWidget();
 
       const mockCall = getMockTurnstile().mock.calls[0];
       expect(mockCall?.[0]).toMatchObject({
         options: {
+          size: "compact",
           action: "product_inquiry",
         },
       });
