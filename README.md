@@ -25,7 +25,7 @@ cp .dev.vars.example .dev.vars    # Cloudflare 本地预览环境变量
 pnpm dev
 ```
 
-询盘表单需要在 `.env.local` 里填入真实服务配置。服务端密钥包括 `AIRTABLE_API_KEY`、`RESEND_API_KEY` 和 `TURNSTILE_SECRET_KEY`；`NEXT_PUBLIC_TURNSTILE_SITE_KEY` 是浏览器侧公开站点 key。完整键位以 `.env.example` 为准，派生和上线见 `docs/派生项目交接.md`。
+询盘表单需要在 `.env.local` 里填入真实服务配置。服务端密钥包括 `AIRTABLE_API_KEY`、`RESEND_API_KEY` 和 `TURNSTILE_SECRET_KEY`；`NEXT_PUBLIC_TURNSTILE_SITE_KEY` 是浏览器侧公开站点 key。完整键位以 `.env.example` 为准，派生和上线见 [派生项目交接](docs/派生项目交接.md)。
 
 首页询盘表单、移动导航或语言菜单的按需加载失败时，页面仍会保留：询盘区显示静态联系说明（配置了有效公开邮箱时提供邮件入口），移动导航保留普通链接，语言菜单改用当前页面的语言链接。需要重新加载交互功能时，请刷新页面。
 
@@ -50,20 +50,22 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 
 ## 主要维护入口
 
-1. `docs/项目.md`
-2. `docs/技术栈.md`
-3. `docs/质量门禁.md`
-4. `docs/派生站工作流.md`
-5. `docs/派生项目交接.md`
-6. `docs/design/设计真相.md`
+| 要做的事 | 阅读入口 |
+| --- | --- |
+| 了解项目用途和边界 | [项目](docs/项目.md) |
+| 开发、升级或排查技术限制 | [技术栈](docs/技术栈.md) → [技术债](docs/技术债.md) |
+| 选择检查、准备 PR 或发布 | [质量门禁](docs/质量门禁.md) |
+| 研究并制作派生站 | [派生站工作流](docs/派生站工作流.md) → [派生项目交接](docs/派生项目交接.md) |
+| 创建、fork 或接手派生站 | [派生项目交接](docs/派生项目交接.md) |
+| 调整视觉或比较参考 | [设计真相](docs/design/设计真相.md) → 按任务查[设计参考](docs/design/设计参考.md) |
 
-派生站研究从 `docs/派生站工作流.md` 开始；整体换肤从 `src/app/theme.css` 开始；组件结构和 variant 看 `.claude/rules/ui.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
+派生站研究从 [派生站工作流](docs/派生站工作流.md) 开始；整体换肤从 `src/app/theme.css` 开始；组件结构和 variant 看 `.claude/rules/ui.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
 
-创建、fork 或接手派生站时，从 `docs/派生项目交接.md` 开始；不要继承模板或另一个站点的 provider、部署和 Owner 证据。
+创建、fork 或接手派生站时，从 [派生项目交接](docs/派生项目交接.md) 开始；不要继承模板或另一个站点的 provider、部署和 Owner 证据。
 
 ## 技术基础
 
-当前技术栈、精确版本、Cloudflare、cache、CSP 和升级边界见 `docs/技术栈.md` 与 `package.json`。
+当前技术栈、精确版本、Cloudflare、cache、CSP 和升级边界见 [技术栈](docs/技术栈.md) 与 `package.json`。
 
 ## 当前内容和配置真相
 
