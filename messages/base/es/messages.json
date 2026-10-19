@@ -19,7 +19,8 @@
     "description": "Permite cookies de análisis opcionales para ayudarnos a entender el tráfico del sitio.",
     "learnMore": "Política de privacidad",
     "acceptAll": "Permitir análisis",
-    "rejectAll": "No, gracias"
+    "rejectAll": "No, gracias",
+    "settings": "Configuración de cookies"
   },
   "structured-data": {
     "website": {

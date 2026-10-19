@@ -86,6 +86,12 @@ export function saveConsent(consent: CookieConsent): void {
   }
 }
 
+/** 撤回已保存的选择：横幅重新出现，选择前不加载分析 */
+export function clearConsent(): void {
+  if (!isStorageAvailable()) return;
+  window.localStorage.removeItem(CONSENT_STORAGE_KEY);
+}
+
 /** Create consent with all optional categories accepted */
 export function createAcceptAllConsent(): CookieConsent {
   return {

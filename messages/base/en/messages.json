@@ -19,7 +19,8 @@
     "description": "Allow optional analytics cookies to help us understand site traffic.",
     "learnMore": "Privacy policy",
     "acceptAll": "Allow analytics",
-    "rejectAll": "No thanks"
+    "rejectAll": "No thanks",
+    "settings": "Cookie settings"
   },
   "structured-data": {
     "website": {

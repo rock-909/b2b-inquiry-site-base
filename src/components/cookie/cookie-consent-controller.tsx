@@ -4,12 +4,16 @@ import { useEffect, useState } from "react";
 import { CookieBanner } from "@/components/cookie/cookie-banner";
 import { EnterpriseAnalyticsIsland } from "@/components/monitoring/enterprise-analytics-island";
 import {
+  clearConsent,
   createAcceptAllConsent,
   createRejectAllConsent,
   loadConsent,
   saveConsent,
 } from "@/lib/cookie-consent/storage";
-import type { CookieConsent } from "@/lib/cookie-consent/types";
+import {
+  OPEN_CONSENT_EVENT,
+  type CookieConsent,
+} from "@/lib/cookie-consent/types";
 
 export function CookieConsentController() {
   const [consent, setConsent] = useState<CookieConsent | null | undefined>(
@@ -19,7 +23,12 @@ export function CookieConsentController() {
   useEffect(() => {
     const hydrateConsent = () => setConsent(loadConsent()?.consent ?? null);
     queueMicrotask(hydrateConsent);
-    return () => undefined;
+    const reopen = () => {
+      clearConsent();
+      setConsent(null);
+    };
+    window.addEventListener(OPEN_CONSENT_EVENT, reopen);
+    return () => window.removeEventListener(OPEN_CONSENT_EVENT, reopen);
   }, []);
 
   if (consent === undefined) {

@@ -39,6 +39,14 @@ export function EnterpriseAnalyticsIsland({
 
   /* eslint-disable react-you-might-not-need-an-effect/no-event-handler -- these effects synchronize the external GA runtime after consent and navigation. */
   useEffect(() => {
+    if (!gaMeasurementId) return;
+    // GA 官方退出开关：撤回同意后已加载的 gtag 也停止发送。
+    (window as unknown as Record<string, unknown>)[
+      `ga-disable-${gaMeasurementId}`
+    ] = !analyticsAllowed;
+  }, [analyticsAllowed, gaMeasurementId]);
+
+  useEffect(() => {
     if (!gaEnabled || gaInitRef.current) return;
     ensureGa4QueueInitialized(gaMeasurementId!);
     gaInitRef.current = true;

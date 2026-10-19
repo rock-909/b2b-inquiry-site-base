@@ -3,6 +3,8 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { SINGLE_SITE_FOOTER_COLUMNS } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
+import { CookieSettingsButton } from "@/components/cookie/cookie-settings-button";
+import { getPublicRuntimeEnvString } from "@/lib/public-runtime-env";
 
 export interface FooterProps {
   themeToggleSlot?: ReactNode;
@@ -29,6 +31,11 @@ export function Footer({ themeToggleSlot, className }: FooterProps) {
                 </li>
               ),
             )}
+            {getPublicRuntimeEnvString("NEXT_PUBLIC_GA_MEASUREMENT_ID") ? (
+              <li>
+                <CookieSettingsButton label={t("cookie.settings")} />
+              </li>
+            ) : null}
           </ul>
         </nav>
         {themeToggleSlot}
