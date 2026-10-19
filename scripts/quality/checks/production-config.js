@@ -145,49 +145,91 @@ function validateNoStarterMarker(target, markerPath, value, reason) {
 }
 
 const SECURITY_TXT_PATH = "public/.well-known/security.txt";
-// 这些文件会原样上线（或在本地 release 构建时生效），门禁逐行扫模板占位。
-const PLACEHOLDER_SCAN_FILES = [".env.production", SECURITY_TXT_PATH];
-const PLACEHOLDER_SCAN_DIRS = ["messages/base", "src/content/pages"];
+// 纯文本文件会原样上线（或在本地 release 构建时生效），逐行扫模板占位。
+const PLACEHOLDER_TEXT_FILES = [".env.production", SECURITY_TXT_PATH];
+// 页面模块和 messages 只扫实际导出的字符串：注释不会发布，也就不会影响结果。
+const PLACEHOLDER_VALUE_DIRS = ["messages/base", "src/content/pages"];
 
-function listPlaceholderScanFiles(rootDir) {
-  const files = [...PLACEHOLDER_SCAN_FILES];
-  for (const dir of PLACEHOLDER_SCAN_DIRS) {
+function pushPlaceholderError(target, location) {
+  target.push(
+    `${location} is not public-launch ready (replace template placeholder content before client launch).`,
+  );
+}
+
+function validatePlaceholderTextFile(target, rootDir, file) {
+  const filePath = path.join(rootDir, file);
+  if (!fs.existsSync(filePath)) return;
+  const content = fs.readFileSync(filePath, "utf8");
+  content.split("\n").forEach((line, index) => {
+    const trimmed = line.trim();
+    if (!trimmed || (file === ".env.production" && trimmed.startsWith("#"))) {
+      return;
+    }
+    if (containsStarterMarker(line)) {
+      pushPlaceholderError(target, `${file}:${index + 1}`);
+    }
+  });
+
+  // RFC 9116 要求 Expires；过期的 security.txt 等于没有。
+  const expires = /^Expires:\s*(.+)$/imu.exec(content)?.[1];
+  if (file === SECURITY_TXT_PATH && !(Date.parse(expires) > Date.now())) {
+    target.push(
+      `${file} Expires is not public-launch ready (set a future expiry date).`,
+    );
+  }
+}
+
+function listPlaceholderValueFiles(rootDir) {
+  const files = [];
+  for (const dir of PLACEHOLDER_VALUE_DIRS) {
     const absDir = path.join(rootDir, dir);
     if (!fs.existsSync(absDir)) continue;
     for (const entry of fs.readdirSync(absDir, { recursive: true })) {
       if (/\.(?:json|ts)$/u.test(entry)) files.push(path.join(dir, entry));
     }
   }
-  return files.filter((file) => fs.existsSync(path.join(rootDir, file)));
+  return files;
 }
 
-// 注释不会输出给访客，不能因此阻断上线。
-// shortcut: 只认整行注释（.env 的 #、TS 的 // 和 /* 开头行），块注释中间行仍会被扫；出现误报时再换成 TS scanner。
-function isCommentLine(file, line) {
-  const trimmed = line.trim();
-  if (file === ".env.production") return trimmed.startsWith("#");
-  return file.endsWith(".ts") && /^(?:\/\/|\/\*)/u.test(trimmed);
+// CLI 已由 loadPublicLaunchInput 注册 tsx（支持 @/ 别名）；否则靠 Node 原生剥离类型加载。
+function loadPublishedValues(rootDir, file) {
+  const filePath = path.join(rootDir, file);
+  if (file.endsWith(".json")) {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  }
+  // eslint-disable-next-line security/detect-non-literal-require -- 路径来自本仓库内容目录的列举，加载后只读导出值
+  return require(filePath);
+}
+
+function scanPublishedValues(target, file, value, keyPath) {
+  if (typeof value === "string") {
+    // 空字符串是合法的"不展示"，不是占位。
+    if (value && containsStarterMarker(value)) {
+      pushPlaceholderError(target, `${file} ${keyPath.join(".")}`);
+    }
+  } else if (value && typeof value === "object") {
+    for (const [key, child] of Object.entries(value)) {
+      scanPublishedValues(target, file, child, [...keyPath, key]);
+    }
+  }
 }
 
 function validateTemplatePlaceholderFiles(target, rootDir) {
-  for (const file of listPlaceholderScanFiles(rootDir)) {
-    const content = fs.readFileSync(path.join(rootDir, file), "utf8");
-    content.split("\n").forEach((line, index) => {
-      if (isCommentLine(file, line)) return;
-      if (line.trim() && containsStarterMarker(line)) {
-        target.push(
-          `${file}:${index + 1} is not public-launch ready (replace template placeholder content before client launch).`,
-        );
-      }
-    });
-
-    // RFC 9116 要求 Expires；过期的 security.txt 等于没有。
-    const expires = /^Expires:\s*(.+)$/imu.exec(content)?.[1];
-    if (file === SECURITY_TXT_PATH && !(Date.parse(expires) > Date.now())) {
+  for (const file of PLACEHOLDER_TEXT_FILES) {
+    validatePlaceholderTextFile(target, rootDir, file);
+  }
+  for (const file of listPlaceholderValueFiles(rootDir)) {
+    let values;
+    try {
+      values = loadPublishedValues(rootDir, file);
+    } catch (error) {
+      // 读不出就无法证明没有占位：按未就绪处理。
       target.push(
-        `${file} Expires is not public-launch ready (set a future expiry date).`,
+        `${file} is not public-launch ready (could not load it to check published text: ${String(error?.message ?? error).split("\n")[0]}).`,
       );
+      continue;
     }
+    scanPublishedValues(target, file, values, []);
   }
 }
 

@@ -125,6 +125,16 @@ describe("template placeholder files", () => {
         '// Previous template title: Terms — to be completed\nexport const page = { title: "Terms" };',
     },
     {
+      file: "src/content/pages/en/terms.ts",
+      content:
+        '/**\n * Previous template title: Terms — to be completed\n */\nexport default { content: "Payment is due within 30 days." };',
+    },
+    {
+      file: "src/content/pages/en/terms.ts",
+      content:
+        'export default { content: "Payment is due within 30 days." }; // Previous template title: Terms — to be completed',
+    },
+    {
       file: ".env.production",
       content:
         "# Was https://example.invalid before launch\nNEXT_PUBLIC_SITE_URL=https://acme-industrial.com\n",
@@ -152,6 +162,15 @@ describe("template placeholder files", () => {
       file: "src/content/pages/en/privacy.ts",
       content:
         'export const page = { title: "Privacy policy — to be completed" };',
+    },
+    {
+      file: "src/content/pages/en/terms.ts",
+      content:
+        'export default {\n/* Legal title */ title: "Terms — to be completed",\ncontent: "Payment is due within 30 days." };',
+    },
+    {
+      file: "src/content/pages/en/terms.ts",
+      content: "export default { title: ",
     },
     {
       file: "src/content/pages/en/terms.ts",
