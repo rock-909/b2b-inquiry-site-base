@@ -37,12 +37,24 @@ describe("createMockTranslations 的取值语义", () => {
     }
   });
 
-  it("不存在的 key 回退成 key 本身", () => {
+  // 真实 next-intl 对缺失 key 报 MISSING_MESSAGE；回退成 key 名会让断言 key
+  // 名的测试静默通过。
+  it("不存在的 key 直接报错", () => {
     const t = createMockTranslations();
 
-    expect(t("navigation.thisKeyDoesNotExist")).toBe(
-      "navigation.thisKeyDoesNotExist",
+    expect(() => t("navigation.thisKeyDoesNotExist")).toThrow(
+      /MISSING_MESSAGE: navigation.thisKeyDoesNotExist/u,
     );
+  });
+
+  it("传了 values 时替换 {name} 占位符", () => {
+    expect(
+      lookupMessage(
+        new Map([["accessibility.language", "Languages: {language}"]]),
+        "accessibility.language",
+        { language: "English" },
+      ),
+    ).toBe("Languages: English");
   });
 
   it("覆写真实 key 生效", () => {

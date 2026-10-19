@@ -3,6 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/layout/header";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 
+// 语言切换只在多语言时出现；用固定双语 fixture，和站点当前配几种语言解耦。
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
+
 vi.mock("@/components/layout/header-client", () => ({
   LanguageToggleIsland: () => (
     <div data-testid="language-toggle-island">Language</div>

@@ -1,11 +1,22 @@
 import { expect, test } from "@playwright/test";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
-import spanish from "../../messages/base/es/messages.json";
+import {
+  DEFAULT_LOCALE,
+  getLocaleMessages,
+  localizePath,
+  SECOND_LOCALE,
+} from "./site-page-cases";
+
+const SINGLE_LOCALE_REASON = "单语种站点不渲染语言切换";
+// 跳过时不会执行，回退值只为让类型收窄。
+const SECOND = SECOND_LOCALE ?? DEFAULT_LOCALE;
 
 for (const input of ["mouse", "keyboard"] as const) {
   test(`desktop language choice survives ${input} activation before JavaScript`, async ({
     page,
   }) => {
+    test.skip(SECOND_LOCALE === undefined, SINGLE_LOCALE_REASON);
     await page.setViewportSize({ width: 1280, height: 800 });
     let releaseScripts!: () => void;
     const scriptsReady = new Promise<void>((resolve) => {
@@ -26,9 +37,10 @@ for (const input of ["mouse", "keyboard"] as const) {
       } else {
         await trigger.click();
       }
-      const choice = page
-        .locator("header")
-        .getByRole("link", { name: "Español", exact: true });
+      const choice = page.locator("header").getByRole("link", {
+        name: LOCALES_CONFIG.displayNames[SECOND],
+        exact: true,
+      });
       await expect(choice).toBeVisible();
       const hadFocus = await trigger.evaluate(
         (element) => element === document.activeElement,
@@ -39,8 +51,10 @@ for (const input of ["mouse", "keyboard"] as const) {
       await expect(choice).toBeVisible();
       if (hadFocus) await expect(trigger).toBeFocused();
       await choice.click();
-      await expect(page).toHaveURL(/\/es\/contact$/u);
-      await expect(page.locator("html")).toHaveAttribute("lang", "es");
+      await expect
+        .poll(() => new URL(page.url()).pathname)
+        .toBe(localizePath(SECOND, "/contact"));
+      await expect(page.locator("html")).toHaveAttribute("lang", SECOND);
       expect(errors).toEqual([]);
     } finally {
       releaseScripts();
@@ -52,6 +66,7 @@ for (const initiallyOpen of [false, true]) {
   test(`native language menu preserves ${initiallyOpen ? "open" : "closed"} focused state until idle`, async ({
     page,
   }) => {
+    test.skip(SECOND_LOCALE === undefined, SINGLE_LOCALE_REASON);
     await page.setViewportSize({ width: 1280, height: 800 });
     let releaseScripts!: () => void;
     const scriptsReady = new Promise<void>((resolve) => {
@@ -95,11 +110,13 @@ for (const initiallyOpen of [false, true]) {
   });
 }
 
-for (const locale of ["en", "es"] as const) {
-  const path = locale === "en" ? "/contact" : "/es/contact";
+for (const locale of LOCALES_CONFIG.locales) {
+  const path = localizePath(locale, "/contact");
+  const target = locale === DEFAULT_LOCALE ? SECOND : DEFAULT_LOCALE;
   test(`desktop ${locale} language choice works without JavaScript`, async ({
     browser,
   }) => {
+    test.skip(SECOND_LOCALE === undefined, SINGLE_LOCALE_REASON);
     const context = await browser.newContext({
       javaScriptEnabled: false,
       viewport: { width: 1280, height: 800 },
@@ -112,16 +129,13 @@ for (const locale of ["en", "es"] as const) {
       await page
         .locator("header")
         .getByRole("link", {
-          name: locale === "en" ? "Español" : "English",
+          name: LOCALES_CONFIG.displayNames[target],
           exact: true,
         })
         .click();
-      await expect(page.locator("html")).toHaveAttribute(
-        "lang",
-        locale === "en" ? "es" : "en",
-      );
+      await expect(page.locator("html")).toHaveAttribute("lang", target);
       expect(new URL(page.url()).pathname).toBe(
-        locale === "en" ? "/es/contact" : "/contact",
+        localizePath(target, "/contact"),
       );
     } finally {
       await context.close();
@@ -138,11 +152,11 @@ for (const locale of ["en", "es"] as const) {
       const page = await context.newPage();
       try {
         await page.goto(new URL(path, test.info().project.use.baseURL).href);
+        // 按目标锚点定位正文里的询盘链接，不钉联系页文案。
         await page
-          .getByRole("link", {
-            name: locale === "en" ? "inquiry form" : "formulario de consulta",
-            exact: true,
-          })
+          .getByRole("main")
+          .locator('a[href$="#inquiry"]')
+          .first()
           .click();
         await expect(page).toHaveURL(/#inquiry$/u);
         const target = page.locator("#inquiry");
@@ -169,20 +183,23 @@ for (const locale of ["en", "es"] as const) {
   }
 }
 
-for (const path of ["/es/products/audit-missing-offering", "/es/random.txt"]) {
+for (const missing of ["/audit-missing-section/offering", "/random.txt"]) {
+  const path = localizePath(SECOND, missing);
   test(`${path} keeps localized noindex 404 metadata`, async ({ page }) => {
+    test.skip(SECOND_LOCALE === undefined, "单语种站点没有带前缀的语种 404");
+    const messages = getLocaleMessages(SECOND);
     const response = await page.goto(path);
     expect(response?.status()).toBe(404);
-    await expect(page.locator("html")).toHaveAttribute("lang", "es");
+    await expect(page.locator("html")).toHaveAttribute("lang", SECOND);
     await expect(page).toHaveTitle(
-      spanish.home.metadata.title.replace(
+      messages.home.metadata.title.replace(
         "{siteName}",
         SINGLE_SITE_CONFIG.name,
       ),
     );
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       "content",
-      spanish.home.metadata.description,
+      messages.home.metadata.description,
     );
     const robots = await page
       .locator('meta[name="robots"]')

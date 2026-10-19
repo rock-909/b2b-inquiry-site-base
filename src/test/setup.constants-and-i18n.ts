@@ -2,6 +2,7 @@ import React from "react";
 import { vi } from "vitest";
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { PATHNAMES } from "@/config/paths/utils";
+import type { Locale } from "@/types/content.types";
 
 // Mock next-intl —— 翻译来自真实合成消息包，不是手写清单。这里曾经写死七条
 // 导航文案，其中 navigation.services 和 navigation.contact 在三个真实消息包里
@@ -13,8 +14,13 @@ vi.mock("next-intl", async () => {
 
   return {
     useTranslations: vi.fn(
-      (namespace?: string) => (key: string) =>
-        lookupMessage(messages, namespace ? `${namespace}.${key}` : key),
+      (namespace?: string) =>
+        (key: string, values?: Record<string, string | number>) =>
+          lookupMessage(
+            messages,
+            namespace ? `${namespace}.${key}` : key,
+            values,
+          ),
     ),
     useLocale: vi.fn(() => "en"),
     useMessages: vi.fn(() => ({})),
@@ -44,15 +50,19 @@ vi.mock("next-intl/server", async () => {
     // 生产签名是 getTranslations(namespace) 或 getTranslations({ locale, namespace })。
     // 显式传入 locale 时按该 locale 取词，和生产一致；没传 locale 才回落 en。
     getTranslations: vi.fn(
-      (options?: string | { locale?: string; namespace?: string }) => {
+      (options?: string | { locale?: Locale; namespace?: string }) => {
         const namespace =
           typeof options === "string" ? options : options?.namespace;
         const locale =
           typeof options === "string" ? undefined : options?.locale;
-        const messages = locale === "es" ? getFlatMessages("es") : enMessages;
+        const messages = locale ? getFlatMessages(locale) : enMessages;
 
-        return (key: string) =>
-          lookupMessage(messages, namespace ? `${namespace}.${key}` : key);
+        return (key: string, values?: Record<string, string | number>) =>
+          lookupMessage(
+            messages,
+            namespace ? `${namespace}.${key}` : key,
+            values,
+          );
       },
     ),
     getLocale: vi.fn(() => "en"),

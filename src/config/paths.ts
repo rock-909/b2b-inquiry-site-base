@@ -7,7 +7,6 @@
 export type { Locale, PageType } from "@/config/paths/types";
 
 // 重新导出配置
-export { PATHS_CONFIG } from "@/config/paths/paths-config";
 export { LOCALES_CONFIG } from "@/config/paths/locales-config";
 
 // 重新导出工具函数

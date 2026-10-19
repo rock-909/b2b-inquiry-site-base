@@ -1,8 +1,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
+import { describe, expect, it } from "vitest";
 import {
   INQUIRY_FORM_CHUNK_MARKER,
   INQUIRY_FORM_SOURCE,
@@ -55,17 +54,8 @@ function buildInquiryFormChunkFixture(rootDir: string) {
 }
 
 describe("client-boundary build artifacts", () => {
-  const fixtureRoots: string[] = [];
-
-  afterEach(() => {
-    for (const rootDir of fixtureRoots.splice(0)) {
-      moveOwnedTempDirectoryToTrash(rootDir, FIXTURE_PREFIX);
-    }
-  });
-
   it("hard fails when build output is missing", () => {
     const rootDir = createFixture({});
-    fixtureRoots.push(rootDir);
 
     expect(collectInquiryFormBuildArtifactFindings(rootDir)).toEqual([
       {
@@ -78,7 +68,6 @@ describe("client-boundary build artifacts", () => {
   it("passes when exactly one InquiryForm chunk and sourcemap are present", () => {
     const rootDir = createFixture({});
     buildInquiryFormChunkFixture(rootDir);
-    fixtureRoots.push(rootDir);
 
     const result = collectInquiryFormBuildArtifactFindings(rootDir);
     expect(Array.isArray(result)).toBe(false);
@@ -112,7 +101,6 @@ describe("client-boundary build artifacts", () => {
         sources: [`turbopack:///[project]/${INQUIRY_FORM_SOURCE}`],
       })}\n`,
     );
-    fixtureRoots.push(rootDir);
 
     const result = collectInquiryFormBuildArtifactFindings(rootDir);
     expect(Array.isArray(result)).toBe(false);
@@ -142,7 +130,6 @@ describe("client-boundary build artifacts", () => {
         ],
       })}\n`,
     );
-    fixtureRoots.push(rootDir);
 
     expect(collectInquiryFormBuildArtifactFindings(rootDir)).toEqual([
       {
@@ -188,7 +175,6 @@ describe("client-boundary build artifacts", () => {
         ],
       })}\n`,
     );
-    fixtureRoots.push(rootDir);
 
     expect(collectInquiryFormBuildArtifactFindings(rootDir)).toEqual([
       {
@@ -208,7 +194,6 @@ describe("client-boundary build artifacts", () => {
       path.join(chunksDir, "actual-inquiry.js"),
       `export const marker="${INQUIRY_FORM_CHUNK_MARKER}";\n`,
     );
-    fixtureRoots.push(rootDir);
 
     expect(collectInquiryFormBuildArtifactFindings(rootDir)).toEqual([
       {
@@ -228,7 +213,6 @@ describe("client-boundary build artifacts", () => {
       path.join(chunksDir, "actual-inquiry.js"),
       `export const marker="${INQUIRY_FORM_CHUNK_MARKER}";\n//# sourceMappingURL=../outside.js.map\n`,
     );
-    fixtureRoots.push(rootDir);
 
     expect(collectInquiryFormBuildArtifactFindings(rootDir)).toEqual([
       {
@@ -240,7 +224,6 @@ describe("client-boundary build artifacts", () => {
 
   it("writes a failure report from the build-artifact helper", () => {
     const rootDir = createFixture({});
-    fixtureRoots.push(rootDir);
 
     const result = runInquiryFormBuildArtifactCheck(rootDir);
     expect(result.status).toBe("failed");

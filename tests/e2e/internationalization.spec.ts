@@ -1,5 +1,13 @@
-import { getSitePageCases } from "./site-page-cases";
+import {
+  DEFAULT_LOCALE,
+  getLocaleMessages,
+  getSitePageCases,
+  localePrefix,
+  localizePath,
+  SECOND_LOCALE,
+} from "./site-page-cases";
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { checkA11y } from "./helpers/axe";
 import {
   expectDesktopLanguageMenuKeyboardReady,
@@ -7,7 +15,29 @@ import {
   getHeaderMobileMenuButton,
 } from "./helpers/navigation";
 
-const SPANISH_PAGES = getSitePageCases("es");
+test.skip(
+  SECOND_LOCALE === undefined,
+  "单语种站点没有第二语种页面，也不渲染语言切换",
+);
+
+// 跳过时不会执行，回退值只为让类型在下面收窄。
+const SECOND = SECOND_LOCALE ?? DEFAULT_LOCALE;
+const SECOND_PAGES = SECOND_LOCALE ? getSitePageCases(SECOND_LOCALE) : [];
+const SECOND_PREFIX = localePrefix(SECOND);
+const DEFAULT_NAME = LOCALES_CONFIG.displayNames[DEFAULT_LOCALE];
+const SECOND_NAME = LOCALES_CONFIG.displayNames[SECOND];
+
+function languageTriggerName(locale: typeof SECOND): string {
+  return getLocaleMessages(locale).accessibility.language.replace(
+    "{language}",
+    LOCALES_CONFIG.displayNames[locale],
+  );
+}
+
+// 去掉 as-needed 前缀，得到同一页面在默认语种下的路径。
+function toDefaultLocalePath(path: string): string {
+  return path.slice(SECOND_PREFIX.length) || "/";
+}
 
 const INQUIRY_DRAFT = {
   fullName: "Language Switch Buyer",
@@ -56,16 +86,18 @@ function expectContactUrl(page: Page, pathname: string): void {
   expect(url.hash).toBe("#inquiry");
 }
 
-test.describe("Spanish locale contract", () => {
-  for (const [path, heading] of SPANISH_PAGES) {
-    test(`${path} renders a complete Spanish page`, async ({ page }) => {
+test.describe("Second locale contract", () => {
+  for (const [path, heading] of SECOND_PAGES) {
+    test(`${path} renders a complete ${SECOND} page`, async ({ page }) => {
       const response = await page.goto(path, { waitUntil: "domcontentloaded" });
 
       expect(response?.status(), `${path} should return HTTP 200`).toBe(200);
-      await expect(page.locator("html")).toHaveAttribute("lang", "es");
-      await expect(
-        page.getByRole("heading", { level: 1, name: heading }),
-      ).toBeVisible();
+      await expect(page.locator("html")).toHaveAttribute("lang", SECOND);
+      if (heading !== undefined) {
+        await expect(
+          page.getByRole("heading", { level: 1, name: heading }),
+        ).toBeVisible();
+      }
 
       const canonical = page.locator('link[rel="canonical"]');
       await expect(canonical).toHaveCount(1);
@@ -73,11 +105,13 @@ test.describe("Spanish locale contract", () => {
         new URL((await canonical.getAttribute("href")) ?? "").pathname,
       ).toBe(path);
 
+      const defaultPath = toDefaultLocalePath(path);
       for (const [language, expectedPath] of [
-        ["en", path.replace(/^\/es(?=\/|$)/u, "") || "/"],
-        ["es", path],
-        ["x-default", path.replace(/^\/es(?=\/|$)/u, "") || "/"],
-      ] as const) {
+        ...LOCALES_CONFIG.locales.map(
+          (locale) => [locale, localizePath(locale, defaultPath)] as const,
+        ),
+        ["x-default", defaultPath] as const,
+      ]) {
         const alternate = page.locator(
           `link[rel="alternate"][hreflang="${language}"]`,
         );
@@ -97,7 +131,9 @@ test.describe("Language switcher journey", () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto("/contact", { waitUntil: "domcontentloaded" });
 
-    const trigger = page.getByRole("button", { name: "Languages: English" });
+    const trigger = page.getByRole("button", {
+      name: languageTriggerName(DEFAULT_LOCALE),
+    });
     // 此用例检查增强菜单的对比度；水合前单次激活由专门回归覆盖。
     await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     await trigger.focus();
@@ -105,10 +141,10 @@ test.describe("Language switcher journey", () => {
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
 
     await expectDesktopLanguageMenuKeyboardReady(page);
-    const spanish = page.getByRole("menuitem", { name: "Español" });
+    const second = page.getByRole("menuitem", { name: SECOND_NAME });
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("ArrowDown");
-    await expect(spanish).toHaveAttribute("data-highlighted", "");
+    await expect(second).toHaveAttribute("data-highlighted", "");
 
     await checkA11y(page, '[data-testid="language-dropdown-content"]', {
       axeOptions: { runOnly: ["color-contrast"] },
@@ -129,38 +165,37 @@ test.describe("Language switcher journey", () => {
     await page.evaluate(() => window.scrollTo(0, 0));
 
     const trigger = page.getByRole("button", {
-      name: "Languages: English",
+      name: languageTriggerName(DEFAULT_LOCALE),
     });
     await expect(trigger).toBeVisible();
     await trigger.focus();
     await page.keyboard.press("Enter");
     await expect(trigger).toHaveAttribute("aria-expanded", "true");
-    await expect(page.getByTestId("language-option-en")).toHaveAttribute(
-      "aria-current",
-      "true",
-    );
+    await expect(
+      page.getByTestId(`language-option-${DEFAULT_LOCALE}`),
+    ).toHaveAttribute("aria-current", "true");
 
     await page.keyboard.press("Escape");
     await expect(trigger).toHaveAttribute("aria-expanded", "false");
     await expect(trigger).toBeFocused();
 
     await trigger.click();
-    const spanish = page.getByRole("menuitem", { name: "Español" });
-    await expect(spanish).toHaveAttribute(
+    const second = page.getByRole("menuitem", { name: SECOND_NAME });
+    await expect(second).toHaveAttribute(
       "href",
-      "/es/contact?source=language-e2e&tag=one&tag=two#inquiry",
+      `${SECOND_PREFIX}/contact?source=language-e2e&tag=one&tag=two#inquiry`,
     );
     await page.evaluate(() => Reflect.set(window, "__languageE2E", true));
-    await spanish.click();
+    await second.click();
 
-    await expectHtmlLang(page, "es");
-    expectContactUrl(page, "/es/contact");
+    await expectHtmlLang(page, SECOND);
+    expectContactUrl(page, `${SECOND_PREFIX}/contact`);
     expect(
       await page.evaluate(() => Reflect.get(window, "__languageE2E")),
     ).toBe(true);
     await expectInquiryDraft(await getEditableInquiryFields(page));
     await expect(
-      page.getByRole("button", { name: "Idiomas: Español" }),
+      page.getByRole("button", { name: languageTriggerName(SECOND) }),
     ).toHaveAttribute("aria-expanded", "false");
     expect(pageErrors).toEqual([]);
   });
@@ -174,7 +209,7 @@ test.describe("Language switcher journey", () => {
       const pageErrors: string[] = [];
       page.on("pageerror", (error) => pageErrors.push(error.message));
       await page.goto(
-        "/es/contact?source=language-e2e&tag=one&tag=two#inquiry",
+        `${SECOND_PREFIX}/contact?source=language-e2e&tag=one&tag=two#inquiry`,
         { waitUntil: "domcontentloaded" },
       );
 
@@ -184,20 +219,20 @@ test.describe("Language switcher journey", () => {
       const mobileTrigger = getHeaderMobileMenuButton(page);
       await mobileTrigger.click();
       const drawer = page.getByRole("dialog", {
-        name: /navegación móvil/i,
+        name: getLocaleMessages(SECOND).accessibility.mobileNavigation,
       });
       await expect(drawer).toBeVisible();
       await expect(page.locator("body")).toHaveCSS("overflow", "hidden");
 
       await page.getByTestId("mobile-language-trigger").click();
-      const english = drawer.getByRole("link", { name: "English" });
-      await expect(english).toHaveAttribute(
+      const defaultLanguage = drawer.getByRole("link", { name: DEFAULT_NAME });
+      await expect(defaultLanguage).toHaveAttribute(
         "href",
         "/contact?source=language-e2e&tag=one&tag=two#inquiry",
       );
-      await english.click();
+      await defaultLanguage.click();
 
-      await expectHtmlLang(page, "en");
+      await expectHtmlLang(page, DEFAULT_LOCALE);
       expectContactUrl(page, "/contact");
       await expect(drawer).not.toBeVisible();
       await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");

@@ -2,7 +2,7 @@ import { vi } from "vitest";
 
 /**
  * Mock logger for testing
- * 测试用日志模块 Mock
+ * 测试用日志模块 Mock：只替换输出，PII 脱敏函数用真实实现。
  */
 export const logger = {
   info: vi.fn(),
@@ -12,12 +12,5 @@ export const logger = {
   log: vi.fn(),
 };
 
-export const sanitizeEmail = vi.fn((value: string | undefined | null) => {
-  if (!value) return "[NO_EMAIL]";
-  return "[REDACTED_EMAIL]";
-});
-
-export const sanitizeIP = vi.fn((value: string | undefined | null) => {
-  if (!value) return "[NO_IP]";
-  return "[REDACTED_IP]";
-});
+export const { sanitizeEmail, sanitizeIP } =
+  await vi.importActual<typeof import("@/lib/logger")>("@/lib/logger");

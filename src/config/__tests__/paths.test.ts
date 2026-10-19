@@ -1,46 +1,48 @@
 import { describe, expect, it } from "vitest";
+import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 import {
   getCanonicalPath,
   getLocalizedPath,
   LOCALES_CONFIG,
   PATHNAMES,
-  PATHS_CONFIG,
 } from "@/config/paths";
 
-const CORE_PATHS = {
-  home: "/",
-  contact: "/contact",
-  privacy: "/privacy",
-  terms: "/terms",
-} as const;
+const { defaultLocale, locales } = LOCALES_CONFIG;
 
 describe("paths", () => {
-  it("keeps the configured locale route contract", () => {
-    expect(LOCALES_CONFIG).toMatchObject({
-      locales: ["en", "es"],
-      defaultLocale: "en",
-      localePrefix: "as-needed",
-    });
+  it("keeps a valid locale route contract", () => {
+    expect(locales).toContain(defaultLocale);
+    expect(new Set(locales).size).toBe(locales.length);
+    expect(LOCALES_CONFIG.localePrefix).toBe("as-needed");
   });
 
-  it("maps every core page to its canonical path", () => {
-    expect(Object.keys(PATHS_CONFIG)).toEqual(Object.keys(CORE_PATHS));
-    for (const [pageType, path] of Object.entries(CORE_PATHS)) {
-      expect(getCanonicalPath(pageType as keyof typeof CORE_PATHS)).toBe(path);
-      expect(getLocalizedPath(pageType as keyof typeof CORE_PATHS, "en")).toBe(
-        path,
-      );
-    }
-  });
-
-  it("publishes only shared static pathnames", () => {
-    const expected = Object.fromEntries(
-      Object.values(CORE_PATHS).map((path) => [path, path]),
+  it("registers unique page types and paths", () => {
+    const pageTypes = PUBLIC_STATIC_PAGE_DEFINITIONS.map(
+      (page) => page.pageType,
     );
-    expect(PATHNAMES).toEqual(expected);
+    const paths = PUBLIC_STATIC_PAGE_DEFINITIONS.map((page) => page.path);
+    expect(new Set(pageTypes).size).toBe(pageTypes.length);
+    expect(new Set(paths).size).toBe(paths.length);
+    expect(getCanonicalPath("home")).toBe("/");
   });
 
-  it("builds and resolves the Spanish locale prefix", () => {
-    expect(getLocalizedPath("privacy", "es")).toBe("/es/privacy");
+  it("publishes exactly the registered paths as shared static pathnames", () => {
+    expect(PATHNAMES).toEqual(
+      Object.fromEntries(
+        PUBLIC_STATIC_PAGE_DEFINITIONS.map((page) => [page.path, page.path]),
+      ),
+    );
+  });
+
+  it("prefixes every non-default locale and leaves the default unprefixed", () => {
+    for (const { pageType, path } of PUBLIC_STATIC_PAGE_DEFINITIONS) {
+      expect(getCanonicalPath(pageType)).toBe(path);
+      for (const locale of locales) {
+        const prefix = locale === defaultLocale ? "" : `/${locale}`;
+        expect(getLocalizedPath(pageType, locale)).toBe(
+          path === "/" ? prefix || "/" : `${prefix}${path}`,
+        );
+      }
+    }
   });
 });

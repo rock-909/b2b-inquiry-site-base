@@ -7,12 +7,15 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
-  rmSync,
   writeFileSync,
 } from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
-import { runChildCommand } from "../../../scripts/quality/checks/cloudflare-smoke.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  parseCloudflarePreviewUrl,
+  runChildCommand,
+} from "../../../scripts/quality/checks/cloudflare-smoke.js";
 
 const FIXTURE_PREFIX = "b2b-cf-preview-proof-";
 const PREVIEW_URL = "https://b2b-preview.example.workers.dev";
@@ -22,26 +25,23 @@ const PREVIEW_DEPLOY_COMMAND = [
   `--var NEXT_PUBLIC_SITE_URL:${PREVIEW_URL}`,
   "--var TURNSTILE_ALLOWED_HOSTS:localhost,127.0.0.1,b2b-preview.example.workers.dev",
 ].join(" ");
-const tempDirs: string[] = [];
-
 afterEach(() => {
-  for (const tempDir of tempDirs.splice(0)) {
-    rmSync(tempDir, { recursive: true, force: true });
-  }
+  vi.useRealTimers();
 });
 
 // 子进程边界上的替身：假的 pnpm / node 只记录调用顺序并按环境变量输出，
 // 证明通道本身（含 git）仍是真实进程。
 function createProofFixture() {
-  const rootDir = mkdtempSync(path.resolve(FIXTURE_PREFIX));
-  tempDirs.push(rootDir);
+  const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
 
-  const checksDir = path.join(rootDir, "scripts", "quality", "checks");
-  mkdirSync(checksDir, { recursive: true });
-  copyFileSync(
-    path.resolve("scripts/quality/checks/cloudflare-smoke.js"),
-    path.join(checksDir, "cloudflare-smoke.js"),
-  );
+  // 脚本运行时只读取自身和页面注册表。
+  for (const repoPath of [
+    "scripts/quality/checks/cloudflare-smoke.js",
+    "src/config/pages.config.ts",
+  ]) {
+    mkdirSync(path.dirname(path.join(rootDir, repoPath)), { recursive: true });
+    copyFileSync(path.resolve(repoPath), path.join(rootDir, repoPath));
+  }
 
   const binDir = path.join(rootDir, "bin");
   mkdirSync(binDir);
@@ -150,6 +150,33 @@ describe("cloudflare preview deploy proof", () => {
     expect(fixture.readBuildEnv()).toBe(`${PREVIEW_URL} ${PREVIEW_URL}`);
   });
 
+  // 两个入口各跑一次完整子进程；逐项的 URL 拒绝规则在下方进程内覆盖。
+  it.each([
+    ["--base-url", ["--base-url", "https://$(reviewprobe).example.com"], {}],
+    [
+      "DEPLOY_SMOKE_BASE_URL",
+      [],
+      { DEPLOY_SMOKE_BASE_URL: "https://example.invalid" },
+    ],
+  ])(
+    "blocks before building or deploying when %s carries a refused URL",
+    (_entry, args, env) => {
+      const fixture = createProofFixture();
+
+      const result = fixture.runLane(
+        { FAKE_BUILD_OUTPUT: "build ok", ...env },
+        [...args],
+      );
+
+      expect(result.status).toBe(2);
+      expect(fixture.readCalls()).toEqual([]);
+      expect(fixture.readProof()).toMatchObject({
+        status: "blocked",
+        stage: "preview-base-url",
+      });
+    },
+  );
+
   it.each([
     ["empty", ""],
     ["a non-https URL", "http://b2b-preview.example.workers.dev"],
@@ -170,27 +197,14 @@ describe("cloudflare preview deploy proof", () => {
     ["a port", "https://example.com:8443"],
     ["a path", "https://example.com/$(reviewprobe)"],
     ["a query", "https://example.com/?q=1"],
-  ])(
-    "blocks before building or deploying with %s from either entry point",
-    (_label, raw) => {
-      for (const [args, env] of [
-        [["--base-url", raw], {}],
-        [[], { DEPLOY_SMOKE_BASE_URL: raw }],
-      ] as const) {
-        const fixture = createProofFixture();
+  ])("refuses a preview URL with %s", (_label, raw) => {
+    expect(parseCloudflarePreviewUrl(raw)).toBeNull();
+  });
 
-        const result = fixture.runLane(
-          { FAKE_BUILD_OUTPUT: "build ok", ...env },
-          [...args],
-        );
-
-        expect(result.status).toBe(2);
-        expect(fixture.readCalls()).toEqual([]);
-        expect(fixture.readProof()).toMatchObject({
-          status: "blocked",
-          stage: "preview-base-url",
-        });
-      }
+  it.each([PREVIEW_URL, `${PREVIEW_URL}/`])(
+    "accepts the plain https preview URL %s",
+    (raw) => {
+      expect(parseCloudflarePreviewUrl(raw)?.origin).toBe(PREVIEW_URL);
     },
   );
 
@@ -332,31 +346,36 @@ describe("cloudflare preview deploy proof", () => {
 });
 
 describe("runChildCommand", () => {
-  it("kills wrapper descendants before they can produce delayed side effects", async () => {
-    const rootDir = mkdtempSync(path.resolve(FIXTURE_PREFIX));
-    tempDirs.push(rootDir);
-    const marker = path.join(rootDir, "marker");
-    const result = await runChildCommand(
+  it("kills wrapper descendants when the command times out", async () => {
+    const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
+    const ready = path.join(rootDir, "ready");
+    // 只假冒超时计时器；子进程、管道与信号都是真实的。
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    // 孙进程存活 30 秒（长于用例超时）并一直持有 stdout 管道：只杀掉 sh 时 close
+    // 不会触发、用例会超时失败，所以 promise 能结算即证明整个进程组已被杀掉。
+    const pending = runChildCommand(
       "sh",
       [
         "-c",
         '"$1" -e "$2" "$3" & wait',
         "wrapper",
         process.execPath,
-        'process.stdout.write("ready"); setTimeout(() => require("node:fs").writeFileSync(process.argv[1], "escaped"), 1500)',
-        marker,
+        'process.stdout.write("ready", () => require("node:fs").writeFileSync(process.argv[1], "")); setTimeout(() => {}, 30000)',
+        ready,
       ],
       700,
     );
+    while (!existsSync(ready)) {
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+    vi.advanceTimersByTime(700);
+    const result = await pending;
 
-    await new Promise((resolve) => setTimeout(resolve, 1800));
     expect(result.stdout).toBe("ready");
     expect((result.error as NodeJS.ErrnoException | undefined)?.code).toBe(
       "ETIMEDOUT",
     );
     expect(result.status).toBeNull();
     expect(result.signal).toBe("SIGKILL");
-    // nosemgrep: test-no-file-existence-assertion -- 观察被终止子进程没有写出副作用，不是锁定仓库文件形状。
-    expect(existsSync(marker)).toBe(false);
   });
 });

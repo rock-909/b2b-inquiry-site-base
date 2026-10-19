@@ -6,7 +6,12 @@ import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 interface LighthouseConfig {
   ci: {
     collect: { url: string[] };
-    assert: { assertMatrix: Array<{ assertions: Record<string, unknown> }> };
+    assert: {
+      assertMatrix: Array<{
+        matchingUrlPattern: string;
+        assertions: Record<string, unknown>;
+      }>;
+    };
   };
 }
 
@@ -26,22 +31,24 @@ function loadConfig(fullCoverage: boolean): LighthouseConfig {
 }
 
 describe("lighthouse route contract", () => {
-  it("audits every core route in the full-coverage sweep", () => {
-    const paths = loadConfig(true).ci.collect.url.map(
-      (url) => new URL(url).pathname,
-    );
-    const expected = PUBLIC_STATIC_PAGE_DEFINITIONS.map(({ path }) => path);
-
-    expect([...paths].sort()).toEqual([...expected].sort());
-  });
-
   it("keeps the normal run on home and applies SEO assertions to all pages", () => {
     expect(
       loadConfig(false).ci.collect.url.map((url) => new URL(url).pathname),
     ).toEqual(["/"]);
-    expect(loadConfig(true).ci.assert.assertMatrix).toHaveLength(1);
-    expect(
-      loadConfig(true).ci.assert.assertMatrix[0]?.assertions,
-    ).toHaveProperty("categories:seo");
+
+    const { collect, assert } = loadConfig(true).ci;
+    expect(collect.url.map((url) => new URL(url).pathname).sort()).toEqual(
+      PUBLIC_STATIC_PAGE_DEFINITIONS.map(({ path }) => path).sort(),
+    );
+    for (const url of collect.url) {
+      const matching = assert.assertMatrix.filter(({ matchingUrlPattern }) =>
+        // eslint-disable-next-line security/detect-non-literal-regexp -- pattern comes from the repo's own lighthouserc.js
+        new RegExp(matchingUrlPattern).test(url),
+      );
+      expect(
+        matching.some(({ assertions }) => "categories:seo" in assertions),
+        url,
+      ).toBe(true);
+    }
   });
 });

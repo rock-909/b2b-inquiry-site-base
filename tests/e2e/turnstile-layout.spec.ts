@@ -1,7 +1,19 @@
 import { expect, test } from "@playwright/test";
+import { localePrefix, SECOND_LOCALE } from "./site-page-cases";
+
+declare global {
+  interface Window {
+    __clsTotal?: number;
+  }
+}
+
+const CONTACT_PATHS = [
+  "/contact",
+  ...(SECOND_LOCALE ? [`${localePrefix(SECOND_LOCALE)}/contact`] : []),
+];
 
 // 尺寸与官方 compact 一致；单元测试另守真实封装的 size 选项，CI 不请求外部服务。
-for (const path of ["/contact", "/es/contact"]) {
+for (const path of CONTACT_PATHS) {
   for (const initialWidth of [320, 390, 640, 768]) {
     test(`compact bot-check footprint fits ${path} from ${initialWidth}px`, async ({
       page,
@@ -70,7 +82,13 @@ for (const path of ["/contact", "/es/contact"]) {
       const widget = page.getByTestId("turnstile-mock");
       await expect(widget).toHaveAttribute("data-compact-footprint", "true");
       await expect(page.locator("[data-inquiry-form-reserve]")).toHaveCount(0);
-      await page.waitForTimeout(1200);
+      // 等两帧渲染完成，让 layout-shift 观察者记录替换造成的位移。
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+          }),
+      );
       const heights = await form.evaluate((element) => ({
         form: element.getBoundingClientRect().height,
         card: element.parentElement!.getBoundingClientRect().height,

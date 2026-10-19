@@ -4,11 +4,10 @@ import os from "node:os";
 import path from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { afterEach, describe, expect, it } from "vitest";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
+import { describe, expect, it } from "vitest";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { collectPrerenderStaticFindings } from "../../../scripts/quality/checks/prerender-static.js";
 
-const tempDirs: string[] = [];
 const FIXTURE_PREFIX = "prerender-static-";
 const EXPECTED_OG_IMAGE_URL = "https://example.invalid/opengraph-image.png";
 
@@ -65,12 +64,11 @@ function writeMetadataArtifacts({
 function createBuildFixture({
   aboutPostponed = false,
   contactPostponed = false,
-  locales = ["en", "es"],
+  locales = [...LOCALES_CONFIG.locales] as string[],
   secondaryAboutPrerendered = true,
   includeAboutRoute = true,
 } = {}) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
-  tempDirs.push(rootDir);
   writeJson(rootDir, ".next/server/app-paths-manifest.json", {
     "/[locale]/about/page": "app/[locale]/about/page.js",
     "/[locale]/contact/page": "app/[locale]/contact/page.js",
@@ -110,7 +108,6 @@ function createStaticBuildWithoutTemplateShellsFixture({
   includeAboutRoute = true,
 } = {}) {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
-  tempDirs.push(rootDir);
   writeJson(rootDir, ".next/server/app-paths-manifest.json", {
     "/[locale]/about/page": "app/[locale]/about/page.js",
     "/[locale]/contact/page": "app/[locale]/contact/page.js",
@@ -134,12 +131,6 @@ function createStaticBuildWithoutTemplateShellsFixture({
   writeMetadataArtifacts({ rootDir });
   return rootDir;
 }
-
-afterEach(() => {
-  for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
-  }
-});
 
 describe("prerender static behavior gate", () => {
   it("accepts a configured image URL escaped by React SSR", () => {

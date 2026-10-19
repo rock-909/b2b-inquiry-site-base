@@ -8,6 +8,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageToggleIsland, MobileNavigationIsland } from "../header-client";
 
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
+
 const mockPathname = vi.hoisted(() => ({ current: "/" }));
 
 vi.mock("@/i18n/routing", () => ({
@@ -178,9 +181,9 @@ describe("LanguageToggleIsland", () => {
     const container = document.createElement("div");
     container.innerHTML = html;
     expect(container.querySelector("details > summary")).not.toBeNull();
-    expect(container.querySelector('a[hreflang="es"]')).toHaveAttribute(
+    expect(container.querySelector('a[hreflang="de"]')).toHaveAttribute(
       "href",
-      "/es",
+      "/de",
     );
     expect(container.querySelector("button")).toBeNull();
   });

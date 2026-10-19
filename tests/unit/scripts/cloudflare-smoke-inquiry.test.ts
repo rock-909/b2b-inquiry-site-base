@@ -1,8 +1,13 @@
 import http from "node:http";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { captureExpectedConsoleErrors } from "@/test/console";
-import { runDeployedSmoke } from "../../../scripts/quality/checks/cloudflare-smoke.js";
+import {
+  CORE_PUBLIC_PAGE_PATHS,
+  runDeployedSmoke,
+} from "../../../scripts/quality/checks/cloudflare-smoke.js";
 
+// 注册表推导出的字面量元组放宽为 string，便于判断任意请求路径。
+const PAGE_PATHS: readonly string[] = CORE_PUBLIC_PAGE_PATHS;
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
 const HTML_HEADERS = {
   "content-type": "text/html; charset=utf-8",
@@ -11,7 +16,6 @@ const HTML_HEADERS = {
   "referrer-policy": "strict-origin-when-cross-origin",
   "content-security-policy": "default-src 'self'",
 };
-const PAGE_PATHS = ["/", "/contact", "/privacy", "/terms"];
 
 const openServers: http.Server[] = [];
 
@@ -65,6 +69,7 @@ async function listenWithInquiryStatus(inquiryStatus: number) {
 }
 
 afterEach(async () => {
+  vi.useRealTimers();
   await Promise.all(
     openServers.splice(0).map(
       (server) =>
@@ -95,9 +100,23 @@ describe("deployed smoke inquiry probe", () => {
       `  - Expected /api/inquiry to return 415, got ${status}`,
     );
     const { baseUrl } = await listenWithInquiryStatus(status);
+    // 5xx 会触发重试退避；只假冒 setTimeout，HTTP 往返仍走真实 IO。
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
 
-    await expect(runDeployedSmoke(["--base-url", baseUrl])).resolves.toBe(
-      false,
-    );
+    const smoke = runDeployedSmoke(["--base-url", baseUrl]);
+    // 每让出一轮真实事件循环仍未结束，就把下一个退避计时器立即触发。
+    while (
+      await Promise.race([
+        smoke.then(
+          () => false,
+          () => false,
+        ),
+        new Promise<boolean>((resolve) => setImmediate(() => resolve(true))),
+      ])
+    ) {
+      vi.advanceTimersToNextTimer();
+    }
+
+    await expect(smoke).resolves.toBe(false);
   });
 });

@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import en from "../../../../messages/base/en/messages.json";
-import es from "../../../../messages/base/es/messages.json";
 import { generateLocaleMetadata } from "@/app/[locale]/layout-metadata";
+import { LOCALES_CONFIG } from "@/config/paths";
+import { getFlatMessages } from "@/test/i18n-messages";
 
 const { mockSiteConfig } = vi.hoisted(() => ({
   mockSiteConfig: {
@@ -55,18 +56,30 @@ describe("Locale layout metadata", () => {
     expect(robots.googleBot?.["max-video-preview"]).toBe(-1);
   });
 
-  it("localizes inherited Spanish metadata without publishing page URLs", async () => {
-    const metadata = await generateLocaleMetadata({
-      params: Promise.resolve({ locale: "es" }),
-    });
-    expect(metadata.title).toEqual({
-      default: es.home.metadata.title,
-      template: "%s | Test Site",
-    });
-    expect(metadata.description).toBe(es.home.metadata.description);
-    expect(metadata.alternates).toBeUndefined();
-    expect(metadata.openGraph).toBeUndefined();
-  });
+  // 单语言站点没有非默认语言，此用例自然跳过。
+  const otherLocales = LOCALES_CONFIG.locales.filter(
+    (locale) => locale !== LOCALES_CONFIG.defaultLocale,
+  );
+  it.skipIf(otherLocales.length === 0)(
+    "localizes inherited non-default-locale metadata without publishing page URLs",
+    async () => {
+      for (const locale of otherLocales) {
+        const messages = getFlatMessages(locale);
+        const metadata = await generateLocaleMetadata({
+          params: Promise.resolve({ locale }),
+        });
+        expect(metadata.title).toEqual({
+          default: messages.get("home.metadata.title"),
+          template: "%s | Test Site",
+        });
+        expect(metadata.description).toBe(
+          messages.get("home.metadata.description"),
+        );
+        expect(metadata.alternates).toBeUndefined();
+        expect(metadata.openGraph).toBeUndefined();
+      }
+    },
+  );
 
   it("rejects an invalid locale through notFound", async () => {
     const notFoundError = new Error("NEXT_HTTP_ERROR_FALLBACK;404");

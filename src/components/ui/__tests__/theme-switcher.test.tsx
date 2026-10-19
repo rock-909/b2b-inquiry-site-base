@@ -1,39 +1,14 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { createMockTranslations } from "@/test/utils";
 
-const themeLabels: Record<string, string> = {
-  switchToLight: "Switch to light theme",
-  switchToDark: "Switch to dark theme",
-  switchToSystem: "Switch to system theme",
-};
-
-const accessibilityLabels: Record<string, string> = {
-  themeSelector: "TEST theme selector group",
-};
-
-function mockThemeTranslations(namespace?: string) {
-  if (namespace === "accessibility") {
-    return ((key: string) => accessibilityLabels[key] ?? key) as ReturnType<
-      typeof useTranslations
-    >;
-  }
-
-  return ((key: string) => themeLabels[key] ?? key) as ReturnType<
-    typeof useTranslations
-  >;
-}
+// 文案取自真实消息包：断言的是每个 key 落在了哪个控件上。
+const t = createMockTranslations();
 
 describe("ThemeSwitcher", () => {
-  beforeEach(() => {
-    vi.mocked(useTranslations).mockImplementation((namespace?: string) =>
-      mockThemeTranslations(namespace),
-    );
-  });
-
   it("renders the active theme highlight without a second dynamic boundary", async () => {
     const mockSetTheme = vi.fn();
     vi.mocked(useTheme).mockReturnValue({
@@ -72,7 +47,7 @@ describe("ThemeSwitcher", () => {
     render(<ThemeSwitcher data-testid="theme-switcher" />);
 
     const darkButton = screen.getByRole("button", {
-      name: "Switch to dark theme",
+      name: t("theme.switchToDark"),
     });
 
     expect(
@@ -99,7 +74,7 @@ describe("ThemeSwitcher", () => {
     await screen.findByTestId("theme-switcher-highlight");
 
     const darkButton = screen.getByRole("button", {
-      name: "Switch to dark theme",
+      name: t("theme.switchToDark"),
     });
     await user.click(darkButton);
 
@@ -121,20 +96,20 @@ describe("ThemeSwitcher", () => {
     render(<ThemeSwitcher data-testid="theme-switcher" />);
 
     const group = screen.getByRole("group", {
-      name: "TEST theme selector group",
+      name: t("accessibility.themeSelector"),
     });
     expect(group).toBeInTheDocument();
 
     await screen.findByTestId("theme-switcher-highlight");
 
     expect(
-      screen.getByRole("button", { name: "Switch to dark theme" }),
+      screen.getByRole("button", { name: t("theme.switchToDark") }),
     ).toHaveAttribute("aria-pressed", "true");
     expect(
-      screen.getByRole("button", { name: "Switch to light theme" }),
+      screen.getByRole("button", { name: t("theme.switchToLight") }),
     ).toHaveAttribute("aria-pressed", "false");
     expect(
-      screen.getByRole("button", { name: "Switch to system theme" }),
+      screen.getByRole("button", { name: t("theme.switchToSystem") }),
     ).toHaveAttribute("aria-pressed", "false");
   });
 

@@ -1,28 +1,23 @@
 import { expect, test, type Page } from "@playwright/test";
+import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { checkA11y } from "./helpers/axe";
-import { waitForLoadWithFallback } from "./test-environment-setup";
+import { getLocaleMessages, localizePath } from "./site-page-cases";
+import { collectBrowserErrors } from "./test-environment-setup";
 
 // A 404 page still renders main#main-content + an h1 with no overflow, so scope
 // the calibration to real public pages instead of missing-route fixtures.
-const corePages = [
-  "/",
-  "/contact",
-  "/privacy",
-  "/terms",
-  "/es",
-  "/es/contact",
-  "/es/privacy",
-  "/es/terms",
-] as const;
+const corePages = LOCALES_CONFIG.locales.flatMap((locale) =>
+  PUBLIC_STATIC_PAGE_DEFINITIONS.map(({ path }) => ({
+    path: localizePath(locale, path),
+    theme: getLocaleMessages(locale).theme,
+  })),
+);
 
 async function preparePage(page: Page, path: string) {
   const response = await page.goto(path, { waitUntil: "domcontentloaded" });
   expect(response?.status(), `${path} should render a real page`).toBe(200);
-  await waitForLoadWithFallback(page, {
-    context: `core visual calibration ${path}`,
-    loadTimeout: 10_000,
-    fallbackDelay: 500,
-  });
+  await page.waitForLoadState("load");
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -33,13 +28,6 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(hasOverflow).toBe(false);
 }
 
-function collectPageErrors(page: Page) {
-  const pageErrors: string[] = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-
-  return pageErrors;
-}
-
 test.describe("Core page visual calibration", () => {
   for (const viewport of [
     { name: "desktop", width: 1440, height: 1000 },
@@ -47,16 +35,16 @@ test.describe("Core page visual calibration", () => {
     { name: "narrow", width: 320, height: 844 },
   ] as const) {
     for (const colorScheme of ["light", "dark"] as const) {
-      for (const path of corePages) {
+      for (const { path, theme } of corePages) {
         test(`${viewport.name} ${colorScheme} ${path} stays readable without overflow`, async ({
           page,
-        }, testInfo) => {
+        }) => {
           await page.emulateMedia({ colorScheme });
           await page.setViewportSize({
             width: viewport.width,
             height: viewport.height,
           });
-          const pageErrors = collectPageErrors(page);
+          const pageErrors = collectBrowserErrors(page);
           await preparePage(page, path);
 
           const themeButton = page
@@ -64,8 +52,8 @@ test.describe("Core page visual calibration", () => {
             .getByRole("button", {
               name:
                 colorScheme === "dark"
-                  ? /Switch to dark theme|Cambiar al tema oscuro/u
-                  : /Switch to light theme|Cambiar al tema claro/u,
+                  ? theme.switchToDark
+                  : theme.switchToLight,
             });
           await themeButton.click();
           await expect(page.locator("html")).toHaveClass(
@@ -89,17 +77,6 @@ test.describe("Core page visual calibration", () => {
           ).toBeVisible();
           await expectNoHorizontalOverflow(page);
           expect(pageErrors).toStrictEqual([]);
-
-          await testInfo.attach(
-            `${viewport.name}-${colorScheme}-${path.replace(/\//gu, "-")}.png`,
-            {
-              body: await page.screenshot({
-                fullPage: true,
-                animations: "disabled",
-              }),
-              contentType: "image/png",
-            },
-          );
         });
       }
     }
@@ -109,9 +86,9 @@ test.describe("Core page visual calibration", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    const pageErrors = collectPageErrors(page);
+    const pageErrors = collectBrowserErrors(page);
 
-    for (const path of corePages) {
+    for (const { path } of corePages) {
       await preparePage(page, path);
 
       await expect(page.locator("main#main-content")).toBeVisible();
@@ -127,7 +104,7 @@ test.describe("Core page visual calibration", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
-    const pageErrors = collectPageErrors(page);
+    const pageErrors = collectBrowserErrors(page);
     const leadSurfaces = ["/contact"] as const;
 
     for (const path of leadSurfaces) {

@@ -9,14 +9,7 @@ import "./setup.console";
 
 import "./setup.base-mocks";
 import "./setup.next";
-import "./setup.icons";
 import "./setup.constants-and-i18n";
 import "./setup.env";
 import "./setup.browser-apis";
 import "./setup.hooks";
-
-export {
-  triggerAll,
-  triggerVisible,
-  setIntersectionAutoVisibleAll,
-} from "./setup.intersection-observer";

@@ -1,40 +1,57 @@
 import { expect, test } from "@playwright/test";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
+import {
+  DEFAULT_LOCALE,
+  getLocaleMessages,
+  localizePath,
+} from "./site-page-cases";
+
+const LOCALE_CASES = LOCALES_CONFIG.locales.map((locale) => {
+  const { title, goHome } = getLocaleMessages(locale).errors.notFound;
+  return {
+    locale,
+    title,
+    homeLabel: goHome,
+    homePath: localizePath(locale, "/"),
+  };
+});
 
 test.describe("404 recovery without JavaScript", () => {
   test.use({ javaScriptEnabled: false });
 
-  for (const [locale, prefix, title, homeLabel] of [
-    ["en", "", "Page not found", "Back to homepage"],
-    ["en", "/en", "Page not found", "Back to homepage"],
-    ["es", "/es", "Página no encontrada", "Volver al inicio"],
-  ] as const) {
-    for (const path of [
-      "/this-page-does-not-exist",
-      "/products/not-real",
-      "/random.txt",
-      "/images/retired-asset.jpg",
-      "/__not-found-placeholder",
-    ]) {
-      test(`${prefix}${path} serves a localized recovery document`, async ({
-        page,
-      }) => {
-        const response = await page.goto(`${prefix}${path}`, {
-          waitUntil: "domcontentloaded",
+  for (const { locale, title, homeLabel, homePath } of LOCALE_CASES) {
+    // 默认语种既可无前缀访问，也可显式带前缀访问。
+    const prefixes =
+      locale === DEFAULT_LOCALE ? ["", `/${locale}`] : [`/${locale}`];
+    for (const prefix of prefixes) {
+      for (const path of [
+        "/this-page-does-not-exist",
+        "/products/not-real",
+        "/random.txt",
+        "/images/retired-asset.jpg",
+        "/__not-found-placeholder",
+      ]) {
+        test(`${prefix}${path} serves a localized recovery document`, async ({
+          page,
+        }) => {
+          const response = await page.goto(`${prefix}${path}`, {
+            waitUntil: "domcontentloaded",
+          });
+          expect(response?.status()).toBe(404);
+          await expect(page.locator("html")).toHaveAttribute("lang", locale);
+          const main = page.getByRole("main");
+          await expect(main.locator("p").first()).toBeVisible();
+          await expect(
+            main.getByRole("heading", { level: 1, name: title, exact: true }),
+          ).toBeVisible();
+          const home = main.getByRole("link", {
+            name: homeLabel,
+            exact: true,
+          });
+          await expect(home).toBeVisible();
+          await expect(home).toHaveAttribute("href", homePath);
         });
-        expect(response?.status()).toBe(404);
-        await expect(page.locator("html")).toHaveAttribute("lang", locale);
-        const main = page.getByRole("main");
-        await expect(main.locator("p").first()).toBeVisible();
-        await expect(
-          main.getByRole("heading", { level: 1, name: title, exact: true }),
-        ).toBeVisible();
-        const home = main.getByRole("link", { name: homeLabel, exact: true });
-        await expect(home).toBeVisible();
-        await expect(home).toHaveAttribute(
-          "href",
-          locale === "en" ? "/" : prefix,
-        );
-      });
+      }
     }
   }
 });
@@ -57,10 +74,8 @@ test("unknown routes render the site 404 with a homepage recovery link", async (
   ).toBeVisible();
 });
 
-for (const [path, title, homeLabel, homePath] of [
-  ["/random.txt", "Page not found", "Back to homepage", "/"],
-  ["/es/random.txt", "Página no encontrada", "Volver al inicio", "/es"],
-] as const) {
+for (const { locale, title, homeLabel, homePath } of LOCALE_CASES) {
+  const path = localizePath(locale, "/random.txt");
   test(`${path} recovers through client navigation`, async ({
     page,
     baseURL,

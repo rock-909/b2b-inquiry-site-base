@@ -73,7 +73,13 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: Boolean(process.env.CI),
   /* Retry on CI only */
-  retries: process.env.CI ? (process.env.CI_FLAKE_SAMPLING === "1" ? 0 : 2) : 0,
+  // 真实 Airtable canary 每次重试都会写一条询盘、发一封真实邮件，所以不重试。
+  retries:
+    process.env.CI && !isAirtableCanary
+      ? process.env.CI_FLAKE_SAMPLING === "1"
+        ? 0
+        : 2
+      : 0,
   /* Opt out of parallel tests on CI. */
   // CI 上启用 2 个并发以降低整体时长；本地保持 4
   workers: isCI ? 2 : 4,

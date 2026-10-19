@@ -41,13 +41,21 @@ export function getFlatMessages(locale: Locale = "en"): Map<string, string> {
 }
 
 /**
- * next-intl 的取值语义：key 存在就返回它的值，哪怕值是空字符串；不存在才
- * 回退成 key 本身。用真假判断会把留空的社交链接翻成 key 名，测试环境和生产
- * 环境从此对不上。
+ * next-intl 的取值语义：key 存在就返回它的值，哪怕值是空字符串；用真假判断
+ * 会把留空的社交链接翻成 key 名。key 不存在时真实 next-intl 报
+ * MISSING_MESSAGE，这里直接抛错，免得断言 key 名的测试静默通过。
+ * 传了 values 就替换简单的 `{name}` 占位符（不支持 ICU 复数/select）。
  */
 export function lookupMessage(
   messages: Map<string, string>,
   key: string,
+  values?: Record<string, string | number>,
 ): string {
-  return messages.has(key) ? messages.get(key)! : key;
+  const message = messages.get(key);
+  if (message === undefined) throw new Error(`MISSING_MESSAGE: ${key}`);
+  if (!values) return message;
+
+  return message.replace(/\{(\w+)\}/gu, (placeholder, name: string) =>
+    name in values ? String(values[name]) : placeholder,
+  );
 }

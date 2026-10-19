@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import {
   buildCanonicalForPath,
   createStaticPageMetadataConfig,
@@ -25,6 +26,11 @@ vi.mock("@/config/single-site", () => ({
     },
   },
 }));
+
+const { defaultLocale, locales } = LOCALES_CONFIG;
+const localeUrl = (locale: string, path: string) =>
+  `https://example.com${locale === defaultLocale ? "" : `/${locale}`}${path}`;
+const otherLocale = locales.find((locale) => locale !== defaultLocale);
 
 describe("SEO Metadata", () => {
   beforeEach(() => {
@@ -148,26 +154,34 @@ describe("SEO Metadata", () => {
         "https://example.com/privacy",
       );
       expect(metadata.alternates?.languages).toEqual({
-        en: "https://example.com/privacy",
-        es: "https://example.com/es/privacy",
+        ...Object.fromEntries(
+          locales.map((locale) => [locale, localeUrl(locale, "/privacy")]),
+        ),
         "x-default": "https://example.com/privacy",
       });
       expect(metadata.openGraph?.url).toBe("https://example.com/privacy");
     });
 
-    it("builds locale-specific canonical and alternate URLs", () => {
-      const metadata = generateMetadataForPath({
-        locale: "es",
-        pageType: "privacy",
-        path: "/privacy",
-      });
+    // 单语言站点没有非默认语言，此用例自然跳过。
+    it.skipIf(otherLocale === undefined)(
+      "builds locale-specific canonical and alternate URLs",
+      () => {
+        const locale = otherLocale!;
+        const metadata = generateMetadataForPath({
+          locale,
+          pageType: "privacy",
+          path: "/privacy",
+        });
 
-      expect(metadata.alternates?.canonical).toBe(
-        "https://example.com/es/privacy",
-      );
-      expect(metadata.openGraph?.url).toBe("https://example.com/es/privacy");
-      expect(metadata.openGraph?.locale).toBe("es");
-    });
+        expect(metadata.alternates?.canonical).toBe(
+          `https://example.com/${locale}/privacy`,
+        );
+        expect(metadata.openGraph?.url).toBe(
+          `https://example.com/${locale}/privacy`,
+        );
+        expect(metadata.openGraph?.locale).toBe(locale);
+      },
+    );
 
     it("noindexes active public pages outside production", () => {
       process.env.APP_ENV = "preview";
@@ -206,7 +220,7 @@ describe("SEO Metadata", () => {
     it("keeps incomplete legal pages noindex even in production, with localized canonical URLs", () => {
       process.env.APP_ENV = "production";
       for (const pageType of ["privacy", "terms"] as const) {
-        for (const locale of ["en", "es"] as const) {
+        for (const locale of locales) {
           const metadata = generateMetadataForPath({
             locale,
             pageType,
@@ -218,7 +232,7 @@ describe("SEO Metadata", () => {
             googleBot: { index: false },
           });
           expect(metadata.alternates?.canonical).toBe(
-            `https://example.com${locale === "es" ? "/es" : ""}/${pageType}`,
+            localeUrl(locale, `/${pageType}`),
           );
           expect(metadata.alternates?.languages).toHaveProperty("x-default");
         }

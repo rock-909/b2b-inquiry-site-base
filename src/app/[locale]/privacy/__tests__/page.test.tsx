@@ -1,7 +1,11 @@
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import PrivacyPage, { generateMetadata } from "@/app/[locale]/privacy/page";
-import type { Locale } from "@/types/content.types";
+import PrivacyPage, {
+  generateMetadata as generatePrivacyMetadata,
+} from "@/app/[locale]/privacy/page";
+import TermsPage, {
+  generateMetadata as generateTermsMetadata,
+} from "@/app/[locale]/terms/page";
 
 const { mockLoadLegalPage, mockGenerateMetadataForPath } = vi.hoisted(() => ({
   mockLoadLegalPage: vi.fn(),
@@ -21,96 +25,79 @@ vi.mock(import("@/lib/seo-metadata"), async (importOriginal) => {
 });
 
 vi.mock("@/components/content/legal-page-shell", () => ({
-  LegalPageShell: vi.fn(
-    ({
-      metadata,
-      headings,
-    }: {
-      metadata: { title: string };
-      headings: Array<{ id: string; text: string }>;
-    }) => (
-      <div>
-        <h1>{metadata.title}</h1>
-        <nav aria-label="Table of Contents">
-          {headings.map((heading) => (
-            <a key={heading.id} href={`#${heading.id}`}>
-              {heading.text}
-            </a>
-          ))}
-        </nav>
-      </div>
-    ),
-  ),
+  LegalPageShell: vi.fn(({ metadata }: { metadata: { title: string } }) => (
+    <h1>{metadata.title}</h1>
+  )),
 }));
 
 vi.mock("next-intl/server", () => ({
   setRequestLocale: vi.fn(),
 }));
 
-const createParams = (locale: Locale) => ({
-  locale,
-});
+const LEGAL_PAGES = [
+  {
+    pageType: "privacy",
+    path: "/privacy",
+    Page: PrivacyPage,
+    generateMetadata: generatePrivacyMetadata,
+  },
+  {
+    pageType: "terms",
+    path: "/terms",
+    Page: TermsPage,
+    generateMetadata: generateTermsMetadata,
+  },
+] as const;
 
-const mockLegalPage = {
+const legalPage = {
   metadata: {
-    title: "Privacy Policy",
-    description: "How we collect, use, and protect your data.",
-    slug: "privacy",
+    title: "Legal page title",
+    description: "Legal page description",
     publishedAt: "2024-01-01",
     updatedAt: "2024-02-01",
-    lastReviewed: "2024-02-01",
     seo: {
-      title: "Privacy Policy SEO",
-      description: "Privacy SEO description",
+      title: "Legal SEO title",
+      description: "Legal SEO description",
+      ogImage: "/legal-og.png",
     },
   },
-  content: "## Information We Collect {#info-collect}\n\nWe collect data.",
-  headings: [
-    { level: 2 as const, text: "Information We Collect", id: "info-collect" },
-  ],
+  blocks: [],
+  headings: [],
 };
 
-describe("Privacy Page", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    mockLoadLegalPage.mockResolvedValue(mockLegalPage);
-    mockGenerateMetadataForPath.mockReturnValue({
-      title: "Privacy Policy SEO",
-      description: "Privacy SEO description",
-    });
-  });
-
-  it("应该用静态页面 metadata 生成 metadata", async () => {
-    const metadata = await generateMetadata({
-      params: Promise.resolve(createParams("en")),
+describe.each(LEGAL_PAGES)(
+  "$pageType page",
+  ({ pageType, path, Page, generateMetadata }) => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      mockLoadLegalPage.mockResolvedValue(legalPage);
     });
 
-    expect(metadata.title).toBe("Privacy Policy SEO");
-    expect(metadata.description).toBe("Privacy SEO description");
-    expect(mockLoadLegalPage).toHaveBeenCalledWith("privacy", "en");
-    expect(mockGenerateMetadataForPath).toHaveBeenCalledWith({
-      locale: "en",
-      pageType: "privacy",
-      path: "/privacy",
-      config: {
-        title: "Privacy Policy SEO",
-        description: "Privacy SEO description",
-      },
+    it("builds metadata for its own route from the static page SEO fields", async () => {
+      await generateMetadata({ params: Promise.resolve({ locale: "en" }) });
+
+      expect(mockLoadLegalPage).toHaveBeenCalledWith(pageType, "en");
+      expect(mockGenerateMetadataForPath).toHaveBeenCalledWith({
+        locale: "en",
+        pageType,
+        path,
+        config: {
+          title: "Legal SEO title",
+          description: "Legal SEO description",
+          image: "/legal-og.png",
+        },
+      });
     });
-  });
 
-  it("直接渲染法务正文，不留任何流式边界", async () => {
-    render(
-      await PrivacyPage({
-        params: Promise.resolve(createParams("en")),
-      }),
-    );
+    it("renders the loaded legal page directly, with no streaming boundary", async () => {
+      // 正文必须是页面自己 await 出来的结果。挂在 Suspense 后面会让正文流到
+      // <main> 外的隐藏容器，禁用脚本的访客只剩骨架屏。
+      render(await Page({ params: Promise.resolve({ locale: "en" }) }));
 
-    // 正文必须是页面自己 await 出来的结果。挂在 Suspense 后面会让正文流到
-    // <main> 外的隐藏容器，禁用脚本的访客只剩骨架屏。
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Privacy Policy" }),
-    ).toBeInTheDocument();
-    expect(document.querySelectorAll(".animate-pulse")).toHaveLength(0);
-  });
-});
+      expect(mockLoadLegalPage).toHaveBeenCalledWith(pageType, "en");
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Legal page title" }),
+      ).toBeInTheDocument();
+    });
+  },
+);

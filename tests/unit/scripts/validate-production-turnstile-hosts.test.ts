@@ -1,17 +1,16 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 const GATE_PATH = path.resolve("scripts/quality/checks/production-config.js");
 const SITE_URL = "https://www.reference-site.com";
 const HOSTS_KEY = "env.production.vars.TURNSTILE_ALLOWED_HOSTS";
 const FIXTURE_PREFIX = "turnstile-hosts-";
-const tempDirs: string[] = [];
 
 function turnstileHostErrors(hosts: string | undefined, siteUrl = SITE_URL) {
-  const cwd = mkdtempSync(path.resolve(FIXTURE_PREFIX));
-  tempDirs.push(cwd);
+  const cwd = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp directory
   writeFileSync(
     path.join(cwd, "wrangler.jsonc"),
@@ -41,12 +40,6 @@ function turnstileHostErrors(hosts: string | undefined, siteUrl = SITE_URL) {
   });
   return result.stderr.split("\n").filter((line) => line.includes(HOSTS_KEY));
 }
-
-afterEach(() => {
-  for (const tempDir of tempDirs.splice(0)) {
-    rmSync(tempDir, { recursive: true, force: true });
-  }
-});
 
 describe("production gate for Wrangler TURNSTILE_ALLOWED_HOSTS", () => {
   it.each([

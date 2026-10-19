@@ -9,8 +9,11 @@ describe("logger", () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllEnvs();
+    // 钉住 logger 读的每个变量；unstubAllEnvs 会还原开发者 shell 里的 LOG_LEVEL，
+    // 让结果取决于本机环境。
     vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("LOG_LEVEL", undefined);
+    vi.stubEnv("NEXT_PUBLIC_LOG_LEVEL", undefined);
     consoleSpies = {
       debug: vi.spyOn(console, "debug").mockImplementation(() => undefined),
       info: vi.spyOn(console, "info").mockImplementation(() => undefined),
@@ -21,7 +24,6 @@ describe("logger", () => {
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
     Object.values(consoleSpies).forEach((spy) => spy.mockRestore());
   });
 
@@ -42,7 +44,6 @@ describe("logger", () => {
   });
 
   it("should always output error/warn in production", () => {
-    vi.unstubAllEnvs();
     vi.stubEnv("NODE_ENV", "production");
 
     logger.warn("warning in production");
@@ -53,7 +54,6 @@ describe("logger", () => {
   });
 
   it("should suppress debug/log/info in production by default", () => {
-    vi.unstubAllEnvs();
     vi.stubEnv("NODE_ENV", "production");
 
     logger.debug("should not log");
@@ -66,7 +66,6 @@ describe("logger", () => {
   });
 
   it("should respect LOG_LEVEL=info in production", () => {
-    vi.unstubAllEnvs();
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("LOG_LEVEL", "info");
 

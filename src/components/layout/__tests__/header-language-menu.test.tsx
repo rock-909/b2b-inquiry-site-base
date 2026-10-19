@@ -7,19 +7,10 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { beforeEach, vi, describe, expect, it } from "vitest";
 import { HeaderLanguageMenu } from "@/components/layout/header-language-menu";
+import { DEFAULT_LOCALE, OTHER_LOCALE } from "@/test/two-locales";
 
-vi.mock("next-intl", () => ({
-  useTranslations:
-    (namespace: string) => (key: string, values?: Record<string, string>) => {
-      if (namespace === "accessibility" && key === "language") {
-        return `Languages: ${values?.language ?? ""}`;
-      }
-      if (namespace === "navigation" && key === "language") {
-        return "Languages";
-      }
-      return `${namespace}.${key}`;
-    },
-}));
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
 
 const mockPathname = vi.hoisted(() => ({ current: "/contact" }));
 
@@ -36,7 +27,7 @@ describe("HeaderLanguageMenu", () => {
 
   it("opens from pointer hover", async () => {
     const user = userEvent.setup();
-    render(<HeaderLanguageMenu locale="en" />);
+    render(<HeaderLanguageMenu locale={DEFAULT_LOCALE} />);
 
     const trigger = screen.getByRole("button", {
       name: "Languages: English",
@@ -50,7 +41,7 @@ describe("HeaderLanguageMenu", () => {
   });
 
   it("opens with the current language clearly marked and no fake switch link", async () => {
-    render(<HeaderLanguageMenu initialOpen locale="en" />);
+    render(<HeaderLanguageMenu initialOpen locale={DEFAULT_LOCALE} />);
 
     expect(
       screen.getByRole("button", { name: "Languages: English" }),
@@ -71,16 +62,16 @@ describe("HeaderLanguageMenu", () => {
       "",
       "/contact?source=trade-show&tag=one&tag=two#inquiry",
     );
-    render(<HeaderLanguageMenu initialOpen locale="en" />);
+    render(<HeaderLanguageMenu initialOpen locale={DEFAULT_LOCALE} />);
 
-    const spanishLink = await screen.findByRole("menuitem", {
-      name: "Español",
+    const otherLink = await screen.findByRole("menuitem", {
+      name: "Deutsch",
     });
-    expect(spanishLink).toHaveAttribute("data-locale", "es");
-    expect(spanishLink).toHaveAttribute("hreflang", "es");
-    expect(spanishLink).toHaveAttribute(
+    expect(otherLink).toHaveAttribute("data-locale", "de");
+    expect(otherLink).toHaveAttribute("hreflang", "de");
+    expect(otherLink).toHaveAttribute(
       "href",
-      "/es/contact?source=trade-show&tag=one&tag=two#inquiry",
+      "/de/contact?source=trade-show&tag=one&tag=two#inquiry",
     );
   });
 
@@ -88,9 +79,9 @@ describe("HeaderLanguageMenu", () => {
     window.history.replaceState(
       {},
       "",
-      "/es/contact?source=trade-show&tag=one&tag=two#inquiry",
+      "/de/contact?source=trade-show&tag=one&tag=two#inquiry",
     );
-    render(<HeaderLanguageMenu initialOpen locale="es" />);
+    render(<HeaderLanguageMenu initialOpen locale={OTHER_LOCALE} />);
 
     expect(
       await screen.findByRole("menuitem", { name: "English" }),
@@ -101,20 +92,22 @@ describe("HeaderLanguageMenu", () => {
   });
 
   it("stays closed after navigating away and returning to the activation route", async () => {
-    const { rerender } = render(<HeaderLanguageMenu initialOpen locale="en" />);
+    const { rerender } = render(
+      <HeaderLanguageMenu initialOpen locale={DEFAULT_LOCALE} />,
+    );
 
     expect(
       screen.getByRole("button", { name: "Languages: English" }),
     ).toHaveAttribute("aria-expanded", "true");
 
     mockPathname.current = "/privacy";
-    rerender(<HeaderLanguageMenu initialOpen locale="en" />);
+    rerender(<HeaderLanguageMenu initialOpen locale={DEFAULT_LOCALE} />);
     expect(
       screen.getByRole("button", { name: "Languages: English" }),
     ).toHaveAttribute("aria-expanded", "false");
 
     mockPathname.current = "/contact";
-    rerender(<HeaderLanguageMenu initialOpen locale="en" />);
+    rerender(<HeaderLanguageMenu initialOpen locale={DEFAULT_LOCALE} />);
     expect(
       screen.getByRole("button", { name: "Languages: English" }),
     ).toHaveAttribute("aria-expanded", "false");

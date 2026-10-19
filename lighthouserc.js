@@ -48,15 +48,13 @@ const BASE_URL = `http://localhost:${LIGHTHOUSE_PORT}`;
 
 const criticalUrls = [`${BASE_URL}/`];
 
-// Every canonical public route the template actually ships.
-// tests/unit/scripts/lighthouse-route-contract.test.ts keeps this list matched
-// to the static page registry, so a new route cannot quietly go unmeasured.
-const allUrls = [
-  ...criticalUrls,
-  `${BASE_URL}/contact`,
-  `${BASE_URL}/privacy`,
-  `${BASE_URL}/terms`,
-];
+// Every public page from the static page registry, so a new page is measured
+// without a second list to keep in sync. lhci loads this file as CommonJS.
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- CommonJS config
+const pageRegistry = require("./src/config/pages.config.ts");
+const allUrls = pageRegistry.PUBLIC_STATIC_PAGE_DEFINITIONS.map(
+  ({ path }) => `${BASE_URL}${path}`,
+);
 
 const sharedLighthouseAssertions = {
   // 此前记录称 /en 首页在 GitHub runner 上落在 0.75~0.79 区间（来源待核）。

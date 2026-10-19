@@ -18,6 +18,7 @@ import { useTranslations } from "next-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 import { MobileNavigationLinks } from "@/components/layout/mobile-navigation";
+import { getFlatMessages, lookupMessage } from "@/test/i18n-messages";
 import { createMockUseTranslations } from "@/test/utils";
 
 type MockLinkHref =
@@ -49,8 +50,11 @@ vi.mock("@/i18n/routing", () => ({
   ),
 }));
 
-const EXPECTED_ITEM_LABELS = ["Home", "Start an inquiry"] as const;
-const CTA_LABEL = "Start an inquiry";
+const messages = getFlatMessages();
+const EXPECTED_ITEM_LABELS = SINGLE_SITE_NAVIGATION.map((item) =>
+  lookupMessage(messages, `navigation.${item.messageKey}`),
+);
+const CTA_LABEL = lookupMessage(messages, "navigation.contactSales");
 
 describe("MobileNavigationLinks", () => {
   beforeEach(() => {
@@ -93,6 +97,7 @@ describe("MobileNavigationLinks", () => {
       .map((link) => link.textContent?.trim());
 
     expect(linkTexts).toEqual([...EXPECTED_ITEM_LABELS, CTA_LABEL]);
+    expect(screen.getAllByRole("link")[0]).toHaveAttribute("href", "/");
     // The link list is exactly the nav items plus a single contact CTA.
     expect(screen.getAllByRole("link")).toHaveLength(
       SINGLE_SITE_NAVIGATION.length + 1,

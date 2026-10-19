@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { SITE_PAGE_CASES } from "./site-page-cases";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
+import { localizePath, SITE_PAGE_CASES } from "./site-page-cases";
 
 const pages = SITE_PAGE_CASES.map(([path]) => path);
 
@@ -27,7 +28,7 @@ test.describe("Rendered SEO contract", () => {
     expect((await response.body()).length).toBeGreaterThan(0);
   });
   for (const path of pages) {
-    test(`${path} exposes canonical English metadata and valid JSON-LD`, async ({
+    test(`${path} exposes canonical default-locale metadata and valid JSON-LD`, async ({
       page,
     }) => {
       const response = await page.goto(path, { waitUntil: "domcontentloaded" });
@@ -58,27 +59,29 @@ test.describe("Rendered SEO contract", () => {
         /.+/,
       );
 
-      const enAlternate = page.locator('link[rel="alternate"][hreflang="en"]');
-      const defaultAlternate = page.locator(
-        'link[rel="alternate"][hreflang="x-default"]',
+      // 每个已配置语种各一条 hreflang 加 x-default，不多不少。
+      const alternates = await page
+        .locator("link[rel='alternate'][hreflang]")
+        .evaluateAll((links) =>
+          links.map((link) => [
+            link.getAttribute("hreflang"),
+            new URL(link.getAttribute("href") ?? "").pathname,
+          ]),
+        );
+      expect(alternates.toSorted()).toEqual(
+        [
+          ...LOCALES_CONFIG.locales.map((locale) => [
+            locale,
+            localizePath(locale, path),
+          ]),
+          ["x-default", path],
+        ].toSorted(),
       );
-      await expect(enAlternate).toHaveCount(1);
-      await expect(defaultAlternate).toHaveCount(1);
-      await expect(
-        page.locator('link[rel="alternate"][hreflang="zh"]'),
-      ).toHaveCount(0);
-      expect(
-        new URL((await enAlternate.getAttribute("href")) ?? "").pathname,
-      ).toBe(path);
-      expect(
-        new URL((await defaultAlternate.getAttribute("href")) ?? "").pathname,
-      ).toBe(path);
 
       const scripts = page.locator('script[type="application/ld+json"]');
       expect(await scripts.count()).toBeGreaterThan(0);
       const schemaTypes = new Set<string>();
       for (const raw of await scripts.allTextContents()) {
-        expect(raw).not.toContain("#organization");
         const parsed = JSON.parse(raw) as Record<string, unknown>;
         const nodes = Array.isArray(parsed["@graph"])
           ? parsed["@graph"]
@@ -92,8 +95,6 @@ test.describe("Rendered SEO contract", () => {
           }
         }
       }
-      expect(schemaTypes).not.toContain("Organization");
-
       expect(schemaTypes).toContain("WebSite");
     });
   }

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { localizePath, SECOND_LOCALE } from "./site-page-cases";
 
 /**
  * Not-found status contract.
@@ -9,13 +10,14 @@ import { expect, test } from "@playwright/test";
  *
  */
 
+// 探针用明显不会被派生站占用的路径，避免加新页面后这里反向失败。
 const MISSING_PATHS = [
   "/nope",
-  "/about",
-  "/es/about",
-  "/products",
-  "/products/sample-offering",
-  "/products/not-a-real-product",
+  "/__e2e-missing-page",
+  ...(SECOND_LOCALE
+    ? [localizePath(SECOND_LOCALE, "/__e2e-missing-page")]
+    : []),
+  "/__e2e-missing-section/offering",
   "/random.txt",
   "/does-not-exist.svg",
   "/images/retired-asset.jpg",

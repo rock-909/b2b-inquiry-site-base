@@ -11,7 +11,6 @@ import {
 
 const pageConfig: StaticContentPageConfig = {
   pageType: "terms",
-  slug: "terms",
 } as const;
 
 export function generateStaticParams() {

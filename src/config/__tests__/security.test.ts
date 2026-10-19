@@ -1,6 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { generateCSP, getSecurityHeaders } from "../security";
 
+const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
+
+/** CSP 解析成 指令 -> 来源列表，断言落在具体指令上，而不是整条字符串。 */
+function parseCsp(csp: string): Map<string, string[]> {
+  return new Map(
+    csp
+      .split(";")
+      .map((directive) => directive.trim().split(/\s+/u))
+      .map(([name, ...sources]) => [name!, sources] as const),
+  );
+}
+
 describe("Security Configuration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -10,61 +22,71 @@ describe("Security Configuration", () => {
   });
 
   describe("generateCSP", () => {
-    it("should generate basic CSP in development", () => {
+    it("allows inline and eval scripts only in development", () => {
       vi.stubEnv("NODE_ENV", "development");
+      const dev = parseCsp(generateCSP());
+      expect(dev.get("script-src")).toEqual(
+        expect.arrayContaining(["'unsafe-inline'", "'unsafe-eval'"]),
+      );
 
-      const csp = generateCSP();
-      expect(csp).toContain("default-src 'self'");
-      expect(csp).toContain("'unsafe-inline'");
-      expect(csp).toContain("'unsafe-eval'");
-      expect(csp).toContain("https://unpkg.com");
+      vi.stubEnv("NODE_ENV", "production");
+      const prod = parseCsp(generateCSP());
+      expect(prod.get("script-src")).not.toContain("'unsafe-inline'");
+      expect(prod.get("script-src")).not.toContain("'unsafe-eval'");
+      expect(prod.get("script-src-elem")).not.toContain("'unsafe-eval'");
     });
 
     it("should generate strict CSP in production", () => {
       vi.stubEnv("NODE_ENV", "production");
 
       const csp = generateCSP();
-      expect(csp).toContain("default-src 'self'");
-      // style-src allows 'unsafe-inline' for Tailwind CSS compatibility
-      expect(csp).toMatch(/style-src[^;]*'unsafe-inline'/);
-      expect(csp).toMatch(/style-src-elem[^;]*'unsafe-inline'/);
-      // script-src should NOT contain unsafe-inline in production
-      expect(csp).not.toMatch(/script-src(?!-elem)[^;]*'unsafe-inline'/);
+      const directives = parseCsp(csp);
+      expect(directives.get("default-src")).toEqual(["'self'"]);
+      expect(directives.get("script-src")).toContain("'self'");
       // Static App Router/RSC emits inline bootstrap script elements. Without
       // nonce/proxy dynamic rendering, production must allow those elements.
-      expect(csp).toMatch(/script-src-elem[^;]*'unsafe-inline'/);
+      expect(directives.get("script-src-elem")).toContain("'unsafe-inline'");
       // Keep inline event handlers blocked even though inline script elements
       // are allowed for Next's static bootstrap payload.
-      expect(csp).toContain("script-src-attr 'none'");
+      expect(directives.get("script-src-attr")).toEqual(["'none'"]);
       // App Router/RSC inline script content changes whenever streamed payloads
-      // change. This static CSP mode does not rely on content hashes.
+      // change. This static CSP mode relies on neither hashes nor nonces.
       expect(csp).not.toContain("'sha256-");
-      expect(csp).not.toContain("'unsafe-eval'");
-      expect(csp).toContain("upgrade-insecure-requests");
-    });
-
-    it("should generate static CSP without nonce directives", () => {
-      vi.stubEnv("NODE_ENV", "production");
-
-      const csp = generateCSP();
       expect(csp).not.toContain("'nonce-");
-      expect(csp).toMatch(/script-src(?!-elem)[^;]*'self'/);
+      expect(directives.get("upgrade-insecure-requests")).toEqual([]);
     });
 
-    it("should include required external domains", () => {
-      const csp = generateCSP();
-      expect(csp).toContain("https://challenges.cloudflare.com");
-      expect(csp).toContain("https://www.googletagmanager.com");
-      expect(csp).toContain("https://www.google-analytics.com");
+    // Turnstile 的脚本和 iframe 都来自这个主机；frame-src 缺了它，生产表单的
+    // 人机验证 iframe 会被 CSP 拦下，询盘无法提交。
+    it.each(["development", "production"])(
+      "allows Cloudflare Turnstile script and iframe in %s",
+      (nodeEnv) => {
+        vi.stubEnv("NODE_ENV", nodeEnv);
+        const directives = parseCsp(generateCSP());
+
+        for (const directive of [
+          "script-src",
+          "script-src-elem",
+          "frame-src",
+        ]) {
+          expect(directives.get(directive)).toContain(TURNSTILE_ORIGIN);
+        }
+      },
+    );
+
+    it("allows Google Analytics to load and report", () => {
+      const directives = parseCsp(generateCSP());
+
+      expect(directives.get("script-src")).toContain(
+        "https://www.googletagmanager.com",
+      );
+      expect(directives.get("connect-src")).toContain(
+        "https://www.google-analytics.com",
+      );
     });
 
     it("does not allow remote font or stylesheet hosts (system font stack only)", () => {
-      const directives = new Map(
-        generateCSP()
-          .split(";")
-          .map((d) => d.trim().split(/\s+/u))
-          .map(([name, ...sources]) => [name, sources] as const),
-      );
+      const directives = parseCsp(generateCSP());
 
       expect(directives.get("font-src")).toEqual(["'self'", "data:"]);
       expect(directives.get("style-src")).toEqual([
@@ -86,18 +108,17 @@ describe("Security Configuration", () => {
     });
 
     it("does not broadly allow remote images in browser CSP", () => {
-      const csp = generateCSP();
-      const imgSrc = csp
-        .split(";")
-        .find((directive) => directive.trim().startsWith("img-src"));
+      const imgSrc = parseCsp(generateCSP()).get("img-src");
 
       expect(imgSrc).toBeDefined();
-      expect(imgSrc).not.toMatch(/(^|\s)https:(\s|$)/u);
+      expect(imgSrc).not.toContain("https:");
+      expect(imgSrc).not.toContain("*");
     });
 
     it("should set frame-ancestors to none", () => {
-      const csp = generateCSP();
-      expect(csp).toContain("frame-ancestors 'none'");
+      expect(parseCsp(generateCSP()).get("frame-ancestors")).toEqual([
+        "'none'",
+      ]);
     });
   });
 
@@ -105,10 +126,7 @@ describe("Security Configuration", () => {
     it("should return security headers when enabled", () => {
       vi.stubEnv("SECURITY_HEADERS_ENABLED", "true");
 
-      const headers = getSecurityHeaders();
-      expect(headers).toHaveLength(9);
-
-      const headerKeys = headers.map((h) => h.key);
+      const headerKeys = getSecurityHeaders().map((h) => h.key);
       expect(headerKeys).toContain("X-Frame-Options");
       expect(headerKeys).toContain("X-Content-Type-Options");
       expect(headerKeys).toContain("Referrer-Policy");

@@ -40,7 +40,9 @@ export const createMockTranslations = (
     messages.set(key, value);
   }
 
-  return vi.fn((key: string) => lookupMessage(messages, key));
+  return vi.fn((key: string, values?: Record<string, string | number>) =>
+    lookupMessage(messages, key, values),
+  );
 };
 
 export const createMockUseTranslations = (
@@ -49,6 +51,8 @@ export const createMockUseTranslations = (
   const translate = createMockTranslations(translations);
 
   return vi.fn((namespace?: string) =>
-    vi.fn((key: string) => translate(namespace ? `${namespace}.${key}` : key)),
+    vi.fn((key: string, values?: Record<string, string | number>) =>
+      translate(namespace ? `${namespace}.${key}` : key, values),
+    ),
   );
 };

@@ -24,6 +24,13 @@ describe("resolveTurnstileWidgetMode", () => {
     ).toBe("bypass");
   });
 
+  // 客户端 bypass 只限开发构建：production build 带着 bypass 开关也必须走真实控件。
+  it("production build + bypass flag does not enter bypass", () => {
+    expect(resolveTurnstileWidgetMode(input({ devBypassEnabled: true }))).toBe(
+      "live",
+    );
+  });
+
   it("test mode requires non-production app env on a production build", () => {
     expect(
       resolveTurnstileWidgetMode(
