@@ -15,7 +15,7 @@ import type { Locale } from "@/types/content.types";
 const PREFIXED_PAGES = LOCALES_CONFIG.locales
   .filter((locale) => locale !== LOCALES_CONFIG.defaultLocale)
   .flatMap((locale) =>
-    (["privacy", "terms"] as const).map((pageType) => ({
+    (["contact", "privacy", "terms"] as const).map((pageType) => ({
       locale,
       pageType,
       path: `/${locale}/${pageType}`,

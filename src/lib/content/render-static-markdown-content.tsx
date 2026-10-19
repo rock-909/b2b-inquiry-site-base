@@ -7,10 +7,7 @@
 
 import type { ReactNode } from "react";
 import { InlineMarkdown } from "@/lib/content/inline-markdown";
-import {
-  parseStaticMarkdownBlocks,
-  type StaticMarkdownBlock,
-} from "@/lib/content/static-markdown-blocks";
+import type { StaticMarkdownBlock } from "@/lib/content/static-markdown-blocks";
 
 const LIST_CLASS_NAME =
   "mt-3 max-w-[72ch] list-inside space-y-1 text-base leading-7 text-muted-foreground";
@@ -167,9 +164,4 @@ export function renderStaticMarkdownBlocks(
       })}
     </>
   );
-}
-
-/** 字符串入口（contact 页面等非 TOC 场景的 convenience API）。 */
-export function createStaticMarkdownContent(content: string): ReactNode {
-  return renderStaticMarkdownBlocks(parseStaticMarkdownBlocks(content));
 }

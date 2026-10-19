@@ -2,9 +2,7 @@ import React from "react";
 import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ContactPage, { generateMetadata } from "@/app/[locale]/contact/page";
-import { getStaticContactPage } from "@/app/[locale]/contact/contact-page-data";
 import contactContent from "@/content/pages/en/contact";
-import * as staticPages from "@/lib/content/static-pages";
 import { renderAsyncPage } from "@/test/render-async-page";
 
 vi.mock("react", async () => {
@@ -43,12 +41,6 @@ vi.mock("@/components/forms/inquiry-form", () => ({
   ),
 }));
 
-vi.mock("@/lib/content/render-static-markdown-content", () => ({
-  createStaticMarkdownContent: (content: string) => (
-    <div data-testid="content-body">{content}</div>
-  ),
-}));
-
 describe("ContactPage static content", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -66,24 +58,11 @@ describe("ContactPage static content", () => {
 
     await renderAsyncPage(page as React.JSX.Element);
 
-    const content = await screen.findByTestId("contact-page-content");
-
     expect(
-      within(content).getByRole("heading", { level: 1 }),
+      await screen.findByRole("heading", { level: 1 }),
     ).toHaveTextContent(contactContent.metadata.title);
-    expect(screen.getByTestId("content-body")).toBeInTheDocument();
+    expect(screen.getByRole("article")).not.toBeEmptyDOMElement();
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
-  });
-
-  it("rejects invalid contact metadata before exposing page data", () => {
-    const page = staticPages.getStaticPage("contact", "en");
-    vi.spyOn(staticPages, "getStaticPage").mockReturnValue({
-      ...page,
-      metadata: { ...page.metadata, title: " " },
-    });
-    expect(() => getStaticContactPage("en")).toThrow(
-      "Static contact page metadata missing title for locale: en",
-    );
   });
 
   it("keeps the no-JS inquiry fallback inside the form column", async () => {
@@ -105,7 +84,6 @@ describe("ContactPage static content", () => {
     expect(
       screen.queryByTestId("contact-page-fallback"),
     ).not.toBeInTheDocument();
-    expect(screen.getByTestId("contact-page-content")).toBeInTheDocument();
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
   });
 

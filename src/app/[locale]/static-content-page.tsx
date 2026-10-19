@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import type { LocaleParam } from "@/app/[locale]/generate-static-params";
 import { LegalPageShell } from "@/components/content/legal-page-shell";
 import { getStaticPageContentSlug } from "@/config/pages.config";
@@ -39,8 +40,11 @@ export async function generateStaticContentPageMetadata(
 export async function StaticContentPage({
   config,
   params,
+  children,
 }: StaticContentPageProps & {
   config: StaticContentPageConfig;
+  /** Page-specific sections rendered after the content, e.g. the contact form. */
+  children?: ReactNode;
 }) {
   const locale = resolveLocaleParam(await params);
 
@@ -57,6 +61,8 @@ export async function StaticContentPage({
       headings={headings}
       locale={locale}
       pagePath={pagePath}
-    />
+    >
+      {children}
+    </LegalPageShell>
   );
 }

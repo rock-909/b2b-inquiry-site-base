@@ -21,6 +21,8 @@ interface LegalPageShellProps {
   locale: Locale;
   /** Site-relative path (e.g. "/privacy"); enables BreadcrumbList output. */
   pagePath: string;
+  /** Page-specific sections rendered after the article, e.g. the contact form. */
+  children?: ReactNode;
 }
 
 export interface ShellSchemaInput {
@@ -51,6 +53,7 @@ export async function LegalPageShell({
   headings,
   locale,
   pagePath,
+  children,
 }: LegalPageShellProps): Promise<ReactNode> {
   const t = await getTranslations({ locale, namespace: "legal" });
   const tNav = await getTranslations({ locale, namespace: "navigation" });
@@ -123,6 +126,10 @@ export async function LegalPageShell({
             </aside>
           )}
         </div>
+
+        {children ? (
+          <div className="mt-6 min-w-0 space-y-8">{children}</div>
+        ) : null}
       </div>
     </>
   );
