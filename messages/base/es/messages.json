@@ -102,7 +102,7 @@
   },
   "home": {
     "metadata": {
-      "title": "{siteName} - Plantilla de consultas B2B",
+      "title": "{siteName}",
       "description": "Un sitio de referencia de consultas B2B no destinado a producción, con identidad, dominio y datos de contacto de ejemplo."
     },
     "title": "Sitio de consultas B2B",

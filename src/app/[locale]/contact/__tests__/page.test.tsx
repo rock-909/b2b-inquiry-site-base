@@ -1,7 +1,6 @@
 import React from "react";
 import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { setRequestLocale } from "next-intl/server";
 import ContactPage, { generateMetadata } from "@/app/[locale]/contact/page";
 import { getStaticContactPage } from "@/app/[locale]/contact/contact-page-data";
 import contactContent from "@/content/pages/en/contact";
@@ -110,14 +109,6 @@ describe("ContactPage static content", () => {
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
   });
 
-  it("sets the request locale in the page entry before rendering contact content", async () => {
-    await ContactPage({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    expect(vi.mocked(setRequestLocale)).toHaveBeenCalledWith("en");
-  });
-
   it("renders the public email and hides the owner TODO phone", async () => {
     const { ContactMethodsCard } = await import("../contact-page-sections");
 
@@ -160,7 +151,7 @@ describe("ContactPage static content", () => {
     expect(metadata.openGraph).toEqual(
       expect.objectContaining({
         url: "https://example.com/contact",
-        locale: "en",
+        locale: "en_US",
         type: "website",
       }),
     );

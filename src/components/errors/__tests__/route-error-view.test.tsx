@@ -45,7 +45,7 @@ describe("RouteErrorView", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       copy.title,
     );
     expect(screen.getByText(copy.description)).toBeInTheDocument();

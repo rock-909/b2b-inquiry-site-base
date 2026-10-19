@@ -38,11 +38,7 @@ describe("home page metadata", () => {
         params: Promise.resolve({ locale }),
       });
 
-      expect(metadata.title).toBe(
-        localeMessages
-          .get("home.metadata.title")
-          ?.replace("{siteName}", SINGLE_SITE_CONFIG.name),
-      );
+      expect(metadata.title).toBe(SINGLE_SITE_CONFIG.name);
       expect(metadata.description).toBe(
         localeMessages.get("home.metadata.description"),
       );
@@ -50,7 +46,7 @@ describe("home page metadata", () => {
         title: metadata.title,
         description: metadata.description,
         siteName: SINGLE_SITE_CONFIG.name,
-        locale,
+        locale: expect.stringContaining(`${locale}_`),
       });
       expect(metadata.twitter).toMatchObject({
         title: metadata.title,

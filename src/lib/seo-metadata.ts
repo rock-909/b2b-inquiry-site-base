@@ -137,6 +137,12 @@ function resolveMetadataDescription(config: SEOConfig): string {
   return SINGLE_SITE_CONFIG.seo.defaultDescription;
 }
 
+// Open Graph 要求 language_TERRITORY 形式（en_US），由语言代码推出最可能的地区。
+function toOpenGraphLocale(locale: string): string {
+  const { language, region } = new Intl.Locale(locale).maximize();
+  return region ? `${language}_${region}` : language;
+}
+
 export function generateMetadataForPath(
   params: GenerateMetadataForPathParams,
 ): Metadata {
@@ -156,7 +162,7 @@ export function generateMetadataForPath(
       title,
       description,
       siteName,
-      locale,
+      locale: toOpenGraphLocale(locale),
       type: openGraphType,
       url: canonical,
       images: seoConfig.image ? [{ url: seoConfig.image }] : undefined,

@@ -91,7 +91,7 @@ describe("SEO Metadata", () => {
       expect(metadata.title).toBe("Default Title");
       expect(metadata.description).toBe("Default Description");
       expect(metadata.openGraph?.siteName).toBe("Test Site");
-      expect(metadata.openGraph?.locale).toBe("en");
+      expect(metadata.openGraph?.locale).toBe("en_US");
       expect(metadata.verification).toEqual({
         google: "google-verification-code",
         yandex: "yandex-verification-code",
@@ -179,7 +179,7 @@ describe("SEO Metadata", () => {
         expect(metadata.openGraph?.url).toBe(
           `https://example.com/${locale}/privacy`,
         );
-        expect(metadata.openGraph?.locale).toBe(locale);
+        expect(metadata.openGraph?.locale).toContain(`${locale}_`);
       },
     );
 
