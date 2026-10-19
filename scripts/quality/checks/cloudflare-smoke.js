@@ -76,20 +76,16 @@ function createCloudflarePreviewDeployCommand(previewUrl) {
   ];
 }
 
-// 主机名只允许小写 DNS 标签（无末尾点）：OpenNext 经 shell 执行 wrangler，$ ( )
-// 会被当成命令。非法、带 userinfo 或 .invalid 占位值都视为未提供。
-const CF_PREVIEW_HOSTNAME_PATTERN = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/u;
+// 先对原始字符串做一次严格匹配，再解析：OpenNext 经 shell 执行 wrangler，$ ( ) 会
+// 被当成命令；而 new URL() 会悄悄改写空白、换行、百分号编码等输入。只接受纯 ASCII
+// 的 https://<点分 DNS 标签>[/]，不含 userinfo、端口、路径、查询和末尾点。
+const CF_PREVIEW_URL_INPUT_PATTERN =
+  /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+\/?$/iu;
 
 function parseCloudflarePreviewUrl(value) {
-  const url = URL.canParse(value) ? new URL(value) : null;
-  const isValid =
-    url !== null &&
-    url.protocol === "https:" &&
-    CF_PREVIEW_HOSTNAME_PATTERN.test(url.hostname) &&
-    !url.hostname.endsWith(".invalid") &&
-    !url.username &&
-    !url.password;
-  return isValid ? url : null;
+  if (!CF_PREVIEW_URL_INPUT_PATTERN.test(value)) return null;
+  const url = new URL(value);
+  return url.hostname.endsWith(".invalid") ? null : url;
 }
 const CF_PREVIEW_URL_PATTERN = new RegExp(
   "https://[^\\s\\\"']+\\.workers\\.dev",

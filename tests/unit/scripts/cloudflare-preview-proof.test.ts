@@ -151,37 +151,46 @@ describe("cloudflare preview deploy proof", () => {
   });
 
   it.each([
-    ["no preview URL", []],
-    ["the .invalid placeholder", ["--base-url", "https://example.invalid"]],
-    [
-      "a non-https URL",
-      ["--base-url", "http://b2b-preview.example.workers.dev"],
-    ],
+    ["empty", ""],
+    ["a non-https URL", "http://b2b-preview.example.workers.dev"],
+    ["the .invalid placeholder", "https://example.invalid"],
     [
       "the .invalid placeholder with a trailing dot",
-      ["--base-url", "https://example.invalid."],
+      "https://example.invalid.",
     ],
-    ["a bare invalid. host", ["--base-url", "https://invalid."]],
-    [
-      "shell metacharacters in the host",
-      ["--base-url", "https://$(reviewprobe).example.com"],
-    ],
-    [
-      "userinfo in the URL",
-      ["--base-url", "https://user:pw@b2b-preview.example.workers.dev"],
-    ],
-  ])("blocks before building or deploying with %s", (_label, args) => {
-    const fixture = createProofFixture();
+    ["a bare invalid. host", "https://invalid."],
+    ["shell metacharacters in the host", "https://$(reviewprobe).example.com"],
+    ["userinfo", "https://user:pw@b2b-preview.example.workers.dev"],
+    ["a newline inside the host", "https://x\ny.example.com"],
+    ["surrounding spaces", " https://example.com "],
+    ["percent-encoding", "https://%65xample.com"],
+    ["a Unicode host", "https://例子.com"],
+    ["a port", "https://example.com:8443"],
+    ["a path", "https://example.com/$(reviewprobe)"],
+    ["a query", "https://example.com/?q=1"],
+  ])(
+    "blocks before building or deploying with %s from either entry point",
+    (_label, raw) => {
+      for (const [args, env] of [
+        [["--base-url", raw], {}],
+        [[], { DEPLOY_SMOKE_BASE_URL: raw }],
+      ] as const) {
+        const fixture = createProofFixture();
 
-    const result = fixture.runLane({ FAKE_BUILD_OUTPUT: "build ok" }, args);
+        const result = fixture.runLane(
+          { FAKE_BUILD_OUTPUT: "build ok", ...env },
+          [...args],
+        );
 
-    expect(result.status).toBe(2);
-    expect(fixture.readCalls()).toEqual([]);
-    expect(fixture.readProof()).toMatchObject({
-      status: "blocked",
-      stage: "preview-base-url",
-    });
-  });
+        expect(result.status).toBe(2);
+        expect(fixture.readCalls()).toEqual([]);
+        expect(fixture.readProof()).toMatchObject({
+          status: "blocked",
+          stage: "preview-base-url",
+        });
+      }
+    },
+  );
 
   it("hands a normal preview URL intact to the installed OpenNext runWrangler", () => {
     const fixture = createProofFixture();
