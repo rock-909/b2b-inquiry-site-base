@@ -13,11 +13,16 @@
   "keep_names": false,
   // Workers Logs 基线（免费层 20 万条/天、保留 3 天）：事故取证依赖它。
   // 低频 B2B 站首版全量采样；上线后核对日请求量未接近额度再维持 100%。
+  // Traces 把一次慢询盘拆到 Turnstile、限流、Resend、Airtable 各段；preview 和 production 都继承这里。
   "observability": {
     "enabled": true,
     "logs": {
       "enabled": true,
       "invocation_logs": true,
+      "head_sampling_rate": 1,
+    },
+    "traces": {
+      "enabled": true,
       "head_sampling_rate": 1,
     },
   },

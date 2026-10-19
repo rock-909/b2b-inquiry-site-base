@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
-import { getPublicContactEmail } from "@/config/public-trust";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { getStaticPage } from "@/lib/content/static-pages";
 import { getHeaderMobileMenuButton } from "./helpers/navigation";
@@ -12,7 +11,7 @@ const site = {
   homeHeading: messages.home.title,
   contactHeading: getStaticPage("contact", DEFAULT_LOCALE).metadata.title,
   noJsExplanation: messages.inquiry.form.noJsExplanation,
-  publicEmail: getPublicContactEmail(),
+  publicEmail: SINGLE_SITE_CONFIG.contact.email,
 } as const;
 
 // 公开页面清单来自当前页面配置，避免新增页面后漏掉 no-JS 重复渲染检查。

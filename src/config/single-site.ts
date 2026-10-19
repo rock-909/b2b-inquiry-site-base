@@ -3,16 +3,14 @@ import {
   PUBLIC_STATIC_PAGE_DEFINITIONS,
   type NavigationMessageKey,
 } from "@/config/pages.config";
-import type { SiteConfig, SiteFacts } from "@/config/site-types";
+import type { SiteConfig } from "@/config/site-types";
 
 export type {
   CompanyInfo,
   ContactInfo,
   SiteConfig,
-  SiteFacts,
   SiteNavigationItem,
   SiteSeoConfig,
-  SiteSocialConfig,
   SocialLinks,
 } from "@/config/site-types";
 
@@ -37,11 +35,6 @@ const baseUrl = resolveSingleSiteBaseUrl("https://example.invalid").replace(
   /\/+$/u,
   "",
 );
-
-const social = {
-  twitter: "",
-  linkedin: "",
-} as const;
 
 type StaticPageDefinition = (typeof PUBLIC_STATIC_PAGE_DEFINITIONS)[number];
 type FooterNavigationPage = Extract<
@@ -98,10 +91,6 @@ export const SINGLE_SITE_FOOTER_COLUMNS = [
   },
 ] as const;
 
-const contact = {
-  email: "sales@example.invalid",
-} as const;
-
 const siteName = "B2B Inquiry Template";
 
 /**
@@ -118,13 +107,14 @@ export const SINGLE_SITE_CONFIG: SiteConfig = {
     defaultDescription:
       "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details.",
   },
-  social,
-  contact,
-};
-
-export const SINGLE_SITE_FACTS: SiteFacts = {
-  contact,
-  social,
+  // 留空即不展示；上线门禁要求填入业主确认的邮箱。
+  contact: {
+    email: "",
+  },
+  social: {
+    twitter: "",
+    linkedin: "",
+  },
   brandAssets: {
     ogImage: "/opengraph-image.png",
     favicon: "/icon.svg",

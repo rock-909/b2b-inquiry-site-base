@@ -13,12 +13,12 @@ const { mockSiteConfig } = vi.hoisted(() => ({
       defaultTitle: "Default Title",
       defaultDescription: "Default Description",
     },
+    brandAssets: { ogImage: "/images/og.png" },
   },
 }));
 
 vi.mock("@/config/single-site", () => ({
   SINGLE_SITE_CONFIG: mockSiteConfig,
-  SINGLE_SITE_FACTS: { brandAssets: { ogImage: "/images/og.png" } },
 }));
 
 describe("Locale layout metadata", () => {

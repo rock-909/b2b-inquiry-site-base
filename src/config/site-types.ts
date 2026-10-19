@@ -4,25 +4,6 @@ export interface SiteSeoConfig {
   defaultDescription: string;
 }
 
-export interface SiteSocialConfig {
-  twitter?: string;
-  linkedin?: string;
-}
-
-export interface SiteContactConfig {
-  phone?: string;
-  email: string;
-}
-
-export interface SiteConfig {
-  baseUrl: string;
-  name: string;
-  description: string;
-  seo: SiteSeoConfig;
-  social: SiteSocialConfig;
-  contact: SiteContactConfig;
-}
-
 export interface CompanyInfo {
   name: string;
   established?: number;
@@ -56,7 +37,13 @@ export interface BrandAssets {
   favicon: string;
 }
 
-export interface SiteFacts {
+// 站点身份的唯一配置形状：页头、页脚、metadata、结构化数据都读它。
+// 可选字段留空即不展示、不进结构化数据；占位判断只在上线门禁里做。
+export interface SiteConfig {
+  baseUrl: string;
+  name: string;
+  description: string;
+  seo: SiteSeoConfig;
   company?: CompanyInfo;
   contact: ContactInfo;
   social: SocialLinks;

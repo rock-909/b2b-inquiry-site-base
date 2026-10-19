@@ -9,7 +9,7 @@ const CLIENT_SAFE_ENTRIES = [
 ];
 const FORM_ENTRIES = ["src/app/[locale]/contact/contact-page-sections.tsx"];
 const CLIENT_FORBIDDEN =
-  /(?:^|\/)zod(?:\/|$)|src\/lib\/env(?:\.|$)|public-trust|single-site(?:-|\.|$)|inquiry-form-static-fallback/u;
+  /(?:^|\/)zod(?:\/|$)|src\/lib\/env(?:\.|$)|single-site(?:-|\.|$)|inquiry-form-static-fallback/u;
 const INQUIRY_ROUTE = "src/app/api/inquiry/route.ts";
 const EMAIL_ENTRIES = [
   "src/lib/resend-core.ts",

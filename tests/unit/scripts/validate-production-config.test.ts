@@ -590,14 +590,18 @@ describe("public launch trust content guard", () => {
   });
 
   it("allows a text-only site without optional company, phone, social or logo facts", () => {
+    const { baseUrl, name, description, seo } =
+      READY_PUBLIC_LAUNCH_FIXTURE.SINGLE_SITE_CONFIG;
     const fixture: PublicLaunchFixture = {
-      ...READY_PUBLIC_LAUNCH_FIXTURE,
       SINGLE_SITE_CONFIG: {
-        ...READY_PUBLIC_LAUNCH_FIXTURE.SINGLE_SITE_CONFIG,
+        baseUrl,
+        name,
+        description,
+        seo,
         contact: { email: "sales@reference-site.com" },
         social: {},
+        brandAssets: { ogImage: "/opengraph-image.png", favicon: "/icon.svg" },
       },
-      SINGLE_SITE_FACTS: { contact: {}, brandAssets: {} },
     };
     const result = validateProductionConfig(
       {
@@ -610,21 +614,20 @@ describe("public launch trust content guard", () => {
     expect(result.errors).toEqual([]);
   });
 
-  it("blocks supplied malformed optional facts with real public-trust validators", () => {
+  it("blocks supplied malformed optional facts", () => {
     const fixture: PublicLaunchFixture = {
-      ...READY_PUBLIC_LAUNCH_FIXTURE,
       SINGLE_SITE_CONFIG: {
         ...READY_PUBLIC_LAUNCH_FIXTURE.SINGLE_SITE_CONFIG,
         social: { twitter: "javascript:alert(1)", linkedin: "" },
-      },
-      SINGLE_SITE_FACTS: {
         company: {
           name: "TODO",
           established: 9999,
           location: { country: "Replace before launch" },
         },
-        contact: { phone: "call me" },
+        contact: { email: "sales@reference-site.com", phone: "call me" },
         brandAssets: {
+          ogImage: "/opengraph-image.png",
+          favicon: "/icon.svg",
           logo: {
             status: "ready" as const,
             horizontal: "javascript:alert(1)",
@@ -738,8 +741,8 @@ describe("public launch trust content guard", () => {
         expect.stringContaining("SITE_CONFIG.social.linkedin"),
         expect.stringContaining("SITE_CONFIG.seo.titleTemplate"),
         expect.stringContaining("SITE_CONFIG.description"),
-        expect.stringContaining("SITE_CONFIG.facts.company.name"),
-        expect.stringContaining("SITE_CONFIG.facts.company.location"),
+        expect.stringContaining("SITE_CONFIG.company.name"),
+        expect.stringContaining("SITE_CONFIG.company.location"),
       ]),
     );
   });

@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const ROOT = process.cwd();
+const { isPlaceholderHostname } = require("../public-url-readiness");
 
 const DEFAULT_CF_PREVIEW_BASE_URL =
   process.env.CLOUDFLARE_PREVIEW_BASE_URL || "http://127.0.0.1:8787";
@@ -89,7 +90,7 @@ const CF_PREVIEW_URL_INPUT_PATTERN =
 function parseCloudflarePreviewUrl(value) {
   if (!CF_PREVIEW_URL_INPUT_PATTERN.test(value)) return null;
   const url = new URL(value);
-  return url.hostname.endsWith(".invalid") ? null : url;
+  return isPlaceholderHostname(url.hostname.toLowerCase()) ? null : url;
 }
 const CF_PREVIEW_URL_PATTERN = new RegExp(
   "https://[^\\s\\\"']+\\.workers\\.dev",
@@ -822,7 +823,7 @@ async function runCloudflarePreviewDeployedProof(args) {
         status: "blocked",
         stage: "preview-base-url",
         reason:
-          "pass the real preview https URL with --base-url or DEPLOY_SMOKE_BASE_URL; empty, malformed and .invalid placeholder values are refused",
+          "pass the real preview https URL with --base-url or DEPLOY_SMOKE_BASE_URL; empty, malformed and placeholder (local, example or reserved such as .invalid) hosts are refused",
       },
       2,
     );

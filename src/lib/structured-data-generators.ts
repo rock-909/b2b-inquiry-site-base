@@ -1,13 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
-import {
-  getPublicContactEmail,
-  getPublicFact,
-  getPublicFoundingYear,
-  getPublicSocialUrl,
-  getPublicContactPhone,
-  getPublicLogoPath,
-} from "@/config/public-trust";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { routing } from "@/i18n/routing";
 
 const FALLBACK_BASE_URL = SINGLE_SITE_CONFIG.baseUrl;
@@ -33,30 +25,33 @@ export function websiteStructuredDataId(baseUrl: string = FALLBACK_BASE_URL) {
 }
 
 export function generateOrganizationData() {
-  const { company } = SINGLE_SITE_FACTS;
-  if (!company) return undefined;
-  const name = getPublicFact(company.name);
-  if (!name) return undefined;
-  const logoPath = getPublicLogoPath();
-  const telephone = getPublicContactPhone();
-  const email = getPublicContactEmail();
-  const foundingYear = getPublicFoundingYear(company.established);
-  const address = {
-    streetAddress: getPublicFact(company.location?.address),
-    addressLocality: getPublicFact(company.location?.city),
-    addressCountry: getPublicFact(company.location?.country),
-  };
-  const sameAs = Object.values(SINGLE_SITE_FACTS.social)
-    .map(getPublicSocialUrl)
-    .filter(Boolean);
+  // 只读显式字段：留空即省略；占位值由上线门禁拦截，这里不猜。
+  const { company, contact, social, brandAssets } = SINGLE_SITE_CONFIG;
+  if (!company?.name) return undefined;
+  const { email, phone: telephone } = contact;
+  const logoPath =
+    brandAssets.logo?.status === "ready"
+      ? brandAssets.logo.horizontal
+      : undefined;
+  const { address: streetAddress, city, country } = company.location ?? {};
+  const address = Object.fromEntries(
+    Object.entries({
+      streetAddress,
+      addressLocality: city,
+      addressCountry: country,
+    }).filter(([, value]) => value),
+  );
+  const sameAs = Object.values(social).filter(Boolean);
   return {
     "@type": "Organization",
     "@id": organizationStructuredDataId(),
-    name,
+    name: company.name,
     url: FALLBACK_BASE_URL,
     ...(email ? { email } : {}),
-    ...(foundingYear ? { foundingDate: String(foundingYear) } : {}),
-    ...(Object.values(address).some(Boolean)
+    ...(company.established
+      ? { foundingDate: String(company.established) }
+      : {}),
+    ...(Object.keys(address).length
       ? { address: { "@type": "PostalAddress", ...address } }
       : {}),
     ...(logoPath

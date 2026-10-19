@@ -1,7 +1,10 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const ts = require("typescript");
-const { isPublicBaseUrlReady } = require("../public-url-readiness");
+const {
+  isPlaceholderHostname,
+  isPublicBaseUrlReady,
+} = require("../public-url-readiness");
 
 const WRANGLER_CONFIG_PATH = "wrangler.jsonc";
 const WRANGLER_PRODUCTION_PUBLIC_URL_KEYS = [
@@ -16,10 +19,7 @@ function ensureTypeScriptRequireRuntime() {
 
 function loadPublicLaunchInput() {
   ensureTypeScriptRequireRuntime();
-  return {
-    ...require("../../../src/config/public-trust"),
-    ...require("../../../src/config/single-site"),
-  };
+  return require("../../../src/config/single-site");
 }
 
 // Node 24 原生剥离类型即可加载这个无别名、无副作用的模块，不需要 tsx。
@@ -136,6 +136,98 @@ function containsStarterMarker(value) {
   return /Northstar Industrial Reference|B2B Inquiry Template|b2b-inquiry-site-base|0x4AAAAAADvC8KDbJ54402pb|inquiry site reference|referencia (?:neutral )?para consultas B2B|Plantilla de consultas B2B|no destinado a producción|(?:Privacy policy|Terms) — to be completed|Incomplete placeholder|(?:Privacidad|Condiciones) — pendientes? de completar|Texto provisional incompleto|Sustituye este texto provisional|Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.(?:com|invalid)|starter-contact@example\.com|non-production B2B inquiry reference|sentinel identity|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|This privacy policy is incomplete|These terms are incomplete|Esta política de privacidad está incompleta|Estas condiciones están incompletas|Replace this placeholder|Replace with owner-confirmed|x\.com\/example|linkedin\.com\/company\/example/iu.test(
     value,
   );
+}
+
+// 站点身份的唯一占位与格式判断：运行时只读显式字段、留空不展示，
+// 已填写但是占位或格式不对的值只能在这里被拦下。
+function isPlaceholderFact(value) {
+  return (
+    containsStarterMarker(value) ||
+    /(?:^|[\s[(])TODO(?:$|[\s:\]_-])/u.test(value) ||
+    /placeholder/iu.test(value)
+  );
+}
+
+function isPublicEmailReady(email) {
+  if (typeof email !== "string") return false;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)) return false;
+  const domain = email.slice(email.lastIndexOf("@") + 1).toLowerCase();
+  return !isPlaceholderFact(email) && !isPlaceholderHostname(domain);
+}
+
+const PHONE_ZERO_BLOCK_PATTERN = /(?:^|[-\s])0{3,}(?:[-\s]|$)/u;
+const US_COUNTRY_CODE_WITH_NATIONAL_LENGTH = 11;
+const US_NATIONAL_PHONE_LENGTH = 10;
+const US_AREA_CODE_END = 3;
+const US_EXCHANGE_CODE_END = 6;
+
+function isFakePublicPhoneNumber(phone) {
+  const digits = phone.replace(/\D/gu, "");
+  const nationalDigits =
+    digits.length === US_COUNTRY_CODE_WITH_NATIONAL_LENGTH &&
+    digits.startsWith("1")
+      ? digits.slice(1)
+      : digits;
+
+  if (nationalDigits === "1234567890") return true;
+  if (nationalDigits.length !== US_NATIONAL_PHONE_LENGTH) return false;
+
+  return (
+    nationalDigits.slice(0, US_AREA_CODE_END) === "555" ||
+    nationalDigits.slice(US_AREA_CODE_END, US_EXCHANGE_CODE_END) === "555"
+  );
+}
+
+function isPublicPhoneReady(phone) {
+  if (typeof phone !== "string") return false;
+  if (!/^\+?[\d ()-]{7,25}$/u.test(phone)) return false;
+  if (!/^[1-9]\d{6,14}$/u.test(phone.replace(/\D/gu, ""))) return false;
+  return (
+    !PHONE_ZERO_BLOCK_PATTERN.test(phone) && !isFakePublicPhoneNumber(phone)
+  );
+}
+
+function isFoundingYearReady(year) {
+  return (
+    Number.isInteger(year) && year > 0 && year <= new Date().getUTCFullYear()
+  );
+}
+
+// 运行时原样输出 horizontal：必须是同源的本地路径且尺寸有效。
+function isPublicLogoReady(logo, baseUrl) {
+  if (logo.status !== "ready") return false;
+  if (
+    !Number.isInteger(logo.width) ||
+    logo.width <= 0 ||
+    !Number.isInteger(logo.height) ||
+    logo.height <= 0
+  )
+    return false;
+  if (!/^\/(?!\/)[^\s\\]+$/u.test(logo.horizontal)) return false;
+  try {
+    const base = new URL(baseUrl);
+    return new URL(logo.horizontal, base).origin === base.origin;
+  } catch {
+    return false;
+  }
+}
+
+// 运行时原样写进 sameAs：首尾空白也算不合格。
+function isPublicSocialUrlReady(value) {
+  if (value !== value.trim() || isPlaceholderFact(value)) return false;
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    return (
+      url.protocol === "https:" &&
+      !url.username &&
+      !url.password &&
+      hostname.includes(".") &&
+      !isPlaceholderHostname(hostname)
+    );
+  } catch {
+    return false;
+  }
 }
 
 function validateNoStarterMarker(target, markerPath, value, reason) {
@@ -393,47 +485,41 @@ function validateProductionRuntimeContract(env) {
   return { errors };
 }
 
-function validateOptionalPublicFacts(
-  target,
-  facts,
-  {
-    getPublicFact,
-    getPublicFoundingYear,
-    getPublicContactPhone,
-    getPublicLogoPath,
-  },
-) {
-  const { company, contact, brandAssets } = facts;
+function validateOptionalPublicFacts(target, config) {
+  const { company, contact, brandAssets } = config;
   if (company) {
-    if (!getPublicFact(company.name) || containsStarterMarker(company.name)) {
+    if (isPlaceholderFact(company.name)) {
       target.push(
-        "SITE_CONFIG.facts.company.name is not public-launch ready (supply a real company name or omit the company).",
+        "SITE_CONFIG.company.name is not public-launch ready (supply a real company name or omit the company).",
       );
     }
     if (
       company.established !== undefined &&
-      !getPublicFoundingYear(company.established)
+      !isFoundingYearReady(company.established)
     ) {
       target.push(
-        "SITE_CONFIG.facts.company.established is not public-launch ready.",
+        "SITE_CONFIG.company.established is not public-launch ready.",
       );
     }
     for (const [key, value] of Object.entries(company.location ?? {})) {
-      if (value && !getPublicFact(value)) {
+      if (value && isPlaceholderFact(value)) {
         target.push(
-          `SITE_CONFIG.facts.company.location.${key} is not public-launch ready.`,
+          `SITE_CONFIG.company.location.${key} is not public-launch ready.`,
         );
       }
     }
   }
   // 可选事实可以省略；已填写的占位或无效值不能获得上线许可。
   // 法律正文由业主判断，不用审核布尔值代替内容复核。
-  if (contact.phone && !getPublicContactPhone(contact.phone)) {
+  if (contact.phone && !isPublicPhoneReady(contact.phone)) {
     target.push(
       "SITE_CONFIG.contact.phone is not public-launch ready. Remove it or supply a valid public phone.",
     );
   }
-  if (brandAssets.logo && !getPublicLogoPath(brandAssets.logo)) {
+  if (
+    brandAssets.logo &&
+    !isPublicLogoReady(brandAssets.logo, config.baseUrl)
+  ) {
     target.push(
       "brandAssets.logo.status is pending or invalid. Remove it for a text-only brand or supply a ready logo with a local path and dimensions.",
     );
@@ -452,16 +538,7 @@ function validatePublicLaunchTrustContent(env, input) {
     return { warnings, errors };
   }
 
-  const {
-    getPublicContactEmail,
-    getPublicContactPhone,
-    getPublicLogoPath,
-    getPublicFact,
-    getPublicFoundingYear,
-    getPublicSocialUrl,
-    SINGLE_SITE_CONFIG,
-    SINGLE_SITE_FACTS,
-  } = input?.publicLaunch ?? loadPublicLaunchInput();
+  const { SINGLE_SITE_CONFIG } = input?.publicLaunch ?? loadPublicLaunchInput();
   const rootDir = input?.rootDir ?? process.cwd();
 
   for (const key of ["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_BASE_URL"]) {
@@ -488,10 +565,7 @@ function validatePublicLaunchTrustContent(env, input) {
       "SITE_CONFIG.baseUrl is not public-launch ready (configure the real public domain before client launch).",
     );
   }
-  if (
-    containsStarterMarker(SINGLE_SITE_CONFIG.contact.email) ||
-    !getPublicContactEmail(SINGLE_SITE_CONFIG.contact.email)
-  ) {
+  if (!isPublicEmailReady(SINGLE_SITE_CONFIG.contact.email)) {
     target.push(
       "SITE_CONFIG.contact.email is not public-launch ready (replace the starter contact email before client launch).",
     );
@@ -509,7 +583,7 @@ function validatePublicLaunchTrustContent(env, input) {
     "replace starter SEO description defaults before client launch",
   );
   for (const [key, value] of Object.entries(SINGLE_SITE_CONFIG.social)) {
-    if (value && (!getPublicSocialUrl(value) || containsStarterMarker(value))) {
+    if (value && !isPublicSocialUrlReady(value)) {
       target.push(
         `SITE_CONFIG.social.${key} is not public-launch ready (remove or supply a valid public profile URL).`,
       );
@@ -527,12 +601,7 @@ function validatePublicLaunchTrustContent(env, input) {
     SINGLE_SITE_CONFIG.description,
     "replace the starter company description before client launch",
   );
-  validateOptionalPublicFacts(target, SINGLE_SITE_FACTS, {
-    getPublicFact,
-    getPublicFoundingYear,
-    getPublicContactPhone,
-    getPublicLogoPath,
-  });
+  validateOptionalPublicFacts(target, SINGLE_SITE_CONFIG);
 
   return { warnings, errors };
 }
