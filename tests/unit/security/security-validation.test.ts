@@ -21,4 +21,13 @@ describe("security-validation", () => {
   it("strips control characters from multiline text while keeping line breaks", () => {
     expect(sanitizeMultilineText("a\u0007b\r\nc")).toBe("ab\nc");
   });
+
+  it("strips control and bidi override characters that disguise displayed text", () => {
+    expect(sanitizePlainText("\u202Eevil\u2066 co\u0007rp\u2069")).toBe(
+      "evil corp",
+    );
+    expect(sanitizeMultilineText("\u202Aline\u202C\nnext\u2067")).toBe(
+      "line\nnext",
+    );
+  });
 });
