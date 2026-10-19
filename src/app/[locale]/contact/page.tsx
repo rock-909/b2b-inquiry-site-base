@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
 import {
   generateLocaleStaticParams,
   type LocaleParam,
@@ -72,7 +71,6 @@ function ContactContentBody({ locale }: { locale: Locale }) {
 
 export default async function ContactPage({ params }: ContactPageProps) {
   const locale = resolveLocaleParam(await params);
-  setRequestLocale(locale);
 
   return <ContactContentBody locale={locale} />;
 }

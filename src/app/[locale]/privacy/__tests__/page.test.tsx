@@ -30,9 +30,7 @@ vi.mock("@/components/content/legal-page-shell", () => ({
   )),
 }));
 
-vi.mock("next-intl/server", () => ({
-  setRequestLocale: vi.fn(),
-}));
+vi.mock("next-intl/server", () => ({}));
 
 const LEGAL_PAGES = [
   {

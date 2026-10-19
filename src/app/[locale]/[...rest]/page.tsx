@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { LocalizedNotFoundView } from "@/components/errors/localized-not-found-view";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { routing } from "@/i18n/routing";
@@ -45,6 +45,5 @@ export default async function CatchAllNotFound({
   ) {
     notFound();
   }
-  setRequestLocale(resolveLocaleParam(routeParams));
   return <LocalizedNotFoundView />;
 }
