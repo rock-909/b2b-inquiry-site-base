@@ -123,6 +123,16 @@ describe("template placeholder files", () => {
         'export const page = { title: "Privacy policy — to be completed" };',
     },
     {
+      file: "src/content/pages/en/terms.ts",
+      content:
+        'export const page = { title: "Terms of sale", content: `\nThese terms are incomplete. Replace this placeholder with real terms.\n` };',
+    },
+    {
+      file: "src/content/pages/en/privacy.ts",
+      content:
+        'export const page = { title: "Privacy policy", content: `\nThis privacy policy is incomplete.\n` };',
+    },
+    {
       file: "src/content/pages/es/terms.ts",
       content:
         'export const page = { description: "Texto provisional incompleto." };',
@@ -188,4 +198,32 @@ describe("template placeholder files", () => {
       expect.stringContaining("NEXT_PUBLIC_TURNSTILE_SITE_KEY"),
     ]);
   });
+
+  it.each(["verbose", " "])(
+    "blocks LOG_LEVEL=%j in wrangler production vars",
+    (logLevel) => {
+      const input = inputWithFiles();
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- 写入本测试刚创建的临时目录
+      writeFileSync(
+        path.join(input.rootDir, "wrangler.jsonc"),
+        JSON.stringify({
+          name: "reference-site",
+          env: {
+            production: {
+              vars: {
+                NEXT_PUBLIC_SITE_URL: "https://reference-site.com",
+                NEXT_PUBLIC_BASE_URL: "https://reference-site.com",
+                TURNSTILE_ALLOWED_HOSTS: "reference-site.com",
+                LOG_LEVEL: logLevel,
+              },
+            },
+          },
+        }),
+      );
+
+      const result = validateProductionConfig(strictEnv, input);
+
+      expect(result.errors).toEqual([expect.stringContaining("LOG_LEVEL")]);
+    },
+  );
 });

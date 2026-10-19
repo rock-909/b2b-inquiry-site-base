@@ -472,6 +472,7 @@ describe("production env value formats", () => {
     { key: "EMAIL_FROM", value: "Acme Sales <sales@acme.test>" },
     { key: "LOG_LEVEL", value: "info" },
     { key: "LOG_LEVEL", value: "INFO" },
+    { key: "LOG_LEVEL", value: "" },
   ])("accepts $key=$value", ({ key, value }) => {
     const result = validateProductionRuntimeContract({
       ...createValidProductionEnv(),
@@ -487,6 +488,7 @@ describe("production env value formats", () => {
     { key: "EMAIL_FROM", value: "Acme Sales <not-an-email>" },
     { key: "INQUIRY_RECIPIENT_EMAIL", value: "Owner <owner@acme.test>" },
     { key: "LOG_LEVEL", value: "verbose" },
+    { key: "LOG_LEVEL", value: " " },
   ])("blocks $key=$value before deploy", ({ key, value }) => {
     const result = validateProductionRuntimeContract({
       ...createValidProductionEnv(),

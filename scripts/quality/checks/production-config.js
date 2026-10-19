@@ -89,6 +89,7 @@ function validateWranglerProductionPublicUrls(target, wranglerConfig) {
   }
 
   validateWranglerProductionTurnstileHosts(target, productionVars);
+  validateEnvFormats(target, productionVars);
 
   const siteKey = readEnv(productionVars, "NEXT_PUBLIC_TURNSTILE_SITE_KEY");
   if (siteKey && containsStarterMarker(siteKey)) {
@@ -132,7 +133,7 @@ function readSiteHostname(siteUrl) {
 function containsStarterMarker(value) {
   if (!value) return true;
 
-  return /Northstar Industrial Reference|B2B Inquiry Template|b2b-inquiry-site-base|0x4AAAAAADvC8KDbJ54402pb|inquiry site reference|referencia (?:neutral )?para consultas B2B|Plantilla de consultas B2B|no destinado a producción|to be completed|Incomplete placeholder|pendientes? de completar|Texto provisional|Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.(?:com|invalid)|starter-contact@example\.com|non-production B2B inquiry reference|sentinel identity|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|Replace with owner-confirmed|x\.com\/example|linkedin\.com\/company\/example/iu.test(
+  return /Northstar Industrial Reference|B2B Inquiry Template|b2b-inquiry-site-base|0x4AAAAAADvC8KDbJ54402pb|inquiry site reference|referencia (?:neutral )?para consultas B2B|Plantilla de consultas B2B|no destinado a producción|to be completed|Incomplete placeholder|pendientes? de completar|Texto provisional|Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.(?:com|invalid)|starter-contact@example\.com|non-production B2B inquiry reference|sentinel identity|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|This privacy policy is incomplete|These terms are incomplete|Replace this placeholder|Replace with owner-confirmed|x\.com\/example|linkedin\.com\/company\/example/iu.test(
     value,
   );
 }
@@ -210,6 +211,7 @@ function validateMinLengthEnv(target, env, key, minLength, reason) {
 }
 
 // 与运行时 env schema 同一规则：坏格式会让 env 模块加载即抛错，询盘全部 500。
+// 运行时 emptyStringAsUndefined：空字符串视为未设置，纯空白仍交给 schema 拒绝。
 function validateEnvFormats(target, env) {
   const { emailAddressSchema, emailSenderSchema, logLevelSchema } =
     loadEnvFormats();
@@ -218,7 +220,12 @@ function validateEnvFormats(target, env) {
     ["INQUIRY_RECIPIENT_EMAIL", emailAddressSchema, "a bare email address"],
     ["LOG_LEVEL", logLevelSchema, "error, warn, info or debug"],
   ]) {
-    if (readEnv(env, key) && !schema.safeParse(env[key]).success) {
+    const value = env[key];
+    if (
+      typeof value === "string" &&
+      value !== "" &&
+      !schema.safeParse(value).success
+    ) {
       target.push(
         `${key} has an invalid format (expected ${expected}); the runtime env module would throw and every inquiry would fail.`,
       );
