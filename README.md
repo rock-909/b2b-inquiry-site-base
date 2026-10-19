@@ -61,7 +61,7 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 | 创建、fork 或接手派生站 | [派生项目交接](docs/派生项目交接.md) |
 | 调整视觉或比较参考 | [设计真相](docs/design/设计真相.md) → 按任务查[设计参考](docs/design/设计参考.md) |
 
-派生站研究从 [派生站工作流](docs/派生站工作流.md) 开始；整体换肤从 `src/app/theme.css` 开始；组件结构和 variant 看 `.claude/rules/ui.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
+派生站研究从 [派生站工作流](docs/派生站工作流.md) 开始；整体换肤从 `src/app/theme.css` 开始，询盘通知邮件的颜色另有一份 sRGB 快照 `src/config/static-theme-colors.ts`，换主色时要一起改；组件结构和 variant 看 `.claude/rules/ui.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
 
 创建、fork 或接手派生站时，从 [派生项目交接](docs/派生项目交接.md) 开始；不要继承模板或另一个站点的 provider、部署和 Owner 证据。
 

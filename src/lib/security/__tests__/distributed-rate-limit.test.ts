@@ -112,6 +112,21 @@ describe("distributed-rate-limit", () => {
     expect((await checkInquiryRateLimit("user-b")).allowed).toBe(true);
   });
 
+  it("counts preview and production separately when they share one store", async () => {
+    setEnv("APP_ENV", "preview");
+    for (let i = 0; i < 10; i++) {
+      await checkInquiryRateLimit("shared-store-user");
+    }
+    expect((await checkInquiryRateLimit("shared-store-user")).allowed).toBe(
+      false,
+    );
+
+    setEnv("APP_ENV", "production");
+    expect((await checkInquiryRateLimit("shared-store-user")).allowed).toBe(
+      true,
+    );
+  });
+
   it("reports storage failure when the store rejects", async () => {
     const error = new DOMException("The operation was aborted", "AbortError");
     vi.spyOn(MemoryRateLimitStore.prototype, "increment").mockRejectedValueOnce(
