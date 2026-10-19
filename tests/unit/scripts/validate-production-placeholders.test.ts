@@ -2,22 +2,14 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { READY_PUBLIC_LAUNCH_FIXTURE } from "./production-config-fixtures";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
   isSentinelBlocker,
   validateProductionConfig,
 } from "../../../scripts/quality/checks/production-config.js";
 
 const FIXTURE_PREFIX = "b2b-inquiry-placeholders-";
-const tempDirs: string[] = [];
-
-afterEach(() => {
-  for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
-  }
-});
 
 function createValidProductionEnv(): NodeJS.ProcessEnv {
   return {
@@ -39,7 +31,6 @@ function createValidProductionEnv(): NodeJS.ProcessEnv {
 // 其余上线信息全部就绪，只变动被扫描的文件，失败必定来自占位扫描。
 function createReadyInput() {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
-  tempDirs.push(rootDir);
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- 写入本测试刚创建的临时目录
   writeFileSync(
     path.join(rootDir, "wrangler.jsonc"),
