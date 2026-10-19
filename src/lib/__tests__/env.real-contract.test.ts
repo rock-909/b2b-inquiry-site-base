@@ -166,6 +166,35 @@ describe("real env contract", () => {
     expect(consoleError).toHaveBeenCalledTimes(1);
   });
 
+  it.each([
+    { key: "EMAIL_FROM", value: "sales@acme.test" },
+    { key: "EMAIL_FROM", value: "Acme Sales <sales@acme.test>" },
+    { key: "LOG_LEVEL", value: "info" },
+    { key: "LOG_LEVEL", value: "INFO" },
+  ])("loads with $key=$value", async ({ key, value }) => {
+    vi.stubEnv(key, value);
+
+    await expect(importActualEnv()).resolves.toHaveProperty("env");
+  });
+
+  it.each([
+    { key: "EMAIL_FROM", value: "Acme Sales" },
+    { key: "EMAIL_FROM", value: "<sales@acme.test>" },
+    { key: "EMAIL_FROM", value: "Acme Sales <not-an-email>" },
+    { key: "INQUIRY_RECIPIENT_EMAIL", value: "Owner <owner@acme.test>" },
+    { key: "LOG_LEVEL", value: "verbose" },
+  ])("rejects $key=$value at load", async ({ key, value }) => {
+    const consoleError = captureExpectedConsoleErrors(
+      "❌ Invalid environment variables:",
+    );
+    vi.stubEnv(key, value);
+
+    await expect(importActualEnv()).rejects.toThrow(
+      "Invalid environment variables",
+    );
+    expect(consoleError).toHaveBeenCalledTimes(1);
+  });
+
   it.each(["DEPLOYMENT_PLATFORM", "NEXT_PUBLIC_DEPLOYMENT_PLATFORM"])(
     "rejects %s=self-hosted, a platform no code path implements",
     async (key) => {

@@ -466,6 +466,37 @@ describe("validate-production-config runtime contract", () => {
   );
 });
 
+describe("production env value formats", () => {
+  it.each([
+    { key: "EMAIL_FROM", value: "sales@acme.test" },
+    { key: "EMAIL_FROM", value: "Acme Sales <sales@acme.test>" },
+    { key: "LOG_LEVEL", value: "info" },
+    { key: "LOG_LEVEL", value: "INFO" },
+  ])("accepts $key=$value", ({ key, value }) => {
+    const result = validateProductionRuntimeContract({
+      ...createValidProductionEnv(),
+      [key]: value,
+    });
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it.each([
+    { key: "EMAIL_FROM", value: "Acme Sales" },
+    { key: "EMAIL_FROM", value: "<sales@acme.test>" },
+    { key: "EMAIL_FROM", value: "Acme Sales <not-an-email>" },
+    { key: "INQUIRY_RECIPIENT_EMAIL", value: "Owner <owner@acme.test>" },
+    { key: "LOG_LEVEL", value: "verbose" },
+  ])("blocks $key=$value before deploy", ({ key, value }) => {
+    const result = validateProductionRuntimeContract({
+      ...createValidProductionEnv(),
+      [key]: value,
+    });
+
+    expect(result.errors).toEqual([expect.stringContaining(key)]);
+  });
+});
+
 describe("validateProductionConfig CI vs deploy gate", () => {
   it("skips runtime contract for preview when APP_ENV=preview", () => {
     const env: NodeJS.ProcessEnv = {

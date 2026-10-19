@@ -81,15 +81,27 @@ describe("Playwright CI web server", () => {
   it("rebuilds the release smoke server without weakening CI safeguards", async () => {
     const config = await loadCiConfig(true);
 
-    expect(getWebServer(config).command).toBe("pnpm build && pnpm start");
+    expect(getWebServer(config).command).toBe(
+      "pnpm build && pnpm start -H localhost",
+    );
     expect(config.forbidOnly).toBe(true);
   });
 
   it("reuses the workflow build in ordinary CI", async () => {
     const config = await loadCiConfig(false);
 
-    expect(getWebServer(config).command).toBe("pnpm start");
+    expect(getWebServer(config).command).toBe("pnpm start -H localhost");
     expect(config.forbidOnly).toBe(true);
+  });
+
+  // 测试服务器处于 Turnstile 放行模式：只能对本机开放，且不能读到真实投递密钥。
+  it("keeps the test-mode server on loopback without delivery keys", async () => {
+    const webServer = getWebServer(await loadCiConfig(true));
+
+    expect(webServer.env).toMatchObject({
+      RESEND_API_KEY: "",
+      AIRTABLE_API_KEY: "",
+    });
   });
 
   it("disables retries in the full browser matrix so first failures stay red", async () => {

@@ -1,0 +1,191 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+import { afterEach, describe, expect, it } from "vitest";
+import { READY_PUBLIC_LAUNCH_FIXTURE } from "./production-config-fixtures";
+import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
+import {
+  isSentinelBlocker,
+  validateProductionConfig,
+} from "../../../scripts/quality/checks/production-config.js";
+
+const FIXTURE_PREFIX = "b2b-inquiry-placeholders-";
+const tempDirs: string[] = [];
+
+afterEach(() => {
+  for (const tempDir of tempDirs.splice(0)) {
+    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
+  }
+});
+
+function createValidProductionEnv(): NodeJS.ProcessEnv {
+  return {
+    NODE_ENV: "production",
+    DEPLOYMENT_PLATFORM: "cloudflare",
+    UPSTASH_REDIS_REST_URL: "https://example.upstash.io",
+    UPSTASH_REDIS_REST_TOKEN: "upstash-token",
+    RATE_LIMIT_PEPPER: "a".repeat(32),
+    TURNSTILE_SECRET_KEY: "turnstile-secret",
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: "turnstile-site-key",
+    EMAIL_FROM: "noreply@example.com",
+    INQUIRY_RECIPIENT_EMAIL: "sales@example.com",
+    RESEND_API_KEY: "resend-api-key",
+    AIRTABLE_API_KEY: "airtable-api-key",
+    AIRTABLE_BASE_ID: "appBaseId",
+  };
+}
+
+// 其余上线信息全部就绪，只变动被扫描的文件，失败必定来自占位扫描。
+function createReadyInput() {
+  const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
+  tempDirs.push(rootDir);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- 写入本测试刚创建的临时目录
+  writeFileSync(
+    path.join(rootDir, "wrangler.jsonc"),
+    JSON.stringify({
+      name: "reference-site",
+      env: {
+        production: {
+          vars: {
+            NEXT_PUBLIC_SITE_URL: "https://reference-site.com",
+            NEXT_PUBLIC_BASE_URL: "https://reference-site.com",
+            TURNSTILE_ALLOWED_HOSTS: "reference-site.com",
+          },
+        },
+      },
+    }),
+  );
+  return { rootDir, publicLaunch: READY_PUBLIC_LAUNCH_FIXTURE };
+}
+
+describe("template placeholder files", () => {
+  const strictEnv = {
+    ...createValidProductionEnv(),
+    APP_ENV: "production",
+    PUBLIC_LAUNCH_STRICT: "true",
+  };
+  const readyFiles: Record<string, string> = {
+    "messages/base/en/messages.json": JSON.stringify(
+      { home: { metadata: { description: "Valves made to order." } } },
+      null,
+      2,
+    ),
+    "messages/base/es/messages.json": JSON.stringify(
+      { home: { metadata: { description: "Válvulas a medida." } } },
+      null,
+      2,
+    ),
+    "src/content/pages/en/privacy.ts":
+      'export const page = { title: "Privacy policy", content: "We keep inquiries for 24 months." };\n',
+    "src/content/pages/es/terms.ts":
+      'export const page = { title: "Términos", content: "Condiciones de uso del sitio." };\n',
+    "public/.well-known/security.txt":
+      "Contact: mailto:security@acme-industrial.com\nExpires: 2999-01-01T00:00:00.000Z\n",
+    ".env.production":
+      "NEXT_PUBLIC_SITE_URL=https://acme-industrial.com\nNEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAAAOwnerSiteKey\n",
+  };
+
+  function inputWithFiles(overrides: Record<string, string> = {}) {
+    const input = createReadyInput();
+    for (const [file, content] of Object.entries({
+      ...readyFiles,
+      ...overrides,
+    })) {
+      const filePath = path.join(input.rootDir, file);
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- 写入本测试刚创建的临时目录
+      mkdirSync(path.dirname(filePath), { recursive: true });
+      // eslint-disable-next-line security/detect-non-literal-fs-filename -- 同上
+      writeFileSync(filePath, content);
+    }
+    return input;
+  }
+
+  it("passes owner-ready messages, legal pages, security.txt and .env.production", () => {
+    const result = validateProductionConfig(strictEnv, inputWithFiles());
+
+    expect(result.errors).toEqual([]);
+  });
+
+  it.each([
+    {
+      file: "messages/base/en/messages.json",
+      content:
+        '{ "description": "A non-production B2B inquiry reference site." }',
+    },
+    {
+      file: "messages/base/es/messages.json",
+      content: '{ "title": "{siteName} - Plantilla de consultas B2B" }',
+    },
+    {
+      file: "src/content/pages/en/privacy.ts",
+      content:
+        'export const page = { title: "Privacy policy — to be completed" };',
+    },
+    {
+      file: "src/content/pages/es/terms.ts",
+      content:
+        'export const page = { description: "Texto provisional incompleto." };',
+    },
+    {
+      file: "public/.well-known/security.txt",
+      content:
+        "Contact: mailto:security@example.invalid\nExpires: 2999-01-01T00:00:00.000Z\n",
+    },
+    {
+      file: "public/.well-known/security.txt",
+      content:
+        "Contact: mailto:security@acme-industrial.com\nExpires: 2001-01-01T00:00:00.000Z\n",
+    },
+    {
+      file: "public/.well-known/security.txt",
+      content: "Contact: mailto:security@acme-industrial.com\n",
+    },
+    {
+      file: ".env.production",
+      content: "NEXT_PUBLIC_SITE_URL=https://example.invalid\n",
+    },
+    {
+      file: ".env.production",
+      content: "NEXT_PUBLIC_TURNSTILE_SITE_KEY=0x4AAAAAADvC8KDbJ54402pb\n",
+    },
+  ])(
+    "blocks a template placeholder in $file: $content",
+    ({ file, content }) => {
+      const result = validateProductionConfig(
+        strictEnv,
+        inputWithFiles({ [file]: content }),
+      );
+
+      expect(result.errors).toEqual([expect.stringContaining(file)]);
+      expect(result.errors.every(isSentinelBlocker)).toBe(true);
+    },
+  );
+
+  it("blocks the template Turnstile site key in wrangler production vars", () => {
+    const input = inputWithFiles();
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- 写入本测试刚创建的临时目录
+    writeFileSync(
+      path.join(input.rootDir, "wrangler.jsonc"),
+      JSON.stringify({
+        name: "reference-site",
+        env: {
+          production: {
+            vars: {
+              NEXT_PUBLIC_SITE_URL: "https://reference-site.com",
+              NEXT_PUBLIC_BASE_URL: "https://reference-site.com",
+              TURNSTILE_ALLOWED_HOSTS: "reference-site.com",
+              NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADvC8KDbJ54402pb",
+            },
+          },
+        },
+      }),
+    );
+
+    const result = validateProductionConfig(strictEnv, input);
+
+    expect(result.errors).toEqual([
+      expect.stringContaining("NEXT_PUBLIC_TURNSTILE_SITE_KEY"),
+    ]);
+  });
+});

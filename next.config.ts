@@ -68,18 +68,6 @@ const nextConfig: NextConfig = {
     ...(isCloudflare ? { unoptimized: true } : {}),
   },
 
-  // Next.js Compiler 配置
-  compiler: {
-    // 生产环境移除 console 语句，但保留 error 和 warn 级别
-    // 这有助于减少生产环境的包大小并避免潜在的信息泄露
-    removeConsole:
-      process.env.NODE_ENV === "production"
-        ? {
-            exclude: ["error", "warn"], // 保留 console.error 和 console.warn
-          }
-        : false, // 开发环境保留所有 console 语句
-  },
-
   experimental: {
     turbopackRustReactCompiler: true,
     // Owner decision: use Next.js's agent feedback. `next dev` maintains its

@@ -206,6 +206,33 @@ describe("Cloudflare deploy workflow contract", () => {
     },
   );
 
+  // 配置 routes/custom_domain 后 Wrangler 关闭 workers.dev，部署输出里没有它的 URL；
+  // 新版本此时已上线，部署后验证应改用正式站点 URL，而不是让步骤失败。
+  it.each([
+    { siteUrl: "https://acme-industrial.com", expected: true },
+    { siteUrl: "", expected: false },
+  ])(
+    "falls back to NEXT_PUBLIC_SITE_URL='$siteUrl' when the deploy prints no workers.dev URL",
+    ({ siteUrl, expected }) => {
+      const steps = workflowSteps(loadDeployWorkflow(), "build-and-deploy");
+      const deploy = steps.find((step) => step.id === "deploy_production");
+      const fixture = createDeployFixture();
+      const deployed = fixture.run(
+        deploy?.run ?? "",
+        "Deployed acme-industrial triggers: acme-industrial.com (custom domain)",
+        { NEXT_PUBLIC_SITE_URL: siteUrl },
+      );
+
+      if (expected) {
+        expect(deployed.status, deployed.stderr).toBe(0);
+        expect(fixture.output()).toBe(`worker-url=${siteUrl}\n`);
+      } else {
+        expect(deployed.status).not.toBe(0);
+        expect(fixture.output()).toBe("");
+      }
+    },
+  );
+
   // 部署 URL 来自 wrangler 输出，被篡改的值必须始终只是数据：这里用替身
   // curl/node 真实执行 post-deploy 的两个 shell 步骤，核对收到的参数，
   // 并用带 shell 元字符的 URL 证明它不会被当作命令执行。
