@@ -82,9 +82,12 @@ const nextConfig: NextConfig = {
 
   experimental: {
     turbopackRustReactCompiler: true,
-    // Keep Next.js on its JavaScript compiler API path. The project uses the
-    // same TypeScript 6.x package for CLI checks and tooling.
-    useTypeScriptCli: false,
+    // Owner decision: use Next.js's agent feedback. `next dev` maintains its
+    // managed block in AGENTS.md.
+    agentFeedback: true,
+    // Owner decision: nudge agents to upgrade only when the installed Next.js
+    // has a published security advisory ('latest' would nag on every minor).
+    agentUpgrade: "security",
     // 内联关键CSS（experimental.inlineCss）保持禁用：此前的记录称它在当前构建链路下
     // 会引入 FOUC 和首屏 CLS 劣化（本次未重新测量）。Lighthouse 是手动性能证明
     // （`pnpm website:lighthouse`），不是默认 CI 门禁；重新评估时请手动运行。
