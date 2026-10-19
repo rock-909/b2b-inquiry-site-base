@@ -54,10 +54,27 @@ describe("Security Configuration", () => {
     it("should include required external domains", () => {
       const csp = generateCSP();
       expect(csp).toContain("https://challenges.cloudflare.com");
-      expect(csp).toContain("https://fonts.googleapis.com");
-      expect(csp).toContain("https://fonts.gstatic.com");
       expect(csp).toContain("https://www.googletagmanager.com");
       expect(csp).toContain("https://www.google-analytics.com");
+    });
+
+    it("does not allow remote font or stylesheet hosts (system font stack only)", () => {
+      const directives = new Map(
+        generateCSP()
+          .split(";")
+          .map((d) => d.trim().split(/\s+/u))
+          .map(([name, ...sources]) => [name, sources] as const),
+      );
+
+      expect(directives.get("font-src")).toEqual(["'self'", "data:"]);
+      expect(directives.get("style-src")).toEqual([
+        "'self'",
+        "'unsafe-inline'",
+      ]);
+      expect(directives.get("style-src-elem")).toEqual([
+        "'self'",
+        "'unsafe-inline'",
+      ]);
     });
 
     it("does not allow starter image hosts or server-only email APIs in browser CSP", () => {
