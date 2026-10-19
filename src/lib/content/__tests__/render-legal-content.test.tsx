@@ -20,6 +20,12 @@ describe("createStaticMarkdownContent", () => {
     expect(screen.getByRole("cell", { name: "EU" })).toBeVisible();
   });
 
+  it("treats alignment rows as the table separator, not as data", () => {
+    render(<>{createStaticMarkdownContent("| Region | Days |\n|:--|--:|\n| EU | 30 |")}</>);
+    expect(screen.getAllByRole("row")).toHaveLength(2);
+    expect(screen.queryByText(":--")).not.toBeInTheDocument();
+  });
+
   it("renders inline bold inside list items without literal markdown markers", () => {
     const { container } = render(
       <>
@@ -160,6 +166,40 @@ describe("createStaticMarkdownContent", () => {
     );
 
     expect(screen.getAllByText("You have the right to:")).toHaveLength(2);
+  });
+});
+
+describe("parseStaticMarkdownBlocks heading ids", () => {
+  const headingIds = (markdown: string) =>
+    parseStaticMarkdownBlocks(markdown).flatMap((block) =>
+      block.kind === "heading" ? [block.id] : [],
+    );
+
+  it("keeps letters from non-Latin scripts and drops accents", () => {
+    expect(
+      headingIds(
+        [
+          "## Información que recopilamos",
+          "## Политика конфиденциальности",
+          "## プライバシー",
+          "## 隐私政策",
+        ].join("\n"),
+      ),
+    ).toEqual([
+      "informacion-que-recopilamos",
+      "политика-конфиденциальности",
+      "プライバシー",
+      "隐私政策",
+    ]);
+  });
+
+  it("suffixes repeated headings so every anchor id is unique", () => {
+    expect(headingIds("## Scope\n## Scope\n### Scope\n## ¿?")).toEqual([
+      "scope",
+      "scope-2",
+      "scope-3",
+      "section",
+    ]);
   });
 });
 
