@@ -138,6 +138,16 @@ describe("template placeholder files", () => {
         'export const page = { description: "Texto provisional incompleto." };',
     },
     {
+      file: "src/content/pages/es/terms.ts",
+      content:
+        'export const page = { title: "Condiciones", content: `\nEstas condiciones están incompletas.\n` };',
+    },
+    {
+      file: "src/content/pages/es/privacy.ts",
+      content:
+        'export const page = { title: "Privacidad", content: `\nEsta política de privacidad está incompleta.\n` };',
+    },
+    {
       file: "public/.well-known/security.txt",
       content:
         "Contact: mailto:security@example.invalid\nExpires: 2999-01-01T00:00:00.000Z\n",
