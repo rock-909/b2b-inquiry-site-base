@@ -5,13 +5,18 @@
  */
 
 import { createEnv } from "@t3-oss/env-nextjs";
-import { email, enum as zEnum, string, url } from "zod";
+import { enum as zEnum, string, url } from "zod";
+import {
+  emailAddressSchema,
+  emailSenderSchema,
+  logLevelSchema,
+} from "./env-formats";
 
 export const serverEnvSchema = {
   // Email Service (Resend)
   RESEND_API_KEY: string().min(1).optional(),
-  EMAIL_FROM: email().optional(),
-  INQUIRY_RECIPIENT_EMAIL: email().optional(),
+  EMAIL_FROM: emailSenderSchema.optional(),
+  INQUIRY_RECIPIENT_EMAIL: emailAddressSchema.optional(),
 
   // Data Storage (Airtable)
   AIRTABLE_API_KEY: string().min(1).optional(),
@@ -26,7 +31,7 @@ export const serverEnvSchema = {
     .transform((val) => val === "true"),
 
   // Runtime and platform configuration
-  LOG_LEVEL: zEnum(["error", "warn", "info", "debug"]).optional(),
+  LOG_LEVEL: logLevelSchema.optional(),
   DEPLOYMENT_PLATFORM: zEnum(["cloudflare", "development"]).optional(),
   CF_PAGES: string().optional(),
   GOOGLE_SITE_VERIFICATION: string().min(1).optional(),

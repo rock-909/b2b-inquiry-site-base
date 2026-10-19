@@ -127,10 +127,13 @@ export default defineConfig({
           // 注意：必须使用 NODE_ENV=production 进行构建，否则 React 19 的某些内部 API
           // （如 captureOwnerStack）在 test 模式下不可用，会导致 sitemap.ts 预渲染失败
           // CI 默认复用 workflow build；release proof 用专用 flag 按 test-mode env 重建
+          // 只绑回环地址：本服务器处于 Turnstile 放行模式，不能对局域网开放。
+          // 用 localhost 而非 127.0.0.1：Next 16.4 在 -H 127.0.0.1 下给 proxy 的
+          // 请求 URL 仍是 localhost，next-intl 的 rewrite 被当成跨源，页面 307 到自身。
           command:
             isCI && !shouldRebuildServer
-              ? "pnpm start"
-              : "pnpm build && pnpm start",
+              ? "pnpm start -H localhost"
+              : "pnpm build && pnpm start -H localhost",
           url: "http://localhost:3000",
           reuseExistingServer: shouldReuseExistingServer,
           timeout: isCI && !shouldRebuildServer ? 60 * 1000 : 180 * 1000, // 重建与仅启动分别计时
@@ -147,6 +150,10 @@ export default defineConfig({
             // See: https://developers.cloudflare.com/turnstile/reference/testing/
             NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
             TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+
+            // 置空即可挡住 .env.local 的同名密钥：本地 E2E 永远不能真实投递。
+            RESEND_API_KEY: "",
+            AIRTABLE_API_KEY: "",
 
             NEXT_PUBLIC_SECURITY_MODE: "relaxed",
             SECURITY_HEADERS_ENABLED: "false",

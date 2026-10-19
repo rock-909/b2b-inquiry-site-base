@@ -22,6 +22,11 @@ function loadPublicLaunchInput() {
   };
 }
 
+// Node 24 原生剥离类型即可加载这个无别名、无副作用的模块，不需要 tsx。
+function loadEnvFormats() {
+  return require("../../../src/lib/env-formats.ts");
+}
+
 const MIN_SECRET_LENGTH = 32;
 
 function readEnv(env, key) {
@@ -84,6 +89,14 @@ function validateWranglerProductionPublicUrls(target, wranglerConfig) {
   }
 
   validateWranglerProductionTurnstileHosts(target, productionVars);
+  validateEnvFormats(target, productionVars);
+
+  const siteKey = readEnv(productionVars, "NEXT_PUBLIC_TURNSTILE_SITE_KEY");
+  if (siteKey && containsStarterMarker(siteKey)) {
+    target.push(
+      "wrangler.jsonc env.production.vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY is not public-launch ready (replace the template Turnstile site key with the owner's widget key).",
+    );
+  }
 }
 
 // A non-empty TURNSTILE_ALLOWED_HOSTS replaces the site-URL fallback at runtime,
@@ -120,7 +133,7 @@ function readSiteHostname(siteUrl) {
 function containsStarterMarker(value) {
   if (!value) return true;
 
-  return /Northstar Industrial Reference|B2B Inquiry Template|b2b-inquiry-site-base|Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.(?:com|invalid)|starter-contact@example\.com|non-production B2B inquiry reference|sentinel identity|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|Replace with owner-confirmed|x\.com\/example|linkedin\.com\/company\/example/iu.test(
+  return /Northstar Industrial Reference|B2B Inquiry Template|b2b-inquiry-site-base|0x4AAAAAADvC8KDbJ54402pb|inquiry site reference|referencia (?:neutral )?para consultas B2B|Plantilla de consultas B2B|no destinado a producción|(?:Privacy policy|Terms) — to be completed|Incomplete placeholder|(?:Privacidad|Condiciones) — pendientes? de completar|Texto provisional incompleto|Sustituye este texto provisional|Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.(?:com|invalid)|starter-contact@example\.com|non-production B2B inquiry reference|sentinel identity|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|This privacy policy is incomplete|These terms are incomplete|Esta política de privacidad está incompleta|Estas condiciones están incompletas|Replace this placeholder|Replace with owner-confirmed|x\.com\/example|linkedin\.com\/company\/example/iu.test(
     value,
   );
 }
@@ -128,6 +141,95 @@ function containsStarterMarker(value) {
 function validateNoStarterMarker(target, markerPath, value, reason) {
   if (containsStarterMarker(value)) {
     target.push(`${markerPath} is not public-launch ready (${reason}).`);
+  }
+}
+
+const SECURITY_TXT_PATH = "public/.well-known/security.txt";
+// 纯文本文件会原样上线（或在本地 release 构建时生效），逐行扫模板占位。
+const PLACEHOLDER_TEXT_FILES = [".env.production", SECURITY_TXT_PATH];
+// 页面模块和 messages 只扫实际导出的字符串：注释不会发布，也就不会影响结果。
+const PLACEHOLDER_VALUE_DIRS = ["messages/base", "src/content/pages"];
+
+function pushPlaceholderError(target, location) {
+  target.push(
+    `${location} is not public-launch ready (replace template placeholder content before client launch).`,
+  );
+}
+
+function validatePlaceholderTextFile(target, rootDir, file) {
+  const filePath = path.join(rootDir, file);
+  if (!fs.existsSync(filePath)) return;
+  const content = fs.readFileSync(filePath, "utf8");
+  content.split("\n").forEach((line, index) => {
+    const trimmed = line.trim();
+    if (!trimmed || (file === ".env.production" && trimmed.startsWith("#"))) {
+      return;
+    }
+    if (containsStarterMarker(line)) {
+      pushPlaceholderError(target, `${file}:${index + 1}`);
+    }
+  });
+
+  // RFC 9116 要求 Expires；过期的 security.txt 等于没有。
+  const expires = /^Expires:\s*(.+)$/imu.exec(content)?.[1];
+  if (file === SECURITY_TXT_PATH && !(Date.parse(expires) > Date.now())) {
+    target.push(
+      `${file} Expires is not public-launch ready (set a future expiry date).`,
+    );
+  }
+}
+
+function listPlaceholderValueFiles(rootDir) {
+  const files = [];
+  for (const dir of PLACEHOLDER_VALUE_DIRS) {
+    const absDir = path.join(rootDir, dir);
+    if (!fs.existsSync(absDir)) continue;
+    for (const entry of fs.readdirSync(absDir, { recursive: true })) {
+      if (/\.(?:json|ts)$/u.test(entry)) files.push(path.join(dir, entry));
+    }
+  }
+  return files;
+}
+
+// CLI 已由 loadPublicLaunchInput 注册 tsx（支持 @/ 别名）；否则靠 Node 原生剥离类型加载。
+function loadPublishedValues(rootDir, file) {
+  const filePath = path.join(rootDir, file);
+  if (file.endsWith(".json")) {
+    return JSON.parse(fs.readFileSync(filePath, "utf8"));
+  }
+  // eslint-disable-next-line security/detect-non-literal-require -- 路径来自本仓库内容目录的列举，加载后只读导出值
+  return require(filePath);
+}
+
+function scanPublishedValues(target, file, value, keyPath) {
+  if (typeof value === "string") {
+    // 空字符串是合法的"不展示"，不是占位。
+    if (value && containsStarterMarker(value)) {
+      pushPlaceholderError(target, `${file} ${keyPath.join(".")}`);
+    }
+  } else if (value && typeof value === "object") {
+    for (const [key, child] of Object.entries(value)) {
+      scanPublishedValues(target, file, child, [...keyPath, key]);
+    }
+  }
+}
+
+function validateTemplatePlaceholderFiles(target, rootDir) {
+  for (const file of PLACEHOLDER_TEXT_FILES) {
+    validatePlaceholderTextFile(target, rootDir, file);
+  }
+  for (const file of listPlaceholderValueFiles(rootDir)) {
+    let values;
+    try {
+      values = loadPublishedValues(rootDir, file);
+    } catch (error) {
+      // 读不出就无法证明没有占位：按未就绪处理。
+      target.push(
+        `${file} is not public-launch ready (could not load it to check published text: ${String(error?.message ?? error).split("\n")[0]}).`,
+      );
+      continue;
+    }
+    scanPublishedValues(target, file, values, []);
   }
 }
 
@@ -156,6 +258,29 @@ function validateMinLengthEnv(target, env, key, minLength, reason) {
     target.push(
       `${key} must be at least ${minLength} characters long (${reason}). Current length: ${value.length}`,
     );
+  }
+}
+
+// 与运行时 env schema 同一规则：坏格式会让 env 模块加载即抛错，询盘全部 500。
+// 运行时 emptyStringAsUndefined：空字符串视为未设置，纯空白仍交给 schema 拒绝。
+function validateEnvFormats(target, env) {
+  const { emailAddressSchema, emailSenderSchema, logLevelSchema } =
+    loadEnvFormats();
+  for (const [key, schema, expected] of [
+    ["EMAIL_FROM", emailSenderSchema, 'an email address or "Name <address>"'],
+    ["INQUIRY_RECIPIENT_EMAIL", emailAddressSchema, "a bare email address"],
+    ["LOG_LEVEL", logLevelSchema, "error, warn, info or debug"],
+  ]) {
+    const value = env[key];
+    if (
+      typeof value === "string" &&
+      value !== "" &&
+      !schema.safeParse(value).success
+    ) {
+      target.push(
+        `${key} has an invalid format (expected ${expected}); the runtime env module would throw and every inquiry would fail.`,
+      );
+    }
   }
 }
 
@@ -242,6 +367,8 @@ function validateProductionRuntimeContract(env) {
     "AIRTABLE_BASE_ID",
     "the shipped lead pipeline persists lead records in Airtable",
   );
+
+  validateEnvFormats(errors, env);
 
   if (isTrue(env, "NEXT_PUBLIC_TEST_MODE")) {
     errors.push("NEXT_PUBLIC_TEST_MODE=true is forbidden in production.");
@@ -348,6 +475,7 @@ function validatePublicLaunchTrustContent(env, input) {
   const wranglerConfig = readWranglerConfig(rootDir);
   validateWranglerProductionPublicUrls(target, wranglerConfig);
   validateWranglerSentinelResources(target, wranglerConfig);
+  validateTemplatePlaceholderFiles(target, rootDir);
 
   validateNoStarterMarker(
     target,

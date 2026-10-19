@@ -13,7 +13,6 @@ import {
 import { isSameOrigin } from "@/lib/security/origin-policy";
 import { mapInquiryValidationDetails } from "@/lib/api/inquiry-validation-details";
 import { safeParseJson } from "@/lib/api/safe-parse-json";
-import { isRuntimeProduction } from "@/lib/env";
 import {
   HTTP_BAD_REQUEST,
   HTTP_FORBIDDEN,
@@ -138,15 +137,13 @@ function createInquirySuccessResponse(
   clientIP: string,
   startTime: number,
 ) {
-  if (!isRuntimeProduction()) {
-    logger.info("Inquiry submitted successfully", {
-      referenceId: result.referenceId,
-      ip: sanitizeIP(clientIP),
-      processingTime: Date.now() - startTime,
-      emailSent: result.emailSent,
-      recordCreated: result.recordCreated,
-    });
-  }
+  logger.info("Inquiry submitted successfully", {
+    referenceId: result.referenceId,
+    ip: sanitizeIP(clientIP),
+    processingTime: Date.now() - startTime,
+    emailSent: result.emailSent,
+    recordCreated: result.recordCreated,
+  });
 
   return createApiSuccessResponse({ referenceId: result.referenceId });
 }
