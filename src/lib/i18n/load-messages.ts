@@ -4,7 +4,7 @@
  * Runtime canonical source is the locale file under `messages/base/**`.
  */
 
-import { type Locale } from "@/i18n/routing-config";
+import type { Locale } from "@/i18n/routing-config";
 import { coerceLocale } from "@/i18n/locale-utils";
 import enMessages from "@messages/base/en/messages.json";
 import esMessages from "@messages/base/es/messages.json";

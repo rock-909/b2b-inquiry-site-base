@@ -1,4 +1,4 @@
-import { type InquiryFieldErrorDetail } from "@/constants/inquiry-field-error-protocol";
+import type { InquiryFieldErrorDetail } from "@/constants/inquiry-field-error-protocol";
 
 type InquiryFormMessageKey =
   | "optional"

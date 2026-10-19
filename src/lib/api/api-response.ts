@@ -7,7 +7,7 @@
 
 import { NextResponse } from "next/server";
 
-import { type ApiErrorCode } from "@/constants/api-error-codes";
+import type { ApiErrorCode } from "@/constants/api-error-codes";
 import { HTTP_OK } from "@/constants";
 
 /**

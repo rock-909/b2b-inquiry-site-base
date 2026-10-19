@@ -2,7 +2,7 @@ import {
   API_ERROR_CODES,
   type ApiErrorCode,
 } from "@/constants/api-error-codes";
-import { type ApiErrorResponse } from "@/lib/api/api-response";
+import type { ApiErrorResponse } from "@/lib/api/api-response";
 import { readLeadReferenceId } from "@/lib/forms/lead-response";
 
 export type InquirySubmitState =

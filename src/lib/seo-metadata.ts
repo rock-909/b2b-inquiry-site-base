@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { type Locale, type PageType } from "@/config/paths";
+import type { Locale, PageType } from "@/config/paths";
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { shouldIndexPublicPage } from "@/config/single-site-seo";
 import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";

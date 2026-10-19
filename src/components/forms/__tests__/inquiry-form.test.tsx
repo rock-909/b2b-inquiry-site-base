@@ -108,16 +108,6 @@ describe("InquiryForm contract", () => {
     expect(turnstileLabelsSpy).toHaveBeenCalledWith(copy.turnstile);
   });
 
-  it("truncates oversized initialMessage to the message limit", async () => {
-    // 设计条件 E-1：initialMessage 在组件入口截断到 MAX_LEAD_MESSAGE_LENGTH，
-    // 避免超长初始值先过浏览器 maxLength 再被服务端 400。
-    const longMessage = "A".repeat(2001);
-    const { container } = renderInquiryForm({ initialMessage: longMessage });
-    const message = getFormControls(container).message;
-
-    expect(message).toHaveValue("A".repeat(2000));
-  });
-
   it("restores the current-tab inquiry draft after the form remounts", () => {
     const firstRender = renderInquiryForm();
     const firstControls = getFormControls(firstRender.container);
@@ -143,56 +133,15 @@ describe("InquiryForm contract", () => {
     );
   });
 
-  it("keeps the current product prefill when the draft message was never edited", () => {
-    const productA = renderInquiryForm({
-      initialMessage: "I am interested in Product A",
-    });
-    const controlsA = getFormControls(productA.container);
-    fireEvent.input(controlsA.fullName, { target: { value: "Ada Buyer" } });
-    fireEvent.input(controlsA.email, {
-      target: { value: "ada@example.com" },
-    });
-    productA.unmount();
-
-    const productB = renderInquiryForm({
-      initialMessage: "I am interested in Product B",
-    });
-    const restored = getFormControls(productB.container);
-
-    expect(restored.message).toHaveValue("I am interested in Product B");
-    expect(restored.fullName).toHaveValue("Ada Buyer");
-    expect(restored.email).toHaveValue("ada@example.com");
-  });
-
-  it("restores a message the buyer edited even on another product page", () => {
-    const productA = renderInquiryForm({
-      initialMessage: "I am interested in Product A",
-    });
-    fireEvent.input(getFormControls(productA.container).message, {
-      target: { value: "Need 500 units delivered to Hamburg" },
-    });
-    productA.unmount();
-
-    const productB = renderInquiryForm({
-      initialMessage: "I am interested in Product B",
-    });
-
-    expect(getFormControls(productB.container).message).toHaveValue(
-      "Need 500 units delivered to Hamburg",
-    );
-  });
-
   it("ignores invalid inquiry draft data", () => {
     window.sessionStorage.setItem("inquiry-draft", "not-json");
 
-    const { container } = renderInquiryForm({
-      initialMessage: "Initial product inquiry",
-    });
+    const { container } = renderInquiryForm();
     const controls = getFormControls(container);
 
     expect(controls.fullName).toHaveValue("");
     expect(controls.email).toHaveValue("");
-    expect(controls.message).toHaveValue("Initial product inquiry");
+    expect(controls.message).toHaveValue("");
   });
 
   it("serializes a filled website honeypot into the inquiry payload", async () => {

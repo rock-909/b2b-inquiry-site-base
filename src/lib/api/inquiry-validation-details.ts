@@ -1,4 +1,4 @@
-import { type ZodIssue } from "zod";
+import type { ZodIssue } from "zod";
 import {
   type InquiryFieldErrorDetail,
   INQUIRY_FIELD_ERROR_DETAILS,

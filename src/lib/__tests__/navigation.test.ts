@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
-import type { SiteNavigationItem } from "@/config/site-types";
 import { isActivePath } from "../navigation";
 
 // Use vi.hoisted to ensure proper mock setup
@@ -18,26 +17,6 @@ vi.mock("@/config/paths/locales-config", () => ({
 }));
 
 describe("navigation", () => {
-  describe("NavigationItem interface", () => {
-    it("should have valid NavigationItem structure", () => {
-      const item: SiteNavigationItem = {
-        key: "test",
-        href: "/test",
-        messageKey: "home",
-        icon: "test-icon",
-        external: true,
-        children: [],
-      };
-
-      expect(item.key).toBe("test");
-      expect(item.href).toBe("/test");
-      expect(item.messageKey).toBe("home");
-      expect(item.icon).toBe("test-icon");
-      expect(item.external).toBe(true);
-      expect(Array.isArray(item.children)).toBe(true);
-    });
-  });
-
   describe("main navigation", () => {
     it("uses the configured public navigation", () => {
       expect(SINGLE_SITE_NAVIGATION).toEqual([

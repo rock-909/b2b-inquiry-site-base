@@ -7,16 +7,12 @@ import { Link } from "@/i18n/routing";
 export interface FooterProps {
   themeToggleSlot?: ReactNode;
   className?: string;
-  dataTheme?: string;
 }
 
-export function Footer({ themeToggleSlot, className, dataTheme }: FooterProps) {
+export function Footer({ themeToggleSlot, className }: FooterProps) {
   const t = useTranslations();
   return (
-    <footer
-      className={cn("border-t border-border bg-background", className)}
-      data-theme={dataTheme}
-    >
+    <footer className={cn("border-t border-border bg-background", className)}>
       <div className="mx-auto flex max-w-[1080px] flex-wrap items-center justify-between gap-6 px-6 py-6">
         <nav aria-label={t("accessibility.footerNavigation")}>
           <ul className="flex flex-wrap gap-x-6 gap-y-2">

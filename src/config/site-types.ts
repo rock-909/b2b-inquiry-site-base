@@ -69,7 +69,4 @@ export interface SiteNavigationItem {
   key: string;
   href: string;
   messageKey: NavigationNamespaceKey;
-  icon?: string;
-  external?: boolean;
-  children?: SiteNavigationItem[];
 }

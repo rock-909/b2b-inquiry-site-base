@@ -598,6 +598,8 @@ const eslintConfig = [
       "no-unused-expressions": "off",
       "no-unused-vars": "off",
       "no-undef": "off",
+      // verbatimModuleSyntax 会保留全 inline type 的 import 语句，把服务端模块拖进客户端包。
+      "@typescript-eslint/no-import-type-side-effects": "error",
     },
   },
 

@@ -22,22 +22,8 @@ export interface GtagEventParams {
   event_label?: string;
   value?: number;
   non_interaction?: boolean;
-  // E-commerce
-  currency?: string;
-  items?: GtagItem[];
-  transaction_id?: string;
   // Custom dimensions
   [key: string]: unknown;
-}
-
-export interface GtagItem {
-  item_id?: string;
-  item_name?: string;
-  item_brand?: string;
-  item_category?: string;
-  item_variant?: string;
-  price?: number;
-  quantity?: number;
 }
 
 declare global {

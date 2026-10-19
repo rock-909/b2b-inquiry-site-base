@@ -1,6 +1,6 @@
 import { generateLocaleMetadata } from "@/app/[locale]/layout-metadata";
 import "@/app/globals.css";
-import { type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
