@@ -86,7 +86,7 @@ const MANUAL_PROOF_LANES = [
     lane: "deployed-smoke",
     label: "Real preview publish path",
     command:
-      "node scripts/quality/checks/cloudflare-smoke.js cf-preview-deployed",
+      'node scripts/quality/checks/cloudflare-smoke.js cf-preview-deployed --base-url "$PREVIEW_BASE_URL"',
   },
   {
     lane: "deployed-smoke",

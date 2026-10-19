@@ -16,6 +16,12 @@ import { runChildCommand } from "../../../scripts/quality/checks/cloudflare-smok
 
 const FIXTURE_PREFIX = "b2b-cf-preview-proof-";
 const PREVIEW_URL = "https://b2b-preview.example.workers.dev";
+const PREVIEW_DEPLOY_COMMAND = [
+  "pnpm exec opennextjs-cloudflare deploy --env preview --keep-vars",
+  `--var NEXT_PUBLIC_BASE_URL:${PREVIEW_URL}`,
+  `--var NEXT_PUBLIC_SITE_URL:${PREVIEW_URL}`,
+  "--var TURNSTILE_ALLOWED_HOSTS:localhost,127.0.0.1,b2b-preview.example.workers.dev",
+].join(" ");
 const tempDirs: string[] = [];
 
 afterEach(() => {
@@ -40,11 +46,12 @@ function createProofFixture() {
   const binDir = path.join(rootDir, "bin");
   mkdirSync(binDir);
   const callLog = path.join(rootDir, "calls.log");
+  const buildEnvLog = path.join(rootDir, "build-env.log");
   const fakePnpm = [
     "#!/bin/sh",
     'echo "pnpm $*" >> "$FAKE_CALL_LOG"',
     'case "$1" in',
-    '  website:build:cf) printf "%s\\n" "$FAKE_BUILD_OUTPUT"; exit "${FAKE_BUILD_EXIT:-0}" ;;',
+    '  website:build:cf) echo "$NEXT_PUBLIC_BASE_URL $NEXT_PUBLIC_SITE_URL" >> "$FAKE_BUILD_ENV_LOG"; printf "%s\\n" "$FAKE_BUILD_OUTPUT"; exit "${FAKE_BUILD_EXIT:-0}" ;;',
     `  exec) printf "%s\\n" "\${FAKE_DEPLOY_OUTPUT-Deployed to ${PREVIEW_URL}}"; exit 0 ;;`,
     "esac",
     "exit 1",
@@ -77,11 +84,13 @@ function createProofFixture() {
   );
 
   return {
+    binDir,
     commitSha: git("rev-parse", "HEAD"),
     readCalls: () =>
       existsSync(callLog)
         ? readFileSync(callLog, "utf8").trim().split("\n")
         : [],
+    readBuildEnv: () => readFileSync(buildEnvLog, "utf8").trim(),
     readProof: () =>
       JSON.parse(
         readFileSync(
@@ -94,10 +103,17 @@ function createProofFixture() {
           "utf8",
         ),
       ) as Record<string, unknown>,
-    runLane: (env: Record<string, string> = {}) =>
+    runLane: (
+      env: Record<string, string> = {},
+      args: string[] = ["--base-url", PREVIEW_URL],
+    ) =>
       spawnSync(
         process.execPath,
-        ["scripts/quality/checks/cloudflare-smoke.js", "cf-preview-deployed"],
+        [
+          "scripts/quality/checks/cloudflare-smoke.js",
+          "cf-preview-deployed",
+          ...args,
+        ],
         {
           cwd: rootDir,
           encoding: "utf8",
@@ -105,6 +121,8 @@ function createProofFixture() {
             ...process.env,
             PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`,
             FAKE_CALL_LOG: callLog,
+            FAKE_BUILD_ENV_LOG: buildEnvLog,
+            DEPLOY_SMOKE_BASE_URL: "",
             ...env,
           },
         },
@@ -121,7 +139,7 @@ describe("cloudflare preview deploy proof", () => {
     expect(result.status).toBe(0);
     expect(fixture.readCalls()).toEqual([
       "pnpm website:build:cf",
-      "pnpm exec opennextjs-cloudflare deploy --env preview",
+      PREVIEW_DEPLOY_COMMAND,
       `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url ${PREVIEW_URL}`,
     ]);
     expect(fixture.readProof()).toMatchObject({
@@ -129,6 +147,110 @@ describe("cloudflare preview deploy proof", () => {
       commitSha: fixture.commitSha,
       baseUrl: PREVIEW_URL,
     });
+    expect(fixture.readBuildEnv()).toBe(`${PREVIEW_URL} ${PREVIEW_URL}`);
+  });
+
+  it.each([
+    ["empty", ""],
+    ["a non-https URL", "http://b2b-preview.example.workers.dev"],
+    ["the .invalid placeholder", "https://example.invalid"],
+    [
+      "the .invalid placeholder with a trailing dot",
+      "https://example.invalid.",
+    ],
+    ["a bare invalid. host", "https://invalid."],
+    ["shell metacharacters in the host", "https://$(reviewprobe).example.com"],
+    ["userinfo", "https://user:pw@b2b-preview.example.workers.dev"],
+    ["a newline inside the host", "https://x\ny.example.com"],
+    ["surrounding spaces", " https://example.com "],
+    ["a trailing newline", "https://example.com\n"],
+    ["a Unicode case-folding host", "https://\u212A.example.com"],
+    ["percent-encoding", "https://%65xample.com"],
+    ["a Unicode host", "https://例子.com"],
+    ["a port", "https://example.com:8443"],
+    ["a path", "https://example.com/$(reviewprobe)"],
+    ["a query", "https://example.com/?q=1"],
+  ])(
+    "blocks before building or deploying with %s from either entry point",
+    (_label, raw) => {
+      for (const [args, env] of [
+        [["--base-url", raw], {}],
+        [[], { DEPLOY_SMOKE_BASE_URL: raw }],
+      ] as const) {
+        const fixture = createProofFixture();
+
+        const result = fixture.runLane(
+          { FAKE_BUILD_OUTPUT: "build ok", ...env },
+          [...args],
+        );
+
+        expect(result.status).toBe(2);
+        expect(fixture.readCalls()).toEqual([]);
+        expect(fixture.readProof()).toMatchObject({
+          status: "blocked",
+          stage: "preview-base-url",
+        });
+      }
+    },
+  );
+
+  it("hands a normal preview URL intact to the installed OpenNext runWrangler", () => {
+    const fixture = createProofFixture();
+    const receiver = path.join(fixture.binDir, "receiver");
+    writeFileSync(
+      receiver,
+      `#!${process.execPath}\nconsole.log("RECEIVED " + JSON.stringify(process.argv.slice(2)));\n`,
+    );
+    chmodSync(receiver, 0o755);
+    // 假的 pnpm 经由真实安装的 runWrangler（shell: true）把参数交给替身 wrangler。
+    const runWranglerModule = path.resolve(
+      "node_modules/@opennextjs/cloudflare/dist/cli/commands/utils/run-wrangler.js",
+    );
+    writeFileSync(
+      path.join(fixture.binDir, "pnpm"),
+      [
+        `#!${process.execPath}`,
+        'if (process.argv[2] === "website:build:cf") process.exit(0);',
+        `import(${JSON.stringify(runWranglerModule)}).then(({ runWrangler }) => {`,
+        `  const result = runWrangler({ packager: ${JSON.stringify(receiver)} }, process.argv.slice(4), { logging: "none" });`,
+        "  process.stdout.write(result.stdout);",
+        `  console.log(${JSON.stringify(`Deployed ${PREVIEW_URL}`)});`,
+        "});",
+        "",
+      ].join("\n"),
+    );
+
+    const result = fixture.runLane();
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain(
+      `RECEIVED ${JSON.stringify([
+        "exec",
+        "wrangler",
+        "deploy",
+        "--env",
+        "preview",
+        "--keep-vars",
+        "--var",
+        `NEXT_PUBLIC_BASE_URL:${PREVIEW_URL}`,
+        "--var",
+        `NEXT_PUBLIC_SITE_URL:${PREVIEW_URL}`,
+        "--var",
+        "TURNSTILE_ALLOWED_HOSTS:localhost,127.0.0.1,b2b-preview.example.workers.dev",
+      ])}`,
+    );
+  });
+
+  it("reads the preview URL from DEPLOY_SMOKE_BASE_URL", () => {
+    const fixture = createProofFixture();
+
+    const result = fixture.runLane(
+      { FAKE_BUILD_OUTPUT: "build ok", DEPLOY_SMOKE_BASE_URL: PREVIEW_URL },
+      [],
+    );
+
+    expect(result.status).toBe(0);
+    expect(fixture.readCalls()[1]).toBe(PREVIEW_DEPLOY_COMMAND);
   });
 
   it("fails without deploying when the build log reports MISSING_MESSAGE", () => {
@@ -158,7 +280,7 @@ describe("cloudflare preview deploy proof", () => {
     expect(result.status).toBe(2);
     expect(fixture.readCalls()).toEqual([
       "pnpm website:build:cf",
-      "pnpm exec opennextjs-cloudflare deploy --env preview",
+      PREVIEW_DEPLOY_COMMAND,
     ]);
     expect(fixture.readProof()).toMatchObject({
       status: "blocked",
