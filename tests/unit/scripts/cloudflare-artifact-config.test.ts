@@ -61,12 +61,13 @@ function writeCacheFile(
   rootDir: string,
   baseDir: string,
   relativePath: string,
+  content = "{}",
 ): void {
   const filePath = path.join(rootDir, baseDir, relativePath);
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- writes a test-owned fixture under a temp root
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- writes a test-owned fixture under a temp root
-  fs.writeFileSync(filePath, "{}");
+  fs.writeFileSync(filePath, content);
 }
 
 const BUILD_CACHE = ".open-next/cache";
@@ -167,6 +168,72 @@ describe("Cloudflare artifact config proof", () => {
       expect(() =>
         loadChecker().verifyStaticAssetsCachePopulated(rootDir),
       ).toThrow("missing 1 of 2 prerendered cache entries");
+    });
+
+    it.each([
+      [
+        "a directory",
+        (rootDir: string) => {
+          // eslint-disable-next-line security/detect-non-literal-fs-filename -- writes a test-owned fixture under a temp root
+          fs.mkdirSync(
+            path.join(rootDir, STATIC_ASSETS_CACHE, "build-id/index.cache"),
+            { recursive: true },
+          );
+        },
+      ],
+      [
+        "a zero-byte file",
+        (rootDir: string) =>
+          writeCacheFile(
+            rootDir,
+            STATIC_ASSETS_CACHE,
+            "build-id/index.cache",
+            "",
+          ),
+      ],
+      [
+        "a file with different content",
+        (rootDir: string) =>
+          writeCacheFile(
+            rootDir,
+            STATIC_ASSETS_CACHE,
+            "build-id/index.cache",
+            '{"stale":true}',
+          ),
+      ],
+    ])("rejects a target that is %s", (_label, writeTarget) => {
+      const rootDir = createFixture();
+      writeCacheFile(
+        rootDir,
+        BUILD_CACHE,
+        "build-id/index.cache",
+        '{"page":1}',
+      );
+      writeTarget(rootDir);
+
+      expect(() =>
+        loadChecker().verifyStaticAssetsCachePopulated(rootDir),
+      ).toThrow("missing 1 of 1 prerendered cache entries");
+    });
+
+    it("accepts a populated target with identical non-empty content", () => {
+      const rootDir = createFixture();
+      writeCacheFile(
+        rootDir,
+        BUILD_CACHE,
+        "build-id/index.cache",
+        '{"page":1}',
+      );
+      writeCacheFile(
+        rootDir,
+        STATIC_ASSETS_CACHE,
+        "build-id/index.cache",
+        '{"page":1}',
+      );
+
+      expect(loadChecker().verifyStaticAssetsCachePopulated(rootDir)).toEqual([
+        "build-id/index.cache",
+      ]);
     });
 
     it("rejects a build with no prerendered cache entries", () => {

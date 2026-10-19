@@ -52,12 +52,21 @@ function verifyStaticAssetsCachePopulated(rootDir = ROOT) {
   if (entries.length === 0) {
     throw new Error(`No prerendered cache entries in ${BUILD_CACHE_DIR}`);
   }
-  const missing = entries.filter(
-    (entry) => !fs.existsSync(path.join(target, entry)),
-  );
+  // 缺失、不是普通文件、内容与源不同，都会让 Worker 读缓存未命中。
+  const missing = entries.filter((entry) => {
+    const copy = path.join(target, entry);
+    try {
+      return (
+        !fs.statSync(copy).isFile() ||
+        !fs.readFileSync(copy).equals(fs.readFileSync(path.join(source, entry)))
+      );
+    } catch {
+      return true;
+    }
+  });
   if (missing.length > 0) {
     throw new Error(
-      `${STATIC_ASSETS_CACHE_DIR} is missing ${missing.length} of ${entries.length} prerendered cache entries (run opennextjs-cloudflare populateCache): ${missing[0]}`,
+      `${STATIC_ASSETS_CACHE_DIR} is missing ${missing.length} of ${entries.length} prerendered cache entries (absent, not a regular file, or different from ${BUILD_CACHE_DIR}; run opennextjs-cloudflare populateCache): ${missing[0]}`,
     );
   }
   return entries;
