@@ -15,10 +15,8 @@ async function loadTurnstileConfig({
 } = {}) {
   vi.resetModules();
   vi.doMock("@/lib/env", () => ({
-    env: {
-      TURNSTILE_ALLOWED_HOSTS: allowedHosts,
-    },
-    getRuntimeEnvString: () => undefined,
+    getRuntimeEnvString: (key: string) =>
+      key === "TURNSTILE_ALLOWED_HOSTS" ? allowedHosts : undefined,
   }));
   vi.doMock("@/config/single-site", () => ({
     SINGLE_SITE_CONFIG: { baseUrl },

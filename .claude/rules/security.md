@@ -141,7 +141,9 @@ errors or markers in the public JSON.
 
 ## Env boundaries
 
-- App/runtime code reads server values through `@/lib/env`.
+- App/runtime code reads server values through `@/lib/env`: runtime reads use
+  `getRuntimeEnvString` / `getRuntimeEnvBoolean`, which validate the raw value
+  against its schema; do not add `?? env.X` fallbacks (see the top of `env.ts`).
 - Client Components read only allowlisted `NEXT_PUBLIC_*` values through
   `@/lib/public-runtime-env`, never `@/lib/env`.
 - Do not expose server secrets through `NEXT_PUBLIC_*`.

@@ -17,8 +17,7 @@ export type {
 } from "@/config/site-types";
 
 function resolveSingleSiteBaseUrl(fallback: string): string {
-  const explicitSiteUrl =
-    runtimeEnv.NEXT_PUBLIC_SITE_URL?.trim() ?? env.NEXT_PUBLIC_SITE_URL?.trim();
+  const explicitSiteUrl = runtimeEnv.NEXT_PUBLIC_SITE_URL?.trim();
   if (explicitSiteUrl) return explicitSiteUrl;
 
   const runtimeSharedBaseUrl = runtimeEnv.NEXT_PUBLIC_BASE_URL?.trim();

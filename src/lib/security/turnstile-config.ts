@@ -1,4 +1,4 @@
-import { env, getRuntimeEnvString } from "@/lib/env";
+import { getRuntimeEnvString } from "@/lib/env";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { parseCommaSeparatedValues } from "@/lib/security/parse-comma-separated";
 import { logger } from "@/lib/logger";
@@ -7,11 +7,9 @@ import { logger } from "@/lib/logger";
  * Parse the configured Turnstile allowed hostnames.
  */
 function parseConfiguredHosts(): string[] {
-  const hosts =
-    getRuntimeEnvString("TURNSTILE_ALLOWED_HOSTS") ??
-    env.TURNSTILE_ALLOWED_HOSTS;
-
-  return parseCommaSeparatedValues(hosts);
+  return parseCommaSeparatedValues(
+    getRuntimeEnvString("TURNSTILE_ALLOWED_HOSTS"),
+  );
 }
 
 /**

@@ -2,6 +2,13 @@
  * 环境变量模块（单一真相源）
  *
  * 约束：生产/测试代码统一从 `@/lib/env` 导入，避免出现多套 schema/mock 分叉。
+ *
+ * 读取规则：服务端运行时一律用 `getRuntimeEnvString` / `getRuntimeEnvBoolean`
+ * （Cloudflare 上 OpenNext 已把绑定写进 process.env）；`env` 只给构建期配置，
+ * `runtimeEnv` 只给需要构建期内联的 `NEXT_PUBLIC_*`。
+ *
+ * 不加 `server-only`：next.config.ts 构建期经 src/config/security.ts 加载本文件，
+ * 那里没有 react-server 条件，`server-only` 会直接抛错。客户端误用由 semgrep 拦截。
  */
 
 import { createEnv } from "@t3-oss/env-nextjs";
@@ -33,7 +40,6 @@ export const serverEnvSchema = {
   // Runtime and platform configuration
   LOG_LEVEL: logLevelSchema.optional(),
   DEPLOYMENT_PLATFORM: zEnum(["cloudflare", "development"]).optional(),
-  CF_PAGES: string().optional(),
   GOOGLE_SITE_VERIFICATION: string().min(1).optional(),
   YANDEX_VERIFICATION: string().min(1).optional(),
 
@@ -106,7 +112,6 @@ export const runtimeEnv = {
   TURNSTILE_BYPASS: process.env.TURNSTILE_BYPASS,
   LOG_LEVEL: process.env.LOG_LEVEL,
   DEPLOYMENT_PLATFORM: process.env.DEPLOYMENT_PLATFORM,
-  CF_PAGES: process.env.CF_PAGES,
   GOOGLE_SITE_VERIFICATION: process.env.GOOGLE_SITE_VERIFICATION,
   YANDEX_VERIFICATION: process.env.YANDEX_VERIFICATION,
   RATE_LIMIT_PEPPER: process.env.RATE_LIMIT_PEPPER,
@@ -137,22 +142,6 @@ function readRawEnvValue(key: string): string | undefined {
   return process.env[key];
 }
 
-interface CloudflareContextStore {
-  env?: Record<string, unknown>;
-}
-
-const cloudflareContextSymbol = Symbol.for("__cloudflare-context__");
-
-function readCloudflareContextEnvValue(key: string): string | undefined {
-  const context = (
-    globalThis as typeof globalThis &
-      Record<symbol, CloudflareContextStore | undefined>
-  )[cloudflareContextSymbol];
-  const value = context?.env?.[key];
-
-  return typeof value === "string" ? value : undefined;
-}
-
 function shouldSkipEnvValidation(): boolean {
   return readRawEnvValue("SKIP_ENV_VALIDATION") === "true";
 }
@@ -180,8 +169,12 @@ export const env = createEnv({
   emptyStringAsUndefined: true,
 });
 
+const envSchema = { ...serverEnvSchema, ...clientEnvSchema };
+
+// 与 createEnv 的 emptyStringAsUndefined 一致：空字符串当作未设置。
 function readProcessEnvValue(key: keyof typeof env): string | undefined {
-  return readCloudflareContextEnvValue(key) ?? readRawEnvValue(key);
+  const value = readRawEnvValue(key);
+  return value === "" ? undefined : value;
 }
 
 function readValidatedEnvValue(key: keyof typeof env) {
@@ -210,10 +203,14 @@ function coerceRuntimeAppEnv(
   return undefined;
 }
 
+/** 运行时原始值按该字段的 schema 校验，不合法时当作未设置。 */
 export function getRuntimeEnvString(key: keyof typeof env): string | undefined {
   const runtimeValue = readProcessEnvValue(key);
   if (runtimeValue !== undefined) {
-    return runtimeValue;
+    const parsed = envSchema[key].safeParse(runtimeValue);
+    return parsed.success && typeof parsed.data === "string"
+      ? parsed.data
+      : undefined;
   }
 
   const value = readValidatedEnvValue(key);

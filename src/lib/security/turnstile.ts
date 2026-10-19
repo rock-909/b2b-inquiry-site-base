@@ -13,7 +13,6 @@ import {
   TURNSTILE_DUMMY_TEST_TOKEN,
 } from "@/constants/turnstile-constants";
 import {
-  env,
   getRuntimeEnvBoolean,
   getRuntimeEnvString,
   isRuntimeDevelopment,
@@ -219,8 +218,7 @@ export async function verifyTurnstileDetailed(
       return { status: "verified" };
     }
 
-    const secretKey =
-      getRuntimeEnvString("TURNSTILE_SECRET_KEY") ?? env.TURNSTILE_SECRET_KEY;
+    const secretKey = getRuntimeEnvString("TURNSTILE_SECRET_KEY");
 
     if (!secretKey) {
       logger.error("Turnstile secret key not configured", {
