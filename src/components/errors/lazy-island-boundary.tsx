@@ -13,8 +13,8 @@ interface LazyIslandBoundaryState {
 }
 
 /**
- * 用户交互触发的按需加载（React.lazy）失败时，把错误限制在当前岛内。
- * React.lazy 会缓存被拒绝的结果，重试渲染无法恢复，因此不提供 reset，
+ * 用户交互触发的按需加载（动态 import）失败时，把错误限制在当前岛内。
+ * 被拒绝的 import() 会被缓存，重试渲染无法恢复，因此不提供 reset，
  * 直接保留页面并退回该岛已有的静态兜底；刷新页面后才会重新加载分块。
  */
 export class LazyIslandBoundary extends Component<

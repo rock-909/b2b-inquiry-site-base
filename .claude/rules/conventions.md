@@ -59,13 +59,13 @@ Add route-level `error.tsx` when a route needs its own recovery UI. Currently
 The inquiry form handles expected validation and provider failures locally.
 Do not add another boundary solely because a route has parameters or a form.
 
-User-interaction-triggered lazy loading is the exception: a `React.lazy()` island
-that loads on scroll, hover or click (mobile navigation,
+User-interaction-triggered lazy loading is the exception: an `import()` island
+(`ActivatedIsland`, no Suspense) that loads on scroll, hover or click (mobile navigation,
 language menu) sits under a `[locale]` layout, so a failed `import()` would
 otherwise reach `global-error` and replace the whole page. Wrap each such island
 in `LazyIslandBoundary` and fall back to usable static markup (the island's
-no-JS fallback, or static links). Do not rely on `reset` — `React.lazy` caches
-the rejection, so only a page reload retries the chunk.
+no-JS fallback, or static links). Do not rely on `reset` — the rejected `import()`
+is cached, so only a page reload retries the chunk.
 
 ## Cache
 
