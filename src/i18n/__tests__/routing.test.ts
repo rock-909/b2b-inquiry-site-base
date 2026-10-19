@@ -102,12 +102,14 @@ describe("i18n Routing Configuration", () => {
   });
 
   // localeDetection 必须关着，避免浏览器语言把买家强制重定向到不可预期的版本；
-  // hreflang/canonical 归 metadata 层，避免路由和 sitemap 产生两套 URL 真相。
-  it("keeps locale detection and alternate links off", async () => {
+  // hreflang/canonical 归 metadata 层，避免路由和 sitemap 产生两套 URL 真相；
+  // 不读的语言 cookie 也不写。next-intl 对后两项默认开启，所以必须显式写 false。
+  it("keeps locale detection, alternate links and the locale cookie off", async () => {
     const config = await getRoutingDefinition();
 
     expect(config.localeDetection).toBe(false);
-    expect(config.alternateLinks).toBeUndefined();
+    expect(config.alternateLinks).toBe(false);
+    expect(config.localeCookie).toBe(false);
   });
 
   it("keeps every locale code a two-letter lowercase tag", async () => {
