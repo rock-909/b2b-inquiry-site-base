@@ -16,6 +16,12 @@ import { runChildCommand } from "../../../scripts/quality/checks/cloudflare-smok
 
 const FIXTURE_PREFIX = "b2b-cf-preview-proof-";
 const PREVIEW_URL = "https://b2b-preview.example.workers.dev";
+const PREVIEW_DEPLOY_COMMAND = [
+  "pnpm exec opennextjs-cloudflare deploy --env preview --keep-vars",
+  `--var NEXT_PUBLIC_BASE_URL:${PREVIEW_URL}`,
+  `--var NEXT_PUBLIC_SITE_URL:${PREVIEW_URL}`,
+  "--var TURNSTILE_ALLOWED_HOSTS:localhost,127.0.0.1,b2b-preview.example.workers.dev",
+].join(" ");
 const tempDirs: string[] = [];
 
 afterEach(() => {
@@ -40,11 +46,12 @@ function createProofFixture() {
   const binDir = path.join(rootDir, "bin");
   mkdirSync(binDir);
   const callLog = path.join(rootDir, "calls.log");
+  const buildEnvLog = path.join(rootDir, "build-env.log");
   const fakePnpm = [
     "#!/bin/sh",
     'echo "pnpm $*" >> "$FAKE_CALL_LOG"',
     'case "$1" in',
-    '  website:build:cf) printf "%s\\n" "$FAKE_BUILD_OUTPUT"; exit "${FAKE_BUILD_EXIT:-0}" ;;',
+    '  website:build:cf) echo "$NEXT_PUBLIC_BASE_URL $NEXT_PUBLIC_SITE_URL" >> "$FAKE_BUILD_ENV_LOG"; printf "%s\\n" "$FAKE_BUILD_OUTPUT"; exit "${FAKE_BUILD_EXIT:-0}" ;;',
     `  exec) printf "%s\\n" "\${FAKE_DEPLOY_OUTPUT-Deployed to ${PREVIEW_URL}}"; exit 0 ;;`,
     "esac",
     "exit 1",
@@ -82,6 +89,7 @@ function createProofFixture() {
       existsSync(callLog)
         ? readFileSync(callLog, "utf8").trim().split("\n")
         : [],
+    readBuildEnv: () => readFileSync(buildEnvLog, "utf8").trim(),
     readProof: () =>
       JSON.parse(
         readFileSync(
@@ -94,10 +102,17 @@ function createProofFixture() {
           "utf8",
         ),
       ) as Record<string, unknown>,
-    runLane: (env: Record<string, string> = {}) =>
+    runLane: (
+      env: Record<string, string> = {},
+      args: string[] = ["--base-url", PREVIEW_URL],
+    ) =>
       spawnSync(
         process.execPath,
-        ["scripts/quality/checks/cloudflare-smoke.js", "cf-preview-deployed"],
+        [
+          "scripts/quality/checks/cloudflare-smoke.js",
+          "cf-preview-deployed",
+          ...args,
+        ],
         {
           cwd: rootDir,
           encoding: "utf8",
@@ -105,6 +120,8 @@ function createProofFixture() {
             ...process.env,
             PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`,
             FAKE_CALL_LOG: callLog,
+            FAKE_BUILD_ENV_LOG: buildEnvLog,
+            DEPLOY_SMOKE_BASE_URL: "",
             ...env,
           },
         },
@@ -121,7 +138,7 @@ describe("cloudflare preview deploy proof", () => {
     expect(result.status).toBe(0);
     expect(fixture.readCalls()).toEqual([
       "pnpm website:build:cf",
-      "pnpm exec opennextjs-cloudflare deploy --env preview",
+      PREVIEW_DEPLOY_COMMAND,
       `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url ${PREVIEW_URL}`,
     ]);
     expect(fixture.readProof()).toMatchObject({
@@ -129,6 +146,39 @@ describe("cloudflare preview deploy proof", () => {
       commitSha: fixture.commitSha,
       baseUrl: PREVIEW_URL,
     });
+    expect(fixture.readBuildEnv()).toBe(`${PREVIEW_URL} ${PREVIEW_URL}`);
+  });
+
+  it.each([
+    ["no preview URL", []],
+    ["the .invalid placeholder", ["--base-url", "https://example.invalid"]],
+    [
+      "a non-https URL",
+      ["--base-url", "http://b2b-preview.example.workers.dev"],
+    ],
+  ])("blocks before building or deploying with %s", (_label, args) => {
+    const fixture = createProofFixture();
+
+    const result = fixture.runLane({ FAKE_BUILD_OUTPUT: "build ok" }, args);
+
+    expect(result.status).toBe(2);
+    expect(fixture.readCalls()).toEqual([]);
+    expect(fixture.readProof()).toMatchObject({
+      status: "blocked",
+      stage: "preview-base-url",
+    });
+  });
+
+  it("reads the preview URL from DEPLOY_SMOKE_BASE_URL", () => {
+    const fixture = createProofFixture();
+
+    const result = fixture.runLane(
+      { FAKE_BUILD_OUTPUT: "build ok", DEPLOY_SMOKE_BASE_URL: PREVIEW_URL },
+      [],
+    );
+
+    expect(result.status).toBe(0);
+    expect(fixture.readCalls()[1]).toBe(PREVIEW_DEPLOY_COMMAND);
   });
 
   it("fails without deploying when the build log reports MISSING_MESSAGE", () => {
@@ -158,7 +208,7 @@ describe("cloudflare preview deploy proof", () => {
     expect(result.status).toBe(2);
     expect(fixture.readCalls()).toEqual([
       "pnpm website:build:cf",
-      "pnpm exec opennextjs-cloudflare deploy --env preview",
+      PREVIEW_DEPLOY_COMMAND,
     ]);
     expect(fixture.readProof()).toMatchObject({
       status: "blocked",

@@ -56,13 +56,38 @@ const CF_PREVIEW_BUILD_DEPLOY_TIMEOUT_MS = 15 * 60 * 1000;
 const CF_PREVIEW_SMOKE_TIMEOUT_MS = 5 * 60 * 1000;
 // 完整的 Next/OpenNext 构建日志远超 spawnSync 默认的 1 MiB 缓冲。
 const CHILD_COMMAND_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
-const CF_PREVIEW_DEPLOY_COMMAND = [
-  "exec",
-  "opennextjs-cloudflare",
-  "deploy",
-  "--env",
-  "preview",
-];
+
+// wrangler.jsonc 的 preview 变量里 URL 是占位值，且不带 --keep-vars 的部署会清掉
+// 仪表盘里的变量，所以真实 preview URL 必须由调用方显式给出，并随部署一起覆盖。
+function createCloudflarePreviewDeployCommand(previewUrl) {
+  return [
+    "exec",
+    "opennextjs-cloudflare",
+    "deploy",
+    "--env",
+    "preview",
+    "--keep-vars",
+    "--var",
+    `NEXT_PUBLIC_BASE_URL:${previewUrl.origin}`,
+    "--var",
+    `NEXT_PUBLIC_SITE_URL:${previewUrl.origin}`,
+    "--var",
+    `TURNSTILE_ALLOWED_HOSTS:localhost,127.0.0.1,${previewUrl.hostname}`,
+  ];
+}
+
+// 只接受真实 https 主机；缺失、非法或 .invalid 占位值都视为未提供。
+function parseCloudflarePreviewUrl(value) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  const isPlaceholder =
+    url.hostname === "invalid" || url.hostname.endsWith(".invalid");
+  return url.protocol === "https:" && !isPlaceholder ? url : null;
+}
 const CF_PREVIEW_URL_PATTERN = new RegExp(
   "https://[^\\s\\\"']+\\.workers\\.dev",
   "gi",
@@ -132,6 +157,14 @@ function parseCloudflarePreviewSmokeArgs(args) {
   }
 
   return parsed;
+}
+
+function parseCloudflarePreviewDeployedArgs(args) {
+  return parseSmokeArgs(
+    args,
+    { [COMMON_BASE_URL_OPTION]: valueOption("baseUrl") },
+    { baseUrl: DEFAULT_DEPLOY_SMOKE_BASE_URL },
+  );
 }
 
 function parseExternalUrlSmokeArgs(args) {
@@ -649,12 +682,12 @@ async function runDeployedSmoke(args = []) {
 // Preview deploy proof adapter：编排部署与已部署冒烟，产出结构化 proof。
 // ---------------------------------------------------------------------------
 
-async function runChildCommand(command, args, timeoutMs) {
+async function runChildCommand(command, args, timeoutMs, extraEnv = {}) {
   return new Promise((resolve) => {
     const child = spawn(command, args, {
       cwd: ROOT,
       stdio: ["ignore", "pipe", "pipe"],
-      env: process.env,
+      env: { ...process.env, ...extraEnv },
       detached: true,
     });
     const output = { stdout: [], stderr: [] };
@@ -719,9 +752,9 @@ function printCloudflarePreviewProofOutput(label, result) {
   );
 }
 
-async function runCloudflarePreviewDeployedProof() {
+async function runCloudflarePreviewDeployedProof(args) {
+  const { baseUrl: previewBaseUrl } = parseCloudflarePreviewDeployedArgs(args);
   const buildCommand = `pnpm ${CF_PREVIEW_BUILD_COMMAND.join(" ")}`;
-  const deployCommand = `pnpm ${CF_PREVIEW_DEPLOY_COMMAND.join(" ")}`;
   let commitSha = null;
 
   const finish = (result, exitCode) => {
@@ -753,14 +786,34 @@ async function runCloudflarePreviewDeployedProof() {
     );
   }
 
+  const previewUrl = parseCloudflarePreviewUrl(previewBaseUrl);
+  if (!previewUrl) {
+    return finish(
+      {
+        status: "blocked",
+        stage: "preview-base-url",
+        reason:
+          "pass the real preview https URL with --base-url or DEPLOY_SMOKE_BASE_URL; empty and .invalid placeholder values are refused",
+      },
+      2,
+    );
+  }
+  const deployArgs = createCloudflarePreviewDeployCommand(previewUrl);
+  const deployCommand = `pnpm ${deployArgs.join(" ")}`;
+
   // `opennextjs-cloudflare deploy` 只上传磁盘上现有的 .open-next，所以每次证明
   // 都要先就地构建，并在这份构建日志上检查 next-intl 缺失消息。
   const buildResult = await runChildCommand(
     "pnpm",
     CF_PREVIEW_BUILD_COMMAND,
     CF_PREVIEW_BUILD_DEPLOY_TIMEOUT_MS,
+    // NEXT_PUBLIC_* 在构建时内联，必须用真实 preview URL 而不是占位值。
+    {
+      NEXT_PUBLIC_BASE_URL: previewUrl.origin,
+      NEXT_PUBLIC_SITE_URL: previewUrl.origin,
+    },
   );
-  const buildOutput = `${buildResult.stdout ?? ""}\n${buildResult.stderr ?? ""}`;
+  const buildOutput = `${buildResult.stdout}\n${buildResult.stderr}`;
   printCloudflarePreviewProofOutput("build", buildResult);
   fs.mkdirSync(path.dirname(CF_PREVIEW_BUILD_LOG_PATH), { recursive: true });
   fs.writeFileSync(CF_PREVIEW_BUILD_LOG_PATH, buildOutput);
@@ -795,10 +848,10 @@ async function runCloudflarePreviewDeployedProof() {
 
   const deployResult = await runChildCommand(
     "pnpm",
-    CF_PREVIEW_DEPLOY_COMMAND,
+    deployArgs,
     CF_PREVIEW_BUILD_DEPLOY_TIMEOUT_MS,
   );
-  const deployOutput = `${deployResult.stdout ?? ""}\n${deployResult.stderr ?? ""}`;
+  const deployOutput = `${deployResult.stdout}\n${deployResult.stderr}`;
   printCloudflarePreviewProofOutput("deploy", deployResult);
 
   if (deployResult.status !== 0) {
