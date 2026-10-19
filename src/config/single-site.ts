@@ -1,5 +1,8 @@
 import { env, isRuntimeProduction, runtimeEnv } from "@/lib/env";
-import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
+import {
+  PUBLIC_STATIC_PAGE_DEFINITIONS,
+  type NavigationMessageKey,
+} from "@/config/pages.config";
 import type { SiteConfig, SiteFacts } from "@/config/site-types";
 
 export type {
@@ -37,50 +40,60 @@ const social = {
   linkedin: "",
 } as const;
 
-// 页脚导航列与主导航是同一份页面清单（pages.config 的 navigationKey）。
-const FOOTER_NAVIGATION_PAGES = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
-  (definition) => definition.navigationKey !== null,
-);
+type StaticPageDefinition = (typeof PUBLIC_STATIC_PAGE_DEFINITIONS)[number];
+type FooterNavigationPage = Extract<
+  StaticPageDefinition,
+  { navigationKey: NavigationMessageKey }
+>;
+type FooterSupportPage = Extract<
+  StaticPageDefinition,
+  { pageType: "privacy" | "terms" }
+>;
+// 页脚文案 key 由栏目和 pageType 推导：新页面只需在 messages 补文案，缺了 t() 类型检查会报错。
+type FooterLinkTranslationKey =
+  | `footer.sections.navigation.${FooterNavigationPage["pageType"]}`
+  | `footer.sections.support.${FooterSupportPage["pageType"]}`;
 
-const FOOTER_SUPPORT_PAGES = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
-  (definition) =>
-    definition.pageType === "privacy" || definition.pageType === "terms",
-);
-
-type FooterLinkPage =
-  | (typeof FOOTER_NAVIGATION_PAGES)[number]
-  | (typeof FOOTER_SUPPORT_PAGES)[number];
-
-const FOOTER_TRANSLATION_KEYS = {
-  home: "footer.sections.navigation.home",
-  contact: "footer.sections.navigation.contact",
-  privacy: "footer.sections.support.privacy",
-  terms: "footer.sections.support.terms",
-} as const satisfies Record<FooterLinkPage["pageType"], string>;
-
-const FOOTER_COLUMN_TRANSLATION_KEYS = {
-  navigation: "footer.sections.navigation.title",
-  support: "footer.sections.support.title",
-} as const;
-
-function getFooterLinkItem({ pageType, path }: FooterLinkPage) {
-  return {
-    key: pageType,
-    href: path,
-    translationKey: FOOTER_TRANSLATION_KEYS[pageType],
-  } as const;
+interface FooterLinkItem {
+  key: StaticPageDefinition["pageType"];
+  href: StaticPageDefinition["path"];
+  translationKey: FooterLinkTranslationKey;
 }
 
+function getFooterLinks(
+  column: "navigation" | "support",
+  pages: readonly (FooterNavigationPage | FooterSupportPage)[],
+): FooterLinkItem[] {
+  return pages.map(({ pageType, path }) => ({
+    key: pageType,
+    href: path,
+    translationKey:
+      `footer.sections.${column}.${pageType}` as FooterLinkTranslationKey,
+  }));
+}
+
+// 页脚导航列与主导航是同一份页面清单（pages.config 的 navigationKey）。
 export const SINGLE_SITE_FOOTER_COLUMNS = [
   {
     key: "navigation",
-    translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.navigation,
-    links: FOOTER_NAVIGATION_PAGES.map(getFooterLinkItem),
+    translationKey: "footer.sections.navigation.title",
+    links: getFooterLinks(
+      "navigation",
+      PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+        (page): page is FooterNavigationPage => page.navigationKey !== null,
+      ),
+    ),
   },
   {
     key: "support",
-    translationKey: FOOTER_COLUMN_TRANSLATION_KEYS.support,
-    links: FOOTER_SUPPORT_PAGES.map(getFooterLinkItem),
+    translationKey: "footer.sections.support.title",
+    links: getFooterLinks(
+      "support",
+      PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+        (page): page is FooterSupportPage =>
+          page.pageType === "privacy" || page.pageType === "terms",
+      ),
+    ),
   },
 ] as const;
 

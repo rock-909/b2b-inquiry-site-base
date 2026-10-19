@@ -20,6 +20,8 @@ export function proxy(request: NextRequest) {
   const publicPath = localePrefix
     ? pathname.slice(localePrefix.length + 1) || "/"
     : pathname;
+  // Allowlist = static pages from src/config/pages.config.ts. A future dynamic
+  // route (e.g. /products/[slug]) must add its own match here, or it will 404.
   const isKnownStaticPath = Object.hasOwn(routing.pathnames, publicPath);
 
   if (!isKnownStaticPath) {

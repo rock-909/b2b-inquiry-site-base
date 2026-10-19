@@ -11,7 +11,6 @@ import {
 
 const pageConfig: StaticContentPageConfig = {
   pageType: "privacy",
-  slug: "privacy",
 } as const;
 
 export function generateStaticParams() {

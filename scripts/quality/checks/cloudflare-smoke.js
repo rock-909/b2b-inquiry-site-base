@@ -11,7 +11,11 @@ const DEPLOY_SMOKE_REQUEST_TIMEOUT_MS = 30000;
 const DEPLOY_SMOKE_REQUEST_RETRIES = 2;
 const DEPLOY_SMOKE_RETRY_DELAY_MS = 1000;
 const MIN_HTML_BODY_LENGTH = 1024;
-const CORE_PUBLIC_PAGE_PATHS = ["/", "/contact", "/privacy", "/terms"];
+// Node 24 loads the TS registry natively; deploy smoke jobs have no node_modules.
+const CORE_PUBLIC_PAGE_PATHS =
+  require("../../../src/config/pages.config.ts").PUBLIC_STATIC_PAGE_DEFINITIONS.map(
+    ({ path: pagePath }) => pagePath,
+  );
 const EXTERNAL_URL_SMOKE_EXPECTATIONS = CORE_PUBLIC_PAGE_PATHS.map(
   (pathname) => ({ pathname, status: 200 }),
 );
@@ -950,6 +954,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  CORE_PUBLIC_PAGE_PATHS,
   runChildCommand,
   runCloudflarePreviewDeployedProof,
   runCloudflarePreviewSmoke,

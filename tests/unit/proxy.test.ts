@@ -1,6 +1,33 @@
+import { readdirSync } from "node:fs";
+import path from "node:path";
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { NextRequest, NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getLocalePath } from "@/config/paths/utils";
+import { routing } from "@/i18n/routing-config";
+
+const LOCALE_APP_DIR = path.join(process.cwd(), "src/app/[locale]");
+
+// Public URL of every page.tsx under src/app/[locale], read from the file
+// system so the expectation does not come from the allowlist under test.
+function listLocalePagePaths(): string[] {
+  return readdirSync(LOCALE_APP_DIR, { recursive: true, encoding: "utf8" })
+    .filter((file) => path.basename(file) === "page.tsx")
+    .map((file) => path.dirname(file).split(path.sep))
+    .filter((segments) => !segments.some((s) => s.startsWith("[...")))
+    .map((segments) => {
+      const dynamic = segments.find((s) => s.startsWith("["));
+      if (dynamic) {
+        throw new Error(
+          `Dynamic segment ${dynamic}: add its match to src/proxy.ts and a case here`,
+        );
+      }
+      const urlSegments = segments.filter(
+        (s) => s !== "." && !/^\(.*\)$/u.test(s),
+      );
+      return `/${urlSegments.join("/")}`;
+    });
+}
 
 const { createMiddlewareMock, intlMiddlewareMock } = vi.hoisted(() => ({
   createMiddlewareMock: vi.fn(),
@@ -9,19 +36,6 @@ const { createMiddlewareMock, intlMiddlewareMock } = vi.hoisted(() => ({
 
 vi.mock("next-intl/middleware", () => ({
   default: createMiddlewareMock,
-}));
-
-vi.mock("@/i18n/routing-config", () => ({
-  routing: {
-    defaultLocale: "en",
-    locales: ["en", "es"],
-    pathnames: {
-      "/": "/",
-      "/privacy": "/privacy",
-      "/contact": "/contact",
-    },
-    localeCookie: { maxAge: 60 * 60 * 24 * 365 },
-  },
 }));
 
 describe("proxy next-intl boundary", () => {
@@ -50,12 +64,7 @@ describe("proxy next-intl boundary", () => {
 
     expect(response).toBe(intlResponse);
     expect(createMiddlewareMock).toHaveBeenCalledTimes(1);
-    expect(createMiddlewareMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        defaultLocale: "en",
-        locales: ["en", "es"],
-      }),
-    );
+    expect(createMiddlewareMock).toHaveBeenCalledWith(routing);
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
     expect(intlMiddlewareMock).toHaveBeenCalledWith(request);
   });
@@ -106,7 +115,7 @@ describe("proxy next-intl boundary", () => {
 
     expect(response.status).toBe(404);
     expect(response.headers.get("x-middleware-rewrite")).toBe(
-      "http://localhost:3000/en/__not-found-placeholder",
+      `http://localhost:3000/${routing.defaultLocale}/__not-found-placeholder`,
     );
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
@@ -121,48 +130,45 @@ describe("proxy next-intl boundary", () => {
 
     expect(response.status).toBe(404);
     expect(response.headers.get("x-middleware-rewrite")).toBe(
-      "http://localhost:3000/en/__not-found-placeholder",
+      `http://localhost:3000/${routing.defaultLocale}/__not-found-placeholder`,
     );
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
   it("keeps the locale prefix when rewriting an unknown prefixed route to 404", async () => {
     const { proxy } = await import("@/proxy");
-    const request = new NextRequest("http://localhost:3000/es/nope");
-
-    const response = proxy(request);
-
-    expect(response.status).toBe(404);
-    expect(response.headers.get("x-middleware-rewrite")).toBe(
-      "http://localhost:3000/es/__not-found-placeholder",
+    const prefixedLocale = routing.locales.find(
+      (locale) => locale !== routing.defaultLocale,
     );
-    expect(intlMiddlewareMock).not.toHaveBeenCalled();
-  });
-
-  it("keeps the locale prefix when rewriting an unknown prefixed product to 404", async () => {
-    const { proxy } = await import("@/proxy");
+    if (!prefixedLocale) return; // single-locale site: no prefixed routes
     const request = new NextRequest(
-      "http://localhost:3000/es/products/not-a-real-product",
+      `http://localhost:3000/${prefixedLocale}/nope`,
     );
 
     const response = proxy(request);
 
     expect(response.status).toBe(404);
     expect(response.headers.get("x-middleware-rewrite")).toBe(
-      "http://localhost:3000/es/__not-found-placeholder",
+      `http://localhost:3000/${prefixedLocale}/__not-found-placeholder`,
     );
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
-  it("returns 404 for a removed catalog route", async () => {
+  it("lets every page under src/app/[locale] through in every locale", async () => {
     const { proxy } = await import("@/proxy");
-    const request = new NextRequest(
-      "http://localhost:3000/products/sample-offering",
+    const pagePaths = listLocalePagePaths();
+    expect(pagePaths).toContain("/");
+
+    for (const locale of routing.locales) {
+      for (const pagePath of pagePaths) {
+        const url = `http://localhost:3000${getLocalePath(locale, pagePath)}`;
+        const response = proxy(new NextRequest(url));
+        expect({ url, status: response.status }).toEqual({ url, status: 200 });
+      }
+    }
+    expect(intlMiddlewareMock).toHaveBeenCalledTimes(
+      pagePaths.length * routing.locales.length,
     );
-
-    expect(proxy(request).status).toBe(404);
-
-    expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
   it("does not clean up next-intl response headers", async () => {
@@ -213,15 +219,13 @@ describe("proxy next-intl boundary", () => {
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
-  it("returns a localized 404 for a dotted unknown route", async () => {
+  it("returns the 404 rewrite for a dotted unknown route", async () => {
     const { proxy } = await import("@/proxy");
-    const request = new NextRequest(
-      "http://localhost:3000/es/products/sample.v2",
-    );
+    const request = new NextRequest("http://localhost:3000/products/sample.v2");
     const response = proxy(request);
     expect(response.status).toBe(404);
     expect(response.headers.get("x-middleware-rewrite")).toBe(
-      "http://localhost:3000/es/__not-found-placeholder",
+      `http://localhost:3000/${routing.defaultLocale}/__not-found-placeholder`,
     );
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });

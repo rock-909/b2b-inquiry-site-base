@@ -1,7 +1,5 @@
 import { vi } from "vitest";
 
-import "./setup.intersection-observer";
-
 // Enhanced matchMedia mock for accessibility testing
 Object.defineProperty(window, "matchMedia", {
   writable: true,
