@@ -191,7 +191,7 @@ export function TurnstileWidget({
    * 测试/预览模式下压根没渲染 `<Turnstile>`，`turnstileRef` 永远是 null，只调
    * 它等于什么也没做；自动发令牌的 effect 又已经发过一次不会再发。结果是第一次
    * 提交之后再也拿不到令牌，按钮永久禁用。所以这里补发一次替身令牌，跟真实控件
-   * reset 后会出新挑战对齐。本地 E2E 与预览部署都跑在这个模式下。
+   * reset 后会出新挑战对齐。本地 E2E 跑在这个模式下；线上 preview 用真实控件。
    */
   useEffect(() => {
     const handleReset = () => {

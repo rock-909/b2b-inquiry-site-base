@@ -284,7 +284,8 @@ function rejectPlausiblyIllegitimateRequest(
 /**
  * 限流存储或私钥不可用时放行询盘（业主决定）：Turnstile 仍是反滥用闸门，
  * 而拒绝会连同仍能正常交付的真实买家一起挡掉。只有真实超限才返回 429。
- * 缺配置由部署前的 production-config 检查拦截，运行时只记日志、不挡买家。
+ * 部署闸门只核对 GitHub 侧的值和 Worker 上的密钥名，Worker 里的值缺失或错误
+ * 发现不了；这种情况运行时只记日志、不挡买家。
  */
 async function rejectIfRateLimited(
   clientIP: string,
