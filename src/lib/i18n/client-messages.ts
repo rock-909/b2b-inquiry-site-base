@@ -1,4 +1,4 @@
-import { type Locale } from "@/i18n/routing-config";
+import type { Locale } from "@/i18n/routing-config";
 import { loadCompleteMessages } from "@/lib/i18n/load-messages";
 
 type Messages = Record<string, unknown>;

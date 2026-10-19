@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { getPublicContactEmail } from "@/config/public-trust";
 import { SINGLE_SITE_FACTS } from "@/config/single-site";
-import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
+import type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 
 export function InquiryFormStaticFallback({ copy }: { copy: InquiryFormCopy }) {
   const publicEmail = getPublicContactEmail(SINGLE_SITE_FACTS.contact.email);

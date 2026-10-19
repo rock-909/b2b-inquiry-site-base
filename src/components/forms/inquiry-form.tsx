@@ -10,7 +10,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { InquiryFormFields } from "@/components/forms/inquiry-form-fields";
-import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
+import type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryFormStatus } from "@/components/forms/inquiry-form-status";
 import { createInquiryPayload } from "@/components/forms/inquiry-payload";
 import {
@@ -30,13 +30,6 @@ export type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 export interface InquiryFormProps {
   readonly copy: InquiryFormCopy;
   readonly fallback: ReactNode;
-  /**
-   * 通用留言预填：由调用方提供可信的初始上下文。
-   * 走 textarea defaultValue——React 文本渲染不是 HTML sink；提交仍经
-   * inquiryLeadSchema 校验。传入前截断到 message 上限，
-   * 避免超长初始值先过浏览器 maxLength 再被服务端 400。
-   */
-  readonly initialMessage?: string;
 }
 
 const unsubscribeHydration = () => undefined;
@@ -52,8 +45,6 @@ interface InquiryDraft {
   email: string;
   fullName: string;
   message: string;
-  /** 保存时页面的产品预填；用来判断 message 是否被买家改写过。 */
-  prefill: string;
 }
 
 function getDraftString(value: unknown, maxLength: number): string {
@@ -79,7 +70,6 @@ function readInquiryDraft(): InquiryDraft | null {
       fullName: getDraftString(draftRecord.fullName, MAX_LEAD_NAME_LENGTH),
       email: getDraftString(draftRecord.email, MAX_LEAD_EMAIL_LENGTH),
       message: getDraftString(draftRecord.message, MAX_LEAD_MESSAGE_LENGTH),
-      prefill: getDraftString(draftRecord.prefill, MAX_LEAD_MESSAGE_LENGTH),
     };
 
     return draft.fullName || draft.email || draft.message ? draft : null;
@@ -110,20 +100,11 @@ function getVisibleFormValue(
   return getTextControl(form, name)?.value.slice(0, maxLength) ?? "";
 }
 
-/** textarea 的 defaultValue 就是当前页面的产品预填（无预填时为空）。 */
-function getMessagePrefill(form: HTMLFormElement): string {
-  const control = form.elements.namedItem("message");
-  return control instanceof HTMLTextAreaElement
-    ? control.defaultValue.slice(0, MAX_LEAD_MESSAGE_LENGTH)
-    : "";
-}
-
 function saveInquiryDraft(form: HTMLFormElement) {
   const draft = {
     fullName: getVisibleFormValue(form, "fullName", MAX_LEAD_NAME_LENGTH),
     email: getVisibleFormValue(form, "email", MAX_LEAD_EMAIL_LENGTH),
     message: getVisibleFormValue(form, "message", MAX_LEAD_MESSAGE_LENGTH),
-    prefill: getMessagePrefill(form),
   };
 
   try {
@@ -145,16 +126,9 @@ function restoreInquiryDraft(form: HTMLFormElement | null) {
   const draft = readInquiryDraft();
   if (!form || !draft) return;
 
-  // 留言与保存时的预填相同，说明买家没改过：保留当前页面的预填，
-  // 否则在 A 产品页留下的草稿会把 B 产品页的留言覆盖成对 A 感兴趣。
-  for (const name of ["fullName", "email"] as const) {
+  for (const name of ["fullName", "email", "message"] as const) {
     const control = getTextControl(form, name);
     if (control) control.value = draft[name];
-  }
-
-  const message = getTextControl(form, "message");
-  if (message && draft.message !== draft.prefill) {
-    message.value = draft.message;
   }
 }
 
@@ -372,13 +346,7 @@ function useSubmitErrorFocus(
   }, [displayState, formRef, errorSummaryRef]);
 }
 
-function InquiryFormLive({
-  copy,
-  initialMessage,
-}: {
-  copy: InquiryFormCopy;
-  initialMessage?: string;
-}) {
+function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [displayState, setDisplayState] = useState<InquirySubmitState>({
     status: "idle",
@@ -466,7 +434,6 @@ function InquiryFormLive({
       >
         <InquiryFormFields
           copy={copy}
-          {...(initialMessage ? { initialMessage } : {})}
           messageMaxLength={MAX_LEAD_MESSAGE_LENGTH}
           readOnly={displayState.status === "submitting"}
           {...(fieldDetails ? { fieldDetails } : {})}
@@ -495,17 +462,7 @@ function InquiryFormLive({
   );
 }
 
-export function InquiryForm({
-  copy,
-  fallback,
-  initialMessage,
-}: InquiryFormProps) {
-  // 与 MAX_LEAD_MESSAGE_LENGTH 对齐：超长初始值会先过浏览器再被服务端拒绝。
-  const safeInitialMessage =
-    initialMessage && initialMessage.length > MAX_LEAD_MESSAGE_LENGTH
-      ? initialMessage.slice(0, MAX_LEAD_MESSAGE_LENGTH)
-      : initialMessage;
-
+export function InquiryForm({ copy, fallback }: InquiryFormProps) {
   const isHydrated = useSyncExternalStore(
     subscribeHydration,
     getClientHydrationSnapshot,
@@ -533,10 +490,5 @@ export function InquiryForm({
     );
   }
 
-  return (
-    <InquiryFormLive
-      copy={copy}
-      {...(safeInitialMessage ? { initialMessage: safeInitialMessage } : {})}
-    />
-  );
+  return <InquiryFormLive copy={copy} />;
 }

@@ -3,7 +3,7 @@ import {
   type InquiryErrorField,
   type InquiryFieldErrorDetail,
 } from "@/constants/inquiry-field-error-protocol";
-import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
+import type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 
 const FIELD_CLASS = "min-w-0 space-y-2";
 const LABEL_CLASS = "block text-sm leading-none font-medium text-foreground";
@@ -38,13 +38,11 @@ function resolveFieldError(
 export function InquiryFormFields({
   copy,
   fieldDetails,
-  initialMessage,
   messageMaxLength,
   readOnly,
 }: {
   copy: InquiryFormCopy;
   fieldDetails?: readonly string[];
-  initialMessage?: string;
   messageMaxLength: number;
   /** 提交进行中锁定输入：用 readOnly 而非 disabled，保留焦点且值仍随 FormData 提交。 */
   readOnly?: boolean;
@@ -125,7 +123,6 @@ export function InquiryFormFields({
           }
           aria-invalid={messageError ? true : undefined}
           className={`${INPUT_CLASS} min-h-32 resize-y leading-6`}
-          {...(initialMessage ? { defaultValue: initialMessage } : {})}
           id="inquiry-message"
           maxLength={messageMaxLength}
           name="message"

@@ -20,14 +20,11 @@ Before creating a component, check existing folders:
 
 ```text
 src/components/ui
-src/components/sections
 src/components/forms
 src/components/layout
 src/components/navigation
 src/components/footer
-src/components/contact
 src/components/content
-src/components/grid
 src/components/errors
 src/components/cookie
 src/components/security

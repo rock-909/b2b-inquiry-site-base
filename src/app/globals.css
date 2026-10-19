@@ -74,24 +74,6 @@
     letter-spacing: var(--tracking-normal);
   }
 
-  /* System font: PingFang SC */
-  @font-face {
-    font-family: "PingFang SC";
-    src: local("PingFang SC Regular"), local("PingFangSC-Regular");
-    font-display: swap;
-    font-weight: 400;
-    font-style: normal;
-    unicode-range: U+4E00-9FFF;
-  }
-
-  /* Chinese font optimization */
-  .font-chinese {
-    font-family: var(--font-chinese);
-    font-feature-settings: "kern" 1;
-    text-rendering: optimizeLegibility;
-    font-display: swap;
-  }
-
   /* View Transitions API */
   @supports (view-transition-name: none) {
     :root {
@@ -233,86 +215,6 @@
     background-color: var(--card);
     color: var(--card-foreground);
   }
-
-  .surface-card-muted {
-    border-radius: var(--card-radius);
-    border: 1px solid var(--border);
-    background-color: var(--muted);
-    color: var(--card-foreground);
-  }
-}
-
-/* ==================== CLS OPTIMIZATION ==================== */
-
-.cls-optimized {
-  min-height: 1rem;
-  contain: layout style;
-}
-
-.image-container {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 16 / 9;
-}
-
-.image-container img {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.dynamic-component-container {
-  min-height: 2rem;
-  contain: layout;
-}
-
-.dev-tools-container {
-  position: fixed;
-  pointer-events: none;
-}
-
-.dev-tools-container > * {
-  pointer-events: auto;
-}
-
-/* ==================== CONTENT VISIBILITY ==================== */
-
-.cv-auto {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 800px;
-  contain-intrinsic-size: auto 800px;
-}
-
-.cv-600 {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 600px;
-  contain-intrinsic-size: auto 600px;
-}
-
-.cv-800 {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 800px;
-  contain-intrinsic-size: auto 800px;
-}
-
-.cv-1000 {
-  content-visibility: auto;
-  contain-intrinsic-size: 1px 1000px;
-  contain-intrinsic-size: auto 1000px;
-}
-
-.font-loading {
-  font-display: swap;
-  font-synthesis: none;
-}
-
-.font-fallback {
-  font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-  letter-spacing: 0.01em;
-  line-height: 1.6;
 }
 
 /* ==================== UTILITY CLASSES ==================== */
@@ -331,131 +233,8 @@
     @apply text-base leading-relaxed;
   }
 
-  /* Section divider */
-  .section-divider {
-    @apply border-t;
-    border-color: var(--divider);
-  }
-
   footer {
     padding-bottom: var(--cookie-banner-height, 0px);
-  }
-
-  .column-divider {
-    @apply divide-x divide-border/30;
-  }
-
-  .card-border {
-    @apply border border-border;
-    border-radius: var(--surface-radius);
-  }
-
-  @media (min-width: 768px) {
-    .md\:section-divider {
-      @apply border-t;
-      border-color: var(--divider);
-    }
-  }
-
-  /* Line separator utilities */
-  .line-divider {
-    @apply border-t;
-    border-color: var(--divider);
-  }
-
-  .line-divider-vertical {
-    @apply border-l;
-    border-color: var(--divider);
-  }
-
-  /* Gradient line (fades at edges) */
-  .line-gradient {
-    background: linear-gradient(
-      90deg,
-      transparent 0%,
-      var(--divider) 20%,
-      var(--divider) 80%,
-      transparent 100%
-    );
-    height: 1px;
-  }
-}
-
-/* ==================== ANIMATION UTILITIES ==================== */
-
-@layer utilities {
-  /* Hover lift effect (subtle) */
-  .hover-lift {
-    transition:
-      transform var(--duration-fast) var(--ease-out),
-      box-shadow var(--duration-fast) var(--ease-out);
-  }
-
-  .hover-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--surface-hover-shadow);
-  }
-
-  /* Fade in animation */
-  .animate-fade-in {
-    animation: fadeIn var(--duration-normal) var(--ease-out) forwards;
-  }
-
-  /* Slide up animation */
-  .animate-slide-up {
-    animation: slideUp var(--duration-slow) var(--ease-out) forwards;
-  }
-
-  /* Slide down animation */
-  .animate-slide-down {
-    animation: slideDown var(--duration-slow) var(--ease-out) forwards;
-  }
-
-  /* Scale in animation */
-  .animate-scale-in {
-    animation: scaleIn var(--duration-normal) var(--ease-out-quint) forwards;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 
@@ -481,23 +260,6 @@
     @apply hidden;
     @media (min-width: 840px) {
       @apply flex;
-    }
-  }
-
-  .header-nav-more-only {
-    @apply hidden;
-    @media (min-width: 840px) {
-      @apply block;
-    }
-    @media (min-width: 1200px) {
-      @apply hidden;
-    }
-  }
-
-  .header-nav-secondary-only {
-    @apply hidden;
-    @media (min-width: 1200px) {
-      @apply block;
     }
   }
 
@@ -552,15 +314,5 @@
 
   .header-nav-right {
     @apply col-start-3 flex min-w-0 items-center justify-end gap-2;
-  }
-
-  /* Hide scrollbar for horizontal scroll containers */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
   }
 }

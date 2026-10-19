@@ -1,6 +1,6 @@
-import { type Ref } from "react";
-import { type InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
-import { type InquirySubmitState } from "@/components/forms/inquiry-response";
+import type { Ref } from "react";
+import type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
+import type { InquirySubmitState } from "@/components/forms/inquiry-response";
 import { FormPrivacyNotice } from "@/components/forms/form-privacy-notice";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { StatusCallout } from "@/components/ui/status-callout";

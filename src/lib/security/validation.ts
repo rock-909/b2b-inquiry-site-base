@@ -26,7 +26,7 @@ export function sanitizePlainText(input: string): string {
  * horizontal whitespace within each line.
  *
  * Use this for buyer free-text that is rendered as multiple lines downstream
- * (contact `message`, product `requirements`). It keeps `\n` so multi-line
+ * (contact `message`). It keeps `\n` so multi-line
  * email/Airtable rendering stays meaningful, unlike the single-line
  * {@link sanitizePlainText} which flattens everything to one line.
  *
