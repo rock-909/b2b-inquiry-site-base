@@ -76,17 +76,20 @@ function createCloudflarePreviewDeployCommand(previewUrl) {
   ];
 }
 
-// 只接受真实 https 主机；缺失、非法或 .invalid 占位值都视为未提供。
+// 主机名只允许小写 DNS 标签（无末尾点）：OpenNext 经 shell 执行 wrangler，$ ( )
+// 会被当成命令。非法、带 userinfo 或 .invalid 占位值都视为未提供。
+const CF_PREVIEW_HOSTNAME_PATTERN = /^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/u;
+
 function parseCloudflarePreviewUrl(value) {
-  let url;
-  try {
-    url = new URL(value);
-  } catch {
-    return null;
-  }
-  const isPlaceholder =
-    url.hostname === "invalid" || url.hostname.endsWith(".invalid");
-  return url.protocol === "https:" && !isPlaceholder ? url : null;
+  const url = URL.canParse(value) ? new URL(value) : null;
+  const isValid =
+    url !== null &&
+    url.protocol === "https:" &&
+    CF_PREVIEW_HOSTNAME_PATTERN.test(url.hostname) &&
+    !url.hostname.endsWith(".invalid") &&
+    !url.username &&
+    !url.password;
+  return isValid ? url : null;
 }
 const CF_PREVIEW_URL_PATTERN = new RegExp(
   "https://[^\\s\\\"']+\\.workers\\.dev",
@@ -793,7 +796,7 @@ async function runCloudflarePreviewDeployedProof(args) {
         status: "blocked",
         stage: "preview-base-url",
         reason:
-          "pass the real preview https URL with --base-url or DEPLOY_SMOKE_BASE_URL; empty and .invalid placeholder values are refused",
+          "pass the real preview https URL with --base-url or DEPLOY_SMOKE_BASE_URL; empty, malformed and .invalid placeholder values are refused",
       },
       2,
     );

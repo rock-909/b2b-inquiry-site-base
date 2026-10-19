@@ -84,6 +84,7 @@ function createProofFixture() {
   );
 
   return {
+    binDir,
     commitSha: git("rev-parse", "HEAD"),
     readCalls: () =>
       existsSync(callLog)
@@ -156,6 +157,19 @@ describe("cloudflare preview deploy proof", () => {
       "a non-https URL",
       ["--base-url", "http://b2b-preview.example.workers.dev"],
     ],
+    [
+      "the .invalid placeholder with a trailing dot",
+      ["--base-url", "https://example.invalid."],
+    ],
+    ["a bare invalid. host", ["--base-url", "https://invalid."]],
+    [
+      "shell metacharacters in the host",
+      ["--base-url", "https://$(reviewprobe).example.com"],
+    ],
+    [
+      "userinfo in the URL",
+      ["--base-url", "https://user:pw@b2b-preview.example.workers.dev"],
+    ],
   ])("blocks before building or deploying with %s", (_label, args) => {
     const fixture = createProofFixture();
 
@@ -167,6 +181,53 @@ describe("cloudflare preview deploy proof", () => {
       status: "blocked",
       stage: "preview-base-url",
     });
+  });
+
+  it("hands a normal preview URL intact to the installed OpenNext runWrangler", () => {
+    const fixture = createProofFixture();
+    const receiver = path.join(fixture.binDir, "receiver");
+    writeFileSync(
+      receiver,
+      `#!${process.execPath}\nconsole.log("RECEIVED " + JSON.stringify(process.argv.slice(2)));\n`,
+    );
+    chmodSync(receiver, 0o755);
+    // 假的 pnpm 经由真实安装的 runWrangler（shell: true）把参数交给替身 wrangler。
+    const runWranglerModule = path.resolve(
+      "node_modules/@opennextjs/cloudflare/dist/cli/commands/utils/run-wrangler.js",
+    );
+    writeFileSync(
+      path.join(fixture.binDir, "pnpm"),
+      [
+        `#!${process.execPath}`,
+        'if (process.argv[2] === "website:build:cf") process.exit(0);',
+        `import(${JSON.stringify(runWranglerModule)}).then(({ runWrangler }) => {`,
+        `  const result = runWrangler({ packager: ${JSON.stringify(receiver)} }, process.argv.slice(4), { logging: "none" });`,
+        "  process.stdout.write(result.stdout);",
+        `  console.log(${JSON.stringify(`Deployed ${PREVIEW_URL}`)});`,
+        "});",
+        "",
+      ].join("\n"),
+    );
+
+    const result = fixture.runLane();
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain(
+      `RECEIVED ${JSON.stringify([
+        "exec",
+        "wrangler",
+        "deploy",
+        "--env",
+        "preview",
+        "--keep-vars",
+        "--var",
+        `NEXT_PUBLIC_BASE_URL:${PREVIEW_URL}`,
+        "--var",
+        `NEXT_PUBLIC_SITE_URL:${PREVIEW_URL}`,
+        "--var",
+        "TURNSTILE_ALLOWED_HOSTS:localhost,127.0.0.1,b2b-preview.example.workers.dev",
+      ])}`,
+    );
   });
 
   it("reads the preview URL from DEPLOY_SMOKE_BASE_URL", () => {
