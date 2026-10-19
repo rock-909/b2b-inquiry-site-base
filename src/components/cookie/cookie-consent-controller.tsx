@@ -11,6 +11,7 @@ import {
   saveConsent,
 } from "@/lib/cookie-consent/storage";
 import {
+  CONSENT_STORAGE_KEY,
   OPEN_CONSENT_EVENT,
   type CookieConsent,
 } from "@/lib/cookie-consent/types";
@@ -27,8 +28,18 @@ export function CookieConsentController() {
       clearConsent();
       setConsent(null);
     };
+    // 其他标签页改动或撤回选择时，本标签页重新读取，保证撤回立即生效
+    const syncFromOtherTab = (event: StorageEvent) => {
+      if (event.key === null || event.key === CONSENT_STORAGE_KEY) {
+        hydrateConsent();
+      }
+    };
     window.addEventListener(OPEN_CONSENT_EVENT, reopen);
-    return () => window.removeEventListener(OPEN_CONSENT_EVENT, reopen);
+    window.addEventListener("storage", syncFromOtherTab);
+    return () => {
+      window.removeEventListener(OPEN_CONSENT_EVENT, reopen);
+      window.removeEventListener("storage", syncFromOtherTab);
+    };
   }, []);
 
   if (consent === undefined) {
