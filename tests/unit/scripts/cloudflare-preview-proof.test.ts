@@ -163,6 +163,8 @@ describe("cloudflare preview deploy proof", () => {
     ["userinfo", "https://user:pw@b2b-preview.example.workers.dev"],
     ["a newline inside the host", "https://x\ny.example.com"],
     ["surrounding spaces", " https://example.com "],
+    ["a trailing newline", "https://example.com\n"],
+    ["a Unicode case-folding host", "https://\u212A.example.com"],
     ["percent-encoding", "https://%65xample.com"],
     ["a Unicode host", "https://例子.com"],
     ["a port", "https://example.com:8443"],

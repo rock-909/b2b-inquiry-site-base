@@ -80,7 +80,7 @@ function createCloudflarePreviewDeployCommand(previewUrl) {
 // 被当成命令；而 new URL() 会悄悄改写空白、换行、百分号编码等输入。只接受纯 ASCII
 // 的 https://<点分 DNS 标签>[/]，不含 userinfo、端口、路径、查询和末尾点。
 const CF_PREVIEW_URL_INPUT_PATTERN =
-  /^https:\/\/[a-z0-9-]+(?:\.[a-z0-9-]+)+\/?$/iu;
+  /^https:\/\/[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+\/?$/;
 
 function parseCloudflarePreviewUrl(value) {
   if (!CF_PREVIEW_URL_INPUT_PATTERN.test(value)) return null;
