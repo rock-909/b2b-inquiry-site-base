@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { setTimeout as sleep } from "node:timers/promises";
 import {
   expect,
   test,
@@ -76,6 +77,18 @@ interface InquirySuccessResponse {
 
 const AIRTABLE_BASE_URL = "https://api.airtable.com/v0";
 
+// 与 src/lib/airtable/service.ts 的 AIRTABLE_REQUEST_TIMEOUT_MS 保持一致；
+// 该模块带 server-only，不能直接导入。
+const AIRTABLE_WRITE_CAP_MS = 8_000;
+const CLEANUP_MARGIN_MS = 5_000;
+const CLEANUP_WINDOW_MS = AIRTABLE_WRITE_CAP_MS + CLEANUP_MARGIN_MS;
+const CLEANUP_POLL_INTERVAL_MS = 1_000;
+const AIRTABLE_REQUEST_TIMEOUT_MS = 10_000;
+const RESPONSE_WAIT_MS = 20_000;
+// 表单就绪 50s + 按钮可用 15s + 响应 20s + 成功态 15s + 清理窗口 13s
+// + 清理时的查询与删除 20s，再留余量。
+const TEST_TIMEOUT_MS = 150_000;
+
 // Attribution is only written when the visit carries UTM params, so the canary
 // must arrive with all of them to prove every attribution column exists.
 const CANARY_UTM = {
@@ -102,17 +115,22 @@ async function waitForEditableInquiryForm(page: Page) {
   ).toBeEditable({ timeout: 15_000 });
 }
 
-async function submitInquiryForm(page: Page, email: string, message: string) {
+// 提交后的服务端状态：点击前未知，点击后才可能写入 Airtable，响应到达后写入必已结束。
+interface CanarySubmission {
+  submittedAt?: number;
+  responded: boolean;
+}
+
+async function submitInquiryForm(
+  page: Page,
+  email: string,
+  message: string,
+  submission: CanarySubmission,
+) {
   await page.fill('input[name="fullName"]', "Smoke Test");
   await page.fill('input[name="email"]', email);
   await page.fill('textarea[name="message"]', message);
 
-  const inquiryResponsePromise = page.waitForResponse(
-    (response) =>
-      response.url().includes("/api/inquiry") &&
-      response.request().method() === "POST",
-    { timeout: 20000 },
-  );
   const selectors = buildCanarySelectors();
   const submitButton = page.getByRole("button", {
     name: selectors.submitLabel,
@@ -124,12 +142,19 @@ async function submitInquiryForm(page: Page, email: string, message: string) {
     "Submit button stayed disabled on the deployed contact flow",
   ).toBeEnabled({ timeout: 15_000 });
 
+  // 响应计时从点击前才开始，等按钮的时间不能占掉响应预算。
+  const inquiryResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/inquiry") &&
+      response.request().method() === "POST",
+    { timeout: RESPONSE_WAIT_MS },
+  );
+  submission.submittedAt = Date.now();
   await submitButton.click();
 
-  return {
-    inquiryResponse: await inquiryResponsePromise,
-    selectors,
-  };
+  const inquiryResponse = await inquiryResponsePromise;
+  submission.responded = true;
+  return { inquiryResponse, selectors };
 }
 
 async function expectDeployedSuccess(page: Page, successPrefix: string) {
@@ -165,6 +190,7 @@ async function findCanaryRecords(
   const airtableResponse = await request.get(airtableTableUrl, {
     headers: airtableHeaders,
     params: { filterByFormula: formula },
+    timeout: AIRTABLE_REQUEST_TIMEOUT_MS,
   });
 
   expect(
@@ -173,6 +199,60 @@ async function findCanaryRecords(
   ).toBe(true);
   const body = (await airtableResponse.json()) as AirtableInquiryListResponse;
   return body.records ?? [];
+}
+
+// 提交后结果未知时（没拿到响应），服务端写入最迟在 8s 上限后落地，所以在窗口内
+// 反复按邮箱查并删除；空结果不代表清理完成。已拿到响应则写入已结束，查一遍即可。
+async function cleanupCanaryRecords(
+  request: APIRequestContext,
+  email: string,
+  submission: CanarySubmission,
+  knownRecordIds: Set<string>,
+) {
+  const failures: unknown[] = [];
+  const attempted = new Set<string>();
+  const deadline = (submission.submittedAt ?? Date.now()) + CLEANUP_WINDOW_MS;
+
+  do {
+    try {
+      for (const { id } of await findCanaryRecords(
+        request,
+        `{Email}="${email}"`,
+      )) {
+        if (typeof id === "string") knownRecordIds.add(id);
+      }
+    } catch (error) {
+      failures.push(error);
+    }
+
+    await Promise.all(
+      [...knownRecordIds]
+        .filter((id) => !attempted.has(id))
+        .map(async (id) => {
+          attempted.add(id);
+          try {
+            const cleanupResponse = await request.delete(
+              `${airtableTableUrl}/${id}`,
+              {
+                headers: airtableHeaders,
+                timeout: AIRTABLE_REQUEST_TIMEOUT_MS,
+              },
+            );
+            expect(
+              cleanupResponse.ok(),
+              `Airtable canary cleanup failed with HTTP ${cleanupResponse.status()}`,
+            ).toBe(true);
+          } catch (error) {
+            failures.push(error);
+          }
+        }),
+    );
+
+    if (submission.responded || submission.submittedAt === undefined) break;
+    await sleep(CLEANUP_POLL_INTERVAL_MS);
+  } while (Date.now() < deadline);
+
+  if (failures.length > 0) throw failures[0];
 }
 
 function expectCanaryAttribution(fields?: AirtableInquiryRecordFields) {
@@ -196,9 +276,10 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
     page,
     request,
   }) => {
+    test.setTimeout(TEST_TIMEOUT_MS);
     // 提交前就划定清理边界：Reference ID 由服务端生成，只有邮箱是提前已知的唯一标识。
     const knownRecordIds = new Set<string>();
-    let cleanupLookupError: unknown;
+    const submission: CanarySubmission = { responded: false };
 
     try {
       await waitForEditableInquiryForm(page);
@@ -206,6 +287,7 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
         page,
         CANARY_EMAIL,
         CANARY_MESSAGE,
+        submission,
       );
 
       expect(
@@ -250,32 +332,12 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
 
       await expectDeployedSuccess(page, selectors.successPrefix);
     } finally {
-      // 按邮箱再查一遍，提交后响应丢失、超时等任一失败路径也能删掉记录；
-      // 查询本身失败时仍删除已拿到的 ID，最后再把查询错误抛出。
-      try {
-        const records = await findCanaryRecords(
-          request,
-          `{Email}="${CANARY_EMAIL}"`,
-        );
-        for (const { id } of records) {
-          if (typeof id === "string") knownRecordIds.add(id);
-        }
-      } catch (error) {
-        cleanupLookupError = error;
-      }
-      await Promise.all(
-        [...knownRecordIds].map(async (id) => {
-          const cleanupResponse = await request.delete(
-            `${airtableTableUrl}/${id}`,
-            { headers: airtableHeaders },
-          );
-          expect(
-            cleanupResponse.ok(),
-            `Airtable canary cleanup failed with HTTP ${cleanupResponse.status()}`,
-          ).toBe(true);
-        }),
+      await cleanupCanaryRecords(
+        request,
+        CANARY_EMAIL,
+        submission,
+        knownRecordIds,
       );
-      if (cleanupLookupError) throw cleanupLookupError;
     }
   });
 });
