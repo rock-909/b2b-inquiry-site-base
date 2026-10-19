@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/layout/header";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
+import { usePathname } from "@/i18n/routing";
 
 // 语言切换只在多语言时出现；用固定双语 fixture，和站点当前配几种语言解耦。
 vi.hoisted(() => vi.resetModules());
@@ -59,6 +60,20 @@ describe("Header", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("language-toggle-island")).toBeInTheDocument();
     expect(screen.getByTestId("mobile-navigation")).toBeInTheDocument();
+  });
+
+  it("marks the current page in the desktop navigation", () => {
+    vi.mocked(usePathname).mockReturnValue("/products");
+    renderHeader();
+
+    const nav = screen.getByRole("navigation", { name: "Main navigation" });
+    expect(within(nav).getByRole("link", { name: "Products" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(nav).getByRole("link", { name: "Home" })).not.toHaveAttribute(
+      "aria-current",
+    );
   });
 
   it("renders desktop and mobile inquiry CTAs", () => {
