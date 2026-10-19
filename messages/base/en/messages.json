@@ -27,21 +27,6 @@
       "description": "B2B inquiry site reference"
     }
   },
-  "apiErrors": {
-    "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later.",
-    "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again later.",
-    "INVALID_JSON_BODY": "Invalid request format.",
-    "PAYLOAD_TOO_LARGE": "The request payload is too large.",
-    "TURNSTILE_REQUIRED": "Security verification required.",
-    "TURNSTILE_REJECTED": "Security verification failed. Please try again.",
-    "TURNSTILE_UNAVAILABLE": "Security verification is temporarily unavailable. Please try again later.",
-    "UNKNOWN_ERROR": "An unknown error occurred.",
-    "INTERNAL_SERVER_ERROR": "An unexpected error occurred. Please try again later.",
-    "INVALID_REQUEST": "Some required fields are missing or invalid.",
-    "UNSUPPORTED_MEDIA_TYPE": "Unsupported content type.",
-    "INQUIRY_VALIDATION_FAILED": "Please review your inquiry details and try again.",
-    "INQUIRY_PROCESSING_ERROR": "We could not send your inquiry right now. Please try again later."
-  },
   "errors": {
     "contact": {
       "title": "Contact form temporarily unavailable",
@@ -56,10 +41,7 @@
     }
   },
   "legal": {
-    "effectiveDate": "Effective Date",
-    "lastUpdated": "Last Updated",
-    "tableOfContents": "Table of Contents",
-    "articleAuthorLine": "Written by the operating business responsible for this page."
+    "tableOfContents": "Table of Contents"
   },
   "emailTemplates": {
     "common": {
@@ -86,12 +68,10 @@
   "footer": {
     "sections": {
       "navigation": {
-        "title": "Navigation",
         "home": "Home",
         "contact": "Contact"
       },
       "support": {
-        "title": "Support",
         "privacy": "Privacy Policy",
         "terms": "Terms of Service"
       }
@@ -106,8 +86,6 @@
     "contactLink": "Contact"
   },
   "contact": {
-    "title": "Contact",
-    "description": "Share the essentials so the business can identify the next useful step.",
     "panel": {
       "contactTitle": "Email & inquiry",
       "emailUnavailable": "A contact email has not been configured."

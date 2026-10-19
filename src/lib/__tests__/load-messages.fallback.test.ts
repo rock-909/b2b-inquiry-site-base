@@ -12,7 +12,6 @@ describe("load-messages canonical runtime source", () => {
   it("returns complete messages from the canonical locale file", async () => {
     const messages = await loadCompleteMessages("en");
 
-    expect(messages).toHaveProperty("apiErrors");
     expect(messages).toHaveProperty("home");
     expect(messages).toHaveProperty("contact");
     expect(messages).toHaveProperty("emailTemplates");

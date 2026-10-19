@@ -1,6 +1,4 @@
-import enMessagesSource from "../../messages/base/en/messages.json";
 import { describe, expect, it } from "vitest";
-import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { getSourceMessages } from "@/lib/i18n/load-messages";
 import { INQUIRY_VALIDATION_DETAIL_KEYS } from "@/lib/api/inquiry-validation-details";
 import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
@@ -8,7 +6,6 @@ import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
 type JsonObject = Record<string, unknown>;
 
 const enMessages = getSourceMessages("en") as JsonObject & {
-  apiErrors: Record<string, unknown>;
   inquiry?: JsonObject;
   contact?: JsonObject;
 };
@@ -75,13 +72,5 @@ describe("real i18n runtime message contract", () => {
     expect(
       getMessageValue(enMessages, "inquiry.form.errors.fieldSummary"),
     ).toEqual(expect.any(String));
-  });
-
-  it("keeps API error messages aligned with live error codes", () => {
-    const liveErrorCodes = Object.values(API_ERROR_CODES).sort();
-    const authoringErrorKeys = Object.keys(enMessagesSource.apiErrors).sort();
-
-    expect(authoringErrorKeys).toEqual(liveErrorCodes);
-    expect(Object.keys(enMessages.apiErrors).sort()).toEqual(liveErrorCodes);
   });
 });

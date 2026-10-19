@@ -80,7 +80,6 @@ function getFooterLinks(
 export const SINGLE_SITE_FOOTER_COLUMNS = [
   {
     key: "navigation",
-    translationKey: "footer.sections.navigation.title",
     links: getFooterLinks(
       "navigation",
       PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
@@ -90,7 +89,6 @@ export const SINGLE_SITE_FOOTER_COLUMNS = [
   },
   {
     key: "support",
-    translationKey: "footer.sections.support.title",
     links: getFooterLinks(
       "support",
       PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
