@@ -157,14 +157,14 @@ async function expectDeployedSuccess(page: Page, successPrefix: string) {
 const airtableTableUrl = `${AIRTABLE_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`;
 const airtableHeaders = { Authorization: `Bearer ${apiKey}` };
 
-// 接口返回成功前已写完 Airtable，所以无需等待，直接按 Reference ID 查全部匹配。
+// 接口返回成功前已写完 Airtable，所以无需等待，直接按公式查全部匹配。
 async function findCanaryRecords(
   request: APIRequestContext,
-  referenceId: string,
+  formula: string,
 ): Promise<AirtableInquiryRecord[]> {
   const airtableResponse = await request.get(airtableTableUrl, {
     headers: airtableHeaders,
-    params: { filterByFormula: `{Reference ID}="${referenceId}"` },
+    params: { filterByFormula: formula },
   });
 
   expect(
@@ -196,27 +196,30 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
     page,
     request,
   }) => {
-    await waitForEditableInquiryForm(page);
-    const { inquiryResponse, selectors } = await submitInquiryForm(
-      page,
-      CANARY_EMAIL,
-      CANARY_MESSAGE,
-    );
+    // 提交前就划定清理边界：Reference ID 由服务端生成，只有邮箱是提前已知的唯一标识。
+    const knownRecordIds = new Set<string>();
+    let cleanupLookupError: unknown;
 
-    expect(
-      inquiryResponse.ok(),
-      `Inquiry API failed with HTTP ${inquiryResponse.status()}`,
-    ).toBe(true);
-    const inquiryResult =
-      (await inquiryResponse.json()) as InquirySuccessResponse;
-    expect(inquiryResult).toMatchObject({
-      success: true,
-      data: { referenceId: expect.any(String) },
-    });
-    const referenceId = String(inquiryResult.data?.referenceId);
-
-    // 记录已写入：从这里起任何失败都必须走清理，不能把测试询盘留在业主表里。
     try {
+      await waitForEditableInquiryForm(page);
+      const { inquiryResponse, selectors } = await submitInquiryForm(
+        page,
+        CANARY_EMAIL,
+        CANARY_MESSAGE,
+      );
+
+      expect(
+        inquiryResponse.ok(),
+        `Inquiry API failed with HTTP ${inquiryResponse.status()}`,
+      ).toBe(true);
+      const inquiryResult =
+        (await inquiryResponse.json()) as InquirySuccessResponse;
+      expect(inquiryResult).toMatchObject({
+        success: true,
+        data: { referenceId: expect.any(String) },
+      });
+      const referenceId = String(inquiryResult.data?.referenceId);
+
       const inquiryBody = inquiryResponse.request().postDataJSON() as Record<
         string,
         unknown
@@ -225,7 +228,13 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
       expect(inquiryBody.fullName).toBe("Smoke Test");
       expect(inquiryBody.message).toBe(CANARY_MESSAGE);
 
-      const records = await findCanaryRecords(request, referenceId);
+      const records = await findCanaryRecords(
+        request,
+        `{Reference ID}="${referenceId}"`,
+      );
+      for (const { id } of records) {
+        if (typeof id === "string") knownRecordIds.add(id);
+      }
       expect(
         records,
         "Exactly one Airtable record must carry the canary Reference ID",
@@ -241,18 +250,32 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
 
       await expectDeployedSuccess(page, selectors.successPrefix);
     } finally {
-      // 独立再查一次，前面任一步失败也能删掉全部匹配记录。
-      for (const { id } of await findCanaryRecords(request, referenceId)) {
-        if (typeof id !== "string") continue;
-        const cleanupResponse = await request.delete(
-          `${airtableTableUrl}/${id}`,
-          { headers: airtableHeaders },
+      // 按邮箱再查一遍，提交后响应丢失、超时等任一失败路径也能删掉记录；
+      // 查询本身失败时仍删除已拿到的 ID，最后再把查询错误抛出。
+      try {
+        const records = await findCanaryRecords(
+          request,
+          `{Email}="${CANARY_EMAIL}"`,
         );
-        expect(
-          cleanupResponse.ok(),
-          `Airtable canary cleanup failed with HTTP ${cleanupResponse.status()}`,
-        ).toBe(true);
+        for (const { id } of records) {
+          if (typeof id === "string") knownRecordIds.add(id);
+        }
+      } catch (error) {
+        cleanupLookupError = error;
       }
+      await Promise.all(
+        [...knownRecordIds].map(async (id) => {
+          const cleanupResponse = await request.delete(
+            `${airtableTableUrl}/${id}`,
+            { headers: airtableHeaders },
+          );
+          expect(
+            cleanupResponse.ok(),
+            `Airtable canary cleanup failed with HTTP ${cleanupResponse.status()}`,
+          ).toBe(true);
+        }),
+      );
+      if (cleanupLookupError) throw cleanupLookupError;
     }
   });
 });

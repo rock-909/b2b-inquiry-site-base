@@ -1,9 +1,6 @@
 import type { Page } from "@playwright/test";
 import { DEFAULT_LOCALE, getLocaleMessages } from "./site-page-cases";
 
-// 允许的 console.error：每条都要写明为什么不是缺陷。
-const ALLOWED_CONSOLE_ERRORS: readonly RegExp[] = [];
-
 /**
  * 收集未捕获异常和 console.error。CSP 拦截、资源加载失败只出现在 console 里，
  * 只听 pageerror 会漏掉它们。
@@ -12,10 +9,8 @@ export function collectBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
-    if (message.type() !== "error") return;
-    const text = message.text();
-    if (!ALLOWED_CONSOLE_ERRORS.some((pattern) => pattern.test(text))) {
-      errors.push(`console.error: ${text}`);
+    if (message.type() === "error") {
+      errors.push(`console.error: ${message.text()}`);
     }
   });
   return errors;
