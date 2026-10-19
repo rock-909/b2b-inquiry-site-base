@@ -7,23 +7,14 @@ import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { beforeEach, vi, describe, expect, it } from "vitest";
 import { MobileLanguageSwitcher } from "@/components/layout/mobile-language-switcher";
+import { DEFAULT_LOCALE } from "@/test/two-locales";
 
 type MockFinalUrlLinkProps = ComponentProps<"a"> & {
   onNavigate?: () => void;
 };
 
-vi.mock("next-intl", () => ({
-  useTranslations:
-    (namespace: string) => (key: string, values?: Record<string, string>) => {
-      if (namespace === "accessibility" && key === "language") {
-        return `Languages: ${values?.language ?? ""}`;
-      }
-      if (namespace === "navigation" && key === "language") {
-        return "Languages";
-      }
-      return `${namespace}.${key}`;
-    },
-}));
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
 
 vi.mock("@/i18n/routing", () => ({
   FinalUrlLink: ({ onNavigate, ...props }: MockFinalUrlLinkProps) => (
@@ -43,9 +34,9 @@ describe("MobileLanguageSwitcher", () => {
     window.history.replaceState({}, "", "/contact");
   });
 
-  it("shows the current language and a real Spanish switch target", async () => {
+  it("shows the current language and a real switch target for the other locale", async () => {
     const user = userEvent.setup();
-    render(<MobileLanguageSwitcher locale="en" />);
+    render(<MobileLanguageSwitcher locale={DEFAULT_LOCALE} />);
 
     const trigger = screen.getByTestId("mobile-language-trigger");
     expect(trigger).toHaveAccessibleName("Languages: English");
@@ -56,9 +47,9 @@ describe("MobileLanguageSwitcher", () => {
 
     expect(screen.queryByTestId("mobile-language-option-en")).toBeNull();
     expect(screen.queryByRole("link", { name: "English" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Deutsch" })).toHaveAttribute(
       "lang",
-      "es",
+      "de",
     );
   });
 
@@ -69,23 +60,28 @@ describe("MobileLanguageSwitcher", () => {
       "/contact?source=mobile&tag=one&tag=two#inquiry",
     );
     const user = userEvent.setup();
-    render(<MobileLanguageSwitcher locale="en" />);
+    render(<MobileLanguageSwitcher locale={DEFAULT_LOCALE} />);
 
     await user.click(screen.getByTestId("mobile-language-trigger"));
 
-    expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Deutsch" })).toHaveAttribute(
       "href",
-      "/es/contact?source=mobile&tag=one&tag=two#inquiry",
+      "/de/contact?source=mobile&tag=one&tag=two#inquiry",
     );
   });
 
   it("closes the parent navigation after Next accepts the locale navigation", async () => {
     const onNavigate = vi.fn();
     const user = userEvent.setup();
-    render(<MobileLanguageSwitcher locale="en" onNavigate={onNavigate} />);
+    render(
+      <MobileLanguageSwitcher
+        locale={DEFAULT_LOCALE}
+        onNavigate={onNavigate}
+      />,
+    );
 
     await user.click(screen.getByTestId("mobile-language-trigger"));
-    await user.click(screen.getByRole("link", { name: "Español" }));
+    await user.click(screen.getByRole("link", { name: "Deutsch" }));
 
     expect(onNavigate).toHaveBeenCalledOnce();
   });

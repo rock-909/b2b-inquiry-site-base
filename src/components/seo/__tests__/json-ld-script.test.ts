@@ -119,7 +119,13 @@ describe("createJsonLdGraphData", () => {
     };
 
     expect(graphData["@context"]).toBe("https://schema.org");
-    expect(graphTypes(graphData)).toEqual(["WebSite", "FAQPage"]);
+    // 身份节点在前、页面节点在后；站点填了公司信息时身份节点还会多出 Organization。
+    const types = graphTypes(graphData);
+    expect(types.at(-1)).toBe("FAQPage");
+    expect(types).toContain("WebSite");
+    expect(["Organization", "WebSite"]).toEqual(
+      expect.arrayContaining(types.slice(0, -1)),
+    );
     expect(graphData["@graph"].some((node) => "@context" in node)).toBe(false);
   });
 

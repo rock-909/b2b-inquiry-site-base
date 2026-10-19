@@ -19,11 +19,3 @@ vi.mock("next/navigation", () => ({
 }));
 
 Object.defineProperty(window, "open", { value: vi.fn(), configurable: true });
-
-// Anchor click: dispatch click event without performing navigation
-vi.spyOn(HTMLAnchorElement.prototype as any, "click").mockImplementation(
-  function anchorClickMock(this: HTMLAnchorElement) {
-    const evt = new MouseEvent("click", { bubbles: true, cancelable: true });
-    this.dispatchEvent(evt);
-  },
-);

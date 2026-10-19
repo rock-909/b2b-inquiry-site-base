@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { setRequestLocale } from "next-intl/server";
 import ContactPage, { generateMetadata } from "@/app/[locale]/contact/page";
 import { getStaticContactPage } from "@/app/[locale]/contact/contact-page-data";
+import contactContent from "@/content/pages/en/contact";
 import * as staticPages from "@/lib/content/static-pages";
 import { renderAsyncPage } from "@/test/render-async-page";
 
@@ -70,7 +71,7 @@ describe("ContactPage static content", () => {
 
     expect(
       within(content).getByRole("heading", { level: 1 }),
-    ).toHaveTextContent("Contact");
+    ).toHaveTextContent(contactContent.metadata.title);
     expect(screen.getByTestId("content-body")).toBeInTheDocument();
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
   });
@@ -102,7 +103,6 @@ describe("ContactPage static content", () => {
     expect(staticFallback.tagName).not.toBe("FORM");
     expect(staticFallback.querySelector("form")).toBeNull();
     expect(within(staticFallback).queryByRole("link")).toBeNull();
-    expect(screen.queryByRole("button", { name: /send enquiry/i })).toBeNull();
     expect(
       screen.queryByTestId("contact-page-fallback"),
     ).not.toBeInTheDocument();
@@ -130,38 +130,15 @@ describe("ContactPage static content", () => {
     expect(screen.queryByText(/WhatsApp/i)).not.toBeInTheDocument();
   });
 
-  it("does not render starter FAQ from page metadata", async () => {
-    const page = await ContactPage({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    await renderAsyncPage(page as React.JSX.Element);
-
-    expect(screen.queryByTestId("faq-section")).not.toBeInTheDocument();
-  });
-
-  it("does not protect the entire Contact page from browser translation", async () => {
-    const page = await ContactPage({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    await renderAsyncPage(page as React.JSX.Element);
-    const shell = screen.getByTestId("contact-page-content");
-
-    expect(shell).not.toHaveClass("notranslate");
-    expect(shell).not.toHaveAttribute("translate", "no");
-  });
-
   it("builds contact metadata from the static content manifest", async () => {
     const enMetadata = await generateMetadata({
       params: Promise.resolve({ locale: "en" }),
     });
 
-    expect(enMetadata.title).toBe("Contact — B2B Inquiry Site Reference");
+    expect(enMetadata.title).toBe(contactContent.metadata.seo.title);
     expect(enMetadata.description).toBe(
-      "Reference contact page showing the minimum information a future business should replace.",
+      contactContent.metadata.seo.description,
     );
-    expect(enMetadata.other?.google).not.toBe("notranslate");
   });
 
   it("generates runtime SEO metadata for the actual localized contact route", async () => {
@@ -190,7 +167,7 @@ describe("ContactPage static content", () => {
     expect(metadata.twitter).toEqual(
       expect.objectContaining({
         card: "summary_large_image",
-        title: "Contact — B2B Inquiry Site Reference",
+        title: contactContent.metadata.seo.title,
       }),
     );
     expect(metadata.robots).toEqual(

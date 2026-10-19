@@ -5,13 +5,12 @@ import path from "node:path";
 
 import { load } from "js-yaml";
 import ts from "typescript";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   STARTER_PUBLIC_LAUNCH_FIXTURE,
   READY_PUBLIC_LAUNCH_FIXTURE,
   type PublicLaunchFixture,
 } from "./production-config-fixtures";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
   isSentinelBlocker,
   shouldValidateProductionRuntimeContract,
@@ -69,14 +68,7 @@ const SAFE_PRODUCTION_PUBLIC_KEYS = [
 ] as const;
 
 const ROOT_DIR = path.resolve(import.meta.dirname, "../../..");
-const tempDirs: string[] = [];
 const FIXTURE_PREFIX = "b2b-inquiry-production-";
-
-afterEach(() => {
-  for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
-  }
-});
 
 function loadDeployWorkflowSteps(): WorkflowStep[] {
   const workflow = load(
@@ -148,7 +140,6 @@ function executeProductionExport(exportScript: string): {
   const tempDir = mkdtempSync(
     path.join(os.tmpdir(), `${FIXTURE_PREFIX}export-`),
   );
-  tempDirs.push(tempDir);
   const githubEnvPath = path.join(tempDir, "github-env");
   const result = spawnSync(process.execPath, ["-e", nodeScript], {
     cwd: ROOT_DIR,
@@ -174,7 +165,6 @@ function createPublicLaunchInput(
   const rootDir = mkdtempSync(
     path.join(os.tmpdir(), `${FIXTURE_PREFIX}config-`),
   );
-  tempDirs.push(rootDir);
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- 写入本测试刚创建的临时目录
   writeFileSync(
     path.join(rootDir, "wrangler.jsonc"),

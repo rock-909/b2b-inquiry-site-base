@@ -1,8 +1,15 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import {
   expectDesktopLanguageMenuKeyboardReady,
   getHeaderMobileMenuButton,
 } from "./helpers/navigation";
+import {
+  DEFAULT_LOCALE,
+  getLocaleMessages,
+  localizePath,
+  SECOND_LOCALE,
+} from "./site-page-cases";
 import { acceptCookieBannerIfVisible } from "./test-environment-setup";
 
 // Windows 高对比度（forced-colors）下 box-shadow 会被系统去掉，Tailwind 的
@@ -49,29 +56,39 @@ test.describe("forced-colors keyboard indicators", () => {
     page,
     browserName,
   }) => {
+    test.skip(SECOND_LOCALE === undefined, "单语种站点不渲染语言切换");
+    // 跳过后不会执行，回退值只为让类型收窄。
+    const second = SECOND_LOCALE ?? DEFAULT_LOCALE;
     const mobileMenuButton = getHeaderMobileMenuButton(page);
     if (await mobileMenuButton.isVisible()) {
       // 手机使用抽屉内的原生 details 和链接，不存在桌面菜单的高亮状态。
       await mobileMenuButton.click();
-      const drawer = page.getByRole("dialog", { name: "Mobile navigation" });
+      const drawer = page.getByRole("dialog", {
+        name: getLocaleMessages(DEFAULT_LOCALE).accessibility.mobileNavigation,
+      });
       await expect(drawer).toBeVisible();
       const languageTrigger = drawer.getByTestId("mobile-language-trigger");
       await languageTrigger.focus();
       await expect(languageTrigger).toBeFocused();
       await page.keyboard.press("Enter");
 
-      const spanish = drawer.getByRole("link", { name: "Español" });
-      await expect(spanish).toBeVisible();
+      const secondLocale = drawer.getByRole("link", {
+        name: LOCALES_CONFIG.displayNames[second],
+      });
+      await expect(secondLocale).toBeVisible();
       // macOS Safari 默认用 Option-Tab 访问链接；普通 Tab 会跳过链接。
       const nextLinkKey =
         browserName === "webkit" && process.platform === "darwin"
           ? "Alt+Tab"
           : "Tab";
       await page.keyboard.press(nextLinkKey);
-      await expect(spanish).toBeFocused();
-      await expect(spanish).toHaveAttribute("href", "/es/contact");
+      await expect(secondLocale).toBeFocused();
+      await expect(secondLocale).toHaveAttribute(
+        "href",
+        localizePath(second, "/contact"),
+      );
 
-      const outline = await visibleOutline(spanish);
+      const outline = await visibleOutline(secondLocale);
       expect(outline.style).not.toBe("none");
       expect(outline.width).toBeGreaterThanOrEqual(2);
       return;

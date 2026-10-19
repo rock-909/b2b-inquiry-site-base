@@ -3,6 +3,8 @@ import sitemap from "@/app/sitemap";
 import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 import { getLocalePath, LOCALES_CONFIG } from "@/config/paths";
 
+const { defaultLocale, locales } = LOCALES_CONFIG;
+
 describe("sitemap", () => {
   it("publishes each indexable page in every locale once", async () => {
     const entries = await sitemap();
@@ -12,31 +14,43 @@ describe("sitemap", () => {
     );
     expect(pages.length).toBeGreaterThan(0);
     expect(paths).toEqual(
-      LOCALES_CONFIG.locales.flatMap((locale) =>
+      locales.flatMap((locale) =>
         pages.map((page) => getLocalePath(locale, page.path)),
       ),
     );
     expect(new Set(paths).size).toBe(paths.length);
-    expect(paths).toContain("/contact");
-    expect(paths).toContain("/es/contact");
-    expect(paths).not.toContain("/products/sample-offering");
-    expect(paths).not.toContain("/about");
-    for (const path of ["/privacy", "/terms", "/es/privacy", "/es/terms"])
-      expect(paths).not.toContain(path);
+    // 独立锚点：默认语言的首页不带前缀。
+    expect(paths[0]).toBe("/");
+    for (const page of PUBLIC_STATIC_PAGE_DEFINITIONS) {
+      if (page.sitemap.include) continue;
+      for (const locale of locales)
+        expect(paths).not.toContain(getLocalePath(locale, page.path));
+    }
   });
 
-  it("publishes reciprocal alternates and only supported content dates", async () => {
+  it("publishes reciprocal alternates and content dates only for content pages", async () => {
     const entries = await sitemap();
+    const pages = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+      (page) => page.sitemap.include,
+    );
+    const contentPathnames = new Set(
+      locales.flatMap((locale) =>
+        pages
+          .filter((page) => page.contentSlug !== null)
+          .map((page) => getLocalePath(locale, page.path)),
+      ),
+    );
     for (const entry of entries) {
       expect(entry.priority).toBeGreaterThan(0);
-      for (const locale of LOCALES_CONFIG.locales) {
+      for (const locale of locales) {
         expect(entry.alternates?.languages).toHaveProperty(locale);
       }
-      expect(entry.alternates?.languages).toHaveProperty("x-default");
-      const path =
-        new URL(entry.url).pathname.replace(/^\/es(?=\/|$)/u, "") || "/";
-      if (path === "/") expect(entry).not.toHaveProperty("lastModified");
-      else expect(entry.lastModified).toBeInstanceOf(Date);
+      expect(entry.alternates?.languages?.["x-default"]).toBe(
+        entry.alternates?.languages?.[defaultLocale],
+      );
+      if (contentPathnames.has(new URL(entry.url).pathname))
+        expect(entry.lastModified).toBeInstanceOf(Date);
+      else expect(entry).not.toHaveProperty("lastModified");
     }
   });
 });

@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 import en from "../../messages/base/en/messages.json";
 import { SITE_PAGE_CASES } from "./site-page-cases";
+import { collectBrowserErrors } from "./test-environment-setup";
 
 test.describe("site smoke", () => {
   for (const [path, heading] of SITE_PAGE_CASES) {
     test(`${path} renders current site content`, async ({ page }) => {
-      const pageErrors: string[] = [];
-      page.on("pageerror", (error) => pageErrors.push(error.message));
+      const pageErrors = collectBrowserErrors(page);
 
       const response = await page.goto(path, { waitUntil: "domcontentloaded" });
 

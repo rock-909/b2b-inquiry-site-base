@@ -106,7 +106,6 @@ async function submitInquiryForm(page: Page, email: string, message: string) {
   await page.fill('input[name="fullName"]', "Smoke Test");
   await page.fill('input[name="email"]', email);
   await page.fill('textarea[name="message"]', message);
-  await page.waitForTimeout(3000);
 
   const inquiryResponsePromise = page.waitForResponse(
     (response) =>
@@ -119,10 +118,11 @@ async function submitInquiryForm(page: Page, email: string, message: string) {
     name: selectors.submitLabel,
   });
 
+  // 真实 Turnstile 校验完成前按钮保持禁用，留足时间而不是固定等待。
   await expect(
     submitButton,
     "Submit button stayed disabled on the deployed contact flow",
-  ).toBeEnabled();
+  ).toBeEnabled({ timeout: 15_000 });
 
   await submitButton.click();
 
@@ -154,29 +154,25 @@ async function expectDeployedSuccess(page: Page, successPrefix: string) {
   );
 }
 
-async function fetchAirtableRecord(
+const airtableTableUrl = `${AIRTABLE_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}`;
+const airtableHeaders = { Authorization: `Bearer ${apiKey}` };
+
+// 接口返回成功前已写完 Airtable，所以无需等待，直接按 Reference ID 查全部匹配。
+async function findCanaryRecords(
   request: APIRequestContext,
-  params: { baseId: string; apiKey: string; email: string; tableName: string },
-) {
-  await new Promise((resolve) => {
-    setTimeout(resolve, 5000);
+  referenceId: string,
+): Promise<AirtableInquiryRecord[]> {
+  const airtableResponse = await request.get(airtableTableUrl, {
+    headers: airtableHeaders,
+    params: { filterByFormula: `{Reference ID}="${referenceId}"` },
   });
 
-  const airtableResponse = await request.get(
-    `${AIRTABLE_BASE_URL}/${params.baseId}/${encodeURIComponent(params.tableName)}`,
-    {
-      headers: { Authorization: `Bearer ${params.apiKey}` },
-      params: {
-        filterByFormula: `{Email}="${params.email}"`,
-        maxRecords: "1",
-      },
-    },
-  );
-
-  expect(airtableResponse.ok()).toBe(true);
+  expect(
+    airtableResponse.ok(),
+    `Airtable lookup failed with HTTP ${airtableResponse.status()}`,
+  ).toBe(true);
   const body = (await airtableResponse.json()) as AirtableInquiryListResponse;
-  expect(body.records?.length ?? 0).toBeGreaterThanOrEqual(1);
-  return body.records?.[0];
+  return body.records ?? [];
 }
 
 function expectCanaryAttribution(fields?: AirtableInquiryRecordFields) {
@@ -207,14 +203,6 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
       CANARY_MESSAGE,
     );
 
-    const inquiryBody = inquiryResponse.request().postDataJSON() as Record<
-      string,
-      unknown
-    >;
-    expect(inquiryBody.email).toBe(CANARY_EMAIL);
-    expect(inquiryBody.fullName).toBe("Smoke Test");
-    expect(inquiryBody.message).toBe(CANARY_MESSAGE);
-
     expect(
       inquiryResponse.ok(),
       `Inquiry API failed with HTTP ${inquiryResponse.status()}`,
@@ -225,23 +213,24 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
       success: true,
       data: { referenceId: expect.any(String) },
     });
-    const referenceId = inquiryResult.data?.referenceId;
+    const referenceId = String(inquiryResult.data?.referenceId);
 
-    await expectDeployedSuccess(page, selectors.successPrefix);
-
-    let recordId = "";
+    // 记录已写入：从这里起任何失败都必须走清理，不能把测试询盘留在业主表里。
     try {
-      const record = await fetchAirtableRecord(request, {
-        baseId,
-        apiKey,
-        email: CANARY_EMAIL,
-        tableName,
-      });
+      const inquiryBody = inquiryResponse.request().postDataJSON() as Record<
+        string,
+        unknown
+      >;
+      expect(inquiryBody.email).toBe(CANARY_EMAIL);
+      expect(inquiryBody.fullName).toBe("Smoke Test");
+      expect(inquiryBody.message).toBe(CANARY_MESSAGE);
 
-      recordId = typeof record?.id === "string" ? record.id : "";
-      expect(recordId, "Airtable canary record did not include an id").not.toBe(
-        "",
-      );
+      const records = await findCanaryRecords(request, referenceId);
+      expect(
+        records,
+        "Exactly one Airtable record must carry the canary Reference ID",
+      ).toHaveLength(1);
+      const record = records[0];
       expect(record?.fields?.["First Name"]).toBe("Smoke");
       expect(record?.fields?.["Last Name"]).toBe("Test");
       expect(record?.fields?.Email).toBe(CANARY_EMAIL);
@@ -249,11 +238,15 @@ test.describe("Post-Deploy: Airtable Write Canary", () => {
       expect(record?.fields?.["Reference ID"]).toBe(referenceId);
       expect(record?.fields?.Company ?? "").toBe("");
       expectCanaryAttribution(record?.fields);
+
+      await expectDeployedSuccess(page, selectors.successPrefix);
     } finally {
-      if (recordId) {
+      // 独立再查一次，前面任一步失败也能删掉全部匹配记录。
+      for (const { id } of await findCanaryRecords(request, referenceId)) {
+        if (typeof id !== "string") continue;
         const cleanupResponse = await request.delete(
-          `${AIRTABLE_BASE_URL}/${baseId}/${encodeURIComponent(tableName)}/${recordId}`,
-          { headers: { Authorization: `Bearer ${apiKey}` } },
+          `${airtableTableUrl}/${id}`,
+          { headers: airtableHeaders },
         );
         expect(
           cleanupResponse.ok(),

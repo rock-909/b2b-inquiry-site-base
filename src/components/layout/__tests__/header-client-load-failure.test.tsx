@@ -2,6 +2,11 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LanguageToggleIsland, MobileNavigationIsland } from "../header-client";
+import { captureExpectedConsoleErrors } from "@/test/console";
+import { DEFAULT_LOCALE, OTHER_LOCALE } from "@/test/two-locales";
+
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
 
 const mockPathname = vi.hoisted(() => ({ current: "/contact" }));
 
@@ -22,11 +27,18 @@ vi.mock("@/components/layout/header-language-menu", () => {
   throw new Error("simulated chunk load failure");
 });
 
+// 分块加载失败是本文件故意制造的：边界用 logger 记录一次，React 开发模式对被
+// 边界捕获的错误再打印一次（格式串 "%o\n\n%s\n\n%s"）。其他 error 仍交给全局闸门。
+function captureExpectedChunkFailureLogs() {
+  return captureExpectedConsoleErrors(
+    "Lazy island failed to load",
+    "%o\n\n%s\n\n%s",
+  );
+}
+
 describe("header islands when their chunk fails to load", () => {
   it("keeps the native mobile navigation links usable", async () => {
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+    const consoleError = captureExpectedChunkFailureLogs();
 
     render(
       <MobileNavigationIsland
@@ -53,12 +65,13 @@ describe("header islands when their chunk fails to load", () => {
   it.each(["click", "hover"])(
     "keeps current-page locale links usable after %s activation fails",
     async (activation) => {
-      const consoleError = vi
-        .spyOn(console, "error")
-        .mockImplementation(() => undefined);
+      const consoleError = captureExpectedChunkFailureLogs();
 
       const { rerender } = render(
-        <LanguageToggleIsland ariaLabel="Language: English" locale="en" />,
+        <LanguageToggleIsland
+          ariaLabel="Language: English"
+          locale={DEFAULT_LOCALE}
+        />,
       );
 
       await act(async () => {
@@ -75,23 +88,26 @@ describe("header islands when their chunk fails to load", () => {
         "href",
         "/contact?ref=buyer#specs",
       );
-      expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: "Deutsch" })).toHaveAttribute(
         "href",
-        "/es/contact?ref=buyer#specs",
+        "/de/contact?ref=buyer#specs",
       );
 
       mockPathname.current = "/privacy";
       window.history.replaceState(null, "", "/privacy");
       rerender(
-        <LanguageToggleIsland ariaLabel="Language: Español" locale="es" />,
+        <LanguageToggleIsland
+          ariaLabel="Language: Deutsch"
+          locale={OTHER_LOCALE}
+        />,
       );
       expect(screen.getByRole("link", { name: "English" })).toHaveAttribute(
         "href",
         "/privacy",
       );
-      expect(screen.getByRole("link", { name: "Español" })).toHaveAttribute(
+      expect(screen.getByRole("link", { name: "Deutsch" })).toHaveAttribute(
         "href",
-        "/es/privacy",
+        "/de/privacy",
       );
       consoleError.mockRestore();
     },

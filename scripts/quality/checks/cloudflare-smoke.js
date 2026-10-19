@@ -955,6 +955,7 @@ if (require.main === module) {
 
 module.exports = {
   CORE_PUBLIC_PAGE_PATHS,
+  parseCloudflarePreviewUrl,
   runChildCommand,
   runCloudflarePreviewDeployedProof,
   runCloudflarePreviewSmoke,

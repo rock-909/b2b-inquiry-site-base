@@ -4,8 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-import { afterEach, describe, expect, it } from "vitest";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
+import { describe, expect, it } from "vitest";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const SCRIPT_PATH = path.join(
@@ -14,7 +13,6 @@ const SCRIPT_PATH = path.join(
 );
 const FIXTURE_PREFIX = "b2b-inquiry-cloudflare-artifact-config-";
 const requireModule = createRequire(path.join(REPO_ROOT, "package.json"));
-const tempDirs: string[] = [];
 
 interface CloudflareArtifactConfigModule {
   readonly verifyCloudflareArtifactConfig: (rootDir?: string) => string[];
@@ -27,7 +25,6 @@ function loadChecker(): CloudflareArtifactConfigModule {
 
 function createFixture(): string {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
-  tempDirs.push(rootDir);
   return rootDir;
 }
 
@@ -72,12 +69,6 @@ function writeCacheFile(
 
 const BUILD_CACHE = ".open-next/cache";
 const STATIC_ASSETS_CACHE = ".open-next/assets/cdn-cgi/_next_cache";
-
-afterEach(() => {
-  for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
-  }
-});
 
 describe("Cloudflare artifact config proof", () => {
   it("accepts canonical Next and OpenNext required-server-files configs", () => {

@@ -52,6 +52,8 @@ afterEach(() => {
 });
 
 if (!SHOULD_SHOW_LOGS) {
+  // 理由：被测代码经 logger 在降级/拒绝路径上本来就会输出 debug/info/log/warn，
+  // 那是预期行为而不是失败信号；要断言就在测试里 spyOn，要看就设 VITEST_SHOW_LOGS=1。
   const noop = (): void => {};
 
   // 使用 defineProperty：保证属性可写/可配置，便于测试文件里 vi.spyOn / mockImplementation。

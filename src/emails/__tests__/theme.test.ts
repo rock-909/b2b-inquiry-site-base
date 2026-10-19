@@ -5,7 +5,6 @@ import { COLORS, FONT_FAMILY } from "@/emails/theme";
 describe("email theme", () => {
   it("derives COLORS.primary from STATIC_THEME_COLORS.primaryText", () => {
     expect(COLORS.primary).toBe(STATIC_THEME_COLORS.primaryText);
-    expect(COLORS.primary).toBe("#005993");
   });
 });
 

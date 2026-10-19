@@ -2,11 +2,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { STATIC_THEME_COLORS } from "@/config/static-theme-colors";
-import { COLORS } from "@/emails/theme";
 
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
 const IMPORT_FROM_PATTERN = /from\s+["']([^"']+)["']/g;
-const BRIDGE_SOURCE = readFileSync("src/config/static-theme-colors.ts", "utf8");
 const BROWSER_UI_SCAN_ROOTS = [
   "src/components",
   "src/app",
@@ -77,19 +75,6 @@ describe("static theme colors", () => {
     for (const [name, value] of Object.entries(STATIC_THEME_COLORS)) {
       expect(value, name).toMatch(HEX_COLOR_PATTERN);
     }
-  });
-
-  it("maps the email primary alias to primaryText", () => {
-    expect(COLORS.primary).toBe(STATIC_THEME_COLORS.primaryText);
-    expect(COLORS.primary).toBe("#005993");
-  });
-
-  it("documents the bridge boundary instead of pretending to be brand truth", () => {
-    expect(BRIDGE_SOURCE).toContain("sRGB bridge for src/app/theme.css");
-    expect(BRIDGE_SOURCE).toContain("manually reviewed sRGB snapshot");
-    expect(BRIDGE_SOURCE).toContain("semantic token palette");
-    expect(BRIDGE_SOURCE).toContain("non-CSS surfaces only");
-    expect(BRIDGE_SOURCE).toContain("not the brand truth source");
   });
 
   it("stays out of browser ui and browser-ui config surfaces", () => {

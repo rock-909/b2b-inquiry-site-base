@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 import { isActivePath } from "../navigation";
 
@@ -18,19 +19,17 @@ vi.mock("@/config/paths/locales-config", () => ({
 
 describe("navigation", () => {
   describe("main navigation", () => {
-    it("uses the configured public navigation", () => {
-      expect(SINGLE_SITE_NAVIGATION).toEqual([
-        { key: "home", href: "/", messageKey: "home" },
-        { key: "contact", href: "/contact", messageKey: "contactSales" },
-      ]);
-    });
-
-    it("should keep optional demo pages and support pages out of the default main navigation", () => {
-      const actualKeys = SINGLE_SITE_NAVIGATION.map((item) => item.key);
-      expect(actualKeys).not.toContain("capabilities");
-      expect(actualKeys).not.toContain("howItWorks");
-      expect(actualKeys).not.toContain("customProject");
-      expect(actualKeys).not.toContain("privacy");
+    it("lists every page with a navigationKey, in registry order, home first", () => {
+      expect(SINGLE_SITE_NAVIGATION.map((item) => item.href)).toEqual(
+        PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+          (page) => page.navigationKey !== null,
+        ).map((page) => page.path),
+      );
+      expect(SINGLE_SITE_NAVIGATION[0]).toEqual({
+        key: "home",
+        href: "/",
+        messageKey: "home",
+      });
     });
 
     it("should have valid structure for all items", () => {

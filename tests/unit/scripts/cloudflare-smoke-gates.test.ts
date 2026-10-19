@@ -1,13 +1,15 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { captureExpectedConsoleErrors } from "@/test/console";
 import {
+  CORE_PUBLIC_PAGE_PATHS,
   runCloudflarePreviewSmoke,
   runDeployedSmoke,
 } from "../../../scripts/quality/checks/cloudflare-smoke.js";
 
+// 注册表推导出的字面量元组放宽为 string，便于判断任意请求路径。
+const PAGE_PATHS: readonly string[] = CORE_PUBLIC_PAGE_PATHS;
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
 const MISSING_OFFERING_PATH = "/products/__smoke-missing-offering__";
-const CORE_PUBLIC_PAGE_PATHS = ["/", "/contact", "/privacy", "/terms"];
 
 const SECURITY_HEADERS = {
   "x-frame-options": "DENY",
@@ -41,7 +43,7 @@ function createHealthyFetchMock() {
     async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const pathname = getRequestPath(input);
 
-      if (CORE_PUBLIC_PAGE_PATHS.includes(pathname)) {
+      if (PAGE_PATHS.includes(pathname)) {
         return response(200, HEALTHY_HTML, {
           "content-type": "text/html; charset=utf-8",
           ...SECURITY_HEADERS,

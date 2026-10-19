@@ -5,24 +5,24 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { captureExpectedConsoleErrors } from "@/test/console";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
 import {
+  CORE_PUBLIC_PAGE_PATHS,
   runCloudflarePreviewSmoke,
   runDeployedSmoke,
   runExternalUrlSmoke,
 } from "../../../scripts/quality/checks/cloudflare-smoke.js";
 
+// 注册表推导出的字面量元组放宽为 string，便于判断任意请求路径。
+const PAGE_PATHS: readonly string[] = CORE_PUBLIC_PAGE_PATHS;
 const RETRIABLE_TIMEOUT_ERROR = new DOMException(
   "request timed out",
   "TimeoutError",
 );
 
 const openServers: http.Server[] = [];
-const tempDirs: string[] = [];
 const FIXTURE_PREFIX = "b2b-minimal-cloudflare-smoke-";
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
 const MISSING_OFFERING_PATH = "/products/__smoke-missing-offering__";
-const CORE_PUBLIC_PAGE_PATHS = ["/", "/contact", "/privacy", "/terms"] as const;
 
 interface ChildProcessResult {
   status: number | null;
@@ -64,11 +64,7 @@ function createPreviewFetchMock() {
     ): Promise<Response> => {
       const pathname = getRequestPath(_input);
 
-      if (
-        CORE_PUBLIC_PAGE_PATHS.includes(
-          pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
-        )
-      ) {
+      if (PAGE_PATHS.includes(pathname)) {
         const headers = new Headers({
           "content-type": "text/html; charset=utf-8",
           ...SECURITY_HEADERS,
@@ -95,11 +91,7 @@ function createExternalUrlFetchMock() {
   return vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
     const pathname = getRequestPath(input);
 
-    if (
-      CORE_PUBLIC_PAGE_PATHS.includes(
-        pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
-      )
-    ) {
+    if (PAGE_PATHS.includes(pathname)) {
       return response(200, "healthy external page");
     }
 
@@ -117,11 +109,7 @@ function createDeployedFetchMock() {
         return response(401, "missing proof header");
       }
 
-      if (
-        CORE_PUBLIC_PAGE_PATHS.includes(
-          pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
-        )
-      ) {
+      if (PAGE_PATHS.includes(pathname)) {
         return response(200, HEALTHY_HTML, {
           "content-type": "text/html; charset=utf-8",
           ...SECURITY_HEADERS,
@@ -167,11 +155,7 @@ function listenForExternalUrlSmoke(): Promise<{
       const pathname = request.url ?? "/";
       paths.push(pathname);
 
-      if (
-        CORE_PUBLIC_PAGE_PATHS.includes(
-          pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
-        )
-      ) {
+      if (PAGE_PATHS.includes(pathname)) {
         serverResponse.writeHead(200, { "content-type": "text/plain" });
         serverResponse.end("ok");
         return;
@@ -209,11 +193,7 @@ function listenForDeployedSmoke(): Promise<{
       const pathname = request.url ?? "/";
       paths.push(pathname);
 
-      if (
-        CORE_PUBLIC_PAGE_PATHS.includes(
-          pathname as (typeof CORE_PUBLIC_PAGE_PATHS)[number],
-        )
-      ) {
+      if (PAGE_PATHS.includes(pathname)) {
         serverResponse.writeHead(200, {
           "content-type": "text/html; charset=utf-8",
           ...SECURITY_HEADERS,
@@ -274,14 +254,15 @@ function listenForDeployedSmoke(): Promise<{
 
 function createMinimalCloudflareSmokeFixture(): string {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
-  const focusedChecksDir = path.join(rootDir, "scripts", "quality", "checks");
-  // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
-  mkdirSync(focusedChecksDir, { recursive: true });
-  copyFileSync(
-    path.resolve("scripts/quality/checks/cloudflare-smoke.js"),
-    path.join(focusedChecksDir, "cloudflare-smoke.js"),
-  );
-  tempDirs.push(rootDir);
+  // 部署冒烟作业没有 node_modules，只需要脚本本身和它读取的页面注册表。
+  for (const repoPath of [
+    "scripts/quality/checks/cloudflare-smoke.js",
+    "src/config/pages.config.ts",
+  ]) {
+    // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
+    mkdirSync(path.dirname(path.join(rootDir, repoPath)), { recursive: true });
+    copyFileSync(path.resolve(repoPath), path.join(rootDir, repoPath));
+  }
   return rootDir;
 }
 
@@ -328,10 +309,6 @@ afterEach(async () => {
         }),
     ),
   );
-
-  for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
-  }
 });
 
 describe("external URL smoke", () => {
@@ -611,6 +588,8 @@ describe("deployed smoke", () => {
       ]),
     ).resolves.toBe(true);
 
+    // 路由清单来自页面注册表；首页必须在其中，独立于注册表本身。
+    expect(CORE_PUBLIC_PAGE_PATHS).toContain("/");
     expect(
       fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
     ).toEqual([
@@ -862,13 +841,16 @@ describe("deployed smoke", () => {
   });
 
   it("wraps retry-exhausted retriable failures in the retry-loop error contract", async () => {
+    vi.useFakeTimers();
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockRejectedValue(RETRIABLE_TIMEOUT_ERROR);
 
-    await expect(
+    const smoke = expect(
       runDeployedSmoke(["--base-url", "https://deployed.example"]),
     ).rejects.toThrow("post-deploy-smoke retry loop exited without a response");
+    await vi.runAllTimersAsync();
+    await smoke;
     // 1 次初始请求 + DEPLOY_SMOKE_REQUEST_RETRIES 次重试，全部失败后包装。
     expect(fetchSpy).toHaveBeenCalled();
 

@@ -2,11 +2,19 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import messages from "../../../../messages/base/en/messages.json";
 import HomePage, { generateMetadata } from "@/app/[locale]/page";
+import { LOCALES_CONFIG } from "@/config/paths";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
+import { getFlatMessages } from "@/test/i18n-messages";
 
 vi.mock("@/components/seo/json-ld-script", () => ({
   JsonLdGraphScript: () => null,
 }));
+
+const { defaultLocale, locales } = LOCALES_CONFIG;
+const urlFor = (path: string) =>
+  new URL(path, SINGLE_SITE_CONFIG.baseUrl).toString();
+const homePathFor = (locale: string) =>
+  locale === defaultLocale ? "/" : `/${locale}`;
 
 describe("home page", () => {
   it("renders a localized heading and ordinary contact link without a form", async () => {
@@ -22,45 +30,41 @@ describe("home page", () => {
 });
 
 describe("home page metadata", () => {
-  it("localizes Spanish search and social metadata while preserving the brand", async () => {
-    const metadata = await generateMetadata({
-      params: Promise.resolve({ locale: "es" }),
-    });
+  it.each(locales)(
+    "takes %s search and social metadata from that locale's home messages",
+    async (locale) => {
+      const localeMessages = getFlatMessages(locale);
+      const metadata = await generateMetadata({
+        params: Promise.resolve({ locale }),
+      });
 
-    expect(metadata.title).toBe(
-      `${SINGLE_SITE_CONFIG.name} - Plantilla de consultas B2B`,
-    );
-    expect(metadata.description).toBe(
-      "Un sitio de referencia de consultas B2B no destinado a producción, con identidad, dominio y datos de contacto de ejemplo.",
-    );
-    expect(metadata.openGraph).toMatchObject({
-      title: metadata.title,
-      description: metadata.description,
-      siteName: SINGLE_SITE_CONFIG.name,
-      locale: "es",
-    });
-    expect(metadata.twitter).toMatchObject({
-      title: metadata.title,
-      description: metadata.description,
-    });
-    expect(metadata.alternates).toMatchObject({
-      canonical: new URL("/es", SINGLE_SITE_CONFIG.baseUrl).toString(),
-      languages: {
-        en: new URL("/", SINGLE_SITE_CONFIG.baseUrl).toString(),
-        es: new URL("/es", SINGLE_SITE_CONFIG.baseUrl).toString(),
-        "x-default": new URL("/", SINGLE_SITE_CONFIG.baseUrl).toString(),
-      },
-    });
-  });
-
-  it("preserves English homepage metadata", async () => {
-    const metadata = await generateMetadata({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    expect(metadata.title).toBe(SINGLE_SITE_CONFIG.seo.defaultTitle);
-    expect(metadata.description).toBe(
-      SINGLE_SITE_CONFIG.seo.defaultDescription,
-    );
-  });
+      expect(metadata.title).toBe(
+        localeMessages
+          .get("home.metadata.title")
+          ?.replace("{siteName}", SINGLE_SITE_CONFIG.name),
+      );
+      expect(metadata.description).toBe(
+        localeMessages.get("home.metadata.description"),
+      );
+      expect(metadata.openGraph).toMatchObject({
+        title: metadata.title,
+        description: metadata.description,
+        siteName: SINGLE_SITE_CONFIG.name,
+        locale,
+      });
+      expect(metadata.twitter).toMatchObject({
+        title: metadata.title,
+        description: metadata.description,
+      });
+      expect(metadata.alternates).toMatchObject({
+        canonical: urlFor(homePathFor(locale)),
+        languages: {
+          ...Object.fromEntries(
+            locales.map((entry) => [entry, urlFor(homePathFor(entry))]),
+          ),
+          "x-default": urlFor("/"),
+        },
+      });
+    },
+  );
 });

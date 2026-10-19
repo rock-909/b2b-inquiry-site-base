@@ -1,9 +1,10 @@
 import { vi } from "vitest";
 
-// Enhanced matchMedia mock for accessibility testing
+// jsdom 没有 matchMedia。实现必须写进 vi.fn(impl)：setup.hooks.ts 每个用例前的
+// vi.resetAllMocks() 会回到这个实现；写成 mockImplementation 会被清空成返回 undefined。
 Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation((query: string) => ({
+  value: vi.fn((query: string) => ({
     matches: false,
     media: query,
     onchange: null,

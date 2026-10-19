@@ -3,8 +3,7 @@ import { createRequire } from "node:module";
 import os from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it } from "vitest";
-import { moveOwnedTempDirectoryToTrash } from "@/test/temp-fixture";
+import { describe, expect, it } from "vitest";
 
 const REPO_ROOT = path.resolve(__dirname, "../../..");
 const SCRIPT_PATH = path.join(
@@ -13,7 +12,6 @@ const SCRIPT_PATH = path.join(
 );
 const FIXTURE_PREFIX = "b2b-inquiry-cloudflare-config-";
 const requireModule = createRequire(path.join(REPO_ROOT, "package.json"));
-const tempDirs: string[] = [];
 const CANONICAL_CLOUDFLARE_BUILD_SCRIPTS = {
   "website:build:cf":
     "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build",
@@ -100,15 +98,8 @@ function createFixture(): string {
     path.join(rootDir, "node_modules"),
     process.platform === "win32" ? "junction" : "dir",
   );
-  tempDirs.push(rootDir);
   return rootDir;
 }
-
-afterEach(() => {
-  for (const tempDir of tempDirs.splice(0)) {
-    moveOwnedTempDirectoryToTrash(tempDir, FIXTURE_PREFIX);
-  }
-});
 
 describe("Cloudflare config source contract", () => {
   it("rejects required config that appears only in comments", () => {

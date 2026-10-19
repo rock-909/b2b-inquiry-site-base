@@ -49,11 +49,10 @@ const BASE_URL = `http://localhost:${LIGHTHOUSE_PORT}`;
 const criticalUrls = [`${BASE_URL}/`];
 
 // Every public page from the static page registry, so a new page is measured
-// without a second list to keep in sync.
-const {
-  PUBLIC_STATIC_PAGE_DEFINITIONS,
-} = require("./src/config/pages.config.ts");
-const allUrls = PUBLIC_STATIC_PAGE_DEFINITIONS.map(
+// without a second list to keep in sync. lhci loads this file as CommonJS.
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- CommonJS config
+const pageRegistry = require("./src/config/pages.config.ts");
+const allUrls = pageRegistry.PUBLIC_STATIC_PAGE_DEFINITIONS.map(
   ({ path }) => `${BASE_URL}${path}`,
 );
 

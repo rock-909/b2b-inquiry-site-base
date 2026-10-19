@@ -1,14 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
+import { getPublicContactEmail } from "@/config/public-trust";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
+import { getStaticPage } from "@/lib/content/static-pages";
 import { getHeaderMobileMenuButton } from "./helpers/navigation";
+import { DEFAULT_LOCALE, getLocaleMessages } from "./site-page-cases";
 
+const messages = getLocaleMessages(DEFAULT_LOCALE);
 const site = {
-  skipLabel: "Skip to main content",
-  homeHeading: /B2B inquiry site/i,
-  contactHeading: /Contact/i,
-  fullNameLabel: "Full name",
-  optionalLabel: "optional",
+  skipLabel: messages.accessibility.skipToContent,
+  homeHeading: messages.home.title,
+  contactHeading: getStaticPage("contact", DEFAULT_LOCALE).metadata.title,
+  noJsExplanation: messages.inquiry.form.noJsExplanation,
+  publicEmail: getPublicContactEmail(),
 } as const;
 
 // 公开页面清单来自当前页面配置，避免新增页面后漏掉 no-JS 重复渲染检查。
@@ -93,11 +97,9 @@ test.describe("No-JS HTML contract (default locale)", () => {
       page.getByRole("heading", { level: 1, name: site.homeHeading }),
     ).toBeVisible();
 
+    // JavaScript 已关闭，上面可见的 H1 本身就证明它来自服务端渲染。
     const html = await page.content();
     expectExactlyOneMain(html);
-    // The static shell must be server-rendered (prerendered), proven by the
-    // hero H1 living in the raw HTML string — not injected by client boot.
-    expect(html).toMatch(site.homeHeading);
     expect(html).toContain('id="main-content"');
     await expectBodyRenderedOnce(page);
   });
@@ -149,7 +151,7 @@ test.describe("No-JS HTML contract (default locale)", () => {
       page.getByRole("navigation", { name: /main navigation/i }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: site.contactHeading }),
+      page.getByRole("heading", { level: 1, name: site.contactHeading }),
     ).toBeVisible();
 
     const html = await page.content();
@@ -167,12 +169,17 @@ test.describe("No-JS HTML contract (default locale)", () => {
       .first();
 
     await expect(staticFallback).toBeVisible();
-    await expect(
-      staticFallback.getByText(/secure inquiry form needs JavaScript/i),
-    ).toBeVisible();
-    await expect(staticFallback.getByRole("link", { name: /@/i })).toHaveCount(
-      0,
-    );
+    await expect(staticFallback.getByText(site.noJsExplanation)).toBeVisible();
+    // 只有配置了真实公开邮箱时，无 JS 兜底才给出 mailto 链接。
+    const emailLinks = staticFallback.locator('a[href^="mailto:"]');
+    if (site.publicEmail) {
+      await expect(emailLinks).toHaveAttribute(
+        "href",
+        `mailto:${site.publicEmail}`,
+      );
+    } else {
+      await expect(emailLinks).toHaveCount(0);
+    }
     await expect(staticFallback.getByRole("button")).toHaveCount(0);
     await expectNoReservedGap(page);
     await expectBodyRenderedOnce(page);

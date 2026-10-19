@@ -12,27 +12,6 @@ vi.mock("@/config/single-site", async (importOriginal) => {
   };
 });
 
-vi.mock("next-intl/server", () => ({
-  getTranslations: vi.fn(async ({ namespace }: { namespace: string }) => {
-    const values: Record<string, Record<string, string>> = {
-      legal: {
-        effectiveDate: "Effective",
-        lastUpdated: "Updated",
-        tableOfContents: "Contents",
-      },
-      navigation: {
-        home: "Home",
-      },
-      "structured-data": {
-        "organization.name": "Reference Industries",
-        "article.defaultAuthor": "Reference Industries",
-      },
-    };
-
-    return (key: string) => values[namespace]?.[key] ?? key;
-  }),
-}));
-
 const REQUIRED_LEGAL_METADATA = {
   lastReviewed: "2024-01-01",
 } as const;

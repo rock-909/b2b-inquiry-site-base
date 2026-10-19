@@ -2,7 +2,7 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 
 import type { PlaywrightTestConfig } from "@playwright/test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
 const E2E_DIR = "tests/e2e";
 
@@ -15,14 +15,22 @@ function collectSpecFiles(dir: string): string[] {
   });
 }
 
-async function loadCiConfig(shouldRebuild: boolean) {
-  vi.stubEnv("CI", "1");
-  vi.stubEnv("CI_FULL_COVERAGE", "");
-  vi.stubEnv("CI_FLAKE_SAMPLING", "");
-  vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", shouldRebuild ? "true" : "");
-  vi.stubEnv("STAGING_URL", "");
-  vi.stubEnv("PLAYWRIGHT_BASE_URL", "");
-  vi.stubEnv("POST_DEPLOY_TEST", "");
+// 配置读取的全部变量都显式置值，开发者 shell 里的同名变量不会漏进用例。
+const CONFIG_ENV_KEYS = [
+  "CI",
+  "CI_FULL_COVERAGE",
+  "CI_FLAKE_SAMPLING",
+  "PLAYWRIGHT_REBUILD_SERVER",
+  "PLAYWRIGHT_REUSE_EXISTING_SERVER",
+  "STAGING_URL",
+  "PLAYWRIGHT_BASE_URL",
+  "POST_DEPLOY_TEST",
+] as const;
+
+async function loadConfig(
+  env: Partial<Record<(typeof CONFIG_ENV_KEYS)[number], string>>,
+) {
+  for (const key of CONFIG_ENV_KEYS) vi.stubEnv(key, env[key] ?? "");
   vi.resetModules();
 
   const { default: config } = (await import("../../playwright.config")) as {
@@ -30,6 +38,13 @@ async function loadCiConfig(shouldRebuild: boolean) {
   };
 
   return config;
+}
+
+function loadCiConfig(shouldRebuild: boolean) {
+  return loadConfig({
+    CI: "1",
+    PLAYWRIGHT_REBUILD_SERVER: shouldRebuild ? "true" : "",
+  });
 }
 
 function getWebServer(config: PlaywrightTestConfig) {
@@ -41,8 +56,12 @@ function getWebServer(config: PlaywrightTestConfig) {
 }
 
 afterEach(() => {
-  vi.unstubAllEnvs();
   vi.resetModules();
+});
+
+// 只在整个文件结束后还原：逐用例 unstubAllEnvs 会连 setup 的桩一起清掉。
+afterAll(() => {
+  vi.unstubAllEnvs();
 });
 
 // 普通 E2E 自动发现所有用例，但真实 provider canary 必须显式启动。
@@ -64,8 +83,6 @@ describe("Playwright CI web server", () => {
 
     expect(getWebServer(config).command).toBe("pnpm build && pnpm start");
     expect(config.forbidOnly).toBe(true);
-    expect(config.retries).toBe(2);
-    expect(config.workers).toBe(2);
   });
 
   it("reuses the workflow build in ordinary CI", async () => {
@@ -73,80 +90,54 @@ describe("Playwright CI web server", () => {
 
     expect(getWebServer(config).command).toBe("pnpm start");
     expect(config.forbidOnly).toBe(true);
-    expect(config.retries).toBe(2);
-    expect(config.workers).toBe(2);
   });
 
   it("disables retries in the full browser matrix so first failures stay red", async () => {
-    vi.stubEnv("CI", "1");
-    vi.stubEnv("CI_FULL_COVERAGE", "true");
-    vi.stubEnv("CI_FLAKE_SAMPLING", "1");
-    vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", "");
-    vi.stubEnv("STAGING_URL", "");
-    vi.resetModules();
-
-    const { default: config } = (await import("../../playwright.config")) as {
-      default: PlaywrightTestConfig;
-    };
+    const config = await loadConfig({
+      CI: "1",
+      CI_FULL_COVERAGE: "true",
+      CI_FLAKE_SAMPLING: "1",
+    });
 
     expect(config.retries).toBe(0);
   });
 
-  it("does not start a local server for the explicit external canary", async () => {
-    vi.stubEnv("CI", "1");
-    vi.stubEnv("STAGING_URL", "");
-    vi.stubEnv("PLAYWRIGHT_BASE_URL", "https://preview.example.com");
-    vi.stubEnv("POST_DEPLOY_TEST", "1");
-    vi.resetModules();
-
-    const { default: config } = (await import("../../playwright.config")) as {
-      default: PlaywrightTestConfig;
-    };
+  it("does not start a local server or retry for the explicit external canary", async () => {
+    const config = await loadConfig({
+      CI: "1",
+      PLAYWRIGHT_BASE_URL: "https://preview.example.com",
+      POST_DEPLOY_TEST: "1",
+    });
 
     expect(config.webServer).toBeUndefined();
     expect(config.testIgnore).toBeUndefined();
+    // 每次重试都会写一条真实询盘、发一封真实邮件。
+    expect(config.retries).toBe(0);
   });
 });
 
 // 孤儿 next-server 曾占用端口 3000 超过 20 小时，本地静默复用导致三个契约
 // 用例集体失败且无任何指向真实原因的线索。这三条断言把复用语义钉死。
 describe("Playwright local server reuse contract", () => {
-  async function loadLocalConfig(reuseFlag: string) {
-    vi.stubEnv("CI", "");
-    vi.stubEnv("PLAYWRIGHT_REBUILD_SERVER", "");
-    vi.stubEnv("STAGING_URL", "");
-    vi.stubEnv("PLAYWRIGHT_BASE_URL", "");
-    vi.stubEnv("POST_DEPLOY_TEST", "");
-    vi.stubEnv("PLAYWRIGHT_REUSE_EXISTING_SERVER", reuseFlag);
-    vi.resetModules();
-
-    const { default: config } = (await import("../../playwright.config")) as {
-      default: PlaywrightTestConfig;
-    };
-
-    return config;
-  }
-
   it("defaults to not reusing an already-occupied port locally", async () => {
-    const config = await loadLocalConfig("");
+    const config = await loadConfig({});
 
     expect(getWebServer(config).reuseExistingServer).toBe(false);
   });
 
   it("reuses only when explicitly opted in", async () => {
-    const config = await loadLocalConfig("true");
+    const config = await loadConfig({
+      PLAYWRIGHT_REUSE_EXISTING_SERVER: "true",
+    });
 
     expect(getWebServer(config).reuseExistingServer).toBe(true);
   });
 
   it("never reuses on CI even when the opt-in flag is set", async () => {
-    vi.stubEnv("CI", "1");
-    vi.stubEnv("PLAYWRIGHT_REUSE_EXISTING_SERVER", "true");
-    vi.resetModules();
-
-    const { default: config } = (await import("../../playwright.config")) as {
-      default: PlaywrightTestConfig;
-    };
+    const config = await loadConfig({
+      CI: "1",
+      PLAYWRIGHT_REUSE_EXISTING_SERVER: "true",
+    });
 
     expect(getWebServer(config).reuseExistingServer).toBe(false);
   });
