@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { LocalizedNotFoundView } from "@/components/errors/localized-not-found-view";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { routing } from "@/i18n/routing";
 
-export function generateMetadata(): Metadata {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const t = await getTranslations({
+    locale: resolveLocaleParam(await params),
+    namespace: "errors.notFound",
+  });
   return {
+    title: t("title"),
     robots: {
       index: false,
       follow: false,
@@ -14,7 +23,7 @@ export function generateMetadata(): Metadata {
   };
 }
 
-// proxy 将未知公开路径改写到占位页，并设置 HTTP 404。
+// middleware 将未知公开路径改写到占位页，并设置 HTTP 404。
 // 页面直接渲染恢复内容，避免 notFound() 只输出空壳、等待客户端恢复。
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({
@@ -36,6 +45,5 @@ export default async function CatchAllNotFound({
   ) {
     notFound();
   }
-  setRequestLocale(resolveLocaleParam(routeParams));
   return <LocalizedNotFoundView />;
 }

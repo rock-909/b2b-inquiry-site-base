@@ -59,18 +59,8 @@ vi.mock("@/lib/env", () => {
     NEXT_PUBLIC_TEST_MODE: false,
   } as Record<string, string | boolean | number | undefined>;
 
-  const cloudflareContextSymbol = Symbol.for("__cloudflare-context__");
-  const readCloudflareContextEnvValue = (key: string): string | undefined => {
-    const context = (
-      globalThis as typeof globalThis &
-        Record<symbol, { env?: Record<string, unknown> } | undefined>
-    )[cloudflareContextSymbol];
-    const value = context?.env?.[key];
-
-    return typeof value === "string" ? value : undefined;
-  };
   const readProcessEnvValue = (key: string): string | undefined =>
-    readCloudflareContextEnvValue(key) ?? process.env[key];
+    process.env[key];
 
   return {
     env: mockEnv,

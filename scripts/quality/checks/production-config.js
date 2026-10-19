@@ -602,6 +602,7 @@ if (require.main === module) {
 
 module.exports = {
   isSentinelBlocker,
+  readWranglerConfig,
   runValidateProductionConfigCli,
   shouldValidateProductionRuntimeContract,
   validateProductionConfig,

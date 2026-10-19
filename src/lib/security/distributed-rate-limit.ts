@@ -7,8 +7,11 @@
  * Store implementations are in ./stores/rate-limit-store.ts.
  */
 
-import { MINUTE_MS } from "@/constants";
-import { getRuntimeEnvString, isRuntimeProduction } from "@/lib/env";
+import {
+  getRuntimeAppEnv,
+  getRuntimeEnvString,
+  isRuntimeProduction,
+} from "@/lib/env";
 import { logger } from "@/lib/logger";
 import {
   MemoryRateLimitStore,
@@ -16,7 +19,7 @@ import {
 } from "@/lib/security/stores/rate-limit-store";
 
 const MAX_REQUESTS = 10;
-const WINDOW_MS = MINUTE_MS;
+const WINDOW_MS = 60_000;
 
 interface RateLimitResult {
   allowed: boolean;
@@ -60,7 +63,8 @@ export async function checkInquiryRateLimit(
   try {
     const store = getRateLimitStore();
     const entry = await store.increment(
-      `ratelimit:inquiry:${identifier}`,
+      // 带 APP_ENV：preview 与 production 误用同一个 Upstash 库时计数也不互相影响。
+      `ratelimit:inquiry:${getRuntimeAppEnv() ?? "local"}:${identifier}`,
       WINDOW_MS,
     );
     const { count } = entry;

@@ -26,7 +26,7 @@ function expectPreviewStepEnv(
   stepName: string,
 ): void {
   const previewSiteUrl =
-    "${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://reference-site-preview.faints-pudgier-9r.workers.dev' }}";
+    "${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://example.invalid' }}";
   const gaMeasurementId =
     "${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}";
   const googleSiteVerification =
@@ -49,7 +49,7 @@ function expectPreviewStepEnv(
     "example.com",
   );
   expect(step?.env?.NEXT_PUBLIC_SITE_URL, stepName).not.toContain(
-    "reference-site.com",
+    "reference-site",
   );
 }
 

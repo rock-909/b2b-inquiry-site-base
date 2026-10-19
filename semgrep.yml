@@ -422,7 +422,7 @@ rules:
         - "**/__tests__/**"
         - "**/*.test.*"
         - "**/*.spec.*"
-        - "src/proxy.ts"
+        - "src/middleware.ts"
         - "src/lib/security/client-ip.ts"
     metadata:
       category: security

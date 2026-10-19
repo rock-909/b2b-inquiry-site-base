@@ -6,8 +6,6 @@ import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import { routing } from "@/i18n/routing-config";
 import { getLocalePath } from "@/config/paths/utils";
 import { getRuntimeAppEnv, getRuntimeEnvString } from "@/lib/env";
-import { getSiteMessageValues } from "@/lib/i18n/site-message-values";
-import { interpolate } from "@/lib/interpolate";
 
 export type { Locale } from "@/config/paths";
 
@@ -33,11 +31,6 @@ interface StaticPageMetadataConfigOptions {
 }
 
 const DEFAULT_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
-
-/** 用站点占位符表（getSiteMessageValues）替换 SEO 字符串里的 {placeholder}。 */
-function interpolateSeoString(text: string): string {
-  return interpolate(text, getSiteMessageValues());
-}
 
 function normalizePath(path: string): string {
   const trimmed = path.trim();
@@ -93,7 +86,7 @@ interface GenerateMetadataForPathParams {
   config?: Partial<SEOConfig>;
 }
 
-const INACTIVE_PROFILE_ROBOTS = {
+export const NOINDEX_ROBOTS = {
   index: false,
   follow: false,
   googleBot: {
@@ -102,7 +95,7 @@ const INACTIVE_PROFILE_ROBOTS = {
   },
 } as const satisfies Metadata["robots"];
 
-const ACTIVE_PROFILE_ROBOTS = {
+export const INDEXABLE_ROBOTS = {
   index: true,
   follow: true,
   googleBot: {
@@ -114,13 +107,20 @@ const ACTIVE_PROFILE_ROBOTS = {
   },
 } as const satisfies Metadata["robots"];
 
+export function buildVerification(): Metadata["verification"] {
+  return {
+    google: getRuntimeEnvString("GOOGLE_SITE_VERIFICATION"),
+    yandex: getRuntimeEnvString("YANDEX_VERIFICATION"),
+  };
+}
+
 function shouldIndexRuntimeEnvironment(): boolean {
   return getRuntimeAppEnv() === "production";
 }
 
 function resolveMetadataTitle(config: SEOConfig): string {
   if (config.title !== undefined && config.title.trim().length > 0) {
-    return interpolateSeoString(config.title);
+    return config.title;
   }
 
   return SINGLE_SITE_CONFIG.seo.defaultTitle;
@@ -131,10 +131,16 @@ function resolveMetadataDescription(config: SEOConfig): string {
     config.description !== undefined &&
     config.description.trim().length > 0
   ) {
-    return interpolateSeoString(config.description);
+    return config.description;
   }
 
   return SINGLE_SITE_CONFIG.seo.defaultDescription;
+}
+
+// Open Graph 要求 language_TERRITORY 形式（en_US），由语言代码推出最可能的地区。
+function toOpenGraphLocale(locale: string): string {
+  const { language, region } = new Intl.Locale(locale).maximize();
+  return region ? `${language}_${region}` : language;
 }
 
 export function generateMetadataForPath(
@@ -156,7 +162,7 @@ export function generateMetadataForPath(
       title,
       description,
       siteName,
-      locale,
+      locale: toOpenGraphLocale(locale),
       type: openGraphType,
       url: canonical,
       images: seoConfig.image ? [{ url: seoConfig.image }] : undefined,
@@ -171,18 +177,15 @@ export function generateMetadataForPath(
       canonical,
       languages,
     },
-    robots: ACTIVE_PROFILE_ROBOTS,
-    verification: {
-      google: getRuntimeEnvString("GOOGLE_SITE_VERIFICATION"),
-      yandex: getRuntimeEnvString("YANDEX_VERIFICATION"),
-    },
+    robots: INDEXABLE_ROBOTS,
+    verification: buildVerification(),
   };
 
   if (
     !shouldIndexRuntimeEnvironment() ||
     !shouldIndexPublicPage(pageType, path)
   ) {
-    metadata.robots = INACTIVE_PROFILE_ROBOTS;
+    metadata.robots = NOINDEX_ROBOTS;
   }
 
   return metadata;

@@ -70,6 +70,21 @@ describe("decodeInquirySubmitState", () => {
     });
   });
 
+  it("classifies an unavailable verification service as a server error", async () => {
+    const response = new Response(
+      JSON.stringify({
+        success: false,
+        errorCode: API_ERROR_CODES.TURNSTILE_UNAVAILABLE,
+      }),
+      { status: 503 },
+    );
+
+    await expect(decodeInquirySubmitState(response)).resolves.toEqual({
+      status: "error",
+      errorKind: "server",
+    });
+  });
+
   it("classifies rate limit errors with a valid Retry-After header", async () => {
     const response = new Response(
       JSON.stringify({

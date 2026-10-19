@@ -33,3 +33,6 @@ export const CONSENT_VERSION = 2;
 
 /** localStorage key for consent data */
 export const CONSENT_STORAGE_KEY = "cookie-consent";
+
+/** 页脚“Cookie 设置”按钮发出此事件，让同意横幅重新出现 */
+export const OPEN_CONSENT_EVENT = "cookie-consent:open";

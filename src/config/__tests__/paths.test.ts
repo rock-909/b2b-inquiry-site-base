@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 import {
   getCanonicalPath,
-  getLocalizedPath,
+  getLocalePath,
   LOCALES_CONFIG,
   PATHNAMES,
 } from "@/config/paths";
@@ -39,7 +39,7 @@ describe("paths", () => {
       expect(getCanonicalPath(pageType)).toBe(path);
       for (const locale of locales) {
         const prefix = locale === defaultLocale ? "" : `/${locale}`;
-        expect(getLocalizedPath(pageType, locale)).toBe(
+        expect(getLocalePath(locale, path)).toBe(
           path === "/" ? prefix || "/" : `${prefix}${path}`,
         );
       }

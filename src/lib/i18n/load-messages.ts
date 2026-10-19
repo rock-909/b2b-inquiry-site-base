@@ -8,11 +8,6 @@ import type { Locale } from "@/i18n/routing-config";
 import { coerceLocale } from "@/i18n/locale-utils";
 import enMessages from "@messages/base/en/messages.json";
 import esMessages from "@messages/base/es/messages.json";
-import { interpolate } from "@/lib/interpolate";
-import {
-  getSiteMessageValues,
-  type SiteMessageValues,
-} from "@/lib/i18n/site-message-values";
 
 type Messages = Record<string, unknown>;
 
@@ -21,42 +16,11 @@ const SOURCE_MESSAGES: Record<Locale, Messages> = {
   es: esMessages,
 };
 
-function interpolateSiteMessageValues(
-  value: unknown,
-  siteValues: SiteMessageValues,
-): unknown {
-  if (typeof value === "string") {
-    return interpolate(value, siteValues);
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((item) => interpolateSiteMessageValues(item, siteValues));
-  }
-
-  if (value !== null && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, item]) => [
-        key,
-        interpolateSiteMessageValues(item, siteValues),
-      ]),
-    );
-  }
-
-  return value;
-}
-
-async function loadMessageSource(locale: Locale): Promise<Messages> {
-  const safeLocale = coerceLocale(locale);
-  const loadedMessages = getSourceMessages(safeLocale);
-  const siteValues = await getSiteMessageValues();
-
-  return interpolateSiteMessageValues(loadedMessages, siteValues) as Messages;
-}
-
 export function getSourceMessages(locale: Locale): Messages {
   return SOURCE_MESSAGES[coerceLocale(locale)];
 }
 
-export function loadCompleteMessages(locale: string): Promise<Messages> {
-  return loadMessageSource(coerceLocale(locale));
+// 消息文件原样使用：站点名等配置值由调用处直接读取 SINGLE_SITE_CONFIG，不在这里替换。
+export function loadCompleteMessages(locale: string): Messages {
+  return getSourceMessages(coerceLocale(locale));
 }

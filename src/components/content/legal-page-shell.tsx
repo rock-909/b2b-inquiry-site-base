@@ -35,16 +35,13 @@ export function buildShellPageSchema(
   const { metadata, locale, pageUrl } = input;
 
   const description = metadata.seo?.description ?? metadata.description;
-  const modifiedAt =
-    metadata.updatedAt ?? metadata.lastReviewed ?? metadata.publishedAt;
 
+  // 页面不显示日期，结构化数据也不声明日期，保持两者一致。
   return buildWebPageSchema({
     locale,
     name: metadata.seo?.title ?? metadata.title,
     url: pageUrl,
     ...(description ? { description } : {}),
-    ...(metadata.publishedAt ? { datePublished: metadata.publishedAt } : {}),
-    ...(modifiedAt ? { dateModified: modifiedAt } : {}),
   });
 }
 

@@ -5,14 +5,12 @@
   "compatibility_date": "2026-10-06",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
 
-  // Wrangler-level minification via esbuild. OpenNext split-function minify
-  // remains disabled in open-next.config.ts until it has fresh preview proof.
+  // Wrangler-level minification via esbuild; OpenNext's Cloudflare build always
+  // turns its own minify off so it can patch the bundle.
   // Bundle size follows the Cloudflare Workers Free baseline; paid plans are optional.
   "minify": true,
   // Drop __name() annotations from minified output for additional gzip savings.
   "keep_names": false,
-  // Keep cold starts close to the visitor when Cloudflare can infer placement.
-  "placement": { "mode": "smart" },
   // Workers Logs 基线（免费层 20 万条/天、保留 3 天）：事故取证依赖它。
   // 低频 B2B 站首版全量采样；上线后核对日请求量未接近额度再维持 100%。
   "observability": {

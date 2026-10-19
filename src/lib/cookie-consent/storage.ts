@@ -86,6 +86,17 @@ export function saveConsent(consent: CookieConsent): void {
   }
 }
 
+/** 撤回已保存的选择：横幅重新出现，选择前不加载分析 */
+export function clearConsent(): void {
+  if (typeof window === "undefined") return;
+  // 不走写入探测：存储写满时删除仍然可用，撤回不能因此失效。
+  try {
+    window.localStorage.removeItem(CONSENT_STORAGE_KEY);
+  } catch {
+    // 存储完全不可读写时也没有可删除的记录。
+  }
+}
+
 /** Create consent with all optional categories accepted */
 export function createAcceptAllConsent(): CookieConsent {
   return {

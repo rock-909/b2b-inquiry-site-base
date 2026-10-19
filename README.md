@@ -7,7 +7,7 @@ B2B 询盘站模板，提供联系和询盘转化基础能力，内置英语/西
 ## 当前站点范围
 
 - 多语言示例：英语为默认语言，公开 URL 不带 `/en` 前缀；西班牙语使用 `/es/` 前缀。
-- 未知页面或不存在的产品路径由 proxy 返回 404 时，保留已识别的语言前缀：例如 `/es/nope` 和 `/es/products/not-real` 显示西班牙语 404，导航和返回首页链接也保持西班牙语；没有已识别语言前缀的未知路径使用默认语言。
+- 未知页面或不存在的产品路径由 middleware 返回 404 时，保留已识别的语言前缀：例如 `/es/nope` 和 `/es/products/not-real` 显示西班牙语 404，导航和返回首页链接也保持西班牙语；没有已识别语言前缀的未知路径使用默认语言。
 - 页面：Home、Contact、Privacy、Terms。
 - 业务身份和页面内容必须由派生站 owner 在公开上线前替换确认。
 
@@ -61,7 +61,7 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 | 创建、fork 或接手派生站 | [派生项目交接](docs/派生项目交接.md) |
 | 调整视觉或比较参考 | [设计真相](docs/design/设计真相.md) → 按任务查[设计参考](docs/design/设计参考.md) |
 
-派生站研究从 [派生站工作流](docs/派生站工作流.md) 开始；整体换肤从 `src/app/theme.css` 开始；组件结构和 variant 看 `.claude/rules/ui.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
+派生站研究从 [派生站工作流](docs/派生站工作流.md) 开始；整体换肤从 `src/app/theme.css` 开始，询盘通知邮件的颜色另有一份 sRGB 快照 `src/config/static-theme-colors.ts`，换主色时要一起改；组件结构和 variant 看 `.claude/rules/ui.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
 
 创建、fork 或接手派生站时，从 [派生项目交接](docs/派生项目交接.md) 开始；不要继承模板或另一个站点的 provider、部署和 Owner 证据。
 
@@ -79,7 +79,7 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 
 修改 locale message pack 后运行 `pnpm content:check`。消息叶子值必须是字符串，允许有意义的空字符串；数字、布尔值、`null` 和数组会使检查失败，并输出对应语言文件和消息路径。
 
-UI 消息（含联系页和询盘表单）及 SEO 标题/描述共用站点占位符替换；可用键及其值来源以 `src/lib/i18n/site-message-values.ts` 的 `getSiteMessageValues()` 为准。调用时参数（如 `{productName}`、`{language}`）不在此阶段替换，仍由翻译调用方提供；不要据此假定普通页面正文或邮件文案也会自动替换站点占位符。
+消息文件原样使用，不做站点占位符替换；站点名等配置值由调用处直接读取 `SINGLE_SITE_CONFIG`。翻译中的调用参数（如 `{language}`）由翻译调用方提供。
 
 ## AI 协作入口
 

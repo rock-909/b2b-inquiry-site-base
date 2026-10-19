@@ -16,13 +16,8 @@ export function toNavigationNamespaceKey(
   return key.slice("navigation.".length) as NavigationNamespaceKey;
 }
 
-export type PublicStaticPageChangeFrequency =
-  "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
-
 interface PublicStaticPageSitemapConfig {
   include: boolean;
-  changeFrequency: PublicStaticPageChangeFrequency;
-  priority: number;
 }
 
 export interface PublicStaticPageDefinition {
@@ -47,28 +42,28 @@ export const PUBLIC_STATIC_PAGE_DEFINITIONS = [
     pageType: "home",
     path: "/",
     navigationKey: "navigation.home",
-    sitemap: { include: true, changeFrequency: "daily", priority: 1 },
+    sitemap: { include: true },
     contentSlug: null,
   },
   {
     pageType: "contact",
     path: "/contact",
     navigationKey: "navigation.contactSales",
-    sitemap: { include: true, changeFrequency: "monthly", priority: 0.8 },
+    sitemap: { include: true },
     contentSlug: "contact",
   },
   {
     pageType: "privacy",
     path: "/privacy",
     navigationKey: null,
-    sitemap: { include: false, changeFrequency: "yearly", priority: 0.5 },
+    sitemap: { include: false },
     contentSlug: "privacy",
   },
   {
     pageType: "terms",
     path: "/terms",
     navigationKey: null,
-    sitemap: { include: false, changeFrequency: "yearly", priority: 0.5 },
+    sitemap: { include: false },
     contentSlug: "terms",
   },
 ] as const satisfies readonly PublicStaticPageDefinition[];
@@ -88,27 +83,6 @@ export function getStaticSitemapPages(): string[] {
   return PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((definition) =>
     definition.sitemap.include ? [toSitemapStaticPath(definition.path)] : [],
   );
-}
-
-export function getStaticSitemapPageConfigByPath() {
-  return Object.fromEntries(
-    PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((definition) =>
-      definition.sitemap.include
-        ? [
-            [
-              toSitemapStaticPath(definition.path),
-              {
-                changeFrequency: definition.sitemap.changeFrequency,
-                priority: definition.sitemap.priority,
-              },
-            ],
-          ]
-        : [],
-    ),
-  ) as Record<
-    string,
-    { changeFrequency: PublicStaticPageChangeFrequency; priority: number }
-  >;
 }
 
 export function getStaticContentPageSlugByPath(): Record<string, string> {

@@ -52,9 +52,6 @@ function getDeploymentPlatform(): DeploymentPlatform | null {
     return null;
   }
 
-  if (getRuntimeEnvString("CF_PAGES")) {
-    return PLATFORM_CLOUDFLARE;
-  }
   if (isRuntimeDevelopment()) {
     return PLATFORM_DEVELOPMENT;
   }

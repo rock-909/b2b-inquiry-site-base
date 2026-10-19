@@ -42,6 +42,7 @@ describe("header islands when their chunk fails to load", () => {
 
     render(
       <MobileNavigationIsland
+        siteName="Test Site"
         openMenuLabel="Open navigation menu"
         closeMenuLabel="Close navigation menu"
       >

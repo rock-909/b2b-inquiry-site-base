@@ -25,6 +25,7 @@ interface MobileNavigationInteractiveProps {
   initialOpen?: boolean;
   languageSwitcher?: ReactNode;
   openMenuLabel: string;
+  siteName: string;
 }
 
 interface MobileMenuButtonProps extends ComponentProps<"button"> {
@@ -99,6 +100,7 @@ export function MobileNavigationInteractive({
   languageSwitcher,
   openMenuLabel,
   closeMenuLabel,
+  siteName,
 }: MobileNavigationInteractiveProps) {
   const tNavigation = useTranslations("navigation");
   const tAccessibility = useTranslations("accessibility");
@@ -140,7 +142,7 @@ export function MobileNavigationInteractive({
           <MobileNavigationHeader
             mobileNavigationLabel={tAccessibility("mobileNavigation")}
             siteDescription={tNavigation("siteDescription")}
-            siteName={tNavigation("siteName")}
+            siteName={siteName}
           />
           <div className="my-4 h-px w-full shrink-0 bg-border" />
           <MobileNavigationLinks

@@ -12,7 +12,7 @@ const CLIENT_FORBIDDEN =
   /(?:^|\/)zod(?:\/|$)|src\/lib\/env(?:\.|$)|public-trust|single-site(?:-|\.|$)|inquiry-form-static-fallback/u;
 const INQUIRY_ROUTE = "src/app/api/inquiry/route.ts";
 const EMAIL_ENTRIES = [
-  "src/lib/resend-core.tsx",
+  "src/lib/resend-core.ts",
   "src/lib/email/runtime-email-content.ts",
   "src/lib/email/resend-http-client.ts",
 ];

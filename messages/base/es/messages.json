@@ -19,28 +19,13 @@
     "description": "Permite cookies de análisis opcionales para ayudarnos a entender el tráfico del sitio.",
     "learnMore": "Política de privacidad",
     "acceptAll": "Permitir análisis",
-    "rejectAll": "No, gracias"
+    "rejectAll": "No, gracias",
+    "settings": "Configuración de cookies"
   },
   "structured-data": {
     "website": {
-      "name": "{siteName}",
       "description": "Sitio de referencia para consultas B2B"
     }
-  },
-  "apiErrors": {
-    "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Inténtalo de nuevo más tarde.",
-    "SERVICE_UNAVAILABLE": "El servicio no está disponible temporalmente. Inténtalo de nuevo más tarde.",
-    "INVALID_JSON_BODY": "Formato de solicitud no válido.",
-    "PAYLOAD_TOO_LARGE": "La solicitud es demasiado grande.",
-    "TURNSTILE_REQUIRED": "Se requiere una verificación de seguridad.",
-    "TURNSTILE_REJECTED": "La verificación de seguridad ha fallado. Inténtalo de nuevo.",
-    "TURNSTILE_UNAVAILABLE": "La verificación de seguridad no está disponible temporalmente. Inténtalo de nuevo más tarde.",
-    "UNKNOWN_ERROR": "Se ha producido un error desconocido.",
-    "INTERNAL_SERVER_ERROR": "Se ha producido un error inesperado. Inténtalo de nuevo más tarde.",
-    "INVALID_REQUEST": "Faltan algunos campos obligatorios o no son válidos.",
-    "UNSUPPORTED_MEDIA_TYPE": "Tipo de contenido no compatible.",
-    "INQUIRY_VALIDATION_FAILED": "Revisa los datos de tu consulta e inténtalo de nuevo.",
-    "INQUIRY_PROCESSING_ERROR": "No hemos podido enviar tu consulta ahora. Inténtalo de nuevo más tarde."
   },
   "errors": {
     "contact": {
@@ -56,10 +41,7 @@
     }
   },
   "legal": {
-    "effectiveDate": "Fecha de entrada en vigor",
-    "lastUpdated": "Última actualización",
-    "tableOfContents": "Índice",
-    "articleAuthorLine": "Redactado por la empresa responsable de esta página."
+    "tableOfContents": "Índice"
   },
   "emailTemplates": {
     "common": {
@@ -81,27 +63,22 @@
     "home": "Inicio",
     "contactSales": "Iniciar una consulta",
     "language": "Idiomas",
-    "siteName": "{siteName}",
     "siteDescription": "Sitio de referencia neutral para consultas B2B."
   },
   "footer": {
     "sections": {
       "navigation": {
-        "title": "Navegación",
         "home": "Inicio",
         "contact": "Contacto"
       },
       "support": {
-        "title": "Ayuda",
         "privacy": "Política de privacidad",
         "terms": "Condiciones del servicio"
       }
-    },
-    "copyright": "© {currentYear} {siteName}. Todos los derechos reservados."
+    }
   },
   "home": {
     "metadata": {
-      "title": "{siteName} - Plantilla de consultas B2B",
       "description": "Un sitio de referencia de consultas B2B no destinado a producción, con identidad, dominio y datos de contacto de ejemplo."
     },
     "title": "Sitio de consultas B2B",
@@ -109,8 +86,6 @@
     "contactLink": "Contacto"
   },
   "contact": {
-    "title": "Contacto",
-    "description": "Comparte lo esencial para que la empresa pueda identificar el siguiente paso útil.",
     "panel": {
       "contactTitle": "Correo y consulta",
       "emailUnavailable": "No se ha configurado un correo de contacto."

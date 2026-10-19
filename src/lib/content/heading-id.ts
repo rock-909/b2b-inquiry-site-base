@@ -13,9 +13,13 @@ function slugifyHeading(text: string): string {
     return "";
   }
 
+  // 只去掉拉丁字母上的重音；其他文字的组合符号（假名浊点、天城文元音符）属于字母本身。
   return trimmed
+    .normalize("NFD")
+    .replace(/(\p{Script=Latin})\p{M}+/gu, "$1")
+    .normalize("NFC")
     .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fff\s-]/g, "")
+    .replace(/[^\p{L}\p{M}\p{N}\s-]/gu, "")
     .replace(/\s+/g, "-");
 }
 

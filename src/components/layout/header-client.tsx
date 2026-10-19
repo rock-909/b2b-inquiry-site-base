@@ -68,6 +68,7 @@ interface MobileNavigationIslandProps {
   languageSwitcher?: ReactNode;
   openMenuLabel: string;
   closeMenuLabel: string;
+  siteName: string;
 }
 
 interface LanguageToggleIslandProps {
@@ -156,6 +157,7 @@ export function MobileNavigationIsland({
   languageSwitcher,
   openMenuLabel,
   closeMenuLabel,
+  siteName,
 }: MobileNavigationIslandProps) {
   const pathname = usePathname();
   const [activationPathname, setActivationPathname] = useState<string | null>(
@@ -181,6 +183,7 @@ export function MobileNavigationIsland({
             languageSwitcher,
             openMenuLabel,
             closeMenuLabel,
+            siteName,
           }}
         />
       </LazyIslandBoundary>

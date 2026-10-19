@@ -67,7 +67,12 @@ const MOBILE_NAV_ISLAND_LABELS = {
 
 describe("MobileNavigationIsland", () => {
   it("renders deferred trigger before loading dynamic component", () => {
-    render(<MobileNavigationIsland {...MOBILE_NAV_ISLAND_LABELS} />);
+    render(
+      <MobileNavigationIsland
+        siteName="Test Site"
+        {...MOBILE_NAV_ISLAND_LABELS}
+      />,
+    );
 
     const trigger = screen.getByTestId("header-mobile-menu-button");
     expect(trigger).toBeInTheDocument();
@@ -87,7 +92,10 @@ describe("MobileNavigationIsland", () => {
 
   it("server-renders mobile navigation fallback without loading interactive navigation", () => {
     const html = renderToStaticMarkup(
-      <MobileNavigationIsland {...MOBILE_NAV_ISLAND_LABELS}>
+      <MobileNavigationIsland
+        siteName="Test Site"
+        {...MOBILE_NAV_ISLAND_LABELS}
+      >
         <nav data-testid="header-mobile-navigation-fallback-links">
           Fallback navigation
         </nav>
@@ -105,6 +113,7 @@ describe("MobileNavigationIsland", () => {
   it("passes localized labels to the hydrated mobile navigation", async () => {
     render(
       <MobileNavigationIsland
+        siteName="Test Site"
         {...MOBILE_NAV_ISLAND_LABELS}
         openMenuLabel="打开导航菜单"
         closeMenuLabel="关闭导航菜单"
@@ -125,7 +134,12 @@ describe("MobileNavigationIsland", () => {
   });
 
   it("loads interactive component after trigger click", async () => {
-    render(<MobileNavigationIsland {...MOBILE_NAV_ISLAND_LABELS} />);
+    render(
+      <MobileNavigationIsland
+        siteName="Test Site"
+        {...MOBILE_NAV_ISLAND_LABELS}
+      />,
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByTestId("header-mobile-menu-button"));
@@ -141,12 +155,20 @@ describe("MobileNavigationIsland", () => {
 
   it("does not open the drawer on another route when navigation happens while it loads", async () => {
     const { rerender } = render(
-      <MobileNavigationIsland {...MOBILE_NAV_ISLAND_LABELS} />,
+      <MobileNavigationIsland
+        siteName="Test Site"
+        {...MOBILE_NAV_ISLAND_LABELS}
+      />,
     );
 
     fireEvent.click(screen.getByTestId("header-mobile-menu-button"));
     mockPathname.current = "/contact";
-    rerender(<MobileNavigationIsland {...MOBILE_NAV_ISLAND_LABELS} />);
+    rerender(
+      <MobileNavigationIsland
+        siteName="Test Site"
+        {...MOBILE_NAV_ISLAND_LABELS}
+      />,
+    );
 
     await act(async () => {
       await vi.dynamicImportSettled();
@@ -161,6 +183,7 @@ describe("MobileNavigationIsland", () => {
   it("marks the deferred menu label as notranslate", () => {
     render(
       <MobileNavigationIsland
+        siteName="Test Site"
         {...MOBILE_NAV_ISLAND_LABELS}
         openMenuLabel="Open navigation menu"
       />,
@@ -245,7 +268,10 @@ describe("Island components integration", () => {
   it("mobile island renders without loading hydrated navigation", async () => {
     const { container } = render(
       <>
-        <MobileNavigationIsland {...MOBILE_NAV_ISLAND_LABELS} />
+        <MobileNavigationIsland
+          siteName="Test Site"
+          {...MOBILE_NAV_ISLAND_LABELS}
+        />
       </>,
     );
 

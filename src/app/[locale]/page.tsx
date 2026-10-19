@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 
 import {
   generateLocaleStaticParams,
@@ -10,6 +10,7 @@ import { Link } from "@/i18n/routing";
 import { getCanonicalPath } from "@/config/paths";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 
 interface HomePageProps {
   params: Promise<LocaleParam>;
@@ -30,7 +31,7 @@ export async function generateMetadata({
     pageType: "home",
     path: getCanonicalPath("home"),
     config: {
-      title: t("title"),
+      title: SINGLE_SITE_CONFIG.name,
       description: t("description"),
     },
   });
@@ -38,7 +39,6 @@ export async function generateMetadata({
 
 export default async function HomePage({ params }: HomePageProps) {
   const locale = resolveLocaleParam(await params);
-  setRequestLocale(locale);
   const t = await getTranslations("home");
 
   return (

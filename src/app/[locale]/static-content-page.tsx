@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { setRequestLocale } from "next-intl/server";
 import type { LocaleParam } from "@/app/[locale]/generate-static-params";
 import { LegalPageShell } from "@/components/content/legal-page-shell";
 import { getStaticPageContentSlug } from "@/config/pages.config";
@@ -44,7 +43,6 @@ export async function StaticContentPage({
   config: StaticContentPageConfig;
 }) {
   const locale = resolveLocaleParam(await params);
-  setRequestLocale(locale);
 
   const { metadata, blocks, headings } = await loadLegalPage(
     getStaticPageContentSlug(config.pageType),

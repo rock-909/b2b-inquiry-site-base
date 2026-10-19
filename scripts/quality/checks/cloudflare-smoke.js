@@ -247,7 +247,6 @@ function collectProbeFields(pathname, response, body, retries) {
     status: response.status,
     location: response.headers.get("location"),
     leakedMiddlewareCookie: response.headers.get("x-middleware-set-cookie"),
-    robotsTag: response.headers.get("x-robots-tag"),
     cacheControl: response.headers.get("cache-control"),
     contentType: response.headers.get("content-type"),
     frameOptions: response.headers.get("x-frame-options"),
@@ -451,15 +450,6 @@ function pushBodyErrorChecks(response, failures) {
   );
 }
 
-function pushRobotsTagCheck(response, expectation, failures) {
-  if (!expectation.robotsTag) return;
-  pushFailureUnless(
-    (response.robotsTag ?? "").includes(expectation.robotsTag),
-    `Expected ${response.pathname} to carry X-Robots-Tag: ${expectation.robotsTag}, got ${response.robotsTag ?? "none"}`,
-    failures,
-  );
-}
-
 function pushLeakedMiddlewareCookieCheck(response, failures) {
   pushFailureUnless(
     response.leakedMiddlewareCookie === null,
@@ -494,7 +484,6 @@ function evaluateProbe(
   failures = [],
 ) {
   pushExpectedStatus(response, expectation.status, failures);
-  pushRobotsTagCheck(response, expectation, failures);
   pushCacheControlCheck(response, expectation, failures);
 
   if (expectation.html && htmlChecks) {
@@ -755,6 +744,43 @@ function printCloudflarePreviewProofOutput(label, result) {
   );
 }
 
+// OpenNext 把本地 .env* 文件的值写进 next-env.mjs，随 Worker 一起上传，Cloudflare
+// 账号成员都能下载。公开的 NEXT_PUBLIC_* 本来就内联进页面，其余键一律拒绝上传。
+function findBundledPrivateEnvKeys(
+  filePath = path.join(ROOT, ".open-next", "cloudflare", "next-env.mjs"),
+) {
+  if (!fs.existsSync(filePath)) return [];
+  const source = fs.readFileSync(filePath, "utf8");
+  const keys = [...source.matchAll(/^export const \w+ = (.*);$/gmu)].flatMap(
+    ([, json]) => Object.keys(JSON.parse(json)),
+  );
+  return [
+    ...new Set(keys.filter((key) => !key.startsWith("NEXT_PUBLIC_"))),
+  ].sort();
+}
+
+// 构建产物能否上传：缺翻译消息、构建失败、本地 env 文件混入非公开值时都拒绝。
+function checkPreviewBuild(buildResult, buildOutput, buildCommand) {
+  const build = {
+    command: buildCommand,
+    buildLog: path.relative(ROOT, CF_PREVIEW_BUILD_LOG_PATH),
+  };
+  if (/MISSING_MESSAGE/iu.test(buildOutput)) {
+    const reason = "next-intl MISSING_MESSAGE detected during preview proof";
+    return [{ status: "fail", stage: "build-log", ...build, reason }, 1];
+  }
+  if (buildResult.status !== 0) {
+    const reason = childTimedOut(buildResult)
+      ? "preview build timed out"
+      : "preview build failed";
+    return [{ status: "fail", stage: "build", ...build, reason }, 1];
+  }
+  const privateEnvKeys = findBundledPrivateEnvKeys();
+  if (privateEnvKeys.length === 0) return null;
+  const reason = `local .env files put non-public keys into the Worker bundle (${privateEnvKeys.join(", ")}); move them aside or deploy from a clean checkout`;
+  return [{ status: "blocked", stage: "env-files", reason }, 2];
+}
+
 async function runCloudflarePreviewDeployedProof(args) {
   const { baseUrl: previewBaseUrl } = parseCloudflarePreviewDeployedArgs(args);
   const buildCommand = `pnpm ${CF_PREVIEW_BUILD_COMMAND.join(" ")}`;
@@ -821,33 +847,12 @@ async function runCloudflarePreviewDeployedProof(args) {
   fs.mkdirSync(path.dirname(CF_PREVIEW_BUILD_LOG_PATH), { recursive: true });
   fs.writeFileSync(CF_PREVIEW_BUILD_LOG_PATH, buildOutput);
 
-  if (/MISSING_MESSAGE/iu.test(buildOutput)) {
-    return finish(
-      {
-        status: "fail",
-        stage: "build-log",
-        command: buildCommand,
-        buildLog: path.relative(ROOT, CF_PREVIEW_BUILD_LOG_PATH),
-        reason: "next-intl MISSING_MESSAGE detected during preview proof",
-      },
-      1,
-    );
-  }
-
-  if (buildResult.status !== 0) {
-    return finish(
-      {
-        status: "fail",
-        stage: "build",
-        command: buildCommand,
-        buildLog: path.relative(ROOT, CF_PREVIEW_BUILD_LOG_PATH),
-        reason: childTimedOut(buildResult)
-          ? "preview build timed out"
-          : "preview build failed",
-      },
-      1,
-    );
-  }
+  const buildBlocker = checkPreviewBuild(
+    buildResult,
+    buildOutput,
+    buildCommand,
+  );
+  if (buildBlocker) return finish(...buildBlocker);
 
   const deployResult = await runChildCommand(
     "pnpm",

@@ -19,28 +19,13 @@
     "description": "Allow optional analytics cookies to help us understand site traffic.",
     "learnMore": "Privacy policy",
     "acceptAll": "Allow analytics",
-    "rejectAll": "No thanks"
+    "rejectAll": "No thanks",
+    "settings": "Cookie settings"
   },
   "structured-data": {
     "website": {
-      "name": "{siteName}",
       "description": "B2B inquiry site reference"
     }
-  },
-  "apiErrors": {
-    "RATE_LIMIT_EXCEEDED": "Too many requests. Please try again later.",
-    "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again later.",
-    "INVALID_JSON_BODY": "Invalid request format.",
-    "PAYLOAD_TOO_LARGE": "The request payload is too large.",
-    "TURNSTILE_REQUIRED": "Security verification required.",
-    "TURNSTILE_REJECTED": "Security verification failed. Please try again.",
-    "TURNSTILE_UNAVAILABLE": "Security verification is temporarily unavailable. Please try again later.",
-    "UNKNOWN_ERROR": "An unknown error occurred.",
-    "INTERNAL_SERVER_ERROR": "An unexpected error occurred. Please try again later.",
-    "INVALID_REQUEST": "Some required fields are missing or invalid.",
-    "UNSUPPORTED_MEDIA_TYPE": "Unsupported content type.",
-    "INQUIRY_VALIDATION_FAILED": "Please review your inquiry details and try again.",
-    "INQUIRY_PROCESSING_ERROR": "We could not send your inquiry right now. Please try again later."
   },
   "errors": {
     "contact": {
@@ -56,10 +41,7 @@
     }
   },
   "legal": {
-    "effectiveDate": "Effective Date",
-    "lastUpdated": "Last Updated",
-    "tableOfContents": "Table of Contents",
-    "articleAuthorLine": "Written by the operating business responsible for this page."
+    "tableOfContents": "Table of Contents"
   },
   "emailTemplates": {
     "common": {
@@ -81,27 +63,22 @@
     "home": "Home",
     "contactSales": "Start an inquiry",
     "language": "Languages",
-    "siteName": "{siteName}",
     "siteDescription": "A neutral B2B inquiry site reference."
   },
   "footer": {
     "sections": {
       "navigation": {
-        "title": "Navigation",
         "home": "Home",
         "contact": "Contact"
       },
       "support": {
-        "title": "Support",
         "privacy": "Privacy Policy",
         "terms": "Terms of Service"
       }
-    },
-    "copyright": "© {currentYear} {siteName}. All rights reserved."
+    }
   },
   "home": {
     "metadata": {
-      "title": "{siteName}",
       "description": "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details."
     },
     "title": "B2B inquiry site",
@@ -109,8 +86,6 @@
     "contactLink": "Contact"
   },
   "contact": {
-    "title": "Contact",
-    "description": "Share the essentials so the business can identify the next useful step.",
     "panel": {
       "contactTitle": "Email & inquiry",
       "emailUnavailable": "A contact email has not been configured."

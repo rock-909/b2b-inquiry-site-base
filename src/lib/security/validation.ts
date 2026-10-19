@@ -3,8 +3,13 @@
  * Security validation utilities
  */
 
+// 空白以外的控制字符和方向控制字符（U+202A-202E、U+2066-2069）：会在业主邮件和
+// Airtable 里反转或伪装显示文字，买家正常输入用不到。
+const DISPLAY_SPOOF_CHARS = /[\u202A-\u202E\u2066-\u2069]|[^\P{Cc}\s]/gu;
+
 /**
- * Normalize plain text input: collapse whitespace and trim.
+ * Normalize plain text input: strip control and bidi characters, collapse
+ * whitespace and trim.
  *
  * Deliberately does NOT strip angle brackets or protocol-like substrings —
  * buyer text like "width < 900mm" must survive intact. Injection defense
@@ -18,7 +23,7 @@ export function sanitizePlainText(input: string): string {
     return "";
   }
 
-  return input.replace(/\s+/g, " ").trim();
+  return input.replace(DISPLAY_SPOOF_CHARS, "").replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -32,7 +37,8 @@ export function sanitizePlainText(input: string): string {
  *
  * Rules:
  * - normalize `\r\n` / `\r` to `\n`;
- * - strip control characters except newline (tabs collapse to a space below);
+ * - strip control and bidi characters other than whitespace (tabs collapse to
+ *   a space below);
  * - collapse runs of spaces/tabs within a line to a single space;
  * - trim horizontal whitespace around each line break;
  * - cap runs of blank lines at one blank line;
@@ -43,14 +49,11 @@ export function sanitizeMultilineText(input: string): string {
     return "";
   }
 
-  return (
-    input
-      .replace(/\r\n?/g, "\n")
-      // eslint-disable-next-line no-control-regex -- intentionally strip control chars except newline
-      .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "")
-      .replace(/[^\S\n]+/g, " ")
-      .replace(/ ?\n ?/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim()
-  );
+  return input
+    .replace(/\r\n?/g, "\n")
+    .replace(DISPLAY_SPOOF_CHARS, "")
+    .replace(/[^\S\n]+/g, " ")
+    .replace(/ ?\n ?/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

@@ -91,52 +91,11 @@ describe("SEO Metadata", () => {
       expect(metadata.title).toBe("Default Title");
       expect(metadata.description).toBe("Default Description");
       expect(metadata.openGraph?.siteName).toBe("Test Site");
-      expect(metadata.openGraph?.locale).toBe("en");
+      expect(metadata.openGraph?.locale).toBe("en_US");
       expect(metadata.verification).toEqual({
         google: "google-verification-code",
         yandex: "yandex-verification-code",
       });
-    });
-
-    it("interpolates the site name in custom titles", () => {
-      const metadata = generateMetadataForPath({
-        locale: "en",
-        pageType: "privacy",
-        path: "/privacy",
-        config: {
-          title: "About {siteName}",
-        },
-      });
-
-      expect(metadata.title).toBe("About Test Site");
-    });
-
-    it("interpolates every site placeholder in titles and descriptions", () => {
-      const metadata = generateMetadataForPath({
-        locale: "en",
-        pageType: "privacy",
-        path: "/privacy",
-        config: {
-          title: "{siteName}",
-          description: "© {currentYear} {siteName}.",
-        },
-      });
-
-      expect(metadata.title).toBe("Test Site");
-      expect(metadata.description).toBe(
-        `© ${new Date().getUTCFullYear()} Test Site.`,
-      );
-    });
-
-    it("leaves non-site placeholders untouched", () => {
-      const metadata = generateMetadataForPath({
-        locale: "en",
-        pageType: "privacy",
-        path: "/privacy",
-        config: { title: "About {productName}" },
-      });
-
-      expect(metadata.title).toBe("About {productName}");
     });
 
     it("renders canonical, hreflang and openGraph.url from the actual route path", () => {
@@ -179,7 +138,7 @@ describe("SEO Metadata", () => {
         expect(metadata.openGraph?.url).toBe(
           `https://example.com/${locale}/privacy`,
         );
-        expect(metadata.openGraph?.locale).toBe(locale);
+        expect(metadata.openGraph?.locale).toContain(`${locale}_`);
       },
     );
 

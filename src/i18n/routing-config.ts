@@ -5,7 +5,7 @@ import { PATHNAMES } from "@/config/paths/utils";
 /**
  * Core routing configuration for next-intl.
  * This file contains only the routing definition without navigation exports,
- * making it safe to import in runtime boundary entrypoints such as `src/proxy.ts`.
+ * making it safe to import in runtime boundary entrypoints such as `src/middleware.ts`.
  *
  * For navigation components (Link, redirect, usePathname, useRouter),
  * import from '@/i18n/routing' instead.
@@ -19,17 +19,13 @@ export const routing = defineRouting({
   // 注意：仅包含已实现的页面路径，避免 404 错误
   pathnames: PATHNAMES,
 
-  // canonical/hreflang is handled by the metadata layer so head and sitemap
-  // alternates share one URL contract.
+  // hreflang/canonical 只由 metadata 层输出；next-intl 的 Link 响应头会按请求 Host 生成 URL。
+  alternateLinks: false,
 
   localeDetection: false,
 
-  // 配置locale cookie - 持久化用户语言偏好
-  localeCookie: {
-    name: "NEXT_LOCALE",
-    // 自选 1 年持久化；next-intl 4 默认为会话级，加语种上线前复核 cookie 声明合规
-    maxAge: 60 * 60 * 24 * 365,
-  },
+  // localeDetection 关闭时 next-intl 不读这个 cookie，写入它只会在同意前留下持久 cookie。
+  localeCookie: false,
 });
 
 // 导出类型，使用统一配置

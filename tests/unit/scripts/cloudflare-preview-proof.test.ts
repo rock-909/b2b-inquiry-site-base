@@ -51,7 +51,7 @@ function createProofFixture() {
     "#!/bin/sh",
     'echo "pnpm $*" >> "$FAKE_CALL_LOG"',
     'case "$1" in',
-    '  website:build:cf) echo "$NEXT_PUBLIC_BASE_URL $NEXT_PUBLIC_SITE_URL" >> "$FAKE_BUILD_ENV_LOG"; printf "%s\\n" "$FAKE_BUILD_OUTPUT"; exit "${FAKE_BUILD_EXIT:-0}" ;;',
+    '  website:build:cf) echo "$NEXT_PUBLIC_BASE_URL $NEXT_PUBLIC_SITE_URL" >> "$FAKE_BUILD_ENV_LOG"; if [ -n "$FAKE_NEXT_ENV" ]; then mkdir -p .open-next/cloudflare && printf "%s\\n" "$FAKE_NEXT_ENV" > .open-next/cloudflare/next-env.mjs; fi; printf "%s\\n" "$FAKE_BUILD_OUTPUT"; exit "${FAKE_BUILD_EXIT:-0}" ;;',
     `  exec) printf "%s\\n" "\${FAKE_DEPLOY_OUTPUT-Deployed to ${PREVIEW_URL}}"; exit 0 ;;`,
     "esac",
     "exit 1",
@@ -281,6 +281,38 @@ describe("cloudflare preview deploy proof", () => {
       stage: "build-log",
       commitSha: fixture.commitSha,
     });
+  });
+
+  it("blocks without deploying when local env files baked private values into the build", () => {
+    const fixture = createProofFixture();
+
+    const result = fixture.runLane({
+      FAKE_NEXT_ENV: [
+        'export const production = {"NEXT_PUBLIC_SITE_URL":"https://a.example","RESEND_API_KEY":"re_secret"};',
+        'export const development = {"AIRTABLE_API_KEY":"pat_secret"};',
+        "export const test = {};",
+      ].join("\n"),
+    });
+
+    expect(result.status).toBe(2);
+    expect(fixture.readCalls()).toEqual(["pnpm website:build:cf"]);
+    const proof = fixture.readProof();
+    expect(proof).toMatchObject({ status: "blocked", stage: "env-files" });
+    expect(String(proof.reason)).toContain("AIRTABLE_API_KEY, RESEND_API_KEY");
+    expect(JSON.stringify(proof)).not.toContain("secret");
+  });
+
+  it("deploys when the bundled env files carry only public values", () => {
+    const fixture = createProofFixture();
+
+    fixture.runLane({
+      FAKE_NEXT_ENV:
+        'export const production = {"NEXT_PUBLIC_SITE_URL":"https://a.example"};',
+    });
+
+    expect(fixture.readCalls()).toContain(
+      `pnpm exec opennextjs-cloudflare deploy --env preview --keep-vars --var NEXT_PUBLIC_BASE_URL:${PREVIEW_URL} --var NEXT_PUBLIC_SITE_URL:${PREVIEW_URL} --var TURNSTILE_ALLOWED_HOSTS:localhost,127.0.0.1,b2b-preview.example.workers.dev`,
+    );
   });
 
   it("blocks without smoke when the deploy output has no workers.dev URL", () => {

@@ -13,7 +13,6 @@ export { LOCALES_CONFIG } from "@/config/paths/locales-config";
 export {
   getCanonicalPath,
   getLocalePath,
-  getLocalizedPath,
   PATHNAMES,
 } from "@/config/paths/utils";
 

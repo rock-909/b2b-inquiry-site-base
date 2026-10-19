@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MINUTE_MS } from "@/constants";
 import {
   checkInquiryRateLimit,
   resetRateLimitStore,
@@ -62,13 +61,13 @@ describe("distributed-rate-limit", () => {
       {
         allowed: false,
         remaining: 0,
-        resetTime: 1_700_000_000_000 + MINUTE_MS,
+        resetTime: 1_700_000_000_000 + 60_000,
         retryAfter: 60,
         deniedReason: "limit",
       },
     );
 
-    vi.advanceTimersByTime(MINUTE_MS);
+    vi.advanceTimersByTime(60_000);
     await expect(checkInquiryRateLimit("counting-user")).resolves.toMatchObject(
       {
         allowed: true,
@@ -110,6 +109,21 @@ describe("distributed-rate-limit", () => {
 
     expect((await checkInquiryRateLimit("user-a")).allowed).toBe(false);
     expect((await checkInquiryRateLimit("user-b")).allowed).toBe(true);
+  });
+
+  it("counts preview and production separately when they share one store", async () => {
+    setEnv("APP_ENV", "preview");
+    for (let i = 0; i < 10; i++) {
+      await checkInquiryRateLimit("shared-store-user");
+    }
+    expect((await checkInquiryRateLimit("shared-store-user")).allowed).toBe(
+      false,
+    );
+
+    setEnv("APP_ENV", "production");
+    expect((await checkInquiryRateLimit("shared-store-user")).allowed).toBe(
+      true,
+    );
   });
 
   it("reports storage failure when the store rejects", async () => {
@@ -178,7 +192,7 @@ describe("distributed-rate-limit", () => {
             return { result: next };
           }
           if (name === "PEXPIRE") return { result: 1 };
-          if (name === "PTTL") return { result: MINUTE_MS };
+          if (name === "PTTL") return { result: 60_000 };
 
           unknownCommands.push(String(name));
           return { result: 1 };

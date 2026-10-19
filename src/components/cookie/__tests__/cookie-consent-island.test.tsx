@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CookieConsentIsland } from "@/components/cookie/cookie-consent-island";
+import { CookieSettingsButton } from "@/components/cookie/cookie-settings-button";
 
 const { controllerLoaded } = vi.hoisted(() => ({ controllerLoaded: vi.fn() }));
 
@@ -57,6 +58,54 @@ describe("CookieConsentIsland", () => {
     expect(screen.getByTestId("analytics")).toHaveAttribute(
       "data-allowed",
       "true",
+    );
+  });
+
+  it("lets the visitor withdraw a stored analytics choice from the cookie settings button", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+    render(
+      <>
+        <CookieConsentIsland />
+        <CookieSettingsButton label="Cookie settings" />
+      </>,
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "allow" }));
+    expect(localStorage.getItem("cookie-consent")).not.toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cookie settings" }));
+
+    expect(screen.getByRole("button", { name: "allow" })).toBeInTheDocument();
+    expect(screen.getByTestId("analytics")).toHaveAttribute(
+      "data-allowed",
+      "false",
+    );
+    expect(localStorage.getItem("cookie-consent")).toBeNull();
+  });
+
+  it("withdraws analytics when another tab clears the stored choice", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+    render(<CookieConsentIsland />);
+    fireEvent.click(await screen.findByRole("button", { name: "allow" }));
+    expect(screen.getByTestId("analytics")).toHaveAttribute(
+      "data-allowed",
+      "true",
+    );
+
+    localStorage.removeItem("cookie-consent");
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent("storage", {
+          key: "cookie-consent",
+          oldValue: "{}",
+          newValue: null,
+        }),
+      );
+    });
+
+    expect(screen.getByRole("button", { name: "allow" })).toBeInTheDocument();
+    expect(screen.getByTestId("analytics")).toHaveAttribute(
+      "data-allowed",
+      "false",
     );
   });
 });

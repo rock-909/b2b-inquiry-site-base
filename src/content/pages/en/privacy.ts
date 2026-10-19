@@ -2,7 +2,6 @@ import type { Page } from "@/types/content.types";
 
 const privacyPage = {
   slug: "privacy",
-  filePath: "/src/content/pages/en/privacy.ts",
   metadata: {
     title: "Privacy policy — to be completed",
     description: "Incomplete placeholder. The site operator must replace this before launch.",

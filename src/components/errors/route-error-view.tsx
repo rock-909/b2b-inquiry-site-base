@@ -33,7 +33,7 @@ export function RouteErrorView({
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-16">
       <div className="w-full max-w-lg text-center">
-        <h2 className="text-2xl font-semibold">{copy.title}</h2>
+        <h1 className="text-2xl font-semibold">{copy.title}</h1>
         <p className="mt-3 text-sm text-muted-foreground">{copy.description}</p>
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
           <Button type="button" onClick={retry}>

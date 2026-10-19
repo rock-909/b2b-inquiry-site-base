@@ -79,7 +79,7 @@ describe("email copy source", () => {
 
     expect(EMAIL_COPY.inquiry.title).toBe(emailTemplates.inquiry.title);
     expect(EMAIL_COPY.inquiry.preview).toBe(emailTemplates.inquiry.preview);
-    expect(EMAIL_COPY.inquiry.footer()).toBe(emailTemplates.inquiry.footer);
+    expect(EMAIL_COPY.inquiry.footer).toBe(emailTemplates.inquiry.footer);
     expect(EMAIL_COPY.inquiry.subject(inquiryEmailData)).toBe(
       `[${inquiryEmailData.referenceId}] ${formatTemplate(
         emailTemplates.inquiry.subject,
@@ -90,7 +90,7 @@ describe("email copy source", () => {
 
   it("resolves every dynamic inquiry template placeholder before rendering", () => {
     expectNoUnresolvedPlaceholders([
-      EMAIL_COPY.inquiry.footer(),
+      EMAIL_COPY.inquiry.footer,
       EMAIL_COPY.inquiry.subject(inquiryEmailData),
     ]);
   });

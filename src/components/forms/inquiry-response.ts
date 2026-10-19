@@ -24,10 +24,10 @@ export type InquirySubmitState =
       readonly errorKind: "security" | "server";
     };
 
+// TURNSTILE_UNAVAILABLE 是服务端配置或上游故障，买家重试无用，按 server 文案处理。
 const SECURITY_ERROR_CODES = new Set<ApiErrorCode>([
   API_ERROR_CODES.TURNSTILE_REQUIRED,
   API_ERROR_CODES.TURNSTILE_REJECTED,
-  API_ERROR_CODES.TURNSTILE_UNAVAILABLE,
 ]);
 
 const DEFAULT_RETRY_AFTER_SECONDS = 60;

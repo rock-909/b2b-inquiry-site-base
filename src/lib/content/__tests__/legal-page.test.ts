@@ -40,7 +40,6 @@ describe("loadLegalPage", () => {
       content:
         "## Introduction\n\nWe care about your privacy.\n\n## Information We Collect\n\nWe collect the following.\n\n### Personal Data\n\nName, email.",
       slug: "privacy",
-      filePath: "/src/content/pages/en/privacy.ts",
     });
 
     const result = await loadLegalPage("privacy", "en");
@@ -58,7 +57,6 @@ describe("loadLegalPage", () => {
       },
       content: "## Terms",
       slug: "terms",
-      filePath: "/src/content/pages/en/terms.ts",
     });
 
     const result = await loadLegalPage("terms", "en");
@@ -74,7 +72,6 @@ describe("loadLegalPage", () => {
       },
       content: "## Terms",
       slug: "terms",
-      filePath: "/src/content/pages/en/terms.ts",
     });
 
     const result = await loadLegalPage("terms", "en");
@@ -118,7 +115,6 @@ describe("loadLegalPage headings", () => {
       metadata: { title: "Privacy", slug: "privacy", publishedAt: "2024-01-01" },
       content,
       slug: "privacy",
-      filePath: "/src/content/pages/en/privacy.ts",
     });
     return loadLegalPage("privacy", "en").headings;
   }

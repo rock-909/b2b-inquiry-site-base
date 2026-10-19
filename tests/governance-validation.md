@@ -135,7 +135,7 @@ only that row's test file and `--outputFile=evidence/<name>-mutant.json`.
 
 | Name | Test file | Isolated fault | Observed result (exit 1) |
 | --- | --- | --- | --- |
-| header | `src/components/layout/__tests__/header.test.tsx` | Replace Header's `<Logo locale={locale} />` with `{null}` | 1 failed / 3 passed; accessible brand link not found |
+| header | `src/components/layout/__tests__/header.test.tsx` | Replace Header's `<Logo />` with `{null}` | 1 failed / 3 passed; accessible brand link not found |
 | env | `tests/architecture/env-boundary.test.ts` | Replace getter allowlist check/read with `return process.env[key]` | 6 failed; expected function to throw |
 | graph | `tests/architecture/runtime-dependencies.test.ts` | Add `import "zod"` to logger | 2 failed / 5 passed; public/logger and transitive form dependency sets contain a forbidden entry |
 | deferred | `tests/architecture/runtime-dependencies.test.ts` | Replace deferred form's lazy import with static `import { InquiryForm }` | 1 failed / 6 passed; expected dynamic=true, received false |

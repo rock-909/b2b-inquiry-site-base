@@ -7,7 +7,7 @@ import {
   CONSENT_STORAGE_KEY,
   CONSENT_VERSION,
 } from "@/lib/cookie-consent/types";
-import { loadConsent } from "../storage";
+import { clearConsent, loadConsent } from "../storage";
 
 const CONSENT = {
   necessary: true,
@@ -43,6 +43,24 @@ describe("cookie consent storage", () => {
         throw new DOMException("Access denied", "SecurityError");
       });
     expect(loadConsent()).toBeNull();
+  });
+
+  it("withdraws stored consent even when storage is too full for new writes", () => {
+    window.localStorage.setItem(
+      CONSENT_STORAGE_KEY,
+      JSON.stringify({
+        consent: CONSENT,
+        updatedAt: "2026-08-09T00:00:00.000Z",
+        version: CONSENT_VERSION,
+      }),
+    );
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new DOMException("Quota exceeded", "QuotaExceededError");
+    });
+
+    clearConsent();
+
+    expect(window.localStorage.getItem(CONSENT_STORAGE_KEY)).toBeNull();
   });
 
   it("drops unsupported versions instead of pretending to migrate them", () => {

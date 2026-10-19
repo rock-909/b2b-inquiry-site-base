@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { ThemeProvider } from "next-themes";
 import { AttributionBootstrap } from "@/components/attribution-bootstrap";
 import { CookieConsentIsland } from "@/components/cookie/cookie-consent-island";
@@ -110,7 +110,6 @@ export default async function LocaleLayout({ children }: LocaleLayoutProps) {
   }
 
   const typedLocale = coerceLocale(locale);
-  setRequestLocale(typedLocale);
 
   return (
     <html lang={typedLocale} suppressHydrationWarning>

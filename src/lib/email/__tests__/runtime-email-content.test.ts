@@ -32,6 +32,19 @@ describe("runtime email content", () => {
     expect(content.text).toContain("Requirements: Line one\nLine two");
   });
 
+  it("shows a single-word name without a trailing space", () => {
+    const content = buildInquiryEmailContent({
+      referenceId: "INQ-abc123-deadbeef",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "Madonna",
+        email: "pat@example.com",
+      }),
+    });
+
+    expect(content.text.split("\n")).toContain("Contact Name: Madonna");
+  });
+
   it("omits requirements when not provided", () => {
     const inquiryData: ValidatedInquiry = {
       referenceId: "INQ-abc123-deadbeef",

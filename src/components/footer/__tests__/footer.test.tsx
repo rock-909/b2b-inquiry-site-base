@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 import { Footer } from "../footer";
 
@@ -22,5 +22,20 @@ describe("Footer", () => {
       screen.getByRole("button", { name: "Toggle Theme" }),
     ).toBeInTheDocument();
     expect(screen.queryByText(/example.invalid/)).not.toBeInTheDocument();
+  });
+
+  it("offers cookie settings only when analytics is configured", () => {
+    const { unmount } = render(<Footer />);
+    expect(
+      screen.queryByRole("button", { name: "Cookie settings" }),
+    ).not.toBeInTheDocument();
+    unmount();
+
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+    render(<Footer />);
+    expect(
+      screen.getByRole("button", { name: "Cookie settings" }),
+    ).toBeInTheDocument();
+    vi.unstubAllEnvs();
   });
 });

@@ -2,7 +2,6 @@ import type { Page } from "@/types/content.types";
 
 const privacyPage = {
   slug: "privacy",
-  filePath: "/src/content/pages/es/privacy.ts",
   metadata: {
     title: "Privacidad — pendiente de completar",
     description: "Texto provisional incompleto. El responsable debe sustituirlo antes del lanzamiento.",

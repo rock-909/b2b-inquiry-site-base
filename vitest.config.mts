@@ -63,7 +63,7 @@ export default defineConfig({
         "**/*.test.{js,jsx,ts,tsx}",
         "**/*.spec.{js,jsx,ts,tsx}",
         "src/test/**",
-        "src/proxy.ts",
+        "src/middleware.ts",
         // 排除自动生成的文件
         "**/*.generated.*",
       ],

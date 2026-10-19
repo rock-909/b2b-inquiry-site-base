@@ -1,17 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LocaleLayout from "../layout";
 
-const { mockNotFound, mockRootLocale, mockSetRequestLocale } = vi.hoisted(
-  () => ({
-    mockNotFound: vi.fn(),
-    mockRootLocale: vi.fn(async () => "en"),
-    mockSetRequestLocale: vi.fn(),
-  }),
-);
+const { mockNotFound, mockRootLocale } = vi.hoisted(() => ({
+  mockNotFound: vi.fn(),
+  mockRootLocale: vi.fn(async () => "en"),
+}));
 
 vi.mock("next-intl/server", () => ({
   getTranslations: vi.fn(),
-  setRequestLocale: mockSetRequestLocale,
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mockNotFound }));
@@ -41,7 +37,6 @@ describe("LocaleLayout", () => {
     ).rejects.toThrow("NEXT_NOT_FOUND");
 
     expect(mockNotFound).toHaveBeenCalledTimes(1);
-    expect(mockSetRequestLocale).not.toHaveBeenCalled();
   });
 
   it("wires the locale and outer document shell", async () => {
@@ -59,6 +54,5 @@ describe("LocaleLayout", () => {
     expect(body.type).toBe("body");
     expect(body.props.className).toBe("flex min-h-dvh flex-col antialiased");
     expect(body.props.children.props.children).toEqual(<div>Child</div>);
-    expect(mockSetRequestLocale).toHaveBeenCalledWith("en");
   });
 });

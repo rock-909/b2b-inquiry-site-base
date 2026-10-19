@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as sharedEnvMock from "@/lib/env";
 import { captureExpectedConsoleErrors } from "@/test/console";
 
-const cloudflareContextSymbol = Symbol.for("__cloudflare-context__");
-
 async function importActualEnv() {
   const windowDescriptor = Object.getOwnPropertyDescriptor(
     globalThis,
@@ -38,9 +36,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  delete (globalThis as typeof globalThis & Record<symbol, unknown>)[
-    cloudflareContextSymbol
-  ];
+  vi.unstubAllEnvs();
 });
 
 describe("real env contract", () => {
@@ -51,42 +47,37 @@ describe("real env contract", () => {
     expect(Object.keys(mocked).sort()).toEqual(Object.keys(actual).sort());
   });
 
-  it.each([
-    {
-      scenario: "process.env value",
-      processValue: "process-env-key",
-      binding: undefined,
-      expected: "process-env-key",
-    },
-    {
-      scenario: "Cloudflare binding over process.env",
-      processValue: "process-env-key",
-      binding: "cloudflare-binding-key",
-      expected: "cloudflare-binding-key",
-    },
-    {
-      scenario: "Cloudflare binding without process.env",
-      processValue: undefined,
-      binding: "cloudflare-binding-key",
-      expected: "cloudflare-binding-key",
-    },
-  ])(
-    "reads strings the same way in the shared env mock and the real module: $scenario",
-    async ({ processValue, binding, expected }) => {
-      const actual = await importActualEnv();
-      vi.stubEnv("RESEND_API_KEY", processValue);
-      if (binding !== undefined) {
-        (globalThis as typeof globalThis & Record<symbol, unknown>)[
-          cloudflareContextSymbol
-        ] = { env: { RESEND_API_KEY: binding } };
-      }
+  it("reads strings the same way in the shared env mock and the real module", async () => {
+    const actual = await importActualEnv();
+    vi.stubEnv("RESEND_API_KEY", "process-env-key");
 
-      expect(actual.getRuntimeEnvString("RESEND_API_KEY")).toBe(expected);
-      expect(sharedEnvMock.getRuntimeEnvString("RESEND_API_KEY")).toBe(
-        expected,
-      );
-    },
-  );
+    expect(actual.getRuntimeEnvString("RESEND_API_KEY")).toBe(
+      "process-env-key",
+    );
+    expect(sharedEnvMock.getRuntimeEnvString("RESEND_API_KEY")).toBe(
+      "process-env-key",
+    );
+  });
+
+  it("treats a runtime value that fails its schema as unset", async () => {
+    const actual = await importActualEnv();
+    vi.stubEnv("EMAIL_FROM", "not-an-email");
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "not-a-url");
+    vi.stubEnv("DEPLOYMENT_PLATFORM", "self-hosted");
+
+    expect(actual.getRuntimeEnvString("EMAIL_FROM")).toBeUndefined();
+    expect(
+      actual.getRuntimeEnvString("UPSTASH_REDIS_REST_URL"),
+    ).toBeUndefined();
+    expect(actual.getRuntimeEnvString("DEPLOYMENT_PLATFORM")).toBeUndefined();
+  });
+
+  it("treats an empty runtime value as unset", async () => {
+    const actual = await importActualEnv();
+    vi.stubEnv("TURNSTILE_SECRET_KEY", "");
+
+    expect(actual.getRuntimeEnvString("TURNSTILE_SECRET_KEY")).toBeUndefined();
+  });
 
   it.each([
     { key: "TURNSTILE_BYPASS", value: "true", expected: true },
@@ -221,23 +212,6 @@ describe("real env contract", () => {
       }
     },
   );
-
-  it("prefers live Cloudflare bindings over process.env", async () => {
-    vi.stubEnv("RESEND_API_KEY", "process-env-key");
-    const actual = await importActualEnv();
-
-    (globalThis as typeof globalThis & Record<symbol, unknown>)[
-      cloudflareContextSymbol
-    ] = {
-      env: {
-        RESEND_API_KEY: "cloudflare-binding-key",
-      },
-    };
-
-    expect(actual.getRuntimeEnvString("RESEND_API_KEY")).toBe(
-      "cloudflare-binding-key",
-    );
-  });
 
   it("reads process.env changes after schema initialization", async () => {
     const actual = await importActualEnv();

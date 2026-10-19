@@ -28,6 +28,16 @@ describe("next.config contract", () => {
     expect(nextConfigModule.default.partialPrefetching).not.toBe(true);
   });
 
+  // 站内和 hreflang 从不输出默认语言前缀；外站误链的 /en/* 用永久跳转合并权重。
+  it("permanently redirects the default-locale prefix to unprefixed URLs", async () => {
+    const nextConfigModule = await import("../../next.config");
+
+    expect(await nextConfigModule.default.redirects?.()).toEqual([
+      { source: "/en", destination: "/", permanent: true },
+      { source: "/en/:path*", destination: "/:path*", permanent: true },
+    ]);
+  });
+
   it("uses the native Rust React Compiler for Turbopack builds", async () => {
     const nextConfigModule = await import("../../next.config");
 

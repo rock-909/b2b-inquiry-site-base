@@ -17,8 +17,7 @@ export type {
 } from "@/config/site-types";
 
 function resolveSingleSiteBaseUrl(fallback: string): string {
-  const explicitSiteUrl =
-    runtimeEnv.NEXT_PUBLIC_SITE_URL?.trim() ?? env.NEXT_PUBLIC_SITE_URL?.trim();
+  const explicitSiteUrl = runtimeEnv.NEXT_PUBLIC_SITE_URL?.trim();
   if (explicitSiteUrl) return explicitSiteUrl;
 
   const runtimeSharedBaseUrl = runtimeEnv.NEXT_PUBLIC_BASE_URL?.trim();
@@ -33,7 +32,11 @@ function resolveSingleSiteBaseUrl(fallback: string): string {
   return fallback;
 }
 
-const baseUrl = resolveSingleSiteBaseUrl("https://example.invalid");
+// 去掉结尾斜杠：robots 等处直接拼接路径，`https://acme.com/` 会得到 `//sitemap.xml`。
+const baseUrl = resolveSingleSiteBaseUrl("https://example.invalid").replace(
+  /\/+$/u,
+  "",
+);
 
 const social = {
   twitter: "",
@@ -76,7 +79,6 @@ function getFooterLinks(
 export const SINGLE_SITE_FOOTER_COLUMNS = [
   {
     key: "navigation",
-    translationKey: "footer.sections.navigation.title",
     links: getFooterLinks(
       "navigation",
       PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
@@ -86,7 +88,6 @@ export const SINGLE_SITE_FOOTER_COLUMNS = [
   },
   {
     key: "support",
-    translationKey: "footer.sections.support.title",
     links: getFooterLinks(
       "support",
       PUBLIC_STATIC_PAGE_DEFINITIONS.filter(

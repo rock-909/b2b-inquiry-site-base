@@ -24,7 +24,6 @@ describe("client-ip", () => {
     // Reset environment
     process.env = { ...originalEnv };
     setEnv("DEPLOYMENT_PLATFORM", undefined);
-    setEnv("CF_PAGES", undefined);
     setEnv("NODE_ENV", undefined);
   });
 
@@ -85,7 +84,7 @@ describe("client-ip", () => {
 
     describe("Cloudflare platform", () => {
       beforeEach(() => {
-        setEnv("CF_PAGES", "1");
+        setEnv("DEPLOYMENT_PLATFORM", "cloudflare");
       });
 
       it("trusts cf-connecting-ip directly on the Cloudflare Workers platform", () => {

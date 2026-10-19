@@ -102,12 +102,14 @@ describe("i18n Routing Configuration", () => {
   });
 
   // localeDetection 必须关着，避免浏览器语言把买家强制重定向到不可预期的版本；
-  // hreflang/canonical 归 metadata 层，避免路由和 sitemap 产生两套 URL 真相。
-  it("keeps locale detection and alternate links off", async () => {
+  // hreflang/canonical 归 metadata 层，避免路由和 sitemap 产生两套 URL 真相；
+  // 不读的语言 cookie 也不写。next-intl 对后两项默认开启，所以必须显式写 false。
+  it("keeps locale detection, alternate links and the locale cookie off", async () => {
     const config = await getRoutingDefinition();
 
     expect(config.localeDetection).toBe(false);
-    expect(config.alternateLinks).toBeUndefined();
+    expect(config.alternateLinks).toBe(false);
+    expect(config.localeCookie).toBe(false);
   });
 
   it("keeps every locale code a two-letter lowercase tag", async () => {
@@ -119,7 +121,7 @@ describe("i18n Routing Configuration", () => {
   });
 
   // 用 `toBe` 比对象身份，不是比值：`routing.ts` 造一个字段相同的新对象也会让值相等
-  // 的断言全绿，但那样 app 代码和 proxy 就各拿一份配置了。
+  // 的断言全绿，但那样 app 代码和 middleware 就各拿一份配置了。
   it("re-exports the very object routing-config built", async () => {
     const routingConfigModule = await import("@/i18n/routing-config");
     const routingModule = await import("../routing");

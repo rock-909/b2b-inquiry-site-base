@@ -15,7 +15,6 @@ export interface LogoProps {
   showText?: boolean;
   size?: "sm" | "md" | "lg";
   ariaLabel?: string;
-  locale?: string | undefined;
   constrainText?: boolean;
 }
 

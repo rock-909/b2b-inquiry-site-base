@@ -1,7 +1,6 @@
 const { spawnSync } = require("node:child_process");
-const net = require("node:net");
+const { findPortHolder } = require("../../lighthouse-preflight");
 
-const LOCAL_E2E_HOSTS = ["127.0.0.1", "::1"];
 /** @type {Array<{
  * id: string,
  * command: string,
@@ -116,31 +115,9 @@ function runReleaseVerifyCommand(step, rootDir) {
   return result.status ?? 1;
 }
 
-async function isLocalPortInUse(port, hosts = LOCAL_E2E_HOSTS) {
-  const results = await Promise.all(
-    hosts.map(
-      (host) =>
-        new Promise((resolve) => {
-          const socket = net.createConnection({ host, port });
-
-          socket.setTimeout(1000);
-          socket.once("connect", () => {
-            socket.destroy();
-            resolve(true);
-          });
-          socket.once("timeout", () => {
-            socket.destroy();
-            resolve(false);
-          });
-          socket.once("error", () => {
-            socket.destroy();
-            resolve(false);
-          });
-        }),
-    ),
-  );
-
-  return results.some(Boolean);
+// 查不出来时 findPortHolder 会抛错，不当作端口空闲。
+async function isLocalPortInUse(port) {
+  return (await findPortHolder(port)) !== null;
 }
 
 /**
@@ -217,10 +194,8 @@ if (require.main === module) {
 }
 
 module.exports = {
-  LOCAL_E2E_HOSTS,
   MANUAL_PROOF_LANES,
   RELEASE_VERIFY_COMMANDS,
-  isLocalPortInUse,
   runReleaseVerify,
   runReleaseVerifyCommand,
 };

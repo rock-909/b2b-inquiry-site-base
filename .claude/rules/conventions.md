@@ -2,7 +2,7 @@
 paths:
   - "src/app/**/*.{ts,tsx}"
   - "src/lib/content/**"
-  - "src/proxy.ts"
+  - "src/middleware.ts"
   - "next.config.ts"
 ---
 

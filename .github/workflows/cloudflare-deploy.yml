@@ -377,7 +377,6 @@ jobs:
           if [ ! -f ./scripts/quality/checks/cloudflare-smoke.js ]; then
             echo "❌ Missing Cloudflare smoke checker in workflow checkout" >&2
             ls -la ./scripts || true
-            ls -la ./scripts/deploy || true
             exit 1
           fi
           node ./scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url "$DEPLOYMENT_URL"

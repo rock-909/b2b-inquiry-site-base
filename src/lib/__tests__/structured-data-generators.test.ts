@@ -15,7 +15,6 @@ const mockTranslator = ((key: string) => {
   const values: Record<string, string> = {
     "organization.name": SITE_CONFIG.name,
     "organization.description": SITE_CONFIG.description,
-    "website.name": SITE_CONFIG.name,
     "website.description": SITE_CONFIG.seo.defaultDescription,
     "article.defaultAuthor": SITE_CONFIG.name,
     "organization.social.twitter": "",
@@ -38,36 +37,14 @@ describe("structured-data generators", () => {
         name: "Privacy Policy",
         description: "How we handle data.",
         url: pageUrl,
-        datePublished: "2024-01-01",
       });
 
       expect(schema).toMatchObject({
         "@type": "WebPage",
         "@id": pageUrl,
         url: pageUrl,
-        datePublished: "2024-01-01",
         isPartOf: { "@id": "https://example.com#website" },
       });
-      expect(schema).not.toHaveProperty("additionalType");
-    });
-
-    it("When building a terms-style WebPage, Then optional dates obey exact optional fields", () => {
-      const pageUrl = new URL("/terms", SITE_CONFIG.baseUrl).toString();
-      const schema = buildWebPageSchema({
-        locale: "en",
-        name: "Terms of Service",
-        url: pageUrl,
-        dateModified: "2024-02-01",
-      });
-
-      expect(schema).toMatchObject({
-        "@type": "WebPage",
-        "@id": pageUrl,
-        url: pageUrl,
-        dateModified: "2024-02-01",
-        isPartOf: { "@id": "https://example.com#website" },
-      });
-      expect(schema).not.toHaveProperty("datePublished");
       expect(schema).not.toHaveProperty("additionalType");
     });
 

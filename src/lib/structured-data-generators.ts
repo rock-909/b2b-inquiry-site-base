@@ -20,8 +20,6 @@ interface WebPageSchemaInput {
   name: string;
   description?: string;
   url: string;
-  datePublished?: string;
-  dateModified?: string;
 }
 
 export function organizationStructuredDataId(
@@ -76,7 +74,7 @@ export function generateWebSiteData(t: StructuredDataTranslator) {
   return {
     "@type": "WebSite",
     "@id": websiteStructuredDataId(),
-    name: t("website.name"),
+    name: SINGLE_SITE_CONFIG.name,
     description: t("website.description"),
     url: FALLBACK_BASE_URL,
     ...(generateOrganizationData()
@@ -96,8 +94,6 @@ export function buildWebPageSchema(
     inLanguage: data.locale,
     name: data.name,
     ...(data.description ? { description: data.description } : {}),
-    ...(data.datePublished ? { datePublished: data.datePublished } : {}),
-    ...(data.dateModified ? { dateModified: data.dateModified } : {}),
     isPartOf: {
       "@id": websiteStructuredDataId(FALLBACK_BASE_URL),
     },

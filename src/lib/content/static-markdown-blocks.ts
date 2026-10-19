@@ -43,6 +43,7 @@ interface ParseState {
   tableHeaders: string[];
   tableRows: string[][];
   inTable: boolean;
+  usedHeadingIds: Set<string>;
 }
 
 function parseTableRow(line: string): string[] {
@@ -53,7 +54,7 @@ function parseTableRow(line: string): string[] {
 }
 
 function isTableSeparator(cells: string[]): boolean {
-  return cells.every((cell) => /^-+$/.test(cell));
+  return cells.every((cell) => /^:?-+:?$/.test(cell));
 }
 
 function flushList(state: ParseState): void {
@@ -136,7 +137,14 @@ function handleHeadingLine(
   spec: { level: "h2" | "h3"; prefixLength: number },
 ): void {
   const raw = trimmed.slice(spec.prefixLength).trim();
-  const { displayText, id } = parseHeadingId(raw);
+  const { displayText, id: parsedId } = parseHeadingId(raw);
+  // 同名标题追加序号，保证页面内 id 和目录锚点唯一。
+  const baseId = parsedId || "section";
+  let id = baseId;
+  for (let n = 2; state.usedHeadingIds.has(id); n += 1) {
+    id = `${baseId}-${n}`;
+  }
+  state.usedHeadingIds.add(id);
   state.blocks.push({ kind: "heading", level: spec.level, displayText, id });
 }
 
@@ -177,6 +185,7 @@ export function parseStaticMarkdownBlocks(
     tableHeaders: [],
     tableRows: [],
     inTable: false,
+    usedHeadingIds: new Set(),
   };
 
   for (const line of content.split("\n")) {
