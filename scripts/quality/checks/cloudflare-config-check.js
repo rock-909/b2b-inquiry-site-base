@@ -2,6 +2,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const childProcess = require("node:child_process");
 const ts = require("typescript");
+const { readWranglerConfig } = require("./production-config");
 
 const ROOT = process.cwd();
 
@@ -63,22 +64,6 @@ const RETIRED_SCRIPT_NAMES = [
 
 function readCloudflareConfigFile(rootDir, relPath) {
   return fs.readFileSync(path.join(rootDir, relPath), "utf8");
-}
-
-// wrangler.jsonc is JSONC (comments + trailing commas); the TypeScript config
-// reader parses it to a real object. Never regex-strip comments — that is the
-// same raw-text bug class this check exists to remove.
-function parseWranglerConfig(text) {
-  const { config, error } = ts.parseConfigFileTextToJson(
-    "wrangler.jsonc",
-    text,
-  );
-  if (error) {
-    throw new Error(
-      `wrangler.jsonc parse failed: ${ts.flattenDiagnosticMessageText(error.messageText, "\n")}`,
-    );
-  }
-  return config ?? {};
 }
 
 function getConfigValue(config, keyPath) {
@@ -166,9 +151,8 @@ function checkOpenNextWiring(rootDir, failures) {
 }
 
 function checkWrangler(rootDir, failures) {
-  const config = parseWranglerConfig(
-    readCloudflareConfigFile(rootDir, "wrangler.jsonc"),
-  );
+  // 缺文件时按空配置处理，必填字段会逐条报缺失。
+  const config = readWranglerConfig(rootDir) ?? {};
 
   const missing = [];
   for (const field of WRANGLER_REQUIRED_FIELDS) {

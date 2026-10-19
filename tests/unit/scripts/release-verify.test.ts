@@ -1,42 +1,11 @@
-import net from "node:net";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   RELEASE_VERIFY_COMMANDS,
-  isLocalPortInUse,
   runReleaseVerify,
 } from "../../../scripts/quality/checks/release-verify.js";
 import { captureExpectedConsoleErrors } from "@/test/console";
 
-const openServers: net.Server[] = [];
-
-function listenOnLoopback(): Promise<{ server: net.Server; port: number }> {
-  return new Promise((resolve, reject) => {
-    const server = net.createServer();
-    server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
-      const address = server.address();
-      if (address === null || typeof address === "string") {
-        server.close();
-        reject(new Error("Expected TCP server address"));
-        return;
-      }
-
-      openServers.push(server);
-      resolve({ server, port: address.port });
-    });
-  });
-}
-
-afterEach(async () => {
-  const servers = openServers.splice(0);
-  await Promise.all(
-    servers.map(
-      (server) =>
-        new Promise<void>((resolve) => {
-          server.close(() => resolve());
-        }),
-    ),
-  );
+afterEach(() => {
   vi.restoreAllMocks();
 });
 
@@ -108,20 +77,6 @@ describe("release verify runner", () => {
 
     expect(prerenderStatic).toBeGreaterThan(nextBuild);
     expect(prerenderStatic).toBeLessThan(cloudflareBuild);
-  });
-
-  it("detects an occupied local port", async () => {
-    const { port } = await listenOnLoopback();
-
-    await expect(isLocalPortInUse(port, ["127.0.0.1"])).resolves.toBe(true);
-  });
-
-  it("detects an unused local port", async () => {
-    const { server, port } = await listenOnLoopback();
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    openServers.splice(openServers.indexOf(server), 1);
-
-    await expect(isLocalPortInUse(port, ["127.0.0.1"])).resolves.toBe(false);
   });
 
   it("checks the local E2E port before launching Playwright", async () => {

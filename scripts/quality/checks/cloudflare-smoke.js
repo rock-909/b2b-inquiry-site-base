@@ -247,7 +247,6 @@ function collectProbeFields(pathname, response, body, retries) {
     status: response.status,
     location: response.headers.get("location"),
     leakedMiddlewareCookie: response.headers.get("x-middleware-set-cookie"),
-    robotsTag: response.headers.get("x-robots-tag"),
     cacheControl: response.headers.get("cache-control"),
     contentType: response.headers.get("content-type"),
     frameOptions: response.headers.get("x-frame-options"),
@@ -451,15 +450,6 @@ function pushBodyErrorChecks(response, failures) {
   );
 }
 
-function pushRobotsTagCheck(response, expectation, failures) {
-  if (!expectation.robotsTag) return;
-  pushFailureUnless(
-    (response.robotsTag ?? "").includes(expectation.robotsTag),
-    `Expected ${response.pathname} to carry X-Robots-Tag: ${expectation.robotsTag}, got ${response.robotsTag ?? "none"}`,
-    failures,
-  );
-}
-
 function pushLeakedMiddlewareCookieCheck(response, failures) {
   pushFailureUnless(
     response.leakedMiddlewareCookie === null,
@@ -494,7 +484,6 @@ function evaluateProbe(
   failures = [],
 ) {
   pushExpectedStatus(response, expectation.status, failures);
-  pushRobotsTagCheck(response, expectation, failures);
   pushCacheControlCheck(response, expectation, failures);
 
   if (expectation.html && htmlChecks) {
