@@ -15,14 +15,16 @@ const WRANGLER_REQUIRED_COMPAT_FLAGS = [
   "nodejs_compat",
   "global_fetch_strictly_public",
 ];
-const REQUIRED_R2_ENVIRONMENTS = ["preview", "production"];
 // docs/技术栈.md：Cloudflare 基线使用精确固定的 OpenNext 正式 stable。
 // 具体版本号以 package.json 和 lockfile 为准，这里只校验固定策略。
 const EXACT_STABLE_VERSION = /^\d+\.\d+\.\d+$/u;
 
 // Split-topology surfaces that a passing build + wrangler dry-run would not
-// catch. R2 is intentional; D1/DO/queue expansion still needs a new proof lane.
+// catch. 增量缓存基线是只读 Static Assets，不绑定 R2；R2/D1/DO/queue
+// 扩展都需要新的证明流程。
 const WRANGLER_FORBIDDEN_TOKENS = [
+  "r2_buckets",
+  "NEXT_INC_CACHE_R2_BUCKET",
   "WORKER_SELF_REFERENCE",
   "NEXT_TAG_CACHE_D1",
   "NEXT_CACHE_DO_QUEUE",
@@ -108,7 +110,7 @@ function collectSourceTokens(relPath, text) {
 
 /**
  * 在隔离子进程里真实执行 <rootDir>/open-next.config.ts，并用
- * 安装的 OpenNext stable 验证 R2 incremental cache 最终接线。
+ * 安装的 OpenNext stable 验证 Static Assets 只读 incremental cache 最终接线。
  */
 function checkOpenNextWiring(rootDir, failures) {
   const runnerPath = path.join(
@@ -130,7 +132,7 @@ function checkOpenNextWiring(rootDir, failures) {
     failures.push({
       file: "open-next.config.ts",
       label:
-        "OpenNext config keeps the approved R2 incremental cache without split topology",
+        "OpenNext config keeps the read-only Static Assets incremental cache without split topology",
       missing: [
         `open-next.config.ts failed to load with the installed OpenNext package: ${String(error)}`,
       ],
@@ -154,7 +156,7 @@ function checkOpenNextWiring(rootDir, failures) {
     failures.push({
       file: "open-next.config.ts",
       label:
-        "OpenNext config keeps the approved R2 incremental cache without split topology",
+        "OpenNext config keeps the read-only Static Assets incremental cache without split topology",
       missing: Array.isArray(result.missing)
         ? result.missing
         : ["unknown wiring failure"],
@@ -182,33 +184,6 @@ function checkWrangler(rootDir, failures) {
       missing.push(`compatibility_flags: ${flag}`);
     }
   }
-  const r2BucketNames = {};
-  for (const environment of REQUIRED_R2_ENVIRONMENTS) {
-    const buckets = getConfigValue(config, ["env", environment, "r2_buckets"]);
-    const binding = Array.isArray(buckets)
-      ? buckets.find((bucket) => bucket?.binding === "NEXT_INC_CACHE_R2_BUCKET")
-      : undefined;
-    const bucketName =
-      typeof binding?.bucket_name === "string"
-        ? binding.bucket_name.trim()
-        : "";
-    if (!bucketName) {
-      missing.push(
-        `env.${environment}.r2_buckets: NEXT_INC_CACHE_R2_BUCKET with non-empty bucket_name`,
-      );
-    } else {
-      r2BucketNames[environment] = bucketName;
-    }
-  }
-  if (
-    r2BucketNames.preview &&
-    r2BucketNames.preview === r2BucketNames.production
-  ) {
-    missing.push(
-      "env.preview and env.production NEXT_INC_CACHE_R2_BUCKET bindings must use different bucket_name values",
-    );
-  }
-
   // Comments are already gone from the parsed object; searching its canonical
   // JSON only matches real configuration values.
   // ponytail: substring over canonical JSON; switch to keyed structural checks
@@ -222,7 +197,7 @@ function checkWrangler(rootDir, failures) {
     failures.push({
       file: "wrangler.jsonc",
       label:
-        "Wrangler config keeps the approved preview/production R2 topology",
+        "Wrangler config keeps the Static Assets cache baseline without R2 or split bindings",
       missing,
       forbidden,
     });
@@ -242,7 +217,7 @@ function checkOpenNextConfig(rootDir, failures) {
     failures.push({
       file: "open-next.config.ts",
       label:
-        "OpenNext config keeps the approved R2 incremental cache without split topology",
+        "OpenNext config keeps the read-only Static Assets incremental cache without split topology",
       missing: [],
       forbidden,
     });
@@ -327,7 +302,7 @@ function runCloudflareConfigCheckCli() {
 
   console.log("cloudflare-config-check: passed");
   console.log(
-    "Verified the stable OpenNext release, R2 source topology, and package build aliases.",
+    "Verified the stable OpenNext release, Static Assets cache topology, and package build aliases.",
   );
 
   return true;

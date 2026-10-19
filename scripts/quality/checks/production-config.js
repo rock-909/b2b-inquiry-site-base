@@ -140,28 +140,6 @@ function validateWranglerSentinelResources(target, config) {
     config.name,
     "replace the template Worker name before production deploy",
   );
-
-  for (const environment of ["preview", "production"]) {
-    const buckets = config.env?.[environment]?.r2_buckets;
-    if (!Array.isArray(buckets)) continue;
-
-    for (const bucket of buckets) {
-      const binding =
-        isRecord(bucket) && typeof bucket.binding === "string"
-          ? bucket.binding
-          : "unknown binding";
-      const bucketName =
-        isRecord(bucket) && typeof bucket.bucket_name === "string"
-          ? bucket.bucket_name
-          : "";
-      validateNoStarterMarker(
-        target,
-        `wrangler.jsonc env.${environment}.r2_buckets ${binding}`,
-        bucketName,
-        "replace the template R2 bucket name before production deploy",
-      );
-    }
-  }
 }
 
 function validateRequiredEnv(target, env, key, reason) {

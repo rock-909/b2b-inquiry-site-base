@@ -181,26 +181,13 @@ function createPublicLaunchInput(
     JSON.stringify({
       name: "reference-site",
       env: {
-        preview: {
-          r2_buckets: [
-            {
-              binding: "NEXT_INC_CACHE_R2_BUCKET",
-              bucket_name: "reference-site-next-cache-preview",
-            },
-          ],
-        },
+        preview: {},
         production: {
           vars: {
             NEXT_PUBLIC_SITE_URL: baseUrl,
             NEXT_PUBLIC_BASE_URL: baseUrl,
             TURNSTILE_ALLOWED_HOSTS: new URL(baseUrl).hostname,
           },
-          r2_buckets: [
-            {
-              binding: "NEXT_INC_CACHE_R2_BUCKET",
-              bucket_name: "reference-site-next-cache-production",
-            },
-          ],
         },
       },
     }),
@@ -783,11 +770,6 @@ describe("public launch trust content guard", () => {
     expect(
       isSentinelBlocker(
         "wrangler.jsonc name is not public-launch ready (replace the template Worker name before production deploy).",
-      ),
-    ).toBe(true);
-    expect(
-      isSentinelBlocker(
-        "wrangler.jsonc env.production.r2_buckets NEXT_INC_CACHE_R2_BUCKET is not public-launch ready (replace the template R2 bucket name before production deploy).",
       ),
     ).toBe(true);
   });

@@ -1,10 +1,10 @@
 /**
- * 用已安装的 OpenNext stable 真实加载配置，并验证最终 R2 接线。
+ * 用已安装的 OpenNext stable 真实加载配置，并验证最终 Static Assets 只读缓存接线。
  */
 
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";
+import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";
 
 const rootDir = process.argv[2];
 if (!rootDir) {
@@ -12,7 +12,7 @@ if (!rootDir) {
   process.exit(2);
 }
 
-const MISSING_LABEL = "incrementalCache: r2IncrementalCache";
+const MISSING_LABEL = "incrementalCache: staticAssetsIncrementalCache";
 
 function emit(result) {
   process.stdout.write(JSON.stringify(result));
@@ -31,9 +31,9 @@ try {
 
   if (
     typeof defaultCacheFactory !== "function" ||
-    defaultCacheFactory() !== r2IncrementalCache ||
+    defaultCacheFactory() !== staticAssetsIncrementalCache ||
     typeof middlewareCacheFactory !== "function" ||
-    middlewareCacheFactory() !== r2IncrementalCache
+    middlewareCacheFactory() !== staticAssetsIncrementalCache
   ) {
     missing.push(MISSING_LABEL);
   }
@@ -55,7 +55,9 @@ try {
     middlewareOverride?.tagCache !== "dummy" ||
     middlewareOverride?.queue !== "dummy"
   ) {
-    missing.push("only the approved R2 incremental cache override is allowed");
+    missing.push(
+      "only the approved Static Assets incremental cache override is allowed",
+    );
   }
 
   emit({ ok: missing.length === 0, missing, forbidden: [] });
