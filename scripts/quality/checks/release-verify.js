@@ -50,6 +50,26 @@ const RELEASE_VERIFY_COMMANDS = [
     args: ["scripts/quality/checks/cloudflare-static-asset-headers.js"],
   },
   {
+    id: "populate-cache",
+    command: "pnpm",
+    args: [
+      "exec",
+      "opennextjs-cloudflare",
+      "populateCache",
+      "local",
+      "--env",
+      "preview",
+    ],
+  },
+  {
+    id: "static-assets-cache",
+    command: "node",
+    args: [
+      "scripts/quality/checks/cloudflare-artifact-config.js",
+      "--static-assets-cache",
+    ],
+  },
+  {
     id: "wrangler-dry-run",
     command: "pnpm",
     args: ["exec", "wrangler", "deploy", "--dry-run", "--env", "preview"],
@@ -158,7 +178,7 @@ async function runReleaseVerify({
     }
 
     const command =
-      step.id === "wrangler-dry-run"
+      step.id === "populate-cache" || step.id === "wrangler-dry-run"
         ? { ...step, args: [...step.args.slice(0, -1), environment] }
         : step;
     const status = runCommand(command, rootDir);

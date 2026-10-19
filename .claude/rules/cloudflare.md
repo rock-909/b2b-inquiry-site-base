@@ -27,7 +27,7 @@ the proof table; do not add phase-named wrappers without a real repeated workflo
 | Standard Next.js runtime behavior | `pnpm build` |
 | Cloudflare/OpenNext build path | `pnpm build` then `pnpm website:build:cf` |
 | Local Cloudflare preview behavior | `pnpm exec opennextjs-cloudflare preview --env preview` + `node scripts/quality/checks/cloudflare-smoke.js cf-preview-smoke` |
-| Cloudflare deploy-artifact proof | `pnpm exec wrangler deploy --dry-run --env preview` after `pnpm website:build:cf` |
+| Cloudflare deploy-artifact proof | `pnpm exec wrangler deploy --dry-run --env preview` after `pnpm website:build:cf` and `pnpm exec opennextjs-cloudflare populateCache local --env preview` and `node scripts/quality/checks/cloudflare-artifact-config.js --static-assets-cache` (`opennextjs-cloudflare deploy`/`preview` populate it themselves; plain `wrangler deploy` does not, and a build that skipped populate still passes dry-run and smoke) |
 | Deployed Cloudflare behavior | `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url <url>` |
 | Public submission routes or compatibility actions | related route/action/IP tests + `pnpm build` + `pnpm website:build:cf` |
 
@@ -77,8 +77,10 @@ identity is not an authorization failure.
 
 - Do not add `cacheTag()`, `revalidateTag()`, `revalidatePath()`, or
   `updateTag()` to production code without a new Cloudflare proof plan.
-- Keep Preview and Production on separate R2 incremental-cache buckets using
-  the `NEXT_INC_CACHE_R2_BUCKET` binding.
+- The incremental cache is OpenNext's read-only Static Assets cache
+  (`open-next.config.ts`); `wrangler.jsonc` binds no R2 bucket. Only a derived
+  site that needs runtime revalidation switches back to R2, with separate
+  Preview and Production buckets (`NEXT_INC_CACHE_R2_BUCKET`).
 - Cache Components and Partial Prefetching stay off until a formal stable
   OpenNext release supports them and passes the project runtime proof lanes.
 - Do not add production `"use cache"` boundaries without that stable adapter

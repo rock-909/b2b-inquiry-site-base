@@ -51,6 +51,14 @@ describe("release verify runner", () => {
       },
       portInUse: async () => false,
     });
+    expect(commands.at(-3)).toEqual([
+      "exec",
+      "opennextjs-cloudflare",
+      "populateCache",
+      "local",
+      "--env",
+      "production",
+    ]);
     expect(commands.at(-1)).toEqual([
       "exec",
       "wrangler",
@@ -192,6 +200,8 @@ describe("release verify runner", () => {
           "cloudflare-build",
           "cloudflare-artifact-config",
           "cloudflare-static-asset-headers",
+          "populate-cache",
+          "static-assets-cache",
           "wrangler-dry-run",
         ].includes(id),
       ),
@@ -201,6 +211,8 @@ describe("release verify runner", () => {
       "cloudflare-build",
       "cloudflare-artifact-config",
       "cloudflare-static-asset-headers",
+      "populate-cache",
+      "static-assets-cache",
       "wrangler-dry-run",
     ]);
   });

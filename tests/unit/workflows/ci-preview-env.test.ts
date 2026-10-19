@@ -101,6 +101,10 @@ describe("CI preview environment contract", () => {
 
     for (const [label, command] of [
       ["OpenNext build", "pnpm website:build:cf"],
+      [
+        "Static Assets cache populate",
+        "pnpm exec opennextjs-cloudflare populateCache local --env preview",
+      ],
       ["Wrangler dry-run", "pnpm exec wrangler deploy --dry-run --env preview"],
     ] as const) {
       const step = cloudflareBuildSteps?.find(
@@ -133,5 +137,22 @@ describe("CI preview environment contract", () => {
     expect(artifactProof).toBe(
       "node scripts/quality/checks/cloudflare-artifact-config.js",
     );
+  });
+
+  it("checks the Static Assets cache after populate and before the dry-run", () => {
+    const steps = readCiWorkflow().jobs?.["cloudflare-build"]?.steps ?? [];
+    const indexOf = (run: string) =>
+      steps.findIndex((candidate) => candidate.run === run);
+    const populate = indexOf(
+      "pnpm exec opennextjs-cloudflare populateCache local --env preview",
+    );
+    const cacheProof = indexOf(
+      "node scripts/quality/checks/cloudflare-artifact-config.js --static-assets-cache",
+    );
+    const dryRun = indexOf("pnpm exec wrangler deploy --dry-run --env preview");
+
+    expect(populate).toBeGreaterThan(-1);
+    expect(cacheProof).toBe(populate + 1);
+    expect(dryRun).toBe(cacheProof + 1);
   });
 });

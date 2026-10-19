@@ -23,8 +23,6 @@ const CANONICAL_CLOUDFLARE_BUILD_SCRIPTS = {
 // 刻意不用仓库真实版本：门禁只校验固定策略（精确 stable），
 // OpenNext 升级时不应需要改这里。
 const STABLE_OPEN_NEXT_DEPENDENCY = "9.8.7";
-const PREVIEW_R2_BUCKET = "derived-site-next-cache-preview";
-const PRODUCTION_R2_BUCKET = "derived-site-next-cache-production";
 
 interface Failure {
   readonly file: string;
@@ -59,8 +57,8 @@ function writePassingSideFiles(rootDir: string): void {
     "open-next.config.ts",
     [
       'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
-      'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
-      "export default defineCloudflareConfig({ incrementalCache: r2IncrementalCache });",
+      'import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";',
+      "export default defineCloudflareConfig({ incrementalCache: staticAssetsIncrementalCache });",
       "",
     ].join("\n"),
   );
@@ -76,12 +74,7 @@ function writePassingSideFiles(rootDir: string): void {
   );
 }
 
-function writePassingWranglerConfig(
-  rootDir: string,
-  bucketNames: { preview?: string; production?: string } = {},
-): void {
-  const previewBucket = bucketNames.preview ?? PREVIEW_R2_BUCKET;
-  const productionBucket = bucketNames.production ?? PRODUCTION_R2_BUCKET;
+function writePassingWranglerConfig(rootDir: string): void {
   writeFixtureFile(
     rootDir,
     "wrangler.jsonc",
@@ -91,8 +84,8 @@ function writePassingWranglerConfig(
       '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
       '  "assets": { "binding": "ASSETS" },',
       '  "env": {',
-      `    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${previewBucket}" }] },`,
-      `    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${productionBucket}" }] }`,
+      '    "preview": { "vars": { "APP_ENV": "preview" } },',
+      '    "production": { "vars": { "APP_ENV": "production" } }',
       "  }",
       "}",
     ].join("\n"),
@@ -155,8 +148,8 @@ describe("Cloudflare config source contract", () => {
         "  // historical note: r2_buckets and d1_databases were never added",
         '  "assets": { "binding": "ASSETS" },',
         '  "env": {',
-        `    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${PREVIEW_R2_BUCKET}" }] },`,
-        `    "production": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${PRODUCTION_R2_BUCKET}" }] }`,
+        '    "preview": { "vars": { "APP_ENV": "preview" } },',
+        '    "production": { "vars": { "APP_ENV": "production" } }',
         "  }",
         "}",
       ].join("\n"),
@@ -177,7 +170,7 @@ describe("Cloudflare config source contract", () => {
     expect(failures).toEqual([]);
   });
 
-  it("rejects an imported R2 adapter that is not wired into the config", () => {
+  it("rejects an imported Static Assets adapter that is not wired into the config", () => {
     const rootDir = createFixture();
     writePassingSideFiles(rootDir);
     writePassingWranglerConfig(rootDir);
@@ -186,8 +179,8 @@ describe("Cloudflare config source contract", () => {
       "open-next.config.ts",
       [
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
-        'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
-        "void r2IncrementalCache;",
+        'import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";',
+        "void staticAssetsIncrementalCache;",
         "export default defineCloudflareConfig({});",
         "",
       ].join("\n"),
@@ -199,7 +192,7 @@ describe("Cloudflare config source contract", () => {
       expect.objectContaining({
         file: "open-next.config.ts",
         missing: expect.arrayContaining([
-          "incrementalCache: r2IncrementalCache",
+          "incrementalCache: staticAssetsIncrementalCache",
         ]),
       }),
     ]);
@@ -214,7 +207,34 @@ describe("Cloudflare config source contract", () => {
       "open-next.config.ts",
       [
         "const defineCloudflareConfig = (config: unknown) => config;",
-        "const r2IncrementalCache = {};",
+        "const staticAssetsIncrementalCache = {};",
+        "export default defineCloudflareConfig({ incrementalCache: staticAssetsIncrementalCache });",
+        "",
+      ].join("\n"),
+    );
+
+    const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
+
+    expect(failures).toEqual([
+      expect.objectContaining({
+        file: "open-next.config.ts",
+        missing: expect.arrayContaining([
+          "incrementalCache: staticAssetsIncrementalCache",
+        ]),
+      }),
+    ]);
+  });
+
+  it("rejects an R2 incremental cache wired into open-next.config.ts", () => {
+    const rootDir = createFixture();
+    writePassingSideFiles(rootDir);
+    writePassingWranglerConfig(rootDir);
+    writeFixtureFile(
+      rootDir,
+      "open-next.config.ts",
+      [
+        'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
+        'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
         "export default defineCloudflareConfig({ incrementalCache: r2IncrementalCache });",
         "",
       ].join("\n"),
@@ -226,77 +246,45 @@ describe("Cloudflare config source contract", () => {
       expect.objectContaining({
         file: "open-next.config.ts",
         missing: expect.arrayContaining([
-          "incrementalCache: r2IncrementalCache",
+          "incrementalCache: staticAssetsIncrementalCache",
         ]),
       }),
     ]);
   });
 
-  it("rejects a production environment without its dedicated R2 binding", () => {
-    const rootDir = createFixture();
-    writePassingSideFiles(rootDir);
-    writeFixtureFile(
-      rootDir,
-      "wrangler.jsonc",
-      [
-        "{",
-        '  "main": ".open-next/worker.js",',
-        '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
-        '  "assets": { "binding": "ASSETS" },',
-        '  "env": {',
-        `    "preview": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "${PREVIEW_R2_BUCKET}" }] }`,
-        "  }",
-        "}",
-      ].join("\n"),
-    );
+  it.each(["preview", "production"])(
+    "rejects an R2 incremental cache binding in env.%s",
+    (environment) => {
+      const rootDir = createFixture();
+      writePassingSideFiles(rootDir);
+      writeFixtureFile(
+        rootDir,
+        "wrangler.jsonc",
+        [
+          "{",
+          '  "main": ".open-next/worker.js",',
+          '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
+          '  "assets": { "binding": "ASSETS" },',
+          '  "env": {',
+          `    "${environment}": { "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "derived-site-next-cache" }] }`,
+          "  }",
+          "}",
+        ].join("\n"),
+      );
 
-    const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
+      const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
 
-    expect(failures).toEqual([
-      expect.objectContaining({
-        file: "wrangler.jsonc",
-        missing: expect.arrayContaining([
-          expect.stringContaining("env.production.r2_buckets"),
-        ]),
-      }),
-    ]);
-  });
-
-  it("rejects an empty R2 bucket name", () => {
-    const rootDir = createFixture();
-    writePassingSideFiles(rootDir);
-    writePassingWranglerConfig(rootDir, { preview: "" });
-
-    const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
-
-    expect(failures).toEqual([
-      expect.objectContaining({
-        file: "wrangler.jsonc",
-        missing: expect.arrayContaining([
-          expect.stringContaining("non-empty bucket_name"),
-        ]),
-      }),
-    ]);
-  });
-
-  it("rejects one R2 bucket shared by preview and production", () => {
-    const rootDir = createFixture();
-    writePassingSideFiles(rootDir);
-    writePassingWranglerConfig(rootDir, {
-      production: PREVIEW_R2_BUCKET,
-    });
-
-    const failures = loadChecker().collectCloudflareConfigFailures(rootDir);
-
-    expect(failures).toEqual([
-      expect.objectContaining({
-        file: "wrangler.jsonc",
-        missing: expect.arrayContaining([
-          expect.stringContaining("different bucket_name values"),
-        ]),
-      }),
-    ]);
-  });
+      expect(failures).toEqual([
+        expect.objectContaining({
+          file: "wrangler.jsonc",
+          forbidden: expect.arrayContaining([
+            "r2_buckets",
+            "NEXT_INC_CACHE_R2_BUCKET",
+          ]),
+        }),
+      ]);
+    },
+  );
 
   function writePackageWith(
     rootDir: string,
@@ -412,13 +400,13 @@ describe("Cloudflare config source contract", () => {
       writePassingWranglerConfig(rootDir);
     }
 
-    it("rejects an extra config key alongside the R2 wiring", () => {
+    it("rejects an extra config key alongside the Static Assets wiring", () => {
       const rootDir = createFixture();
       writeWiredConfig(rootDir, [
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
-        'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
+        'import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";',
         "const somethingElse = {};",
-        "export default defineCloudflareConfig({ incrementalCache: r2IncrementalCache, queue: somethingElse });",
+        "export default defineCloudflareConfig({ incrementalCache: staticAssetsIncrementalCache, queue: somethingElse });",
         "",
       ]);
 
@@ -428,7 +416,7 @@ describe("Cloudflare config source contract", () => {
         expect.objectContaining({
           file: "open-next.config.ts",
           missing: expect.arrayContaining([
-            "only the approved R2 incremental cache override is allowed",
+            "only the approved Static Assets incremental cache override is allowed",
           ]),
         }),
       ]);
@@ -438,8 +426,8 @@ describe("Cloudflare config source contract", () => {
       const rootDir = createFixture();
       writeWiredConfig(rootDir, [
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
-        'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
-        'export default defineCloudflareConfig({ incrementalCache: r2IncrementalCache, routePreloadingBehavior: "blocking" });',
+        'import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";',
+        'export default defineCloudflareConfig({ incrementalCache: staticAssetsIncrementalCache, routePreloadingBehavior: "blocking" });',
         "",
       ]);
 
@@ -449,7 +437,7 @@ describe("Cloudflare config source contract", () => {
         expect.objectContaining({
           file: "open-next.config.ts",
           missing: expect.arrayContaining([
-            "only the approved R2 incremental cache override is allowed",
+            "only the approved Static Assets incremental cache override is allowed",
           ]),
         }),
       ]);
@@ -470,7 +458,7 @@ describe("Cloudflare config source contract", () => {
         expect.objectContaining({
           file: "open-next.config.ts",
           missing: expect.arrayContaining([
-            "incrementalCache: r2IncrementalCache",
+            "incrementalCache: staticAssetsIncrementalCache",
           ]),
         }),
       ]);
@@ -480,8 +468,8 @@ describe("Cloudflare config source contract", () => {
       const rootDir = createFixture();
       writeWiredConfig(rootDir, [
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
-        'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
-        "const config = defineCloudflareConfig({ incrementalCache: r2IncrementalCache });",
+        'import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";',
+        "const config = defineCloudflareConfig({ incrementalCache: staticAssetsIncrementalCache });",
         'config.default.override.tagCache = "somethingUnexpected";',
         "export default config;",
         "",
@@ -493,7 +481,7 @@ describe("Cloudflare config source contract", () => {
         expect.objectContaining({
           file: "open-next.config.ts",
           missing: expect.arrayContaining([
-            "only the approved R2 incremental cache override is allowed",
+            "only the approved Static Assets incremental cache override is allowed",
           ]),
         }),
       ]);
@@ -519,7 +507,7 @@ describe("Cloudflare config source contract", () => {
         expect.objectContaining({
           file: "open-next.config.ts",
           missing: expect.arrayContaining([
-            "incrementalCache: r2IncrementalCache",
+            "incrementalCache: staticAssetsIncrementalCache",
           ]),
         }),
       ]);
@@ -531,8 +519,8 @@ describe("Cloudflare config source contract", () => {
         "// historical note: apiLead, apiOps and /api/cache/invalidate were never wired here",
         'const myapiLeadNote = "mentions /api/cache/invalidation in prose";',
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
-        'import r2IncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/r2-incremental-cache";',
-        "export default defineCloudflareConfig({ incrementalCache: r2IncrementalCache });",
+        'import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";',
+        "export default defineCloudflareConfig({ incrementalCache: staticAssetsIncrementalCache });",
         "void myapiLeadNote;",
         "",
       ]);
