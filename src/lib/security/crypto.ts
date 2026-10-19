@@ -1,5 +1,3 @@
-import { HEX_RADIX } from "@/constants";
-
 /**
  * 加密和密码哈希工具
  * Cryptography and password hashing utilities
@@ -31,6 +29,6 @@ export async function generateHMAC(
   const signatureArray = Array.from(new Uint8Array(signature));
 
   return signatureArray
-    .map((b) => b.toString(HEX_RADIX).padStart(HEX_PAD_LENGTH, "0"))
+    .map((b) => b.toString(16).padStart(HEX_PAD_LENGTH, "0"))
     .join("");
 }

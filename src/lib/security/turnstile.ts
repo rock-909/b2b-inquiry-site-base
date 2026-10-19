@@ -6,7 +6,6 @@
  * 失败分类和诊断日志都在这里完成：每次失败只在分类处记一条日志。
  */
 
-import { FIVE_SECONDS_MS } from "@/constants/time";
 import {
   INQUIRY_TURNSTILE_ACTION,
   TURNSTILE_ALWAYS_PASS_TEST_SECRET,
@@ -62,7 +61,7 @@ function buildTurnstilePayload(
  * 具名并导出，是为了让浏览器那侧的提交预算能跟它对账：预算必须盖住服务端
  * 验证预算，加上限流预算和两个并行交付通道中较长的预算。
  */
-export const TURNSTILE_VERIFY_TIMEOUT_MS = FIVE_SECONDS_MS;
+export const TURNSTILE_VERIFY_TIMEOUT_MS = 5_000;
 
 async function requestTurnstileVerification(
   payload: URLSearchParams,

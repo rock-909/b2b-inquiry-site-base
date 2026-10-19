@@ -34,24 +34,6 @@ function createPathnames(): Readonly<PathnameMap> {
   return Object.freeze(Object.fromEntries(staticPathnames)) as PathnameMap;
 }
 
-/**
- * 获取本地化路径
- */
-export function getLocalizedPath(pageType: PageType, locale: Locale): string {
-  // 严格验证输入参数
-  if (pageType === null || pageType === undefined) {
-    throw new Error("Page type cannot be null or undefined");
-  }
-  if (locale === null || locale === undefined) {
-    throw new Error("Locale cannot be null or undefined");
-  }
-
-  if (!Object.hasOwn(PATHS_CONFIG, pageType)) {
-    throw new Error(`Unknown page type: ${pageType}`);
-  }
-  return getLocalePath(locale, PATHS_CONFIG[pageType]);
-}
-
 export function getCanonicalPath<T extends PageType>(
   pageType: T,
 ): (typeof PATHS_CONFIG)[T] {

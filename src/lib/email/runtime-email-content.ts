@@ -139,7 +139,7 @@ export function buildInquiryEmailContent(
     title: EMAIL_COPY.inquiry.title,
     preview: EMAIL_COPY.inquiry.preview,
     accentColor: COLORS.success,
-    footerText: EMAIL_COPY.inquiry.footer(),
+    footerText: EMAIL_COPY.inquiry.footer,
     contentBackgroundColor: COLORS.contentBackground,
     bodyHtml: renderFields(fields),
     bodyText: renderPlainFields(fields),

@@ -1,5 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MINUTE_MS } from "@/constants";
 import {
   checkInquiryRateLimit,
   resetRateLimitStore,
@@ -62,13 +61,13 @@ describe("distributed-rate-limit", () => {
       {
         allowed: false,
         remaining: 0,
-        resetTime: 1_700_000_000_000 + MINUTE_MS,
+        resetTime: 1_700_000_000_000 + 60_000,
         retryAfter: 60,
         deniedReason: "limit",
       },
     );
 
-    vi.advanceTimersByTime(MINUTE_MS);
+    vi.advanceTimersByTime(60_000);
     await expect(checkInquiryRateLimit("counting-user")).resolves.toMatchObject(
       {
         allowed: true,
@@ -193,7 +192,7 @@ describe("distributed-rate-limit", () => {
             return { result: next };
           }
           if (name === "PEXPIRE") return { result: 1 };
-          if (name === "PTTL") return { result: MINUTE_MS };
+          if (name === "PTTL") return { result: 60_000 };
 
           unknownCommands.push(String(name));
           return { result: 1 };

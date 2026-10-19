@@ -7,7 +7,6 @@
  * Store implementations are in ./stores/rate-limit-store.ts.
  */
 
-import { MINUTE_MS } from "@/constants";
 import {
   getRuntimeAppEnv,
   getRuntimeEnvString,
@@ -20,7 +19,7 @@ import {
 } from "@/lib/security/stores/rate-limit-store";
 
 const MAX_REQUESTS = 10;
-const WINDOW_MS = MINUTE_MS;
+const WINDOW_MS = 60_000;
 
 interface RateLimitResult {
   allowed: boolean;

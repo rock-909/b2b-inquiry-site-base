@@ -9,7 +9,7 @@ export const EMAIL_COPY = {
   inquiry: {
     title: emailTemplateCopy.inquiry.title,
     preview: emailTemplateCopy.inquiry.preview,
-    footer: () => emailTemplateCopy.inquiry.footer,
+    footer: emailTemplateCopy.inquiry.footer,
     subject: (data: { referenceId: string }) =>
       `[${data.referenceId}] ${emailTemplateCopy.inquiry.subject}`,
   },
