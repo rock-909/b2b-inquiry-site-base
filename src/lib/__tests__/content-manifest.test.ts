@@ -5,14 +5,12 @@ describe("static content source", () => {
   it("resolves imported page content", () => {
     expect(getStaticPage("privacy", "en")).toMatchObject({
       slug: "privacy",
-      filePath: "/src/content/pages/en/privacy.ts",
     });
   });
 
   it("resolves the Spanish example page content", () => {
     expect(getStaticPage("privacy", "es")).toMatchObject({
       slug: "privacy",
-      filePath: "/src/content/pages/es/privacy.ts",
     });
   });
 

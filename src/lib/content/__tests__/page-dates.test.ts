@@ -7,7 +7,7 @@ import {
   isStaticContentPage,
 } from "@/lib/content/page-dates";
 
-const { defaultLocale, locales } = LOCALES_CONFIG;
+const { locales } = LOCALES_CONFIG;
 const toSitemapPath = (path: string) => (path === "/" ? "" : path);
 const contentPages = PUBLIC_STATIC_PAGE_DEFINITIONS.flatMap((page) =>
   page.contentSlug === null
@@ -20,29 +20,26 @@ const contentDate = (slug: string, locale: (typeof locales)[number]) => {
 };
 
 describe("page-dates", () => {
-  // 需要至少两种语言才能让一个语言的坏日期与其他语言的好日期并存。
-  it.skipIf(locales.length < 2)(
-    "does not let an invalid locale date poison the sitemap date",
-    async () => {
-      const [page] = contentPages;
-      const poisoned = locales
-        .filter((locale) => locale !== defaultLocale)
-        .map((locale) => getStaticPage(page!.slug, locale).metadata);
-      const originals = poisoned.map((metadata) => metadata.updatedAt);
-      try {
-        for (const metadata of poisoned) metadata.updatedAt = "not-a-date";
-        await expect(
-          getStaticContentPageLastModified(page!.path),
-        ).resolves.toEqual(contentDate(page!.slug, defaultLocale));
-      } finally {
-        poisoned.forEach((metadata, index) => {
-          const original = originals[index];
-          if (original === undefined) delete metadata.updatedAt;
-          else metadata.updatedAt = original;
-        });
+  it("skips an invalid date without affecting the other locales", () => {
+    const [page] = contentPages;
+    const [first, ...rest] = locales;
+    const metadata = getStaticPage(page!.slug, first!).metadata;
+    const original = metadata.updatedAt;
+    try {
+      metadata.updatedAt = "not-a-date";
+      expect(
+        getStaticContentPageLastModified(page!.path, first!),
+      ).toBeUndefined();
+      for (const locale of rest) {
+        expect(getStaticContentPageLastModified(page!.path, locale)).toEqual(
+          contentDate(page!.slug, locale),
+        );
       }
-    },
-  );
+    } finally {
+      if (original === undefined) delete metadata.updatedAt;
+      else metadata.updatedAt = original;
+    }
+  });
 
   it("detects content pages from the registry's contentSlug", () => {
     for (const page of PUBLIC_STATIC_PAGE_DEFINITIONS) {
@@ -53,21 +50,20 @@ describe("page-dates", () => {
     expect(isStaticContentPage("/not-a-registered-page")).toBe(false);
   });
 
-  it("uses the latest content date across locales for every content page", async () => {
+  it("dates every content page from each locale's own content", () => {
     expect(contentPages.length).toBeGreaterThan(0);
     for (const { path, slug } of contentPages) {
-      const latest = Math.max(
-        ...locales.map((locale) => contentDate(slug, locale).getTime()),
-      );
-      await expect(
-        getStaticContentPageLastModified(path),
-        path,
-      ).resolves.toEqual(new Date(latest));
+      for (const locale of locales) {
+        expect(
+          getStaticContentPageLastModified(path, locale),
+          `${locale}${path}`,
+        ).toEqual(contentDate(slug, locale));
+      }
     }
   });
 
-  it("rejects paths that are not mapped from a static route id", async () => {
-    await expect(getStaticContentPageLastModified("/unknown")).rejects.toThrow(
+  it("rejects paths that are not mapped from a static route id", () => {
+    expect(() => getStaticContentPageLastModified("/unknown", "en")).toThrow(
       "No static content slug mapping for path: /unknown",
     );
   });

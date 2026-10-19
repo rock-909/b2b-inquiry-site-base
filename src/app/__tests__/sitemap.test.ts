@@ -41,7 +41,8 @@ describe("sitemap", () => {
       ),
     );
     for (const entry of entries) {
-      expect(entry.priority).toBeGreaterThan(0);
+      expect(entry).not.toHaveProperty("priority");
+      expect(entry).not.toHaveProperty("changeFrequency");
       for (const locale of locales) {
         expect(entry.alternates?.languages).toHaveProperty(locale);
       }

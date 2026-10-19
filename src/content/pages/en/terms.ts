@@ -2,7 +2,6 @@ import type { Page } from "@/types/content.types";
 
 const termsPage = {
   slug: "terms",
-  filePath: "/src/content/pages/en/terms.ts",
   metadata: {
     title: "Terms — to be completed",
     description: "Incomplete placeholder. The site operator must replace this before launch.",

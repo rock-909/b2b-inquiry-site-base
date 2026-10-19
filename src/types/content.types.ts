@@ -42,7 +42,6 @@ export interface ParsedContent<T extends ContentMetadata = ContentMetadata> {
   metadata: T;
   content: string;
   slug: string;
-  filePath: string;
 }
 
 // Page content

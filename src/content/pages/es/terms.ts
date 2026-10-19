@@ -2,7 +2,6 @@ import type { Page } from "@/types/content.types";
 
 const termsPage = {
   slug: "terms",
-  filePath: "/src/content/pages/es/terms.ts",
   metadata: {
     title: "Condiciones — pendientes de completar",
     description: "Texto provisional incompleto. El responsable debe sustituirlo antes del lanzamiento.",

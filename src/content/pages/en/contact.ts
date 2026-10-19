@@ -2,7 +2,6 @@ import type { Page } from "@/types/content.types";
 
 const contactPage = {
   slug: "contact",
-  filePath: "/src/content/pages/en/contact.ts",
   metadata: {
     title: "Contact",
     description: "Reference contact content for a B2B inquiry site.",
