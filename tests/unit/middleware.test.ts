@@ -177,7 +177,9 @@ describe("middleware next-intl boundary", () => {
     intlResponse.headers.set("x-middleware-set-cookie", "next-intl-owned");
     intlMiddlewareMock.mockReturnValue(intlResponse);
 
-    const response = middleware(new NextRequest("http://localhost:3000/en/privacy"));
+    const response = middleware(
+      new NextRequest("http://localhost:3000/en/privacy"),
+    );
 
     expect(response.headers.get("x-middleware-set-cookie")).toBe(
       "next-intl-owned",
@@ -209,12 +211,15 @@ describe("middleware next-intl boundary", () => {
       "/.well-known/security.txt",
       "/images/real.photo.jpg",
     ]) {
-      const response = middleware(new NextRequest(`http://localhost:3000${path}`));
+      const response = middleware(
+        new NextRequest(`http://localhost:3000${path}`),
+      );
       expect(response.status).toBe(200);
       expect(response.headers.get("x-middleware-rewrite")).toBeNull();
     }
     expect(
-      middleware(new NextRequest("http://localhost:3000/images/missing.jpg")).status,
+      middleware(new NextRequest("http://localhost:3000/images/missing.jpg"))
+        .status,
     ).toBe(404);
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
