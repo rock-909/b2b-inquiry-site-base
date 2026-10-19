@@ -101,6 +101,10 @@ describe("CI preview environment contract", () => {
 
     for (const [label, command] of [
       ["OpenNext build", "pnpm website:build:cf"],
+      [
+        "Static Assets cache populate",
+        "pnpm exec opennextjs-cloudflare populateCache local --env preview",
+      ],
       ["Wrangler dry-run", "pnpm exec wrangler deploy --dry-run --env preview"],
     ] as const) {
       const step = cloudflareBuildSteps?.find(

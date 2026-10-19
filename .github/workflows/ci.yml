@@ -248,6 +248,18 @@ jobs:
       - name: Cloudflare 静态资源响应头
         run: node scripts/quality/checks/cloudflare-static-asset-headers.js
 
+      - name: Cloudflare Static Assets cache populate
+        run: pnpm exec opennextjs-cloudflare populateCache local --env preview
+        env:
+          NODE_ENV: production
+          APP_ENV: preview
+          DEPLOYMENT_PLATFORM: cloudflare
+          NEXT_PUBLIC_DEPLOYMENT_PLATFORM: cloudflare
+          NEXT_PUBLIC_SITE_URL: ${{ vars.CLOUDFLARE_PREVIEW_URL || 'https://reference-site-preview.faints-pudgier-9r.workers.dev' }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY || secrets.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ vars.NEXT_PUBLIC_GA_MEASUREMENT_ID || secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION || secrets.GOOGLE_SITE_VERIFICATION }}
+
       - name: Cloudflare/Wrangler dry-run
         run: pnpm exec wrangler deploy --dry-run --env preview
         env:
