@@ -33,7 +33,7 @@ type InquiryTranslate = (key: InquiryFormMessageKey) => string;
 
 export function createInquiryFormCopy(
   t: InquiryTranslate,
-  rescueEmail: string,
+  rescueEmail: string | undefined,
 ) {
   // 以 wire detail 为键：协议新增 detail 而这里漏写时，type-check 直接红。
   const fieldErrors = {

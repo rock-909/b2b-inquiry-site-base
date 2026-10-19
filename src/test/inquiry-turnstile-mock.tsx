@@ -17,7 +17,7 @@ interface InquiryTurnstileLabels {
   testMode: string;
   rescueBeforeEmail: string;
   rescueAfterEmail: string;
-  rescueEmail: string;
+  rescueEmail: string | undefined;
   rescueSubject: string;
 }
 

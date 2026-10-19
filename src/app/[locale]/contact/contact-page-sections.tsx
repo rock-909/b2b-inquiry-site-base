@@ -40,7 +40,7 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
 
 export async function ContactFormWithFallback({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: "inquiry.form" });
-  const inquiryCopy = createInquiryFormCopy(t, SINGLE_SITE_FACTS.contact.email);
+  const inquiryCopy = createInquiryFormCopy(t, getPublicContactEmail());
   const inquiryFallback = <InquiryFormStaticFallback copy={inquiryCopy} />;
 
   return (

@@ -257,6 +257,19 @@ describe("TurnstileWidget", () => {
         `mailto:${sentinelTurnstileLabels.rescueEmail}?subject=${encodeURIComponent(sentinelTurnstileLabels.rescueSubject)}`,
       );
     });
+
+    it("shows no mailto link when no public email is configured", () => {
+      vi.stubEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY", "");
+
+      renderTurnstileWidget({
+        labels: { ...sentinelTurnstileLabels, rescueEmail: undefined },
+      });
+
+      expect(screen.getByRole("status")).toHaveTextContent(
+        sentinelTurnstileLabels.unavailable,
+      );
+      expect(screen.queryByRole("link")).toBeNull();
+    });
   });
 
   describe("测试/预览模式：reset 之后还要能再出一个令牌", () => {

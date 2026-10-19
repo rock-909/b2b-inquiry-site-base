@@ -46,7 +46,7 @@ interface TurnstileLabels {
   testMode: string;
   rescueBeforeEmail: string;
   rescueAfterEmail: string;
-  rescueEmail: string;
+  rescueEmail: string | undefined;
   rescueSubject: string;
 }
 
@@ -105,16 +105,18 @@ function TurnstileRescueStatus({
       <div className="text-sm text-[var(--error-foreground)]">
         {kind === "unavailable" ? labels.unavailable : labels.loadFailed}
       </div>
-      <p className="mt-1 text-sm leading-6 text-muted-foreground">
-        {labels.rescueBeforeEmail}{" "}
-        <a
-          className="font-medium text-[var(--primary-text)] underline underline-offset-4 hover:no-underline"
-          href={`mailto:${labels.rescueEmail}?subject=${encodeURIComponent(labels.rescueSubject)}`}
-        >
-          {labels.rescueEmail}
-        </a>
-        . {labels.rescueAfterEmail}
-      </p>
+      {labels.rescueEmail ? (
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
+          {labels.rescueBeforeEmail}{" "}
+          <a
+            className="font-medium text-[var(--primary-text)] underline underline-offset-4 hover:no-underline"
+            href={`mailto:${labels.rescueEmail}?subject=${encodeURIComponent(labels.rescueSubject)}`}
+          >
+            {labels.rescueEmail}
+          </a>
+          . {labels.rescueAfterEmail}
+        </p>
+      ) : null}
     </output>
   );
 }
