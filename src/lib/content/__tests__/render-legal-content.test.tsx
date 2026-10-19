@@ -1,18 +1,19 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  createStaticMarkdownContent,
-  renderStaticMarkdownBlocks,
-} from "@/lib/content/render-static-markdown-content";
+import { renderStaticMarkdownBlocks } from "@/lib/content/render-static-markdown-content";
 import { parseStaticMarkdownBlocks } from "@/lib/content/static-markdown-blocks";
+
+function renderMarkdown(content: string) {
+  return renderStaticMarkdownBlocks(parseStaticMarkdownBlocks(content));
+}
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("createStaticMarkdownContent", () => {
+describe("static markdown rendering", () => {
   it("does not carry an incomplete table header into the next table", () => {
-    render(<>{createStaticMarkdownContent(
+    render(<>{renderMarkdown(
       "| Abandoned |\n\nParagraph\n\n| Region |\n| --- |\n| EU |",
     )}</>);
     expect(screen.getByRole("columnheader", { name: "Region" })).toBeVisible();
@@ -21,7 +22,7 @@ describe("createStaticMarkdownContent", () => {
   });
 
   it("treats alignment rows as the table separator, not as data", () => {
-    render(<>{createStaticMarkdownContent("| Region | Days |\n|:--|--:|\n| EU | 30 |")}</>);
+    render(<>{renderMarkdown("| Region | Days |\n|:--|--:|\n| EU | 30 |")}</>);
     expect(screen.getAllByRole("row")).toHaveLength(2);
     expect(screen.queryByText(":--")).not.toBeInTheDocument();
   });
@@ -29,7 +30,7 @@ describe("createStaticMarkdownContent", () => {
   it("renders inline bold inside list items without literal markdown markers", () => {
     const { container } = render(
       <>
-        {createStaticMarkdownContent(
+        {renderMarkdown(
           "- **Email inquiries**: Response within one business day",
         )}
       </>,
@@ -44,7 +45,7 @@ describe("createStaticMarkdownContent", () => {
   it("preserves ordered-list semantics for numbered markdown lists", () => {
     const { container } = render(
       <>
-        {createStaticMarkdownContent(
+        {renderMarkdown(
           [
             "1. Replace the business facts",
             "2. Review the public story",
@@ -61,7 +62,7 @@ describe("createStaticMarkdownContent", () => {
 
   it("renders explicit heading anchors without leaking marker text", () => {
     const { container } = render(
-      <>{createStaticMarkdownContent("## Privacy Scope \\{#privacy-scope\\}")}</>,
+      <>{renderMarkdown("## Privacy Scope \\{#privacy-scope\\}")}</>,
     );
 
     const heading = container.querySelector("h2");
@@ -73,7 +74,7 @@ describe("createStaticMarkdownContent", () => {
 
   it("generates stable heading ids when content has no explicit anchor", () => {
     const { container } = render(
-      <>{createStaticMarkdownContent("### Data Protection Basics")}</>,
+      <>{renderMarkdown("### Data Protection Basics")}</>,
     );
 
     expect(container.querySelector("h3")).toHaveAttribute(
@@ -85,7 +86,7 @@ describe("createStaticMarkdownContent", () => {
   it("renders markdown tables with semantic table structure", () => {
     render(
       <>
-        {createStaticMarkdownContent(
+        {renderMarkdown(
           [
             "| Region | Standard |",
             "| --- | --- |",
@@ -104,7 +105,7 @@ describe("createStaticMarkdownContent", () => {
   it("makes markdown tables keyboard reachable with header context", () => {
     render(
       <>
-        {createStaticMarkdownContent(
+        {renderMarkdown(
           [
             "| Region | Standard |",
             "| --- | --- |",
@@ -122,7 +123,7 @@ describe("createStaticMarkdownContent", () => {
   it("omits empty table headers from the region label", () => {
     render(
       <>
-        {createStaticMarkdownContent(
+        {renderMarkdown(
           ["| | Standard |", "| --- | --- |", "| EU | GDPR |"].join("\n"),
         )}
       </>,
@@ -136,7 +137,7 @@ describe("createStaticMarkdownContent", () => {
   it("flushes lists and tables before following paragraphs", () => {
     render(
       <>
-        {createStaticMarkdownContent(
+        {renderMarkdown(
           [
             "- First item",
             "- Second item",
@@ -159,7 +160,7 @@ describe("createStaticMarkdownContent", () => {
   it("renders repeated paragraph text without duplicate React key warnings", () => {
     render(
       <>
-        {createStaticMarkdownContent(
+        {renderMarkdown(
           ["You have the right to:", "", "You have the right to:"].join("\n"),
         )}
       </>,
@@ -208,14 +209,6 @@ describe("renderStaticMarkdownBlocks", () => {
     const blocks = parseStaticMarkdownBlocks("## Privacy");
     const { container } = render(
       <>{renderStaticMarkdownBlocks(blocks)}</>,
-    );
-
-    expect(container.querySelector("h2")).toHaveTextContent("Privacy");
-  });
-
-  it("keeps createStaticMarkdownContent as the string convenience entry", () => {
-    const { container } = render(
-      <>{createStaticMarkdownContent("## Privacy")}</>,
     );
 
     expect(container.querySelector("h2")).toHaveTextContent("Privacy");

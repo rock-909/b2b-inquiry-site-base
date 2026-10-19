@@ -18,7 +18,11 @@ async function resolveNode(node: React.ReactNode): Promise<React.ReactNode> {
     const resolved = await Promise.resolve(
       (node.type as AsyncComponent)(node.props as Record<string, unknown>),
     );
-    return resolveNode(resolved);
+    const output = await resolveNode(resolved);
+    // 内联组件后保留原 key，否则列表里的子元素会触发 React key 警告。
+    return node.key !== null && React.isValidElement(output)
+      ? React.cloneElement(output, { key: node.key })
+      : output;
   }
 
   const children = React.Children.toArray(

@@ -533,7 +533,7 @@ const eslintConfig = [
       "src/app/api/inquiry/route.ts",
       "src/app/api/health/route.ts",
       "src/app/[locale]/contact/page.tsx",
-      "src/app/[locale]/contact/contact-page-data.ts",
+      "src/app/[locale]/contact/contact-page-sections.tsx",
     ],
     rules: {
       "no-restricted-imports": ["error", criticalRouteRestrictedImports],
