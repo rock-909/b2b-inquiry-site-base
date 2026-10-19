@@ -6,7 +6,7 @@ import { getSecurityHeaders } from "./src/config/security";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
-// proxy 在文件路由前运行；构建时记录真实文件，不能凭扩展名放行缺失资源。
+// middleware 在文件路由前运行；构建时记录真实文件，不能凭扩展名放行缺失资源。
 const publicDirectory = join(__dirname, "public");
 const publicAssetPaths = readdirSync(publicDirectory, {
   recursive: true,

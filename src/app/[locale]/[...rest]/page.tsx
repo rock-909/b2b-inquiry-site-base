@@ -14,7 +14,7 @@ export function generateMetadata(): Metadata {
   };
 }
 
-// proxy 将未知公开路径改写到占位页，并设置 HTTP 404。
+// middleware 将未知公开路径改写到占位页，并设置 HTTP 404。
 // 页面直接渲染恢复内容，避免 notFound() 只输出空壳、等待客户端恢复。
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({

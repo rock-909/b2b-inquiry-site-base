@@ -124,7 +124,7 @@ errors or markers in the public JSON.
 
 - Security header behavior lives in `src/config/security.ts` and Next.js
   native `headers()` in `next.config.ts`.
-- The Next.js proxy delegates locale routing to next-intl. It does not own CSP,
+- The Next.js middleware delegates locale routing to next-intl. It does not own CSP,
   generic security headers, locale-cookie setup, or leaked cookie cleanup.
 - Do not use `NextResponse.next({ headers })` to push broad response headers
   from middleware/proxy. It can break framework-owned responses such as Server

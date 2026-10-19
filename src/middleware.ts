@@ -9,7 +9,7 @@ const publicAssetPaths = new Set<string>(
   JSON.parse(process.env.PUBLIC_ASSET_PATHS ?? "[]"),
 );
 
-export function proxy(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname.replace(/\/+$/u, "") || "/";
   if (publicAssetPaths.has(pathname)) {
     return NextResponse.next();

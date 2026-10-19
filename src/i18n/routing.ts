@@ -9,7 +9,7 @@ export { routing, type Locale } from "@/i18n/routing-config";
 // Lightweight wrappers around Next.js' navigation APIs
 // that will consider the routing configuration
 // NOTE: These exports pull in React Server Component code and are not runtime-safe.
-// For proxy/runtime entrypoints, import routing from '@/i18n/routing-config' instead.
+// For middleware/runtime entrypoints, import routing from '@/i18n/routing-config' instead.
 export const { Link, redirect, usePathname, useRouter } =
   createNavigation(routing);
 

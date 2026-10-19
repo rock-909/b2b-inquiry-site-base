@@ -1,6 +1,6 @@
 ---
 paths:
-  - "src/proxy.ts"
+  - "src/middleware.ts"
   - "open-next.config.ts"
   - "wrangler.jsonc"
   - "next.config.ts"
@@ -10,7 +10,7 @@ paths:
 # Cloudflare / OpenNext Rules
 
 Use this file when changing Cloudflare/OpenNext build, preview, deploy,
-proxy, worker config, or Cloudflare-only runtime behavior.
+middleware, worker config, or Cloudflare-only runtime behavior.
 
 This file contains the repository's Cloudflare/OpenNext choices and proof
 requirements, not generic Next.js API guidance.
@@ -48,13 +48,19 @@ Never run `pnpm build` and `pnpm website:build:cf` in parallel. They both write 
 
 ## Runtime entry
 
-Keep `src/proxy.ts` as the runtime entrypoint. Do not restore
-`src/middleware.ts` as cleanup.
+`src/middleware.ts` (edge runtime, `export function middleware`) is the runtime
+entrypoint as a transitional choice: OpenNext supports edge middleware, while its
+Node.js `proxy.ts` bundling is marked experimental and not maintained by the
+OpenNext maintainers. Next.js 16 deprecates the `middleware` file convention and
+prints a build warning; that warning is expected. Move back to `src/proxy.ts`
+only when stable OpenNext officially supports Node.js middleware or Next.js
+schedules the removal of edge middleware, with the build, preview, and deployed
+proof rows above. Keep the middleware to Web APIs; do not add Node.js-only
+imports to it.
 
-The exact stable OpenNext dependency owns the Node.js proxy bundling and
-instrumentation compatibility path. Keep `nodejs_compat` enabled, and do not
-replace the stable package with `pkg.pr.new`, a canary, or a local package patch
-without a separate compatibility experiment.
+Keep `nodejs_compat` enabled, and do not replace the stable OpenNext package
+with `pkg.pr.new`, a canary, or a local package patch without a separate
+compatibility experiment.
 
 The matcher must remain static string literals.
 
@@ -64,11 +70,11 @@ proof rows above.
 ## Public submission identity
 
 Browser lead submissions go through the `/api/inquiry` route handler only.
-Proxy must not inject internal client-IP headers for public form flows.
+Middleware must not inject internal client-IP headers for public form flows.
 
 There is no live `'use server'` Server Action contact path. Any server-side
 submission code must validate internally and fail closed when request identity
-is unavailable rather than relying on proxy-provided trusted IP headers. For the
+is unavailable rather than relying on middleware-provided trusted IP headers. For the
 inquiry rate limiter's fail-open exception, follow
 [Lead-family behavior](security.md#lead-family-behavior); unavailable rate-limit
 identity is not an authorization failure.
