@@ -58,9 +58,9 @@ describe("ContactPage static content", () => {
 
     await renderAsyncPage(page as React.JSX.Element);
 
-    expect(
-      await screen.findByRole("heading", { level: 1 }),
-    ).toHaveTextContent(contactContent.metadata.title);
+    expect(await screen.findByRole("heading", { level: 1 })).toHaveTextContent(
+      contactContent.metadata.title,
+    );
     expect(screen.getByRole("article")).not.toBeEmptyDOMElement();
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
   });

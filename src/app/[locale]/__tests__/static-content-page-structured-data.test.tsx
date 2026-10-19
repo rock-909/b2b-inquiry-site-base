@@ -31,10 +31,7 @@ const PREFIXED_PAGES = LOCALES_CONFIG.locales
     })),
   );
 
-async function renderGraphNodes(
-  locale: Locale,
-  pageType: keyof typeof PAGES,
-) {
+async function renderGraphNodes(locale: Locale, pageType: keyof typeof PAGES) {
   const element = (await PAGES[pageType]({
     params: Promise.resolve({ locale }),
   })) as ReactElement<Parameters<typeof LegalPageShell>[0]>;
