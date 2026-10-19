@@ -60,15 +60,10 @@ export function generateCSP(): string {
       // Static CSP intentionally keeps inline style allowances for framework
       // and runtime style attributes until a dedicated dynamic nonce plan exists.
       "'unsafe-inline'",
-      "https://fonts.googleapis.com",
     ],
     // Static CSP intentionally keeps inline style element allowances for
     // framework/runtime style tags that cannot be reliably statically hashed.
-    "style-src-elem": [
-      "'self'",
-      "'unsafe-inline'",
-      "https://fonts.googleapis.com",
-    ],
+    "style-src-elem": ["'self'", "'unsafe-inline'"],
     // Static CSP intentionally keeps style attributes allowed for framework and
     // runtime-rendered style attributes used by server/client components.
     "style-src-attr": ["'unsafe-inline'"],
@@ -79,7 +74,7 @@ export function generateCSP(): string {
       "https://www.google-analytics.com",
       "https://www.googletagmanager.com",
     ],
-    "font-src": ["'self'", "data:", "https://fonts.gstatic.com"],
+    "font-src": ["'self'", "data:"],
     "connect-src": [
       "'self'",
       // API endpoints
