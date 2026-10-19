@@ -42,10 +42,13 @@ export function getSitePageCases(locale: ConfiguredLocale) {
     ({ path, contentSlug }) =>
       [
         localizePath(locale, path),
-        // 首页短文案在 messages，其余页面标题在各自的内容模块。
-        contentSlug === null
+        // 首页标题在 messages，内容页标题在各自的内容模块；
+        // 其余组件直接渲染的页面没有可靠的标题来源，不猜，由调用方跳过标题断言。
+        path === "/"
           ? messages.home.title
-          : getStaticPage(contentSlug, locale).metadata.title,
+          : contentSlug === null
+            ? undefined
+            : getStaticPage(contentSlug, locale).metadata.title,
       ] as const,
   );
 }

@@ -1,6 +1,7 @@
 import { createRequire } from "node:module";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 
 interface LighthouseConfig {
   ci: {
@@ -36,7 +37,9 @@ describe("lighthouse route contract", () => {
     ).toEqual(["/"]);
 
     const { collect, assert } = loadConfig(true).ci;
-    expect(collect.url.map((url) => new URL(url).pathname)).toContain("/");
+    expect(collect.url.map((url) => new URL(url).pathname).sort()).toEqual(
+      PUBLIC_STATIC_PAGE_DEFINITIONS.map(({ path }) => path).sort(),
+    );
     for (const url of collect.url) {
       const matching = assert.assertMatrix.filter(({ matchingUrlPattern }) =>
         // eslint-disable-next-line security/detect-non-literal-regexp -- pattern comes from the repo's own lighthouserc.js

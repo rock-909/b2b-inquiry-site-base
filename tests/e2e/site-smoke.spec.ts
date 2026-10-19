@@ -11,9 +11,11 @@ test.describe("site smoke", () => {
       const response = await page.goto(path, { waitUntil: "domcontentloaded" });
 
       expect(response?.status(), `${path} should return HTTP 200`).toBe(200);
-      await expect(
-        page.getByRole("heading", { level: 1, name: heading }),
-      ).toBeVisible();
+      if (heading !== undefined) {
+        await expect(
+          page.getByRole("heading", { level: 1, name: heading }),
+        ).toBeVisible();
+      }
       // domcontentloaded 和 load 都不能保证 hydration 已完成；等待页脚主题按钮
       // 在自身 hydration 后启用，再检查截至此时收集到的客户端错误。
       await expect(

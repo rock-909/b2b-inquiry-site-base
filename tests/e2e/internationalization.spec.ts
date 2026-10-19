@@ -93,9 +93,11 @@ test.describe("Second locale contract", () => {
 
       expect(response?.status(), `${path} should return HTTP 200`).toBe(200);
       await expect(page.locator("html")).toHaveAttribute("lang", SECOND);
-      await expect(
-        page.getByRole("heading", { level: 1, name: heading }),
-      ).toBeVisible();
+      if (heading !== undefined) {
+        await expect(
+          page.getByRole("heading", { level: 1, name: heading }),
+        ).toBeVisible();
+      }
 
       const canonical = page.locator('link[rel="canonical"]');
       await expect(canonical).toHaveCount(1);
