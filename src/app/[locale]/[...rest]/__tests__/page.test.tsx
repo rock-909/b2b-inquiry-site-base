@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { routing } from "@/i18n/routing";
-import CatchAllNotFound, { generateStaticParams } from "../page";
+import CatchAllNotFound, {
+  generateMetadata,
+  generateStaticParams,
+} from "../page";
 
 describe("CatchAllNotFound", () => {
   it("returns placeholder static params for every locale", () => {
@@ -30,5 +33,14 @@ describe("CatchAllNotFound", () => {
     expect(
       screen.getByRole("link", { name: "Back to homepage" }),
     ).toHaveAttribute("href", "/");
+  });
+
+  it("titles the 404 page as not found instead of inheriting the home title", async () => {
+    const metadata = await generateMetadata({
+      params: Promise.resolve({ locale: "es" }),
+    });
+
+    expect(metadata.title).toBe("Página no encontrada");
+    expect(metadata.robots).toEqual({ index: false, follow: false });
   });
 });

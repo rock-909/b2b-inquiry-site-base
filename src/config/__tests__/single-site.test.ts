@@ -30,6 +30,20 @@ describe("single-site", () => {
     expect(SINGLE_SITE_CONFIG.baseUrl).toBe(TEMPLATE_BASE_URL);
   });
 
+  it("drops a trailing slash from the configured site URL", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/env", () => ({
+      env: { NEXT_PUBLIC_SITE_URL: "https://acme-example.com/" },
+      runtimeEnv: { NEXT_PUBLIC_SITE_URL: "https://acme-example.com/" },
+      getRuntimeEnvString: () => undefined,
+      isRuntimeProduction: () => true,
+    }));
+
+    const { SINGLE_SITE_CONFIG } = await import("@/config/single-site");
+
+    expect(SINGLE_SITE_CONFIG.baseUrl).toBe("https://acme-example.com");
+  });
+
   it("publishes the configured OG image in generated metadata", () => {
     const REFERENCE_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
     const metadata = generateMetadataForPath({

@@ -33,7 +33,11 @@ function resolveSingleSiteBaseUrl(fallback: string): string {
   return fallback;
 }
 
-const baseUrl = resolveSingleSiteBaseUrl("https://example.invalid");
+// 去掉结尾斜杠：robots 等处直接拼接路径，`https://acme.com/` 会得到 `//sitemap.xml`。
+const baseUrl = resolveSingleSiteBaseUrl("https://example.invalid").replace(
+  /\/+$/u,
+  "",
+);
 
 const social = {
   twitter: "",

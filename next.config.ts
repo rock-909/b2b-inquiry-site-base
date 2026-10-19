@@ -2,6 +2,7 @@ import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
+import { LOCALES_CONFIG } from "./src/config/paths/locales-config";
 import { getSecurityHeaders } from "./src/config/security";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
@@ -80,6 +81,15 @@ const nextConfig: NextConfig = {
     // 会引入 FOUC 和首屏 CLS 劣化（本次未重新测量）。Lighthouse 是手动性能证明
     // （`pnpm website:lighthouse`），不是默认 CI 门禁；重新评估时请手动运行。
     inlineCss: false,
+  },
+
+  // localePrefix 为 as-needed：默认语言前缀永久跳到无前缀地址，先于 middleware 执行。
+  redirects() {
+    const prefix = `/${LOCALES_CONFIG.defaultLocale}`;
+    return [
+      { source: prefix, destination: "/", permanent: true },
+      { source: `${prefix}/:path*`, destination: "/:path*", permanent: true },
+    ];
   },
 
   headers() {

@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { setRequestLocale } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { LocalizedNotFoundView } from "@/components/errors/localized-not-found-view";
 import { resolveLocaleParam } from "@/i18n/locale-utils";
 import { routing } from "@/i18n/routing";
 
-export function generateMetadata(): Metadata {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const t = await getTranslations({
+    locale: resolveLocaleParam(await params),
+    namespace: "errors.notFound",
+  });
   return {
+    title: t("title"),
     robots: {
       index: false,
       follow: false,
