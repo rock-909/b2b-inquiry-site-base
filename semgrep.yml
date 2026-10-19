@@ -63,7 +63,7 @@ rules:
         - "**/src/app/api/inquiry/route.*"
         - "**/src/app/api/health/route.*"
         - "**/src/app/*/contact/page.*"
-        - "**/src/app/*/contact/contact-page-data.*"
+        - "**/src/app/*/contact/contact-page-sections.*"
     pattern-either:
       - patterns:
           - pattern-either:
