@@ -1,7 +1,8 @@
 "use client";
 
+// global-error 替换根布局，不带全局样式，需要自己引入。
+import "@/app/globals.css";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { isPublicRuntimeDevelopment } from "@/lib/public-runtime-env";
 
 interface GlobalErrorProps {
@@ -27,8 +28,6 @@ async function reportGlobalError(error: Error): Promise<void> {
 }
 
 export default function GlobalError({ error, retry }: GlobalErrorProps) {
-  const router = useRouter();
-
   useEffect(() => {
     reportGlobalError(error).catch(() => undefined);
   }, [error]);
@@ -69,15 +68,14 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
               >
                 {translations.tryAgain}
               </button>
-              <button
-                type="button"
-                // nosemgrep: nextjs-unsafe-redirect -- HOME_HREF is the fixed internal root path, never request or user input
-                onClick={() => router.push(HOME_HREF)}
+              {/* 根布局已经失败，用整页跳转而不是客户端路由。 */}
+              <a
+                href={HOME_HREF}
                 className="inline-flex h-[38px] w-full shrink-0 items-center justify-center rounded-[6px] border-2 border-[var(--button-primary-bg)] bg-transparent px-5 py-2.5 text-sm font-semibold text-[var(--primary-text)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--button-primary-bg)_10%,transparent)]"
                 data-testid="go-home-button"
               >
                 {translations.goHome}
-              </button>
+              </a>
             </div>
           </div>
         </div>

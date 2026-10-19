@@ -39,8 +39,10 @@ describe("LegalPageShell structured data", () => {
       "@id": pageUrl,
       url: pageUrl,
       isPartOf: { "@id": "https://www.example.com#website" },
-
     });
+    // 页面不显示日期，JSON-LD 也不能声明。
+    expect(schema).not.toHaveProperty("datePublished");
+    expect(schema).not.toHaveProperty("dateModified");
     expect(schema).not.toHaveProperty("additionalType");
     expect(schema).not.toHaveProperty("about");
   });

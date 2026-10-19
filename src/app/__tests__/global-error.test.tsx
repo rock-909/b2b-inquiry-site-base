@@ -3,13 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import GlobalError from "../global-error";
 
 // Mock logger using vi.hoisted
-const { mockLoggerError, mockRouterPush } = vi.hoisted(() => ({
+const { mockLoggerError } = vi.hoisted(() => ({
   mockLoggerError: vi.fn(),
-  mockRouterPush: vi.fn(),
-}));
-
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ push: mockRouterPush }),
 }));
 
 vi.mock("@/lib/logger", () => ({
@@ -127,9 +122,9 @@ describe("GlobalError", () => {
     it("should navigate to the homepage", () => {
       renderGlobalError();
 
-      fireEvent.click(screen.getByTestId("go-home-button"));
-
-      expect(mockRouterPush).toHaveBeenCalledWith("/");
+      expect(
+        screen.getByRole("link", { name: "Go to homepage" }),
+      ).toHaveAttribute("href", "/");
     });
   });
 
@@ -259,9 +254,9 @@ describe("GlobalError", () => {
 
       renderGlobalError();
 
-      fireEvent.click(screen.getByTestId("go-home-button"));
-
-      expect(mockRouterPush).toHaveBeenCalledWith("/");
+      expect(
+        screen.getByRole("link", { name: "Go to homepage" }),
+      ).toHaveAttribute("href", "/");
     });
 
     it("should default to English for non-Chinese languages", () => {

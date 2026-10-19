@@ -31,12 +31,12 @@ function normalizeErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unknown error";
 }
 
-function createProcessingFailureResult(referenceId?: string): LeadResult {
+function createProcessingFailureResult(referenceId: string): LeadResult {
   return {
     success: false,
     emailSent: false,
     recordCreated: false,
-    ...(referenceId ? { referenceId } : {}),
+    referenceId,
     error: "PROCESSING_FAILED",
   };
 }
@@ -75,41 +75,31 @@ async function createInquiryLeadRecord(
 export async function processValidatedInquiry(
   input: InquiryLeadInput,
 ): Promise<LeadResult> {
-  let referenceId: string | undefined;
+  // 两个投递通道各自捕获错误；其余意外错误由路由的 catch 统一返回 500。
+  const referenceId = generateLeadReferenceId();
 
-  try {
-    referenceId = generateLeadReferenceId();
+  logger.info("Processing lead", {
+    type: INQUIRY_LEAD_TYPE,
+    email: sanitizeEmail(input.email),
+    leadDeliveryPolicy: LEAD_DELIVERY_POLICY,
+    referenceId,
+  });
 
-    logger.info("Processing lead", {
-      type: INQUIRY_LEAD_TYPE,
-      email: sanitizeEmail(input.email),
-      leadDeliveryPolicy: LEAD_DELIVERY_POLICY,
-      referenceId,
-    });
+  const lead: ValidatedInquiry = { ...input, referenceId };
+  // 两个独立收件通道共享引用号，不让邮件故障阻塞备份写入。
+  const [emailSent, recordCreated] = await Promise.all([
+    sendOwnerEmail(lead),
+    createInquiryLeadRecord(lead),
+  ]);
 
-    const lead: ValidatedInquiry = { ...input, referenceId };
-    // 两个独立收件通道共享引用号，不让邮件故障阻塞备份写入。
-    const [emailSent, recordCreated] = await Promise.all([
-      sendOwnerEmail(lead),
-      createInquiryLeadRecord(lead),
-    ]);
-
-    if (!emailSent && !recordCreated) {
-      return createProcessingFailureResult(referenceId);
-    }
-
-    return {
-      success: true,
-      emailSent,
-      recordCreated,
-      referenceId,
-    };
-  } catch (error) {
-    logger.error("Lead processing unexpected error", {
-      type: INQUIRY_LEAD_TYPE,
-      referenceId,
-      error: normalizeErrorMessage(error),
-    });
+  if (!emailSent && !recordCreated) {
     return createProcessingFailureResult(referenceId);
   }
+
+  return {
+    success: true,
+    emailSent,
+    recordCreated,
+    referenceId,
+  };
 }
