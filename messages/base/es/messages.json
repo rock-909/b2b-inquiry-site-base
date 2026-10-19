@@ -24,7 +24,6 @@
   },
   "structured-data": {
     "website": {
-      "name": "{siteName}",
       "description": "Sitio de referencia para consultas B2B"
     }
   },
@@ -82,7 +81,6 @@
     "home": "Inicio",
     "contactSales": "Iniciar una consulta",
     "language": "Idiomas",
-    "siteName": "{siteName}",
     "siteDescription": "Sitio de referencia neutral para consultas B2B."
   },
   "footer": {
@@ -97,12 +95,10 @@
         "privacy": "Política de privacidad",
         "terms": "Condiciones del servicio"
       }
-    },
-    "copyright": "© {currentYear} {siteName}. Todos los derechos reservados."
+    }
   },
   "home": {
     "metadata": {
-      "title": "{siteName}",
       "description": "Un sitio de referencia de consultas B2B no destinado a producción, con identidad, dominio y datos de contacto de ejemplo."
     },
     "title": "Sitio de consultas B2B",

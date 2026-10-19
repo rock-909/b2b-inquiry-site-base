@@ -39,7 +39,7 @@ describe("Locale layout metadata", () => {
     const metadata = await generateLocaleMetadata({ params });
 
     expect(metadata.title).toEqual({
-      default: en.home.metadata.title,
+      default: "Test Site",
       template: "%s | Test Site",
     });
     expect(metadata.description).toBe(en.home.metadata.description);
@@ -70,7 +70,7 @@ describe("Locale layout metadata", () => {
           params: Promise.resolve({ locale }),
         });
         expect(metadata.title).toEqual({
-          default: messages.get("home.metadata.title"),
+          default: "Test Site",
           template: "%s | Test Site",
         });
         expect(metadata.description).toBe(

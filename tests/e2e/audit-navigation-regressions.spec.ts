@@ -192,10 +192,7 @@ for (const missing of ["/audit-missing-section/offering", "/random.txt"]) {
     expect(response?.status()).toBe(404);
     await expect(page.locator("html")).toHaveAttribute("lang", SECOND);
     await expect(page).toHaveTitle(
-      messages.home.metadata.title.replace(
-        "{siteName}",
-        SINGLE_SITE_CONFIG.name,
-      ),
+      `${messages.errors.notFound.title} | ${SINGLE_SITE_CONFIG.name}`,
     );
     await expect(page.locator('meta[name="description"]')).toHaveAttribute(
       "content",

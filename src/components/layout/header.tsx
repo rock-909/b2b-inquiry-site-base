@@ -5,6 +5,7 @@ import { NavigationPending } from "@/components/navigation/navigation-pending";
  * 服务端渲染的头部，交互部件以客户端小岛方式注入，减少首屏 JS 体积。
  */
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { PATHS_CONFIG } from "@/config/paths/paths-config";
 import { Link } from "@/i18n/routing";
 import type { Locale } from "@/i18n/routing-config";
@@ -199,6 +200,7 @@ function HeaderUtilityControls({
               }
               openMenuLabel={openMenuLabel}
               closeMenuLabel={closeMenuLabel}
+              siteName={SINGLE_SITE_CONFIG.name}
             >
               <MobileNavigationLinks
                 contactSalesLabel={contactSalesLabel}

@@ -24,7 +24,6 @@
   },
   "structured-data": {
     "website": {
-      "name": "{siteName}",
       "description": "B2B inquiry site reference"
     }
   },
@@ -82,7 +81,6 @@
     "home": "Home",
     "contactSales": "Start an inquiry",
     "language": "Languages",
-    "siteName": "{siteName}",
     "siteDescription": "A neutral B2B inquiry site reference."
   },
   "footer": {
@@ -97,12 +95,10 @@
         "privacy": "Privacy Policy",
         "terms": "Terms of Service"
       }
-    },
-    "copyright": "© {currentYear} {siteName}. All rights reserved."
+    }
   },
   "home": {
     "metadata": {
-      "title": "{siteName}",
       "description": "A non-production B2B inquiry reference site using sentinel identity, domain, and contact details."
     },
     "title": "B2B inquiry site",

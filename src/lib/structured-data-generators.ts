@@ -76,7 +76,7 @@ export function generateWebSiteData(t: StructuredDataTranslator) {
   return {
     "@type": "WebSite",
     "@id": websiteStructuredDataId(),
-    name: t("website.name"),
+    name: SINGLE_SITE_CONFIG.name,
     description: t("website.description"),
     url: FALLBACK_BASE_URL,
     ...(generateOrganizationData()

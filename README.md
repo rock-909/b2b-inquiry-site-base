@@ -79,7 +79,7 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 
 修改 locale message pack 后运行 `pnpm content:check`。消息叶子值必须是字符串，允许有意义的空字符串；数字、布尔值、`null` 和数组会使检查失败，并输出对应语言文件和消息路径。
 
-UI 消息（含联系页和询盘表单）及 SEO 标题/描述共用站点占位符替换；可用键及其值来源以 `src/lib/i18n/site-message-values.ts` 的 `getSiteMessageValues()` 为准。调用时参数（如 `{productName}`、`{language}`）不在此阶段替换，仍由翻译调用方提供；不要据此假定普通页面正文或邮件文案也会自动替换站点占位符。
+消息文件原样使用，不做站点占位符替换；站点名等配置值由调用处直接读取 `SINGLE_SITE_CONFIG`。翻译中的调用参数（如 `{language}`）由翻译调用方提供。
 
 ## AI 协作入口
 

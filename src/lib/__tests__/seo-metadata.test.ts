@@ -98,47 +98,6 @@ describe("SEO Metadata", () => {
       });
     });
 
-    it("interpolates the site name in custom titles", () => {
-      const metadata = generateMetadataForPath({
-        locale: "en",
-        pageType: "privacy",
-        path: "/privacy",
-        config: {
-          title: "About {siteName}",
-        },
-      });
-
-      expect(metadata.title).toBe("About Test Site");
-    });
-
-    it("interpolates every site placeholder in titles and descriptions", () => {
-      const metadata = generateMetadataForPath({
-        locale: "en",
-        pageType: "privacy",
-        path: "/privacy",
-        config: {
-          title: "{siteName}",
-          description: "© {currentYear} {siteName}.",
-        },
-      });
-
-      expect(metadata.title).toBe("Test Site");
-      expect(metadata.description).toBe(
-        `© ${new Date().getUTCFullYear()} Test Site.`,
-      );
-    });
-
-    it("leaves non-site placeholders untouched", () => {
-      const metadata = generateMetadataForPath({
-        locale: "en",
-        pageType: "privacy",
-        path: "/privacy",
-        config: { title: "About {productName}" },
-      });
-
-      expect(metadata.title).toBe("About {productName}");
-    });
-
     it("renders canonical, hreflang and openGraph.url from the actual route path", () => {
       const metadata = generateMetadataForPath({
         locale: "en",

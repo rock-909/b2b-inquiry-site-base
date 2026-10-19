@@ -6,8 +6,6 @@ import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
 import { routing } from "@/i18n/routing-config";
 import { getLocalePath } from "@/config/paths/utils";
 import { getRuntimeAppEnv, getRuntimeEnvString } from "@/lib/env";
-import { getSiteMessageValues } from "@/lib/i18n/site-message-values";
-import { interpolate } from "@/lib/interpolate";
 
 export type { Locale } from "@/config/paths";
 
@@ -33,11 +31,6 @@ interface StaticPageMetadataConfigOptions {
 }
 
 const DEFAULT_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
-
-/** 用站点占位符表（getSiteMessageValues）替换 SEO 字符串里的 {placeholder}。 */
-function interpolateSeoString(text: string): string {
-  return interpolate(text, getSiteMessageValues());
-}
 
 function normalizePath(path: string): string {
   const trimmed = path.trim();
@@ -127,7 +120,7 @@ function shouldIndexRuntimeEnvironment(): boolean {
 
 function resolveMetadataTitle(config: SEOConfig): string {
   if (config.title !== undefined && config.title.trim().length > 0) {
-    return interpolateSeoString(config.title);
+    return config.title;
   }
 
   return SINGLE_SITE_CONFIG.seo.defaultTitle;
@@ -138,7 +131,7 @@ function resolveMetadataDescription(config: SEOConfig): string {
     config.description !== undefined &&
     config.description.trim().length > 0
   ) {
-    return interpolateSeoString(config.description);
+    return config.description;
   }
 
   return SINGLE_SITE_CONFIG.seo.defaultDescription;

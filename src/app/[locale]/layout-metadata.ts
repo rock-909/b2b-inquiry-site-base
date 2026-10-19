@@ -42,7 +42,7 @@ export async function generateLocaleMetadata({
   return {
     metadataBase: new URL(metadataBaseUrl),
     title: {
-      default: t("title"),
+      default: SINGLE_SITE_CONFIG.name,
       template: SINGLE_SITE_CONFIG.seo.titleTemplate,
     },
     description: t("description"),

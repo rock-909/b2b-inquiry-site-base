@@ -15,7 +15,6 @@ const mockTranslator = ((key: string) => {
   const values: Record<string, string> = {
     "organization.name": SITE_CONFIG.name,
     "organization.description": SITE_CONFIG.description,
-    "website.name": SITE_CONFIG.name,
     "website.description": SITE_CONFIG.seo.defaultDescription,
     "article.defaultAuthor": SITE_CONFIG.name,
     "organization.social.twitter": "",
