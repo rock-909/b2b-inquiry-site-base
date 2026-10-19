@@ -133,7 +133,7 @@ function readSiteHostname(siteUrl) {
 function containsStarterMarker(value) {
   if (!value) return true;
 
-  return /Northstar Industrial Reference|B2B Inquiry Template|b2b-inquiry-site-base|0x4AAAAAADvC8KDbJ54402pb|inquiry site reference|referencia (?:neutral )?para consultas B2B|Plantilla de consultas B2B|no destinado a producción|to be completed|Incomplete placeholder|pendientes? de completar|Texto provisional|Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.(?:com|invalid)|starter-contact@example\.com|non-production B2B inquiry reference|sentinel identity|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|This privacy policy is incomplete|These terms are incomplete|Esta política de privacidad está incompleta|Estas condiciones están incompletas|Replace this placeholder|Replace with owner-confirmed|x\.com\/example|linkedin\.com\/company\/example/iu.test(
+  return /Northstar Industrial Reference|B2B Inquiry Template|b2b-inquiry-site-base|0x4AAAAAADvC8KDbJ54402pb|inquiry site reference|referencia (?:neutral )?para consultas B2B|Plantilla de consultas B2B|no destinado a producción|(?:Privacy policy|Terms) — to be completed|Incomplete placeholder|(?:Privacidad|Condiciones) — pendientes? de completar|Texto provisional incompleto|Sustituye este texto provisional|Example Showcase Company|Showcase Website Starter|example\.(?:com|org|net|invalid)|[\w.-]+\.example|\.workers\.dev|localhost|127\.0\.0\.1|sales@example\.(?:com|invalid)|starter-contact@example\.com|non-production B2B inquiry reference|sentinel identity|showcase website example|showcase website starter|public demo starter|replaceable showcase website example|Public Demo Starter Site|Example Business Park|Example City|Replace before launch|This privacy policy is incomplete|These terms are incomplete|Esta política de privacidad está incompleta|Estas condiciones están incompletas|Replace this placeholder|Replace with owner-confirmed|x\.com\/example|linkedin\.com\/company\/example/iu.test(
     value,
   );
 }
@@ -161,10 +161,19 @@ function listPlaceholderScanFiles(rootDir) {
   return files.filter((file) => fs.existsSync(path.join(rootDir, file)));
 }
 
+// 注释不会输出给访客，不能因此阻断上线。
+// shortcut: 只认整行注释（.env 的 #、TS 的 // 和 /* 开头行），块注释中间行仍会被扫；出现误报时再换成 TS scanner。
+function isCommentLine(file, line) {
+  const trimmed = line.trim();
+  if (file === ".env.production") return trimmed.startsWith("#");
+  return file.endsWith(".ts") && /^(?:\/\/|\/\*)/u.test(trimmed);
+}
+
 function validateTemplatePlaceholderFiles(target, rootDir) {
   for (const file of listPlaceholderScanFiles(rootDir)) {
     const content = fs.readFileSync(path.join(rootDir, file), "utf8");
     content.split("\n").forEach((line, index) => {
+      if (isCommentLine(file, line)) return;
       if (line.trim() && containsStarterMarker(line)) {
         target.push(
           `${file}:${index + 1} is not public-launch ready (replace template placeholder content before client launch).`,

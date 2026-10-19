@@ -107,6 +107,37 @@ describe("template placeholder files", () => {
     expect(result.errors).toEqual([]);
   });
 
+  // 只拦模板占位本身：正常条款里的相同短语、不会输出的注释都不能阻断上线。
+  it.each([
+    {
+      file: "src/content/pages/en/terms.ts",
+      content:
+        'export const page = { content: "Payment is to be completed within 30 days of invoice." };',
+    },
+    {
+      file: "src/content/pages/es/terms.ts",
+      content:
+        'export const page = { content: "Los pedidos pendientes de completar se facturan a fin de mes." };',
+    },
+    {
+      file: "src/content/pages/en/terms.ts",
+      content:
+        '// Previous template title: Terms — to be completed\nexport const page = { title: "Terms" };',
+    },
+    {
+      file: ".env.production",
+      content:
+        "# Was https://example.invalid before launch\nNEXT_PUBLIC_SITE_URL=https://acme-industrial.com\n",
+    },
+  ])("passes owner text in $file: $content", ({ file, content }) => {
+    const result = validateProductionConfig(
+      strictEnv,
+      inputWithFiles({ [file]: content }),
+    );
+
+    expect(result.errors).toEqual([]);
+  });
+
   it.each([
     {
       file: "messages/base/en/messages.json",
@@ -136,6 +167,11 @@ describe("template placeholder files", () => {
       file: "src/content/pages/es/terms.ts",
       content:
         'export const page = { description: "Texto provisional incompleto." };',
+    },
+    {
+      file: "src/content/pages/es/terms.ts",
+      content:
+        'export const page = { title: "Condiciones — pendientes de completar" };',
     },
     {
       file: "src/content/pages/es/terms.ts",

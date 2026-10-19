@@ -169,6 +169,8 @@ describe("real env contract", () => {
   it.each([
     { key: "EMAIL_FROM", value: "sales@acme.test" },
     { key: "EMAIL_FROM", value: "Acme Sales <sales@acme.test>" },
+    { key: "EMAIL_FROM", value: '"Acme, Inc." <sales@acme.test>' },
+    { key: "EMAIL_FROM", value: "Acmé 销售 <sales@acme.test>" },
     { key: "LOG_LEVEL", value: "info" },
     { key: "LOG_LEVEL", value: "INFO" },
   ])("loads with $key=$value", async ({ key, value }) => {
@@ -181,6 +183,12 @@ describe("real env contract", () => {
     { key: "EMAIL_FROM", value: "Acme Sales" },
     { key: "EMAIL_FROM", value: "<sales@acme.test>" },
     { key: "EMAIL_FROM", value: "Acme Sales <not-an-email>" },
+    {
+      key: "EMAIL_FROM",
+      value: "Acme\r\nBcc: other@acme.test\r\n <sales@acme.test>",
+    },
+    { key: "EMAIL_FROM", value: "Acme\u0000Sales <sales@acme.test>" },
+    { key: "EMAIL_FROM", value: "Acme\tSales <sales@acme.test>" },
     { key: "INQUIRY_RECIPIENT_EMAIL", value: "Owner <owner@acme.test>" },
     { key: "LOG_LEVEL", value: "verbose" },
   ])("rejects $key=$value at load", async ({ key, value }) => {
