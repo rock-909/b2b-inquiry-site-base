@@ -18,6 +18,7 @@ const tempDirs: string[] = [];
 
 interface CloudflareArtifactConfigModule {
   readonly verifyCloudflareArtifactConfig: (rootDir?: string) => string[];
+  readonly verifyStaticAssetsCachePopulated: (rootDir?: string) => string[];
 }
 
 function loadChecker(): CloudflareArtifactConfigModule {
@@ -55,6 +56,21 @@ function writeValidArtifacts(rootDir: string): void {
     config,
   );
 }
+
+function writeCacheFile(
+  rootDir: string,
+  baseDir: string,
+  relativePath: string,
+): void {
+  const filePath = path.join(rootDir, baseDir, relativePath);
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- writes a test-owned fixture under a temp root
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  // eslint-disable-next-line security/detect-non-literal-fs-filename -- writes a test-owned fixture under a temp root
+  fs.writeFileSync(filePath, "{}");
+}
+
+const BUILD_CACHE = ".open-next/cache";
+const STATIC_ASSETS_CACHE = ".open-next/assets/cdn-cgi/_next_cache";
 
 afterEach(() => {
   for (const tempDir of tempDirs.splice(0)) {
@@ -110,5 +126,55 @@ describe("Cloudflare artifact config proof", () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("Cloudflare artifact config check failed");
+  });
+
+  describe("Static Assets cache population", () => {
+    it("accepts a build whose prerendered cache was copied to Static Assets", () => {
+      const rootDir = createFixture();
+      writeCacheFile(rootDir, BUILD_CACHE, "build-id/index.cache");
+      writeCacheFile(rootDir, BUILD_CACHE, "__fetch/build-id/key");
+      writeCacheFile(rootDir, STATIC_ASSETS_CACHE, "build-id/index.cache");
+      writeCacheFile(rootDir, STATIC_ASSETS_CACHE, "__fetch/build-id/key");
+
+      expect(
+        loadChecker().verifyStaticAssetsCachePopulated(rootDir).sort(),
+      ).toEqual(["__fetch/build-id/key", "build-id/index.cache"]);
+    });
+
+    it("rejects an unpopulated artifact and exits nonzero from the CLI", () => {
+      const rootDir = createFixture();
+      writeCacheFile(rootDir, BUILD_CACHE, "build-id/index.cache");
+
+      expect(() =>
+        loadChecker().verifyStaticAssetsCachePopulated(rootDir),
+      ).toThrow("missing 1 of 1 prerendered cache entries");
+
+      const result = spawnSync(
+        process.execPath,
+        [SCRIPT_PATH, "--static-assets-cache"],
+        { cwd: rootDir, encoding: "utf8" },
+      );
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("populateCache");
+    });
+
+    it("rejects a partially populated artifact", () => {
+      const rootDir = createFixture();
+      writeCacheFile(rootDir, BUILD_CACHE, "build-id/index.cache");
+      writeCacheFile(rootDir, BUILD_CACHE, "build-id/contact.cache");
+      writeCacheFile(rootDir, STATIC_ASSETS_CACHE, "build-id/index.cache");
+
+      expect(() =>
+        loadChecker().verifyStaticAssetsCachePopulated(rootDir),
+      ).toThrow("missing 1 of 2 prerendered cache entries");
+    });
+
+    it("rejects a build with no prerendered cache entries", () => {
+      const rootDir = createFixture();
+
+      expect(() =>
+        loadChecker().verifyStaticAssetsCachePopulated(rootDir),
+      ).toThrow("No prerendered cache entries");
+    });
   });
 });

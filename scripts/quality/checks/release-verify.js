@@ -62,6 +62,14 @@ const RELEASE_VERIFY_COMMANDS = [
     ],
   },
   {
+    id: "static-assets-cache",
+    command: "node",
+    args: [
+      "scripts/quality/checks/cloudflare-artifact-config.js",
+      "--static-assets-cache",
+    ],
+  },
+  {
     id: "wrangler-dry-run",
     command: "pnpm",
     args: ["exec", "wrangler", "deploy", "--dry-run", "--env", "preview"],

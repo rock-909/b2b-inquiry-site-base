@@ -36,14 +36,52 @@ function verifyCloudflareArtifactConfig(rootDir = ROOT) {
   return artifactPaths;
 }
 
-module.exports = { verifyCloudflareArtifactConfig };
+// 只读 Static Assets 缓存：populateCache 把 .open-next/cache 复制到这里。
+// 漏填充时 build、dry-run 和 smoke 都能通过，Worker 却会记录只读缓存写入错误。
+const BUILD_CACHE_DIR = ".open-next/cache";
+const STATIC_ASSETS_CACHE_DIR = ".open-next/assets/cdn-cgi/_next_cache";
+
+function verifyStaticAssetsCachePopulated(rootDir = ROOT) {
+  const source = path.join(rootDir, BUILD_CACHE_DIR);
+  const target = path.join(rootDir, STATIC_ASSETS_CACHE_DIR);
+  const entries = fs.existsSync(source)
+    ? fs
+        .readdirSync(source, { recursive: true })
+        .filter((entry) => fs.statSync(path.join(source, entry)).isFile())
+    : [];
+  if (entries.length === 0) {
+    throw new Error(`No prerendered cache entries in ${BUILD_CACHE_DIR}`);
+  }
+  const missing = entries.filter(
+    (entry) => !fs.existsSync(path.join(target, entry)),
+  );
+  if (missing.length > 0) {
+    throw new Error(
+      `${STATIC_ASSETS_CACHE_DIR} is missing ${missing.length} of ${entries.length} prerendered cache entries (run opennextjs-cloudflare populateCache): ${missing[0]}`,
+    );
+  }
+  return entries;
+}
+
+module.exports = {
+  verifyCloudflareArtifactConfig,
+  verifyStaticAssetsCachePopulated,
+};
 
 if (require.main === module) {
+  const checkCache = process.argv.includes("--static-assets-cache");
   try {
-    const artifactPaths = verifyCloudflareArtifactConfig();
-    console.log(
-      `Verified canonical Cloudflare config in ${artifactPaths.length} artifact(s)`,
-    );
+    if (checkCache) {
+      const entries = verifyStaticAssetsCachePopulated();
+      console.log(
+        `Verified ${entries.length} prerendered cache entries in Static Assets`,
+      );
+    } else {
+      const artifactPaths = verifyCloudflareArtifactConfig();
+      console.log(
+        `Verified canonical Cloudflare config in ${artifactPaths.length} artifact(s)`,
+      );
+    }
   } catch (error) {
     console.error("Cloudflare artifact config check failed");
     console.error(error instanceof Error ? error.message : error);

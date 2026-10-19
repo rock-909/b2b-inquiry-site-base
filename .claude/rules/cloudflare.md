@@ -27,7 +27,7 @@ the proof table; do not add phase-named wrappers without a real repeated workflo
 | Standard Next.js runtime behavior | `pnpm build` |
 | Cloudflare/OpenNext build path | `pnpm build` then `pnpm website:build:cf` |
 | Local Cloudflare preview behavior | `pnpm exec opennextjs-cloudflare preview --env preview` + `node scripts/quality/checks/cloudflare-smoke.js cf-preview-smoke` |
-| Cloudflare deploy-artifact proof | `pnpm exec wrangler deploy --dry-run --env preview` after `pnpm website:build:cf` and `pnpm exec opennextjs-cloudflare populateCache local --env preview` (`opennextjs-cloudflare deploy`/`preview` populate it themselves; plain `wrangler deploy` does not) |
+| Cloudflare deploy-artifact proof | `pnpm exec wrangler deploy --dry-run --env preview` after `pnpm website:build:cf` and `pnpm exec opennextjs-cloudflare populateCache local --env preview` and `node scripts/quality/checks/cloudflare-artifact-config.js --static-assets-cache` (`opennextjs-cloudflare deploy`/`preview` populate it themselves; plain `wrangler deploy` does not, and a build that skipped populate still passes dry-run and smoke) |
 | Deployed Cloudflare behavior | `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url <url>` |
 | Public submission routes or compatibility actions | related route/action/IP tests + `pnpm build` + `pnpm website:build:cf` |
 
