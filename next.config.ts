@@ -58,6 +58,9 @@ const nextConfig: NextConfig = {
     root: __dirname,
   },
 
+  // Cloudflare deploy artifacts prioritize bundle size; disable browser source maps there.
+  productionBrowserSourceMaps: !isCloudflare,
+
   images: {
     // Starter baseline: Cloudflare builds must not require Images,
     // Transformations, Polish, Mirage, R2, or a custom image loader. Derived
