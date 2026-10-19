@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  lazy,
-  Suspense,
   useCallback,
+  useEffect,
   useSyncExternalStore,
   useRef,
   useState,
+  type ComponentType,
   type ReactNode,
   type Ref,
 } from "react";
@@ -21,17 +21,47 @@ import { useLocaleSwitchHref } from "@/components/layout/use-locale-switch-href"
 import { cn } from "@/lib/utils";
 import { MobileNavigationFallback } from "@/components/layout/header-mobile-navigation-fallback";
 
-const MobileNavigationInteractive = lazy(() =>
-  import("@/components/layout/mobile-navigation-interactive").then((mod) => ({
-    default: mod.MobileNavigationInteractive,
-  })),
-);
+const loadMobileNavigationInteractive = () =>
+  import("@/components/layout/mobile-navigation-interactive").then(
+    (mod) => mod.MobileNavigationInteractive,
+  );
 
-const HeaderLanguageMenu = lazy(() =>
-  import("@/components/layout/header-language-menu").then((mod) => ({
-    default: mod.HeaderLanguageMenu,
-  })),
-);
+const loadHeaderLanguageMenu = () =>
+  import("@/components/layout/header-language-menu").then(
+    (mod) => mod.HeaderLanguageMenu,
+  );
+
+type IslandState<P> = { Component: ComponentType<P> } | { error: unknown };
+
+// 激活时才 import()，加载完成后用 state 渲染。不使用 React.lazy/Suspense：
+// 提交 Suspense fallback 会触发约 300 ms 的重试节流，让首次打开固定变慢。
+// 加载失败在渲染期重新抛出，由外层 LazyIslandBoundary 退回静态兜底。
+function ActivatedIsland<P extends object>({
+  load,
+  pending,
+  props,
+}: {
+  load: () => Promise<ComponentType<P>>;
+  pending: ReactNode;
+  props: P;
+}) {
+  // 在首次渲染时就发起 import()，不等 effect 提交后再开始。
+  const [pendingIsland] = useState(() =>
+    load().then(
+      (Component): IslandState<P> => ({ Component }),
+      (error: unknown): IslandState<P> => ({ error }),
+    ),
+  );
+  const [island, setIsland] = useState<IslandState<P> | null>(null);
+
+  useEffect(() => {
+    pendingIsland.then(setIsland);
+  }, [pendingIsland]);
+
+  if (!island) return pending;
+  if ("error" in island) throw island.error;
+  return <island.Component {...props} />;
+}
 
 interface MobileNavigationIslandProps {
   children?: ReactNode;
@@ -143,14 +173,16 @@ export function MobileNavigationIsland({
   if (activationPathname !== null) {
     return (
       <LazyIslandBoundary fallback={fallback}>
-        <Suspense fallback={fallback}>
-          <MobileNavigationInteractive
-            initialOpen={activationPathname === pathname}
-            languageSwitcher={languageSwitcher}
-            openMenuLabel={openMenuLabel}
-            closeMenuLabel={closeMenuLabel}
-          />
-        </Suspense>
+        <ActivatedIsland
+          load={loadMobileNavigationInteractive}
+          pending={fallback}
+          props={{
+            initialOpen: activationPathname === pathname,
+            languageSwitcher,
+            openMenuLabel,
+            closeMenuLabel,
+          }}
+        />
       </LazyIslandBoundary>
     );
   }
@@ -230,12 +262,11 @@ export function LanguageToggleIsland({
             />
           }
         >
-          <Suspense fallback={fallback}>
-            <HeaderLanguageMenu
-              initialOpen={isActivationCurrent}
-              locale={locale}
-            />
-          </Suspense>
+          <ActivatedIsland
+            load={loadHeaderLanguageMenu}
+            pending={fallback}
+            props={{ initialOpen: isActivationCurrent, locale }}
+          />
         </LazyIslandBoundary>
       ) : (
         fallback
