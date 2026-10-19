@@ -3,28 +3,12 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { isLocale } from "@/i18n/locale-utils";
-import { getRuntimeAppEnv, getRuntimeEnvString } from "@/lib/env";
-
-const INDEXABLE_ROBOTS = {
-  index: true,
-  follow: true,
-  googleBot: {
-    index: true,
-    follow: true,
-    "max-video-preview": -1,
-    "max-image-preview": "large",
-    "max-snippet": -1,
-  },
-} as const satisfies Metadata["robots"];
-
-const NOINDEX_ROBOTS = {
-  index: false,
-  follow: false,
-  googleBot: {
-    index: false,
-    follow: false,
-  },
-} as const satisfies Metadata["robots"];
+import { getRuntimeAppEnv } from "@/lib/env";
+import {
+  buildVerification,
+  INDEXABLE_ROBOTS,
+  NOINDEX_ROBOTS,
+} from "@/lib/seo-metadata";
 
 /**
  * Locale layout metadata (base only).
@@ -64,9 +48,6 @@ export async function generateLocaleMetadata({
     description: t("description"),
     robots:
       getRuntimeAppEnv() === "production" ? INDEXABLE_ROBOTS : NOINDEX_ROBOTS,
-    verification: {
-      google: getRuntimeEnvString("GOOGLE_SITE_VERIFICATION"),
-      yandex: getRuntimeEnvString("YANDEX_VERIFICATION"),
-    },
+    verification: buildVerification(),
   };
 }

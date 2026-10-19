@@ -93,7 +93,7 @@ interface GenerateMetadataForPathParams {
   config?: Partial<SEOConfig>;
 }
 
-const INACTIVE_PROFILE_ROBOTS = {
+export const NOINDEX_ROBOTS = {
   index: false,
   follow: false,
   googleBot: {
@@ -102,7 +102,7 @@ const INACTIVE_PROFILE_ROBOTS = {
   },
 } as const satisfies Metadata["robots"];
 
-const ACTIVE_PROFILE_ROBOTS = {
+export const INDEXABLE_ROBOTS = {
   index: true,
   follow: true,
   googleBot: {
@@ -113,6 +113,13 @@ const ACTIVE_PROFILE_ROBOTS = {
     "max-snippet": -1,
   },
 } as const satisfies Metadata["robots"];
+
+export function buildVerification(): Metadata["verification"] {
+  return {
+    google: getRuntimeEnvString("GOOGLE_SITE_VERIFICATION"),
+    yandex: getRuntimeEnvString("YANDEX_VERIFICATION"),
+  };
+}
 
 function shouldIndexRuntimeEnvironment(): boolean {
   return getRuntimeAppEnv() === "production";
@@ -177,18 +184,15 @@ export function generateMetadataForPath(
       canonical,
       languages,
     },
-    robots: ACTIVE_PROFILE_ROBOTS,
-    verification: {
-      google: getRuntimeEnvString("GOOGLE_SITE_VERIFICATION"),
-      yandex: getRuntimeEnvString("YANDEX_VERIFICATION"),
-    },
+    robots: INDEXABLE_ROBOTS,
+    verification: buildVerification(),
   };
 
   if (
     !shouldIndexRuntimeEnvironment() ||
     !shouldIndexPublicPage(pageType, path)
   ) {
-    metadata.robots = INACTIVE_PROFILE_ROBOTS;
+    metadata.robots = NOINDEX_ROBOTS;
   }
 
   return metadata;
