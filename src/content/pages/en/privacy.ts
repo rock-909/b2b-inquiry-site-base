@@ -16,7 +16,7 @@ const privacyPage = {
     },
   },
   content: String.raw`
-This privacy policy is incomplete. Before launch, the site operator must document who controls the data, what is collected, its purpose, service providers, retention, cookies and how people can exercise their rights.
+This privacy policy is incomplete. Before launch, the site operator must document who controls the data, what is collected, its purpose, service providers, retention, cookies (including optional analytics and advertising cookies, which are only used with the visitor’s consent) and how people can exercise their rights.
 
 Replace this placeholder with a policy reviewed for the actual business and applicable law.
 `,

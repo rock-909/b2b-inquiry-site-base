@@ -15,19 +15,41 @@ vi.mock(
 );
 
 vi.mock("@/components/cookie/cookie-banner", () => ({
-  CookieBanner: ({ onAccept }: { onAccept: () => void }) => (
-    <button type="button" onClick={onAccept}>
-      allow
-    </button>
+  CookieBanner: ({
+    onAccept,
+    onSave,
+  }: {
+    onAccept: () => void;
+    onSave: (choice: { analytics: boolean; advertising: boolean }) => void;
+  }) => (
+    <>
+      <button type="button" onClick={onAccept}>
+        allow
+      </button>
+      <button
+        type="button"
+        onClick={() => onSave({ analytics: true, advertising: false })}
+      >
+        analytics only
+      </button>
+    </>
   ),
 }));
 
 vi.mock("@/components/monitoring/enterprise-analytics-island", () => ({
   EnterpriseAnalyticsIsland: ({
     analyticsAllowed,
+    advertisingAllowed,
   }: {
     analyticsAllowed: boolean;
-  }) => <div data-testid="analytics" data-allowed={String(analyticsAllowed)} />,
+    advertisingAllowed: boolean;
+  }) => (
+    <div
+      data-testid="analytics"
+      data-allowed={String(analyticsAllowed)}
+      data-advertising={String(advertisingAllowed)}
+    />
+  ),
 }));
 
 describe("CookieConsentIsland", () => {
@@ -58,6 +80,22 @@ describe("CookieConsentIsland", () => {
     expect(screen.getByTestId("analytics")).toHaveAttribute(
       "data-allowed",
       "true",
+    );
+  });
+
+  it("keeps advertising denied when the visitor saves analytics only", async () => {
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+    render(<CookieConsentIsland />);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "analytics only" }),
+    );
+    expect(screen.getByTestId("analytics")).toHaveAttribute(
+      "data-allowed",
+      "true",
+    );
+    expect(screen.getByTestId("analytics")).toHaveAttribute(
+      "data-advertising",
+      "false",
     );
   });
 

@@ -12,6 +12,7 @@ import { clearConsent, loadConsent } from "../storage";
 const CONSENT = {
   necessary: true,
   analytics: true,
+  advertising: false,
 } as const;
 
 describe("cookie consent storage", () => {
@@ -60,6 +61,20 @@ describe("cookie consent storage", () => {
 
     clearConsent();
 
+    expect(window.localStorage.getItem(CONSENT_STORAGE_KEY)).toBeNull();
+  });
+
+  it("asks again for a previous-version analytics-only record instead of reading it as advertising consent", () => {
+    window.localStorage.setItem(
+      CONSENT_STORAGE_KEY,
+      JSON.stringify({
+        consent: { necessary: true, analytics: true },
+        updatedAt: "2026-08-09T00:00:00.000Z",
+        version: 2,
+      }),
+    );
+
+    expect(loadConsent()).toBeNull();
     expect(window.localStorage.getItem(CONSENT_STORAGE_KEY)).toBeNull();
   });
 

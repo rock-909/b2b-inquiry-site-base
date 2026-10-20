@@ -8,18 +8,27 @@ import {
   isPublicRuntimeProduction,
 } from "@/lib/public-runtime-env";
 
-// Consent Mode v2 的四个信号统一跟随横幅上的 analytics 选择。
-function consentSignals(granted: boolean): Record<string, string> {
-  const value = granted ? "granted" : "denied";
+type ConsentChoice = { analytics: boolean; advertising: boolean };
+
+// Consent Mode v2：analytics 控制 analytics_storage，advertising 同时控制三个广告信号。
+function consentSignals({
+  analytics,
+  advertising,
+}: ConsentChoice): Record<string, string> {
+  const analyticsValue = analytics ? "granted" : "denied";
+  const advertisingValue = advertising ? "granted" : "denied";
   return {
-    analytics_storage: value,
-    ad_storage: value,
-    ad_user_data: value,
-    ad_personalization: value,
+    analytics_storage: analyticsValue,
+    ad_storage: advertisingValue,
+    ad_user_data: advertisingValue,
+    ad_personalization: advertisingValue,
   };
 }
 
-function ensureGa4QueueInitialized(measurementId: string): void {
+function ensureGa4QueueInitialized(
+  measurementId: string,
+  choice: ConsentChoice,
+): void {
   if (!Array.isArray(window.dataLayer)) {
     window.dataLayer = [];
   }
@@ -31,8 +40,12 @@ function ensureGa4QueueInitialized(measurementId: string): void {
     };
   }
   // 基础模式：同意后才加载 gtag，按 Google 规定的顺序先 default 拒绝、再 update 授予。
-  window.gtag("consent", "default", consentSignals(false));
-  window.gtag("consent", "update", consentSignals(true));
+  window.gtag(
+    "consent",
+    "default",
+    consentSignals({ analytics: false, advertising: false }),
+  );
+  window.gtag("consent", "update", consentSignals(choice));
   window.gtag("js", new Date());
   window.gtag("config", measurementId, {
     page_path: window.location.pathname,
@@ -42,15 +55,18 @@ function ensureGa4QueueInitialized(measurementId: string): void {
 
 export function EnterpriseAnalyticsIsland({
   analyticsAllowed,
+  advertisingAllowed,
 }: {
   analyticsAllowed: boolean;
+  advertisingAllowed: boolean;
 }) {
   const pathname = usePathname();
   const isProd = isPublicRuntimeProduction();
   const gaMeasurementId = getPublicRuntimeEnvString(
     "NEXT_PUBLIC_GA_MEASUREMENT_ID",
   );
-  const gaEnabled = Boolean(gaMeasurementId) && analyticsAllowed && isProd;
+  const anyAllowed = analyticsAllowed || advertisingAllowed;
+  const gaEnabled = Boolean(gaMeasurementId) && anyAllowed && isProd;
   const gaInitRef = useRef(false);
 
   /* eslint-disable react-you-might-not-need-an-effect/no-event-handler -- these effects synchronize the external GA runtime after consent and navigation. */
@@ -65,14 +81,24 @@ export function EnterpriseAnalyticsIsland({
   useEffect(() => {
     // 已初始化的 gtag 在撤回或重新同意时同步 Consent Mode 状态。
     if (!gaInitRef.current) return;
-    window.gtag("consent", "update", consentSignals(analyticsAllowed));
-  }, [analyticsAllowed]);
+    window.gtag(
+      "consent",
+      "update",
+      consentSignals({
+        analytics: analyticsAllowed,
+        advertising: advertisingAllowed,
+      }),
+    );
+  }, [analyticsAllowed, advertisingAllowed]);
 
   useEffect(() => {
     if (!gaEnabled || gaInitRef.current) return;
-    ensureGa4QueueInitialized(gaMeasurementId!);
+    ensureGa4QueueInitialized(gaMeasurementId!, {
+      analytics: analyticsAllowed,
+      advertising: advertisingAllowed,
+    });
     gaInitRef.current = true;
-  }, [gaEnabled, gaMeasurementId]);
+  }, [gaEnabled, gaMeasurementId, analyticsAllowed, advertisingAllowed]);
 
   useEffect(() => {
     if (!gaEnabled || typeof window.gtag !== "function") return;
@@ -86,7 +112,7 @@ export function EnterpriseAnalyticsIsland({
   }, [pathname, gaEnabled, gaMeasurementId]);
   /* eslint-enable react-you-might-not-need-an-effect/no-event-handler -- the exception ends after the GA synchronization effects. */
 
-  if (!analyticsAllowed) return null;
+  if (!anyAllowed) return null;
 
   return (
     <>

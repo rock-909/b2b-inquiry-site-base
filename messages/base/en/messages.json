@@ -15,11 +15,14 @@
     "footerNavigation": "Footer navigation"
   },
   "cookie": {
-    "title": "Analytics cookies",
-    "description": "Allow optional analytics cookies to help us understand site traffic.",
+    "title": "Cookie preferences",
+    "description": "Choose which optional cookies we may use. Analytics helps us understand site traffic; advertising lets us measure and personalise ads.",
+    "analytics": "Analytics",
+    "advertising": "Advertising",
     "learnMore": "Privacy policy",
-    "acceptAll": "Allow analytics",
-    "rejectAll": "No thanks",
+    "acceptAll": "Allow all",
+    "saveChoices": "Save choices",
+    "rejectAll": "Reject all",
     "settings": "Cookie settings"
   },
   "structured-data": {

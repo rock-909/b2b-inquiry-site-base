@@ -57,10 +57,12 @@ export function CookieConsentController() {
         <CookieBanner
           onAccept={() => choose(createAcceptAllConsent())}
           onReject={() => choose(createRejectAllConsent())}
+          onSave={(choice) => choose({ necessary: true, ...choice })}
         />
       ) : null}
       <EnterpriseAnalyticsIsland
         analyticsAllowed={consent?.analytics === true}
+        advertisingAllowed={consent?.advertising === true}
       />
     </>
   );

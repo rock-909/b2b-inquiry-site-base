@@ -11,6 +11,8 @@ export interface CookieConsent {
   necessary: true;
   /** Analytics cookies such as GA4, if configured */
   analytics: boolean;
+  /** Advertising cookies such as Google Ads, if configured */
+  advertising: boolean;
 }
 
 /** Persisted consent data structure */
@@ -26,10 +28,11 @@ export interface StoredConsent {
 export const DEFAULT_CONSENT: CookieConsent = {
   necessary: true,
   analytics: false,
+  advertising: false,
 } as const;
 
 /** Current storage schema version */
-export const CONSENT_VERSION = 2;
+export const CONSENT_VERSION = 3;
 
 /** localStorage key for consent data */
 export const CONSENT_STORAGE_KEY = "cookie-consent";

@@ -30,7 +30,11 @@ function isStorageAvailable(): boolean {
 function isValidConsent(obj: unknown): obj is CookieConsent {
   if (typeof obj !== "object" || obj === null) return false;
   const consent = obj as Record<string, unknown>;
-  return consent.necessary === true && typeof consent.analytics === "boolean";
+  return (
+    consent.necessary === true &&
+    typeof consent.analytics === "boolean" &&
+    typeof consent.advertising === "boolean"
+  );
 }
 
 /** Validate stored consent structure */
@@ -102,6 +106,7 @@ export function createAcceptAllConsent(): CookieConsent {
   return {
     necessary: true,
     analytics: true,
+    advertising: true,
   };
 }
 

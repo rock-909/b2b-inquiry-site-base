@@ -32,7 +32,12 @@ describe("EnterpriseAnalyticsIsland", () => {
   });
 
   it("does not load or initialize GA without consent", () => {
-    render(<EnterpriseAnalyticsIsland analyticsAllowed={false} />);
+    render(
+      <EnterpriseAnalyticsIsland
+        analyticsAllowed={false}
+        advertisingAllowed={false}
+      />,
+    );
     expect(screen.queryByTestId("ga")).toBeNull();
     // 同意前不得安装 gtag，也不得把 config/pageview 推入 dataLayer。
     expect(window.gtag).toBeUndefined();
@@ -41,45 +46,91 @@ describe("EnterpriseAnalyticsIsland", () => {
   });
 
   it("sets the GA opt-out flag when consent is withdrawn", () => {
-    const { rerender } = render(<EnterpriseAnalyticsIsland analyticsAllowed />);
+    const { rerender } = render(
+      <EnterpriseAnalyticsIsland analyticsAllowed advertisingAllowed={false} />,
+    );
     expect(Reflect.get(window, GA_DISABLE_KEY)).toBe(false);
 
-    rerender(<EnterpriseAnalyticsIsland analyticsAllowed={false} />);
+    rerender(
+      <EnterpriseAnalyticsIsland
+        analyticsAllowed={false}
+        advertisingAllowed={false}
+      />,
+    );
     expect(Reflect.get(window, GA_DISABLE_KEY)).toBe(true);
   });
 
-  it("sends Consent Mode v2 signals on allow and on withdraw", () => {
-    const allSignals = (value: "granted" | "denied") => ({
-      analytics_storage: value,
-      ad_storage: value,
-      ad_user_data: value,
-      ad_personalization: value,
-    });
-    const consentCommands = () =>
-      (window.dataLayer as ArrayLike<unknown>[])
-        .map((entry) => Array.from(entry))
-        .filter((args) => args[0] === "consent");
+  const signals = (analytics: boolean, advertising: boolean) => {
+    const analyticsValue = analytics ? "granted" : "denied";
+    const advertisingValue = advertising ? "granted" : "denied";
+    return {
+      analytics_storage: analyticsValue,
+      ad_storage: advertisingValue,
+      ad_user_data: advertisingValue,
+      ad_personalization: advertisingValue,
+    };
+  };
+  const consentCommands = () =>
+    (window.dataLayer as ArrayLike<unknown>[])
+      .map((entry) => Array.from(entry))
+      .filter((args) => args[0] === "consent");
 
-    const { rerender } = render(<EnterpriseAnalyticsIsland analyticsAllowed />);
-    // gtag.js 只处理 Arguments 对象，数组形式的命令会被静默丢弃。
-    for (const entry of window.dataLayer) {
-      expect(Object.prototype.toString.call(entry)).toBe("[object Arguments]");
-    }
-    expect(consentCommands()).toEqual([
-      ["consent", "default", allSignals("denied")],
-      ["consent", "update", allSignals("granted")],
-    ]);
+  it.each([
+    { name: "accept all", analytics: true, advertising: true },
+    { name: "analytics only", analytics: true, advertising: false },
+    { name: "advertising only", analytics: false, advertising: true },
+  ])(
+    "sends Consent Mode v2 signals for $name and updates all denied on withdraw",
+    ({ analytics, advertising }) => {
+      const { rerender } = render(
+        <EnterpriseAnalyticsIsland
+          analyticsAllowed={analytics}
+          advertisingAllowed={advertising}
+        />,
+      );
+      // gtag.js 只处理 Arguments 对象，数组形式的命令会被静默丢弃。
+      for (const entry of window.dataLayer) {
+        expect(Object.prototype.toString.call(entry)).toBe(
+          "[object Arguments]",
+        );
+      }
+      expect(consentCommands()).toEqual([
+        ["consent", "default", signals(false, false)],
+        ["consent", "update", signals(analytics, advertising)],
+      ]);
 
-    rerender(<EnterpriseAnalyticsIsland analyticsAllowed={false} />);
-    expect(consentCommands()).toEqual([
-      ["consent", "default", allSignals("denied")],
-      ["consent", "update", allSignals("granted")],
-      ["consent", "update", allSignals("denied")],
+      rerender(
+        <EnterpriseAnalyticsIsland
+          analyticsAllowed={false}
+          advertisingAllowed={false}
+        />,
+      );
+      expect(consentCommands().at(-1)).toEqual([
+        "consent",
+        "update",
+        signals(false, false),
+      ]);
+    },
+  );
+
+  it("withdraws only the category the visitor withdrew", () => {
+    const { rerender } = render(
+      <EnterpriseAnalyticsIsland analyticsAllowed advertisingAllowed />,
+    );
+    rerender(
+      <EnterpriseAnalyticsIsland analyticsAllowed advertisingAllowed={false} />,
+    );
+    expect(consentCommands().at(-1)).toEqual([
+      "consent",
+      "update",
+      signals(true, false),
     ]);
   });
 
   it("loads configured GA after consent", () => {
-    render(<EnterpriseAnalyticsIsland analyticsAllowed />);
+    render(
+      <EnterpriseAnalyticsIsland analyticsAllowed advertisingAllowed={false} />,
+    );
     expect(screen.getByTestId("ga")).toHaveAttribute(
       "data-src",
       "https://www.googletagmanager.com/gtag/js?id=G-TEST",
@@ -95,7 +146,9 @@ describe("EnterpriseAnalyticsIsland", () => {
       "/contact?email=buyer%40example.com#ref",
     );
     window.dataLayer = [];
-    render(<EnterpriseAnalyticsIsland analyticsAllowed />);
+    render(
+      <EnterpriseAnalyticsIsland analyticsAllowed advertisingAllowed={false} />,
+    );
 
     const configCalls = (window.dataLayer as unknown[][]).filter(
       (args) => args[0] === "config",
