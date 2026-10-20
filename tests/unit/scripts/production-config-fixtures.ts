@@ -1,19 +1,4 @@
-import {
-  getPublicContactEmail,
-  getPublicContactPhone,
-  getPublicLogoPath,
-  getPublicFact,
-  getPublicFoundingYear,
-  getPublicSocialUrl,
-} from "@/config/public-trust";
-
 export const STARTER_PUBLIC_LAUNCH_FIXTURE = {
-  getPublicContactEmail,
-  getPublicContactPhone,
-  getPublicLogoPath,
-  getPublicFact,
-  getPublicFoundingYear,
-  getPublicSocialUrl,
   SINGLE_SITE_CONFIG: {
     baseUrl: "https://example.com",
     name: "Showcase Website Starter",
@@ -25,6 +10,13 @@ export const STARTER_PUBLIC_LAUNCH_FIXTURE = {
       defaultDescription:
         "A public demo starter site for teams that need a deployable showcase website foundation before they have a real website.",
     },
+    company: {
+      name: "Showcase Website Starter",
+      location: {
+        city: "Replace before launch",
+        address: "Replace before launch",
+      },
+    },
     social: {
       twitter: "https://x.com/example",
       linkedin: "https://www.linkedin.com/company/example",
@@ -33,27 +25,15 @@ export const STARTER_PUBLIC_LAUNCH_FIXTURE = {
       phone: "+86-518-0000-0000",
       email: "starter-contact@example.com",
     },
-  },
-  SINGLE_SITE_FACTS: {
-    company: {
-      name: "Showcase Website Starter",
-      location: {
-        city: "Replace before launch",
-        address: "Replace before launch",
-      },
+    brandAssets: {
+      ogImage: "/opengraph-image.png",
+      favicon: "/icon.svg",
+      logo: { status: "pending" as const },
     },
-    contact: { phone: "+86-518-0000-0000" },
-    brandAssets: { logo: { status: "pending" as const } },
   },
 };
 
 export const READY_PUBLIC_LAUNCH_FIXTURE = {
-  getPublicContactEmail,
-  getPublicContactPhone,
-  getPublicLogoPath,
-  getPublicFact,
-  getPublicFoundingYear,
-  getPublicSocialUrl,
   SINGLE_SITE_CONFIG: {
     baseUrl: "https://reference-site.com",
     name: "Reference Industrial",
@@ -63,19 +43,18 @@ export const READY_PUBLIC_LAUNCH_FIXTURE = {
       defaultTitle: "Reference Industrial",
       defaultDescription: "Industrial products and buyer support.",
     },
+    company: {
+      name: "Reference Industrial LLC",
+      location: { city: "New York", address: "1 Industrial Way" },
+    },
     social: { twitter: "", linkedin: "" },
     contact: {
       phone: "+86-138-0013-8000",
       email: "sales@reference-site.com",
     },
-  },
-  SINGLE_SITE_FACTS: {
-    company: {
-      name: "Reference Industrial LLC",
-      location: { city: "New York", address: "1 Industrial Way" },
-    },
-    contact: { phone: "+86-138-0013-8000" },
     brandAssets: {
+      ogImage: "/opengraph-image.png",
+      favicon: "/icon.svg",
       logo: {
         status: "ready" as const,
         horizontal: "/images/logo.svg",
@@ -86,18 +65,15 @@ export const READY_PUBLIC_LAUNCH_FIXTURE = {
   },
 };
 
-export type PublicLaunchFixture = Omit<
-  typeof READY_PUBLIC_LAUNCH_FIXTURE,
-  "SINGLE_SITE_FACTS" | "SINGLE_SITE_CONFIG"
-> & {
-  SINGLE_SITE_CONFIG: import("@/config/site-types").SiteConfig;
-  SINGLE_SITE_FACTS: {
-    company?: import("@/config/site-types").CompanyInfo;
-    contact: { phone?: string };
-    brandAssets: {
-      logo?: Partial<
-        NonNullable<import("@/config/site-types").BrandAssets["logo"]>
-      > & { status: string };
+type SiteConfig = import("@/config/site-types").SiteConfig;
+
+// 门禁要能拦下形状不全的配置（如 pending 且缺尺寸的 logo），所以 logo 放宽为 Partial。
+export interface PublicLaunchFixture {
+  SINGLE_SITE_CONFIG: Omit<SiteConfig, "brandAssets"> & {
+    brandAssets: Omit<SiteConfig["brandAssets"], "logo"> & {
+      logo?: Partial<NonNullable<SiteConfig["brandAssets"]["logo"]>> & {
+        status: string;
+      };
     };
   };
-};
+}

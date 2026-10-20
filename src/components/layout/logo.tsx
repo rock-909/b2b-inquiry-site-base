@@ -5,9 +5,8 @@
  * Supports both text and image logos with automatic dark mode handling.
  */
 import Image from "next/image";
-import { getPublicLogoPath } from "@/config/public-trust";
 import { Link } from "@/i18n/routing";
-import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { cn } from "@/lib/utils";
 
 export interface LogoProps {
@@ -51,8 +50,8 @@ export function Logo({
   ariaLabel = SINGLE_SITE_CONFIG.name,
   constrainText = false,
 }: LogoProps) {
-  const { logo } = SINGLE_SITE_FACTS.brandAssets;
-  const logoPath = getPublicLogoPath();
+  const { logo } = SINGLE_SITE_CONFIG.brandAssets;
+  const logoPath = logo?.status === "ready" ? logo.horizontal : undefined;
   const shouldShowText = showText || !logoPath;
 
   return (

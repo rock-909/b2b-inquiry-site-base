@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { Locale, PageType } from "@/config/paths";
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import { shouldIndexPublicPage } from "@/config/single-site-seo";
-import { SINGLE_SITE_CONFIG, SINGLE_SITE_FACTS } from "@/config/single-site";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { routing } from "@/i18n/routing-config";
 import { getLocalePath } from "@/config/paths/utils";
 import { getRuntimeAppEnv, getRuntimeEnvString } from "@/lib/env";
@@ -30,7 +30,7 @@ interface StaticPageMetadataConfigOptions {
   readonly includeImage?: boolean;
 }
 
-const DEFAULT_OG_IMAGE = SINGLE_SITE_FACTS.brandAssets.ogImage;
+const DEFAULT_OG_IMAGE = SINGLE_SITE_CONFIG.brandAssets.ogImage;
 
 function normalizePath(path: string): string {
   const trimmed = path.trim();

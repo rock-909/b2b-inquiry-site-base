@@ -170,7 +170,7 @@ describe("prerender static behavior gate", () => {
         "-e",
         `
       require("tsx/cjs");
-      require("./src/config/single-site").SINGLE_SITE_FACTS.brandAssets.ogImage = "/derived-share.png";
+      require("./src/config/single-site").SINGLE_SITE_CONFIG.brandAssets.ogImage = "/derived-share.png";
       const { collectPrerenderStaticFindings } = require("./scripts/quality/checks/prerender-static");
       console.log(JSON.stringify(collectPrerenderStaticFindings({ rootDir: process.argv[1] })));
     `,

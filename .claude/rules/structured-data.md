@@ -30,8 +30,10 @@ escaping behavior covered by tests.
 
 - Shared graph: `JsonLdGraphScript` merges stable `#organization` and `#website`
   identity nodes with page-specific schemas on pages that render structured data.
-  Organization and its references are omitted when valid company facts are absent;
-  do not require company details merely to populate schema.
+  Organization and its references are omitted when no company name is configured,
+  and empty optional fields are omitted from the node; placeholder values are
+  never guessed at runtime (the launch gate blocks them). Do not require company
+  details merely to populate schema.
 - Page: page-specific schemas such as FAQPage, Article, Product, WebPage,
   ItemList, and BreadcrumbList.
 - Component shell: only when the shell owns page-level rendering, and the

@@ -1,9 +1,6 @@
 import { generateJSONLD } from "@/lib/structured-data";
 import { afterEach, describe, expect, it } from "vitest";
-import {
-  SINGLE_SITE_CONFIG as SITE_CONFIG,
-  SINGLE_SITE_FACTS,
-} from "@/config/single-site";
+import { SINGLE_SITE_CONFIG as SITE_CONFIG } from "@/config/single-site";
 import {
   buildWebPageSchema,
   generateOrganizationData,
@@ -66,10 +63,10 @@ describe("structured-data generators", () => {
     });
   });
 
-  const originalFacts = structuredClone(SINGLE_SITE_FACTS);
+  const originalConfig = structuredClone(SITE_CONFIG);
   afterEach(() => {
-    delete SINGLE_SITE_FACTS.company;
-    Object.assign(SINGLE_SITE_FACTS, structuredClone(originalFacts));
+    delete SITE_CONFIG.company;
+    Object.assign(SITE_CONFIG, structuredClone(originalConfig));
   });
 
   it("omits unconfigured organizations and their references", () => {
@@ -80,19 +77,16 @@ describe("structured-data generators", () => {
     ).not.toHaveProperty("about");
   });
 
-  it("publishes only configured valid facts from the shared source", () => {
-    SINGLE_SITE_FACTS.company = {
+  it("publishes configured facts and omits empty ones", () => {
+    SITE_CONFIG.company = {
       name: "Acme Manufacturing",
       established: 2001,
-      location: { city: "London", address: "Replace before launch" },
+      location: { city: "London", address: "" },
     };
-    SINGLE_SITE_FACTS.contact = {
-      email: "info@acme.co.uk",
-      phone: "invalid phone",
-    };
-    SINGLE_SITE_FACTS.social = {
+    SITE_CONFIG.contact = { email: "info@acme.co.uk", phone: "" };
+    SITE_CONFIG.social = {
       linkedin: "https://linkedin.com/company/acme",
-      twitter: "javascript:alert(1)",
+      twitter: "",
     };
     const schema = generateOrganizationData();
     expect(schema).toMatchObject({
@@ -113,8 +107,8 @@ describe("structured-data generators", () => {
     });
   });
 
-  it("does not manufacture optional company facts or publish a placeholder email", () => {
-    SINGLE_SITE_FACTS.company = { name: "Acme Manufacturing" };
+  it("does not manufacture optional company facts or an email", () => {
+    SITE_CONFIG.company = { name: "Acme Manufacturing" };
     const schema = generateOrganizationData();
     for (const key of [
       "foundingDate",
@@ -125,12 +119,42 @@ describe("structured-data generators", () => {
       "sameAs",
     ])
       expect(schema).not.toHaveProperty(key);
-    SINGLE_SITE_FACTS.company = { name: "Replace before launch" };
+    SITE_CONFIG.company = { name: "" };
     expect(generateOrganizationData()).toBeUndefined();
   });
-  it("publishes only same-origin logo URLs for a configured company", () => {
-    SINGLE_SITE_FACTS.company = { name: "Acme Manufacturing" };
-    SINGLE_SITE_FACTS.brandAssets.logo = {
+
+  it("treats whitespace-only company facts as empty", () => {
+    SITE_CONFIG.company = { name: "   " };
+    expect(generateOrganizationData()).toBeUndefined();
+    SITE_CONFIG.company = {
+      name: "Acme Manufacturing",
+      location: { address: "1 Harbour Road", city: "   " },
+    };
+    expect(generateOrganizationData()?.address).toEqual({
+      "@type": "PostalAddress",
+      streetAddress: "1 Harbour Road",
+    });
+  });
+
+  // 运行时不再按文本猜占位：真实地址里含旧触发词也照常输出，占位只由上线门禁拦截。
+  it("publishes real facts that contain former placeholder trigger words", () => {
+    SITE_CONFIG.company = {
+      name: "Placeholder Analytics Ltd",
+      location: { address: "1 Harbour Road", city: "Example City" },
+    };
+    expect(generateOrganizationData()).toMatchObject({
+      name: "Placeholder Analytics Ltd",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "1 Harbour Road",
+        addressLocality: "Example City",
+      },
+    });
+  });
+
+  it("publishes a ready logo and omits a pending one", () => {
+    SITE_CONFIG.company = { name: "Acme Manufacturing" };
+    SITE_CONFIG.brandAssets.logo = {
       status: "ready",
       width: 240,
       height: 72,
@@ -139,7 +163,7 @@ describe("structured-data generators", () => {
     expect(generateOrganizationData()?.logo).toBe(
       new URL("/images/logo.svg", SITE_CONFIG.baseUrl).href,
     );
-    SINGLE_SITE_FACTS.brandAssets.logo.horizontal = String.raw`/\cdn.invalid/logo.svg`;
+    SITE_CONFIG.brandAssets.logo.status = "pending";
     expect(generateOrganizationData()).not.toHaveProperty("logo");
   });
 });

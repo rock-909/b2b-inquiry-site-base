@@ -1,9 +1,5 @@
 import { getTranslations } from "next-intl/server";
-import {
-  getPublicContactEmail,
-  getPublicContactPhone,
-} from "@/config/public-trust";
-import { SINGLE_SITE_FACTS } from "@/config/single-site";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import type { Locale } from "@/types/content.types";
 import { createInquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryForm } from "@/components/forms/inquiry-form";
@@ -11,8 +7,7 @@ import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-stati
 
 export async function ContactMethodsCard({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: "contact.panel" });
-  const email = getPublicContactEmail(SINGLE_SITE_FACTS.contact.email);
-  const phone = getPublicContactPhone(SINGLE_SITE_FACTS.contact.phone);
+  const { email, phone } = SINGLE_SITE_CONFIG.contact;
   return (
     <section className="space-y-3 text-sm">
       <h2 className="font-semibold">{t("contactTitle")}</h2>
@@ -40,7 +35,10 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
 
 export async function ContactFormWithFallback({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: "inquiry.form" });
-  const inquiryCopy = createInquiryFormCopy(t, getPublicContactEmail());
+  const inquiryCopy = createInquiryFormCopy(
+    t,
+    SINGLE_SITE_CONFIG.contact.email || undefined,
+  );
   const inquiryFallback = <InquiryFormStaticFallback copy={inquiryCopy} />;
 
   return (

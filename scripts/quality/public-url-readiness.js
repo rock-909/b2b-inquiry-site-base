@@ -3,8 +3,7 @@
  * Pure helpers — no runtime env reads.
  *
  * Shared by:
- * - production readiness checks
- * - scripts/quality/checks/production-config.js
+ * - scripts/quality/checks/production-config.js（base URL、Turnstile 主机、邮箱域名、社媒链接）
  *
  * Accepts only an https origin suitable as a public production base URL:
  * https, non-empty hostname, no credentials, no query/hash, pathname `/` only,
@@ -59,6 +58,19 @@ function isReservedSpecialUseHostname(hostname) {
 }
 
 /**
+ * 本地、示例和保留域名：任何对外身份或地址都不该用它们。
+ * @param {string} hostname 已小写
+ * @returns {boolean}
+ */
+function isPlaceholderHostname(hostname) {
+  return (
+    isLocalHostname(hostname) ||
+    isExampleHostname(hostname) ||
+    isReservedSpecialUseHostname(hostname)
+  );
+}
+
+/**
  * @param {string} hostname
  * @returns {boolean}
  */
@@ -92,13 +104,12 @@ function isPublicBaseUrlReady(baseUrl) {
   // Reject explicit non-default ports; public site origin should be bare https host.
   if (url.port !== "") return false;
 
-  if (isLocalHostname(hostname)) return false;
-  if (isExampleHostname(hostname)) return false;
-  if (isReservedSpecialUseHostname(hostname)) return false;
+  if (isPlaceholderHostname(hostname)) return false;
   if (isWorkersDevHostname(hostname)) return false;
   return true;
 }
 
 module.exports = {
+  isPlaceholderHostname,
   isPublicBaseUrlReady,
 };

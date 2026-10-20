@@ -15,8 +15,6 @@ vi.mock("@/config/single-site", () => ({
       defaultTitle: "Default Title",
       defaultDescription: "Default Description",
     },
-  },
-  SINGLE_SITE_FACTS: {
     company: {
       name: "Test Company",
       established: 2021,
@@ -63,9 +61,6 @@ describe("SEO Metadata", () => {
             defaultTitle: "Default Title",
             defaultDescription: "Default Description",
           },
-        },
-        SINGLE_SITE_FACTS: {
-          company: { established: 2021 },
           brandAssets: { ogImage: "/images/facts-og.png" },
         },
       }));

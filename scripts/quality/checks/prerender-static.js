@@ -95,12 +95,9 @@ function loadExpectedOgImageUrl() {
   process.env.NODE_ENV = "production";
   try {
     require("tsx/cjs");
-    const {
-      SINGLE_SITE_CONFIG,
-      SINGLE_SITE_FACTS,
-    } = require("../../../src/config/single-site");
+    const { SINGLE_SITE_CONFIG } = require("../../../src/config/single-site");
     return new URL(
-      SINGLE_SITE_FACTS.brandAssets.ogImage,
+      SINGLE_SITE_CONFIG.brandAssets.ogImage,
       SINGLE_SITE_CONFIG.baseUrl,
     ).toString();
   } finally {

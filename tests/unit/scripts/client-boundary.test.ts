@@ -240,10 +240,10 @@ describe("client-boundary build artifacts", () => {
     expect(
       collectForbiddenBuildSources([
         `turbopack:///[project]/${INQUIRY_FORM_SOURCE}`,
-        "turbopack:///[project]/src/config/public-trust.ts",
+        "turbopack:///[project]/src/config/single-site.ts",
       ]),
     ).toEqual([
-      "public-trust: turbopack:///[project]/src/config/public-trust.ts",
+      "single-site: turbopack:///[project]/src/config/single-site.ts",
     ]);
   });
 });

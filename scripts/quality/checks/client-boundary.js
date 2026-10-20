@@ -25,7 +25,6 @@ const FORBIDDEN_BUILD_SOURCE_PATTERNS = [
     label: "lib/env",
     test: (source) => /src\/lib\/env(?:\.|$)/.test(source),
   },
-  { label: "public-trust", test: (source) => /public-trust/.test(source) },
   {
     label: "single-site",
     test: (source) => /single-site(?:-|\.|$)/.test(source),
