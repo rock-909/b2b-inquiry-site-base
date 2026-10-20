@@ -25,6 +25,21 @@ function consentSignals({
   };
 }
 
+// 撤回或拒绝分析后删掉已写入的 GA cookie（_ga 与 _ga_<ID 去掉 G->）。GA 默认写在可写的最高一级域名上，
+// 逐级尝试主机名的每个后缀即可覆盖，不需要公共后缀表；浏览器会忽略公共后缀上的写入。
+function expireGaCookies(measurementId: string): void {
+  const labels = window.location.hostname.split(".");
+  const domains = [
+    "",
+    ...labels.map((_, index) => `; domain=${labels.slice(index).join(".")}`),
+  ];
+  for (const name of ["_ga", `_ga_${measurementId.replace(/^G-/u, "")}`]) {
+    for (const domain of domains) {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/${domain}`;
+    }
+  }
+}
+
 function ensureGa4QueueInitialized(
   measurementId: string,
   choice: ConsentChoice,
@@ -76,6 +91,7 @@ export function EnterpriseAnalyticsIsland({
     (window as unknown as Record<string, unknown>)[
       `ga-disable-${gaMeasurementId}`
     ] = !analyticsAllowed;
+    if (!analyticsAllowed) expireGaCookies(gaMeasurementId);
   }, [analyticsAllowed, gaMeasurementId]);
 
   useEffect(() => {
