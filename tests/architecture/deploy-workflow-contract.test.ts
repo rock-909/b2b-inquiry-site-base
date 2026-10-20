@@ -315,10 +315,62 @@ describe("Cloudflare deploy workflow contract", () => {
     );
 
     expect(proof, "production release proof step must exist").toBeDefined();
-    for (const [name, value] of Object.entries(proof?.env ?? {})) {
-      expect(String(value), name).not.toMatch(
-        /secrets\.(?!NEXT_PUBLIC_|GOOGLE_SITE_|BING_SITE_)/u,
-      );
+    const publicNames = [
+      "NEXT_PUBLIC_GA_MEASUREMENT_ID",
+      "GOOGLE_SITE_VERIFICATION",
+      "BING_SITE_VERIFICATION",
+    ];
+    const secretNames = [
+      ...publicNames,
+      "RATE_LIMIT_PEPPER",
+      "TURNSTILE_SECRET_KEY",
+      "EMAIL_FROM",
+      "INQUIRY_RECIPIENT_EMAIL",
+      "RESEND_API_KEY",
+      "AIRTABLE_API_KEY",
+      "AIRTABLE_BASE_ID",
+      "UPSTASH_REDIS_REST_URL",
+      "UPSTASH_REDIS_REST_TOKEN",
+      "CLOUDFLARE_API_TOKEN",
+      "CLOUDFLARE_ACCOUNT_ID",
+    ];
+    const sentinel = (name: string) => `sentinel-secret-${name}`;
+    const context = new data.Dictionary(
+      {
+        key: "vars",
+        value: new data.Dictionary(),
+      },
+      {
+        key: "secrets",
+        value: new data.Dictionary(
+          ...secretNames.map((name) => ({
+            key: name,
+            value: new data.StringData(sentinel(name)),
+          })),
+        ),
+      },
+    );
+    const evaluate = (value: string) =>
+      value.replace(/\$\{\{([\s\S]*?)\}\}/gu, (_, source: string) => {
+        const { tokens } = new Lexer(source).lex();
+        const parsed = new Parser(tokens, ["vars", "secrets"], []).parse();
+        return new Evaluator(parsed, context).evaluate().coerceString();
+      });
+
+    const delivered = Object.entries(proof?.env ?? {}).map(
+      ([name, value]) => [name, evaluate(String(value))] as const,
+    );
+    expect(Object.fromEntries(delivered)).toMatchObject(
+      Object.fromEntries(publicNames.map((n) => [n, sentinel(n)])),
+    );
+    for (const [name, value] of delivered) {
+      for (const secretName of secretNames.filter(
+        (n) => !publicNames.includes(n),
+      )) {
+        expect(value, `${name} must not carry ${secretName}`).not.toContain(
+          sentinel(secretName),
+        );
+      }
     }
   });
 
