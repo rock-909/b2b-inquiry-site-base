@@ -9,7 +9,7 @@ import {
 } from "./production-config-fixtures";
 import { validateProductionConfig } from "../../../scripts/quality/checks/production-config.js";
 
-// 占位与格式只在上线门禁判断（运行时原样输出已填字段），这里证明门禁照旧拦截。
+// 格式在 SINGLE_SITE_CONFIG 加载时校验，占位值只在上线门禁判断（运行时原样输出已填字段），这里证明门禁照旧拦截占位值。
 describe("public launch identity values", () => {
   const READY = READY_PUBLIC_LAUNCH_FIXTURE.SINGLE_SITE_CONFIG;
 

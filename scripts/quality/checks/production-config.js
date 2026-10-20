@@ -138,8 +138,8 @@ function containsStarterMarker(value) {
   );
 }
 
-// 站点身份的唯一占位与格式判断：运行时只读显式字段、留空不展示，
-// 已填写但是占位或格式不对的值只能在这里被拦下。
+// 站点身份的唯一占位判断：运行时只读显式字段、留空不展示，
+// 格式在 SINGLE_SITE_CONFIG 加载时校验，已填写的占位值只能在这里被拦下。
 function isPlaceholderFact(value) {
   return (
     containsStarterMarker(value) ||
