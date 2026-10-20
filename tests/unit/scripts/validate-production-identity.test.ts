@@ -104,6 +104,22 @@ describe("public launch identity values", () => {
     ]);
   });
 
+  it("blocks whitespace-only site name, description and SEO defaults", () => {
+    expect(
+      identityErrors({
+        name: "   ",
+        description: " ",
+        seo: { titleTemplate: " ", defaultTitle: " ", defaultDescription: " " },
+      }),
+    ).toEqual([
+      expect.stringContaining("SITE_CONFIG.name"),
+      expect.stringContaining("SITE_CONFIG.seo.defaultTitle"),
+      expect.stringContaining("SITE_CONFIG.seo.defaultDescription"),
+      expect.stringContaining("SITE_CONFIG.seo.titleTemplate"),
+      expect.stringContaining("SITE_CONFIG.description"),
+    ]);
+  });
+
   it("blocks placeholder social profiles but accepts real ones", () => {
     for (const twitter of [
       "https://x.com/example",

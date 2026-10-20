@@ -72,7 +72,27 @@ function verifyStaticAssetsCachePopulated(rootDir = ROOT) {
   return entries;
 }
 
+// OpenNext 把本地 .env* 文件的值写进 next-env.mjs，随 Worker 一起上传，Cloudflare
+// 账号成员都能下载。公开的 NEXT_PUBLIC_* 本来就内联进页面，其余键一律拒绝上传。
+function findBundledPrivateEnvKeys(rootDir = ROOT) {
+  const filePath = path.join(
+    rootDir,
+    ".open-next",
+    "cloudflare",
+    "next-env.mjs",
+  );
+  if (!fs.existsSync(filePath)) return [];
+  const source = fs.readFileSync(filePath, "utf8");
+  const keys = [...source.matchAll(/^export const \w+ = (.*);$/gmu)].flatMap(
+    ([, json]) => Object.keys(JSON.parse(json)),
+  );
+  return [
+    ...new Set(keys.filter((key) => !key.startsWith("NEXT_PUBLIC_"))),
+  ].sort();
+}
+
 module.exports = {
+  findBundledPrivateEnvKeys,
   verifyCloudflareArtifactConfig,
   verifyStaticAssetsCachePopulated,
 };
@@ -80,7 +100,15 @@ module.exports = {
 if (require.main === module) {
   const checkCache = process.argv.includes("--static-assets-cache");
   try {
-    if (checkCache) {
+    if (process.argv.includes("--private-env")) {
+      const keys = findBundledPrivateEnvKeys();
+      if (keys.length > 0) {
+        throw new Error(
+          `local .env files put non-public keys into the Worker bundle (${keys.join(", ")}); move them aside or deploy from a clean checkout`,
+        );
+      }
+      console.log("Worker bundle carries no non-public env file values");
+    } else if (checkCache) {
       const entries = verifyStaticAssetsCachePopulated();
       console.log(
         `Verified ${entries.length} prerendered cache entries in Static Assets`,

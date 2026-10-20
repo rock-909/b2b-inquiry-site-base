@@ -58,9 +58,10 @@ function getGitTemplate() {
 function createProofFixture() {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
 
-  // 脚本运行时只读取自身和页面注册表。
+  // 脚本运行时只读取自身、同目录的产物检查和页面注册表。
   for (const repoPath of [
     "scripts/quality/checks/cloudflare-smoke.js",
+    "scripts/quality/checks/cloudflare-artifact-config.js",
     "src/config/pages.config.ts",
   ]) {
     mkdirSync(path.dirname(path.join(rootDir, repoPath)), { recursive: true });

@@ -1,4 +1,5 @@
 const fs = require("node:fs");
+const { isIP } = require("node:net");
 const path = require("node:path");
 const ts = require("typescript");
 const {
@@ -28,6 +29,19 @@ function loadEnvFormats() {
 }
 
 const MIN_SECRET_LENGTH = 32;
+
+// Cloudflare 官方测试密钥，取自 https://developers.cloudflare.com/turnstile/troubleshooting/testing/。
+// 测试 secret 只认假令牌，测试 sitekey 发的令牌过不了生产主机名校验：上线后每个真实询盘都会被拒。
+const TURNSTILE_TEST_KEYS = new Set([
+  "1x00000000000000000000AA",
+  "2x00000000000000000000AB",
+  "1x00000000000000000000BB",
+  "2x00000000000000000000BB",
+  "3x00000000000000000000FF",
+  "1x0000000000000000000000000000000AA",
+  "2x0000000000000000000000000000000AA",
+  "3x0000000000000000000000000000000AA",
+]);
 
 function readEnv(env, key) {
   const value = env[key];
@@ -90,12 +104,46 @@ function validateWranglerProductionPublicUrls(target, wranglerConfig) {
 
   validateWranglerProductionTurnstileHosts(target, productionVars);
   validateEnvFormats(target, productionVars);
+  validateNoDevelopmentSwitches(
+    target,
+    productionVars,
+    "wrangler.jsonc env.production.vars.",
+  );
+  validateNoTurnstileTestKeys(
+    target,
+    productionVars,
+    "wrangler.jsonc env.production.vars.",
+  );
 
   const siteKey = readEnv(productionVars, "NEXT_PUBLIC_TURNSTILE_SITE_KEY");
   if (siteKey && containsStarterMarker(siteKey)) {
     target.push(
       "wrangler.jsonc env.production.vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY is not public-launch ready (replace the template Turnstile site key with the owner's widget key).",
     );
+  }
+}
+
+// OpenNext 把 Worker 的字符串 vars 写进 process.env：开发/测试 NODE_ENV 和旁路开关会进入线上运行时。
+function validateNoDevelopmentSwitches(target, values, label) {
+  const nodeEnv = readEnv(values, "NODE_ENV")?.toLowerCase();
+  if (nodeEnv === "development" || nodeEnv === "test") {
+    target.push(`${label}NODE_ENV=${nodeEnv} is forbidden in production.`);
+  }
+  if (isTrue(values, "TURNSTILE_BYPASS")) {
+    target.push(`${label}TURNSTILE_BYPASS=true is forbidden in production.`);
+  }
+}
+
+function validateNoTurnstileTestKeys(target, values, label) {
+  for (const key of [
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+    "TURNSTILE_SECRET_KEY",
+  ]) {
+    if (TURNSTILE_TEST_KEYS.has(readEnv(values, key))) {
+      target.push(
+        `${label}${key} is a Cloudflare Turnstile test key and is not public-launch ready (use the owner's production widget keys).`,
+      );
+    }
   }
 }
 
@@ -232,7 +280,7 @@ function isPublicSocialUrlReady(value) {
 }
 
 function validateNoStarterMarker(target, markerPath, value, reason) {
-  if (containsStarterMarker(value)) {
+  if (!value?.trim() || containsStarterMarker(value)) {
     target.push(`${markerPath} is not public-launch ready (${reason}).`);
   }
 }
@@ -253,6 +301,7 @@ function validatePlaceholderTextFile(target, rootDir, file) {
   const filePath = path.join(rootDir, file);
   if (!fs.existsSync(filePath)) return;
   const content = fs.readFileSync(filePath, "utf8");
+  const errorsBeforeScan = target.length;
   content.split("\n").forEach((line, index) => {
     const trimmed = line.trim();
     if (!trimmed || (file === ".env.production" && trimmed.startsWith("#"))) {
@@ -263,13 +312,42 @@ function validatePlaceholderTextFile(target, rootDir, file) {
     }
   });
 
+  if (file !== SECURITY_TXT_PATH) return;
+  // RFC 9116 要求 Contact：至少一个能联系上的 mailto: 或 https: 地址。
+  const contacts = [...content.matchAll(/^Contact:\s*(\S+)\s*$/gimu)].map(
+    ([, value]) => value,
+  );
+  // 占位行已经报过的模板 Contact 不再重复报一次。
+  if (
+    target.length === errorsBeforeScan &&
+    !contacts.some(isSecurityContactReady)
+  ) {
+    target.push(
+      `${file} Contact is not public-launch ready (add a mailto: or https: Contact on a real domain).`,
+    );
+  }
   // RFC 9116 要求 Expires；过期的 security.txt 等于没有。
   const expires = /^Expires:\s*(.+)$/imu.exec(content)?.[1];
-  if (file === SECURITY_TXT_PATH && !(Date.parse(expires) > Date.now())) {
+  if (!(Date.parse(expires) > Date.now())) {
     target.push(
       `${file} Expires is not public-launch ready (set a future expiry date).`,
     );
   }
+}
+
+function isSecurityContactReady(contact) {
+  if (/^mailto:/iu.test(contact)) {
+    // mailto 允许 ?subject= 之类的头字段；只校验邮箱地址本身。
+    const email = contact.slice("mailto:".length).split("?")[0];
+    const domain = email.slice(email.lastIndexOf("@") + 1);
+    return (
+      isPublicEmailReady(email) && isIP(domain.replace(/^\[|\]$/gu, "")) === 0
+    );
+  }
+  return (
+    isPublicSocialUrlReady(contact) &&
+    isPublicBaseUrlReady(new URL(contact).origin)
+  );
 }
 
 function listPlaceholderValueFiles(rootDir) {
@@ -462,6 +540,8 @@ function validateProductionRuntimeContract(env) {
   );
 
   validateEnvFormats(errors, env);
+  validateNoDevelopmentSwitches(errors, env, "");
+  validateNoTurnstileTestKeys(errors, env, "");
 
   if (isTrue(env, "NEXT_PUBLIC_TEST_MODE")) {
     errors.push("NEXT_PUBLIC_TEST_MODE=true is forbidden in production.");

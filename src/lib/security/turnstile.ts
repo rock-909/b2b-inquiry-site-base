@@ -11,11 +11,7 @@ import {
   TURNSTILE_ALWAYS_PASS_TEST_SECRET,
   TURNSTILE_DUMMY_TEST_TOKEN,
 } from "@/constants/turnstile-constants";
-import {
-  getRuntimeEnvBoolean,
-  getRuntimeEnvString,
-  isRuntimeDevelopment,
-} from "@/lib/env";
+import { getRuntimeEnvBoolean, getRuntimeEnvString } from "@/lib/env";
 import { logger, sanitizeIP } from "@/lib/logger";
 import {
   getAllowedTurnstileHosts,
@@ -152,10 +148,13 @@ function validateTurnstileActionResponse(
 }
 
 function shouldBypassTurnstile(ip: string): boolean {
-  const isDevelopment = isRuntimeDevelopment();
-  const isBypassEnabled = getRuntimeEnvBoolean("TURNSTILE_BYPASS") === true;
-
-  if (isDevelopment && isBypassEnabled) {
+  // 必须是静态的 process.env.NODE_ENV：生产构建把它内联成 "production"，旁路成为死代码；
+  // 运行时读取会让 Worker vars 里的 NODE_ENV=development 重新打开旁路。
+  if (
+    // eslint-disable-next-line no-process-env -- Next 构建常量必须使用直接属性访问才能内联
+    process.env.NODE_ENV === "development" &&
+    getRuntimeEnvBoolean("TURNSTILE_BYPASS") === true
+  ) {
     logger.warn("[DEV] Turnstile verification bypassed", {
       ip: sanitizeIP(ip),
     });

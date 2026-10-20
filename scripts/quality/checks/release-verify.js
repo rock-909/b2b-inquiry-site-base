@@ -39,6 +39,14 @@ const RELEASE_VERIFY_COMMANDS = [
   },
   { id: "cloudflare-build", command: "pnpm", args: ["website:build:cf"] },
   {
+    id: "cloudflare-private-env",
+    command: "node",
+    args: [
+      "scripts/quality/checks/cloudflare-artifact-config.js",
+      "--private-env",
+    ],
+  },
+  {
     id: "cloudflare-artifact-config",
     command: "node",
     args: ["scripts/quality/checks/cloudflare-artifact-config.js"],

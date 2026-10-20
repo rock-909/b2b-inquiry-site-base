@@ -182,13 +182,38 @@ describe("validate-production-config runtime contract", () => {
     ["NEXT_PUBLIC_TEST_MODE", "true"],
     ["SECURITY_HEADERS_ENABLED", "false"],
     ["NEXT_PUBLIC_SECURITY_MODE", "relaxed"],
+    // APP_ENV=production 时 NODE_ENV 仍会进入运行时：开发/测试值会打开开发分支。
+    ["NODE_ENV", "development"],
+    ["NODE_ENV", "test"],
+    ["TURNSTILE_BYPASS", "true"],
   ] as const)("rejects production %s=%s", (key, value) => {
+    const result = validateProductionRuntimeContract({
+      ...createValidProductionEnv(),
+      APP_ENV: "production",
+      [key]: value,
+    });
+
+    expect(result.errors).toEqual([expect.stringContaining(`${key}=${value}`)]);
+  });
+
+  // 取值抄自 Cloudflare Turnstile 测试文档：测试 sitekey 让真实访客的令牌在主机名校验失败，
+  // 测试 secret 只认假令牌。
+  it.each([
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "1x00000000000000000000AA"],
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "2x00000000000000000000AB"],
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "1x00000000000000000000BB"],
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "2x00000000000000000000BB"],
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "3x00000000000000000000FF"],
+    ["TURNSTILE_SECRET_KEY", "1x0000000000000000000000000000000AA"],
+    ["TURNSTILE_SECRET_KEY", "2x0000000000000000000000000000000AA"],
+    ["TURNSTILE_SECRET_KEY", "3x0000000000000000000000000000000AA"],
+  ])("rejects the official Turnstile test key %s=%s", (key, value) => {
     const result = validateProductionRuntimeContract({
       ...createValidProductionEnv(),
       [key]: value,
     });
 
-    expect(result.errors).toEqual([expect.stringContaining(`${key}=${value}`)]);
+    expect(result.errors).toEqual([expect.stringContaining(key)]);
   });
 
   it("reports every unsafe production switch in one pass", () => {
