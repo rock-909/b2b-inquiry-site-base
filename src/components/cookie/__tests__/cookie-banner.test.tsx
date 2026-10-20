@@ -25,6 +25,10 @@ describe("CookieBanner", () => {
       screen.getByRole("link", { name: t("cookie.learnMore") }),
     ).toHaveAttribute("href", "/privacy");
 
+    const accept = screen.getByRole("button", { name: t("cookie.acceptAll") });
+    const reject = screen.getByRole("button", { name: t("cookie.rejectAll") });
+    expect(accept.className).toBe(reject.className);
+
     click(t("cookie.acceptAll"));
     click(t("cookie.rejectAll"));
     expect(onAccept).toHaveBeenCalledTimes(1);
