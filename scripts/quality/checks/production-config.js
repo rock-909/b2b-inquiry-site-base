@@ -1,4 +1,5 @@
 const fs = require("node:fs");
+const { isIP } = require("node:net");
 const path = require("node:path");
 const ts = require("typescript");
 const {
@@ -335,12 +336,12 @@ function validatePlaceholderTextFile(target, rootDir, file) {
 }
 
 function isSecurityContactReady(contact) {
-  // 主机一律按公开站点的规则判定：IP 字面量、单标签主机、保留域名都联系不上。
   if (/^mailto:/iu.test(contact)) {
-    const email = contact.slice("mailto:".length);
+    // mailto 允许 ?subject= 之类的头字段；只校验邮箱地址本身。
+    const email = contact.slice("mailto:".length).split("?")[0];
+    const domain = email.slice(email.lastIndexOf("@") + 1);
     return (
-      isPublicEmailReady(email) &&
-      isPublicBaseUrlReady(`https://${email.slice(email.lastIndexOf("@") + 1)}`)
+      isPublicEmailReady(email) && isIP(domain.replace(/^\[|\]$/gu, "")) === 0
     );
   }
   return (

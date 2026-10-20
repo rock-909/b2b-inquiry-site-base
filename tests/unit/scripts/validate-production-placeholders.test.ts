@@ -98,6 +98,18 @@ describe("template placeholder files", () => {
     expect(result.errors).toEqual([]);
   });
 
+  it("accepts a mailto security.txt Contact with header fields", () => {
+    const result = validateProductionConfig(
+      strictEnv,
+      inputWithFiles({
+        "public/.well-known/security.txt":
+          "Contact: mailto:security@acme-industrial.com?subject=Security\nExpires: 2999-01-01T00:00:00.000Z\n",
+      }),
+    );
+
+    expect(result.errors).toEqual([]);
+  });
+
   it("accepts an https security.txt Contact", () => {
     const result = validateProductionConfig(
       strictEnv,
