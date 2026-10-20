@@ -152,6 +152,9 @@
   --neutral-11: oklch(0.64 0.008 248);
   --neutral-12: oklch(0.9328 0.0025 228.7857);
 
+  /* 菜单、Cookie 横幅等浮层抬高一级，避免与纯黑页面融为一体。 */
+  --popover: var(--neutral-2);
+
   --success-muted: oklch(0.22 0.03 155);
   --success-border: oklch(0.34 0.05 155);
   --success-foreground: oklch(0.82 0.08 155);

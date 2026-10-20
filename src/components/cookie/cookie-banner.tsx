@@ -62,7 +62,7 @@ export function CookieBanner({
               type="checkbox"
               checked={analytics}
               onChange={(event) => setAnalytics(event.target.checked)}
-              className="size-4"
+              className="size-4 accent-[var(--foreground)]"
             />
             {t("analytics")}
           </label>
@@ -71,7 +71,7 @@ export function CookieBanner({
               type="checkbox"
               checked={advertising}
               onChange={(event) => setAdvertising(event.target.checked)}
-              className="size-4"
+              className="size-4 accent-[var(--foreground)]"
             />
             {t("advertising")}
           </label>

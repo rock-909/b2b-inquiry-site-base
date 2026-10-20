@@ -62,7 +62,7 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
             className={cn(
               "flex size-8 items-center justify-center rounded-[calc(var(--control-radius)-0.125rem)] transition-colors duration-150 ease-out",
               isHydrated && isActive
-                ? "bg-background text-foreground ring-1 ring-border"
+                ? "bg-background text-foreground ring-1 ring-input"
                 : "text-muted-foreground hover:text-foreground",
             )}
             disabled={!isHydrated}
