@@ -9,8 +9,6 @@ import {
   type ZodType,
 } from "zod";
 
-const EARLIEST_ESTABLISHED_YEAR = 1800;
-
 // 只校验格式：留空即不展示，占位判断只在上线门禁里做。
 const blankOr = (schema: ZodType<string>) =>
   union([schema, literal("")]).optional();
@@ -31,7 +29,7 @@ const siteIdentitySchema = object({
   company: object({
     established: number()
       .int()
-      .min(EARLIEST_ESTABLISHED_YEAR)
+      .positive()
       .max(new Date().getFullYear())
       .optional(),
   }).optional(),
