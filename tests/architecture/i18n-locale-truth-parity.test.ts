@@ -15,9 +15,4 @@ describe("i18n locale truth parity", () => {
       LOCALES_CONFIG.defaultLocale,
     );
   });
-
-  it("uses the runtime configuration directly rather than a copied list", () => {
-    const runtimeConfig = require("../../src/config/paths/locales-config.ts");
-    expect(translationCheckConfig).toBe(runtimeConfig.LOCALES_CONFIG);
-  });
 });

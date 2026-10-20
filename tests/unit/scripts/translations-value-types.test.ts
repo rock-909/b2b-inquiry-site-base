@@ -37,21 +37,30 @@ describe("translations check value types", () => {
     expect(result.status).toBe(0);
   });
 
-  it.each([
-    ["a number", 42],
-    ["null", null],
-    ["an array", ["Reject all"]],
-    ["a boolean", true],
-  ])("fails and names the locale and path when a value is %s", (_name, bad) => {
+  // 四种非字符串叶子放进同一个 fixture，只起一次子进程；每个路径都必须被点名。
+  it("fails and names the locale and every non-string path", () => {
+    const bad = {
+      number: 42,
+      null: null,
+      array: ["Reject all"],
+      boolean: true,
+    };
+
     const result = runCheck(
-      { cookie: { rejectAll: "Reject all" } },
-      { cookie: { rejectAll: bad } },
+      {
+        cookie: Object.fromEntries(
+          Object.keys(bad).map((key) => [key, "Reject all"]),
+        ),
+      },
+      { cookie: bad },
     );
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(
       `messages/base/${CHECKED_LOCALE}/messages.json`,
     );
-    expect(result.stderr).toContain("cookie.rejectAll");
+    for (const key of Object.keys(bad)) {
+      expect(result.stderr).toContain(`- cookie.${key}\n`);
+    }
   });
 });

@@ -3,53 +3,8 @@ import { buildCanarySelectors } from "./smoke/canary-selectors";
 import { checkA11y } from "./helpers/axe";
 import { checkedInquiryStub } from "../helpers/inquiry-contract";
 
-test("buyer fills contact form, clicks submit, sees success", async ({
-  page,
-}) => {
-  const selectors = buildCanarySelectors();
-  const pageErrors: string[] = [];
-  page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.route("**/api/inquiry", (route) =>
-    route.fulfill(
-      checkedInquiryStub({
-        status: 200,
-        body: {
-          success: true,
-          data: { referenceId: "e2e-ref-1" },
-        },
-      }),
-    ),
-  );
-  await page.goto("/contact");
-
-  // Contact renders InquiryForm directly — scroll the form column into view so
-  // Turnstile test mode can settle before submit.
-  await page
-    .getByTestId("contact-form-column")
-    .scrollIntoViewIfNeeded({ timeout: 5_000 });
-
-  const fullName = page.locator('input[name="fullName"]');
-  await expect(fullName).toBeEditable({ timeout: 15_000 });
-
-  await fullName.fill("E2E Buyer");
-  await page.locator('input[name="email"]').fill("buyer@example.com");
-
-  // Wait for the test-mode token to settle.
-  await expect(page.getByTestId("turnstile-mock")).toBeVisible({
-    timeout: 15_000,
-  });
-
-  const submit = page.getByRole("button", { name: selectors.submitLabel });
-  await expect(submit).toBeEnabled({ timeout: 15_000 });
-  await submit.click();
-  await expect(page.getByText(selectors.successPrefix)).toBeVisible();
-  await expect(fullName).toHaveValue("");
-  await expect(page.locator('input[name="email"]')).toHaveValue("");
-  await expect(page.locator('textarea[name="message"]')).toHaveValue("");
-  expect(pageErrors).toStrictEqual([]);
-});
-
-test("buyer retries a failed inquiry without losing the draft", async ({
+// 失败后重试成功即完整的买家主路径：填写、提交、成功、reference、字段清空。
+test("buyer submits successfully after retrying a failed inquiry without losing the draft", async ({
   page,
 }) => {
   const selectors = buildCanarySelectors();

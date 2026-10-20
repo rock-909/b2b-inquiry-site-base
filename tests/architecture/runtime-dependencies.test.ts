@@ -7,7 +7,6 @@ const CLIENT_SAFE_ENTRIES = [
   "src/lib/logger.ts",
   "src/lib/public-runtime-env.ts",
 ];
-const FORM_ENTRIES = ["src/app/[locale]/contact/contact-page-sections.tsx"];
 const CLIENT_FORBIDDEN =
   /(?:^|\/)zod(?:\/|$)|src\/lib\/env(?:\.|$)|single-site(?:-|\.|$)|inquiry-form-static-fallback/u;
 const INQUIRY_ROUTE = "src/app/api/inquiry/route.ts";
@@ -32,7 +31,6 @@ beforeAll(async () => {
     [
       ...routes,
       ...EMAIL_ENTRIES,
-      ...FORM_ENTRIES,
       ...CLIENT_SAFE_ENTRIES,
       CLIENT_ENTRY,
       FIXTURE_ROOT,

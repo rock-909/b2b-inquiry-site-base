@@ -3,6 +3,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import {
   chmodSync,
   copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -28,6 +29,29 @@ const PREVIEW_DEPLOY_COMMAND = [
 afterEach(() => {
   vi.useRealTimers();
 });
+
+// 每个文件只建一次 git 仓库，各 fixture 复制它的 .git；脚本内部仍运行真实 git。
+let gitTemplate: { dir: string; commitSha: string } | undefined;
+function getGitTemplate() {
+  if (gitTemplate) return gitTemplate;
+  const dir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
+  const git = (...args: string[]) =>
+    execFileSync("git", args, { cwd: dir, encoding: "utf8" }).trim();
+  git("init", "--quiet");
+  git(
+    "-c",
+    "user.name=fixture",
+    "-c",
+    "user.email=fixture@example.com",
+    "commit",
+    "--allow-empty",
+    "--quiet",
+    "-m",
+    "fixture",
+  );
+  gitTemplate = { dir, commitSha: git("rev-parse", "HEAD") };
+  return gitTemplate;
+}
 
 // 子进程边界上的替身：假的 pnpm / node 只记录调用顺序并按环境变量输出，
 // 证明通道本身（含 git）仍是真实进程。
@@ -68,24 +92,13 @@ function createProofFixture() {
     chmodSync(path.join(binDir, name), 0o755);
   }
 
-  const git = (...args: string[]) =>
-    execFileSync("git", args, { cwd: rootDir, encoding: "utf8" }).trim();
-  git("init", "--quiet");
-  git(
-    "-c",
-    "user.name=fixture",
-    "-c",
-    "user.email=fixture@example.com",
-    "commit",
-    "--allow-empty",
-    "--quiet",
-    "-m",
-    "fixture",
-  );
+  cpSync(path.join(getGitTemplate().dir, ".git"), path.join(rootDir, ".git"), {
+    recursive: true,
+  });
 
   return {
     binDir,
-    commitSha: git("rev-parse", "HEAD"),
+    commitSha: getGitTemplate().commitSha,
     readCalls: () =>
       existsSync(callLog)
         ? readFileSync(callLog, "utf8").trim().split("\n")

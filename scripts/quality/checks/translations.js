@@ -192,9 +192,5 @@ if (require.main === module) {
 }
 
 module.exports = {
-  collectLeafPaths,
-  compareLocales,
   findDuplicateJsonObjectKeys,
-  runTranslationCheck,
-  validateLocale,
 };

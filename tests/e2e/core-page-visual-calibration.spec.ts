@@ -34,7 +34,11 @@ test.describe("Core page visual calibration", () => {
     { name: "mobile", width: 390, height: 844 },
     { name: "narrow", width: 320, height: 844 },
   ] as const) {
-    for (const colorScheme of ["light", "dark"] as const) {
+    // 断言与配色无关；暗色只在桌面留一组，证明切到暗色不出错。主题切换归
+    // theme-persistence.spec.ts，暗色对比度归 design-token-contract.test.ts。
+    for (const colorScheme of viewport.name === "desktop"
+      ? (["light", "dark"] as const)
+      : (["light"] as const)) {
       for (const { path, theme } of corePages) {
         test(`${viewport.name} ${colorScheme} ${path} stays readable without overflow`, async ({
           page,

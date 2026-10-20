@@ -43,6 +43,8 @@ export default defineConfig({
     exclude: [
       ...configDefaults.exclude,
       "tests/e2e/**",
+      // gitignored 产物目录，可能留有整份仓库副本
+      "reports/**",
       "**/{fixtures,__fixtures__}/**",
       "**/setup.{js,jsx,ts,tsx}",
       "**/test-utils.{js,jsx,ts,tsx}",

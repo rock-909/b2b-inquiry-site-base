@@ -77,4 +77,4 @@ function runReactDoctor(args = process.argv.slice(2)) {
 }
 
 if (require.main === module) process.exitCode = runReactDoctor();
-module.exports = { isCompleteCleanReport, runReactDoctor };
+module.exports = { isCompleteCleanReport };

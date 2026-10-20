@@ -1,19 +1,20 @@
-import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { READY_PUBLIC_LAUNCH_FIXTURE } from "./production-config-fixtures";
+import { validateProductionConfig } from "../../../scripts/quality/checks/production-config.js";
 
-const GATE_PATH = path.resolve("scripts/quality/checks/production-config.js");
 const SITE_URL = "https://www.reference-site.com";
 const HOSTS_KEY = "env.production.vars.TURNSTILE_ALLOWED_HOSTS";
 const FIXTURE_PREFIX = "turnstile-hosts-";
 
+// 进程内调用门禁（真实 CLI 路径由 validate-production-config 的严格 CLI 用例证明）。
 function turnstileHostErrors(hosts: string | undefined, siteUrl = SITE_URL) {
-  const cwd = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
+  const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp directory
   writeFileSync(
-    path.join(cwd, "wrangler.jsonc"),
+    path.join(rootDir, "wrangler.jsonc"),
     JSON.stringify({
       env: {
         production: {
@@ -27,18 +28,11 @@ function turnstileHostErrors(hosts: string | undefined, siteUrl = SITE_URL) {
     }),
   );
 
-  const result = spawnSync(process.execPath, [GATE_PATH], {
-    cwd,
-    encoding: "utf8",
-    env: {
-      NODE_ENV: "test",
-      PATH: process.env.PATH,
-      TSX_TSCONFIG_PATH: path.resolve("tsconfig.json"),
-      APP_ENV: "preview",
-      PUBLIC_LAUNCH_STRICT: "true",
-    },
-  });
-  return result.stderr.split("\n").filter((line) => line.includes(HOSTS_KEY));
+  const { errors } = validateProductionConfig(
+    { NODE_ENV: "test", APP_ENV: "preview", PUBLIC_LAUNCH_STRICT: "true" },
+    { rootDir, publicLaunch: READY_PUBLIC_LAUNCH_FIXTURE },
+  );
+  return errors.filter((error: string) => error.includes(HOSTS_KEY));
 }
 
 describe("production gate for Wrangler TURNSTILE_ALLOWED_HOSTS", () => {
