@@ -1,8 +1,7 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-const ENV_SOURCE_PATH = "src/lib/env.ts";
 const ENV_EXAMPLE_PATH = ".env.example";
 const SENSITIVE_ENV_KEY_PATTERN =
   /(?:_API_KEY|_TOKEN|_SECRET(?:_KEY)?|_ACCESS_KEY|_ENCRYPTION_KEY|_PEPPER(?:_PREVIOUS)?)$/u;
@@ -29,47 +28,24 @@ const PUBLIC_RUNTIME_ENV_SOURCE_PATH = "src/lib/public-runtime-env.ts";
 const FRAMEWORK_PUBLIC_ENV_KEYS = new Set(["NODE_ENV"]);
 const DERIVED_PUBLIC_ENV_KEYS = new Set(["NEXT_PUBLIC_APP_ENV"]);
 
+// 全局 setup 把 @/lib/env 整体 mock 了，这里要的是真实导出的 schema 与 runtimeEnv。
+const { clientEnvSchema, runtimeEnv, serverEnvSchema } =
+  await vi.importActual<typeof import("@/lib/env")>("@/lib/env");
+
 function readRepoFile(repoPath: string) {
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test reads fixed repo-local files
   return readFileSync(repoPath, "utf8");
 }
 
-function createSourceFile(source: string) {
-  return ts.createSourceFile(
-    ENV_SOURCE_PATH,
+function extractObjectLiteralKeys(source: string, variableName: string) {
+  const sourceFile = ts.createSourceFile(
+    PUBLIC_RUNTIME_ENV_SOURCE_PATH,
     source,
     ts.ScriptTarget.Latest,
     true,
     ts.ScriptKind.TS,
   );
-}
-
-function getPropertyName(name: ts.PropertyName): string | null {
-  if (ts.isIdentifier(name) || ts.isStringLiteral(name)) {
-    return name.text;
-  }
-
-  if (ts.isNumericLiteral(name)) {
-    return name.text;
-  }
-
-  return null;
-}
-
-function unwrapLiteralExpression(expression: ts.Expression): ts.Expression {
-  // `as const satisfies …` 会把对象字面量包进 SatisfiesExpression，直接判
-  // initializer 的 kind 会漏掉这类声明。
-  return ts.isSatisfiesExpression(expression) || ts.isAsExpression(expression)
-    ? unwrapLiteralExpression(expression.expression)
-    : expression;
-}
-
-function findObjectLiteral(
-  source: string,
-  variableName: string,
-): ts.ObjectLiteralExpression {
-  const sourceFile = createSourceFile(source);
-  let objectLiteral: ts.ObjectLiteralExpression | null = null;
+  const keys: string[] = [];
 
   function visit(node: ts.Node): void {
     if (
@@ -78,74 +54,30 @@ function findObjectLiteral(
       node.name.text === variableName &&
       node.initializer
     ) {
-      const unwrapped = unwrapLiteralExpression(node.initializer);
-
-      if (ts.isObjectLiteralExpression(unwrapped)) {
-        objectLiteral = unwrapped;
-        return;
+      let initializer = node.initializer;
+      while (
+        ts.isSatisfiesExpression(initializer) ||
+        ts.isAsExpression(initializer)
+      ) {
+        initializer = initializer.expression;
       }
+      if (ts.isObjectLiteralExpression(initializer)) {
+        for (const property of initializer.properties) {
+          if (
+            ts.isPropertyAssignment(property) &&
+            ts.isIdentifier(property.name)
+          ) {
+            keys.push(property.name.text);
+          }
+        }
+      }
+      return;
     }
-
     ts.forEachChild(node, visit);
   }
 
   visit(sourceFile);
-
-  if (!objectLiteral) {
-    throw new Error(`${variableName} should be an object literal`);
-  }
-
-  return objectLiteral;
-}
-
-function extractObjectLiteralKeys(source: string, variableName: string) {
-  const objectLiteral = findObjectLiteral(source, variableName);
-
-  return objectLiteral.properties.flatMap((property) => {
-    if (!ts.isPropertyAssignment(property)) {
-      return [];
-    }
-
-    const key = getPropertyName(property.name);
-    return key ? [key] : [];
-  });
-}
-
-function extractRuntimeEnvKeys(source: string) {
-  const objectLiteral = findObjectLiteral(source, "runtimeEnv");
-
-  return objectLiteral.properties.flatMap((property) => {
-    if (
-      !ts.isPropertyAssignment(property) ||
-      !ts.isPropertyAccessExpression(property.initializer)
-    ) {
-      return [];
-    }
-
-    const key = getPropertyName(property.name);
-    const envKey = property.initializer.name.text;
-    const envObject = property.initializer.expression;
-
-    if (
-      !key ||
-      key !== envKey ||
-      !ts.isPropertyAccessExpression(envObject) ||
-      envObject.name.text !== "env" ||
-      !ts.isIdentifier(envObject.expression) ||
-      envObject.expression.text !== "process"
-    ) {
-      return [];
-    }
-
-    return [key];
-  });
-}
-
-function getSchemaKeys(envSource: string) {
-  return new Set([
-    ...extractObjectLiteralKeys(envSource, "serverEnvSchema"),
-    ...extractObjectLiteralKeys(envSource, "clientEnvSchema"),
-  ]);
+  return keys;
 }
 
 function parseEnvExample(source: string) {
@@ -174,10 +106,12 @@ function sortedStrings(values: Iterable<string>) {
 
 describe(".env.example parity", () => {
   it("keeps env example aligned with the central runtime env contract", () => {
-    const envSource = readRepoFile(ENV_SOURCE_PATH);
     const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-    const schemaKeys = getSchemaKeys(envSource);
-    const runtimeKeys = new Set<string>(extractRuntimeEnvKeys(envSource));
+    const schemaKeys = new Set([
+      ...Object.keys(serverEnvSchema),
+      ...Object.keys(clientEnvSchema),
+    ]);
+    const runtimeKeys = new Set<string>(Object.keys(runtimeEnv));
 
     expect(sortedStrings(schemaKeys)).toEqual(sortedStrings(runtimeKeys));
 
@@ -220,16 +154,12 @@ describe(".env.example parity", () => {
   // 的读取都有登记」这一个方向：反向（schema 每个 key 都要进 allowlist）不是
   // 已证明的契约，不做。
   it("keeps public runtime allowlist reads registered in the client env schema", () => {
+    // allowlist 未导出且无法经 getPublicRuntimeEnvString 枚举，只能窄读这一处字面量。
     const allowlistKeys = extractObjectLiteralKeys(
       readRepoFile(PUBLIC_RUNTIME_ENV_SOURCE_PATH),
       "PUBLIC_RUNTIME_ENV_READERS",
     );
-    const clientSchemaKeys = new Set(
-      extractObjectLiteralKeys(
-        readRepoFile(ENV_SOURCE_PATH),
-        "clientEnvSchema",
-      ),
-    );
+    const clientSchemaKeys = new Set(Object.keys(clientEnvSchema));
 
     // 豁免名单里的 key 必须真的还在 allowlist 里：key 被删除时豁免也要跟着缩，
     // 不能留一张永远为真的豁免表。
@@ -256,12 +186,8 @@ describe(".env.example parity", () => {
   // 密钥形状的 key 一旦以 NEXT_PUBLIC_ 开头就会被打进浏览器 bundle。
   it("keeps secret-shaped keys out of the public env surface", () => {
     const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-    const clientSchemaKeys = extractObjectLiteralKeys(
-      readRepoFile(ENV_SOURCE_PATH),
-      "clientEnvSchema",
-    );
     const publicSensitiveKeys = new Set(
-      [...envExample.keys(), ...clientSchemaKeys].filter(
+      [...envExample.keys(), ...Object.keys(clientEnvSchema)].filter(
         (key) =>
           key.startsWith("NEXT_PUBLIC_") && SENSITIVE_ENV_KEY_PATTERN.test(key),
       ),
