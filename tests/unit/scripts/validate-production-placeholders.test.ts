@@ -235,6 +235,16 @@ describe("template placeholder files", () => {
         "Contact: mailto:security@acme-industrial.test\nExpires: 2999-01-01T00:00:00.000Z\n",
     },
     {
+      file: "public/.well-known/security.txt",
+      content:
+        "Contact: https://10.0.0.1/security\nExpires: 2999-01-01T00:00:00.000Z\n",
+    },
+    {
+      file: "public/.well-known/security.txt",
+      content:
+        "Contact: mailto:security@10.0.0.1\nExpires: 2999-01-01T00:00:00.000Z\n",
+    },
+    {
       file: ".env.production",
       content: "NEXT_PUBLIC_SITE_URL=https://example.invalid\n",
     },
