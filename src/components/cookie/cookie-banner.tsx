@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,15 @@ const CSS_VAR_BANNER_HEIGHT = "--cookie-banner-height";
 export function CookieBanner({
   onAccept,
   onReject,
+  onSave,
 }: {
   onAccept: () => void;
   onReject: () => void;
+  onSave: (choice: { analytics: boolean; advertising: boolean }) => void;
 }) {
   const t = useTranslations("cookie");
+  const [analytics, setAnalytics] = useState(false);
+  const [advertising, setAdvertising] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,12 +60,39 @@ export function CookieBanner({
             {t("learnMore")}
           </Link>
         </p>
+        <div className="flex flex-col gap-1">
+          <label className="flex min-h-11 items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={analytics}
+              onChange={(event) => setAnalytics(event.target.checked)}
+              className="size-4"
+            />
+            {t("analytics")}
+          </label>
+          <label className="flex min-h-11 items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={advertising}
+              onChange={(event) => setAdvertising(event.target.checked)}
+              className="size-4"
+            />
+            {t("advertising")}
+          </label>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" onClick={onReject}>
             {t("rejectAll")}
           </Button>
           <Button variant="outline" onClick={onAccept}>
             {t("acceptAll")}
+          </Button>
+          <Button
+            variant="ghost"
+            className="col-span-2"
+            onClick={() => onSave({ analytics, advertising })}
+          >
+            {t("saveChoices")}
           </Button>
         </div>
       </div>

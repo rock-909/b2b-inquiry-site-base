@@ -34,12 +34,12 @@ const otherLocale = locales.find((locale) => locale !== defaultLocale);
 describe("SEO Metadata", () => {
   beforeEach(() => {
     process.env.GOOGLE_SITE_VERIFICATION = "google-verification-code";
-    process.env.YANDEX_VERIFICATION = "yandex-verification-code";
+    process.env.BING_SITE_VERIFICATION = "bing-verification-code";
   });
 
   afterEach(() => {
     delete process.env.GOOGLE_SITE_VERIFICATION;
-    delete process.env.YANDEX_VERIFICATION;
+    delete process.env.BING_SITE_VERIFICATION;
     delete process.env.APP_ENV;
   });
 
@@ -90,7 +90,20 @@ describe("SEO Metadata", () => {
       expect(metadata.openGraph?.locale).toBe("en_US");
       expect(metadata.verification).toEqual({
         google: "google-verification-code",
-        yandex: "yandex-verification-code",
+        other: { "msvalidate.01": "bing-verification-code" },
+      });
+    });
+
+    it("emits no Bing verification tag when BING_SITE_VERIFICATION is unset", () => {
+      delete process.env.BING_SITE_VERIFICATION;
+      const metadata = generateMetadataForPath({
+        locale: "en",
+        pageType: "home",
+        path: "/",
+      });
+
+      expect(metadata.verification).toEqual({
+        google: "google-verification-code",
       });
     });
 

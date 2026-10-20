@@ -41,7 +41,7 @@ export const serverEnvSchema = {
   LOG_LEVEL: logLevelSchema.optional(),
   DEPLOYMENT_PLATFORM: zEnum(["cloudflare", "development"]).optional(),
   GOOGLE_SITE_VERIFICATION: string().min(1).optional(),
-  YANDEX_VERIFICATION: string().min(1).optional(),
+  BING_SITE_VERIFICATION: string().min(1).optional(),
 
   // Distributed storage and rate limiting
   RATE_LIMIT_PEPPER: string().min(1).optional(),
@@ -113,7 +113,7 @@ export const runtimeEnv = {
   LOG_LEVEL: process.env.LOG_LEVEL,
   DEPLOYMENT_PLATFORM: process.env.DEPLOYMENT_PLATFORM,
   GOOGLE_SITE_VERIFICATION: process.env.GOOGLE_SITE_VERIFICATION,
-  YANDEX_VERIFICATION: process.env.YANDEX_VERIFICATION,
+  BING_SITE_VERIFICATION: process.env.BING_SITE_VERIFICATION,
   RATE_LIMIT_PEPPER: process.env.RATE_LIMIT_PEPPER,
   UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
   UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,

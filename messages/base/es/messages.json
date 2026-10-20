@@ -15,11 +15,14 @@
     "footerNavigation": "Navegación del pie de página"
   },
   "cookie": {
-    "title": "Cookies de análisis",
-    "description": "Permite cookies de análisis opcionales para ayudarnos a entender el tráfico del sitio.",
+    "title": "Preferencias de cookies",
+    "description": "Elige qué cookies opcionales podemos usar. El análisis nos ayuda a entender el tráfico del sitio; la publicidad permite medir y personalizar los anuncios.",
+    "analytics": "Análisis",
+    "advertising": "Publicidad",
     "learnMore": "Política de privacidad",
-    "acceptAll": "Permitir análisis",
-    "rejectAll": "No, gracias",
+    "acceptAll": "Permitir todo",
+    "saveChoices": "Guardar elecciones",
+    "rejectAll": "Rechazar todo",
     "settings": "Configuración de cookies"
   },
   "structured-data": {

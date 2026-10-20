@@ -56,7 +56,10 @@ test.describe("Contact Form - Test-Mode Smoke", () => {
     const privacyNotice = page.getByTestId("form-privacy-notice");
     await expect(privacyNotice).toBeVisible();
     await expect(privacyNotice).toContainText(/privacy policy/i);
-    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    // 只查询询盘表单：Cookie 横幅自带分类复选框，不属于提交同意。
+    await expect(
+      page.getByTestId("inquiry-form").getByRole("checkbox"),
+    ).toHaveCount(0);
   });
 
   // 1920px 这条不能并进别的文件：`turnstile-layout.spec.ts` 最宽只到 1280px，

@@ -2,6 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { buildCanarySelectors } from "./smoke/canary-selectors";
 import { checkA11y } from "./helpers/axe";
 import { checkedInquiryStub } from "../helpers/inquiry-contract";
+import { acceptCookieBannerIfVisible } from "./test-environment-setup";
 
 // 失败后重试成功即完整的买家主路径：填写、提交、成功、reference、字段清空。
 test("buyer submits successfully after retrying a failed inquiry without losing the draft", async ({
@@ -83,6 +84,8 @@ test("buyer submits successfully after retrying a failed inquiry without losing 
 
 async function expectAccessibleServerFieldErrors(page: Page, path: string) {
   const selectors = buildCanarySelectors();
+  // 320×568 下横幅会盖住提交按钮；横幅不是本用例的被测对象。
+  await acceptCookieBannerIfVisible(page);
   await page.route("**/api/inquiry", (route) =>
     route.fulfill(
       checkedInquiryStub({

@@ -108,9 +108,10 @@ export const INDEXABLE_ROBOTS = {
 } as const satisfies Metadata["robots"];
 
 export function buildVerification(): Metadata["verification"] {
+  const bing = getRuntimeEnvString("BING_SITE_VERIFICATION");
   return {
     google: getRuntimeEnvString("GOOGLE_SITE_VERIFICATION"),
-    yandex: getRuntimeEnvString("YANDEX_VERIFICATION"),
+    ...(bing ? { other: { "msvalidate.01": bing } } : {}),
   };
 }
 

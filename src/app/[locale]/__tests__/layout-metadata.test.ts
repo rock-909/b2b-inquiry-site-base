@@ -24,12 +24,12 @@ vi.mock("@/config/single-site", () => ({
 describe("Locale layout metadata", () => {
   beforeEach(() => {
     process.env.GOOGLE_SITE_VERIFICATION = "google-verification-code";
-    process.env.YANDEX_VERIFICATION = "yandex-verification-code";
+    process.env.BING_SITE_VERIFICATION = "bing-verification-code";
   });
 
   afterEach(() => {
     delete process.env.GOOGLE_SITE_VERIFICATION;
-    delete process.env.YANDEX_VERIFICATION;
+    delete process.env.BING_SITE_VERIFICATION;
     delete process.env.APP_ENV;
   });
 
@@ -48,7 +48,7 @@ describe("Locale layout metadata", () => {
 
     expect(metadata.verification).toEqual({
       google: "google-verification-code",
-      yandex: "yandex-verification-code",
+      other: { "msvalidate.01": "bing-verification-code" },
     });
 
     const robots = metadata.robots as unknown as {

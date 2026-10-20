@@ -37,6 +37,6 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/",
-    "/((?!api(?:/|$)|_next(?:/|$)|robots\\.txt$|sitemap\\.xml$|icon\\.svg$|security-policy\\.txt$).*)",
+    "/((?!api(?:/|$)|_next(?:/|$)|robots\\.txt$|llms\\.txt$|sitemap\\.xml$|icon\\.svg$|security-policy\\.txt$).*)",
   ],
 };

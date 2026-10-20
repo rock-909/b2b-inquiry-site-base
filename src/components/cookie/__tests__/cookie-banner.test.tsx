@@ -7,10 +7,16 @@ import { createMockTranslations } from "@/test/utils";
 const t = createMockTranslations();
 
 describe("CookieBanner", () => {
-  it("shows only the configured analytics choice", () => {
-    const onAccept = vi.fn();
-    const onReject = vi.fn();
-    render(<CookieBanner onAccept={onAccept} onReject={onReject} />);
+  function renderBanner() {
+    const handlers = { onAccept: vi.fn(), onReject: vi.fn(), onSave: vi.fn() };
+    render(<CookieBanner {...handlers} />);
+    return handlers;
+  }
+  const click = (name: string) =>
+    fireEvent.click(screen.getByRole("button", { name }));
+
+  it("links to the privacy policy and offers equal accept and reject buttons", () => {
+    const { onAccept, onReject } = renderBanner();
 
     expect(
       screen.getByRole("region", { name: t("cookie.title") }),
@@ -18,16 +24,54 @@ describe("CookieBanner", () => {
     expect(
       screen.getByRole("link", { name: t("cookie.learnMore") }),
     ).toHaveAttribute("href", "/privacy");
-    expect(screen.queryByText(/marketing/i)).toBeNull();
-    expect(screen.queryByRole("button", { name: /manage/i })).toBeNull();
 
-    fireEvent.click(
-      screen.getByRole("button", { name: t("cookie.acceptAll") }),
-    );
-    fireEvent.click(
-      screen.getByRole("button", { name: t("cookie.rejectAll") }),
-    );
+    const accept = screen.getByRole("button", { name: t("cookie.acceptAll") });
+    const reject = screen.getByRole("button", { name: t("cookie.rejectAll") });
+    expect(accept.className).toBe(reject.className);
+
+    click(t("cookie.acceptAll"));
+    click(t("cookie.rejectAll"));
     expect(onAccept).toHaveBeenCalledTimes(1);
     expect(onReject).toHaveBeenCalledTimes(1);
+  });
+
+  it("starts with both categories unchecked and saves nothing granted by default", () => {
+    const { onSave } = renderBanner();
+    expect(
+      screen.getByRole("checkbox", { name: t("cookie.analytics") }),
+    ).not.toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: t("cookie.advertising") }),
+    ).not.toBeChecked();
+
+    click(t("cookie.saveChoices"));
+    expect(onSave).toHaveBeenCalledWith({
+      analytics: false,
+      advertising: false,
+    });
+  });
+
+  it("lets the visitor grant analytics without advertising", () => {
+    const { onSave } = renderBanner();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: t("cookie.analytics") }),
+    );
+    click(t("cookie.saveChoices"));
+    expect(onSave).toHaveBeenCalledWith({
+      analytics: true,
+      advertising: false,
+    });
+  });
+
+  it("lets the visitor grant advertising without analytics", () => {
+    const { onSave } = renderBanner();
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: t("cookie.advertising") }),
+    );
+    click(t("cookie.saveChoices"));
+    expect(onSave).toHaveBeenCalledWith({
+      analytics: false,
+      advertising: true,
+    });
   });
 });
