@@ -91,7 +91,7 @@ function SheetContent({
             ref={closeButtonRef}
             className="absolute top-4 right-4 inline-flex size-10 items-center justify-center rounded-[var(--control-radius)] text-foreground transition-colors duration-150 ease-out hover:bg-muted disabled:pointer-events-none"
           >
-            <XIcon className="size-5" />
+            <XIcon className="size-4" />
             <span className="sr-only">{closeLabel}</span>
           </SheetPrimitive.Close>
         </SheetPrimitive.Popup>

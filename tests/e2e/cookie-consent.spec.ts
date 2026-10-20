@@ -1,9 +1,14 @@
 import { expect, test } from "@playwright/test";
 import { getHeaderMobileMenuButton } from "./helpers/navigation";
 import { DEFAULT_LOCALE, getLocaleMessages } from "./site-page-cases";
+import { blockAnalyticsRequests } from "./test-environment-setup";
 
-// 横幅只在构建时配置了 GA 才渲染；E2E 构建用假 ID 打开它（预览环境不会加载 GA）。
+// 横幅只在构建时配置了 GA 才渲染；E2E 构建用假 ID 打开它，GA 请求在用例内一律拦截。
 test.use({ viewport: { width: 390, height: 844 } });
+
+test.beforeEach(async ({ page }) => {
+  await blockAnalyticsRequests(page);
+});
 
 test("the open mobile menu covers the cookie banner", async ({ page }) => {
   await page.goto("/");

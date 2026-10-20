@@ -50,9 +50,10 @@ export function MobileNavigationLinks({
                 prefetch={false}
                 className={cn(
                   "flex min-h-11 items-center rounded-[var(--control-radius)] px-3 text-base font-medium transition-colors duration-150 ease-out",
+                  "hover:bg-muted",
                   isActive
                     ? "text-[var(--primary-text)]"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                    : "text-muted-foreground hover:text-foreground",
                 )}
                 aria-current={isActive ? "page" : undefined}
                 onClick={onNavigate}

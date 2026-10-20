@@ -57,7 +57,7 @@ function MobileMenuButton({
       onClick={onClick}
       {...props}
     >
-      {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+      {isOpen ? <X className="size-4" /> : <Menu className="size-4" />}
       <span
         className="sr-only"
         data-testid="mobile-menu-toggle-label"

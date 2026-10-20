@@ -151,7 +151,7 @@ export default defineConfig({
             NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
             TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
 
-            // 假 GA ID 只为渲染同意横幅；预览环境下 GA 脚本不会加载。
+            // 假 GA ID 只为渲染同意横幅；用例必须用“拒绝”关闭横幅，且 GA 请求在用例内被拦截。
             NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-E2ETEST000",
 
             // 置空即可挡住 .env.local 的同名密钥：本地 E2E 永远不能真实投递。

@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 const BASE_CLASSES =
-  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--button-radius)] text-sm font-medium whitespace-nowrap transition-[background-color,color,border-color,box-shadow] duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
+  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-[var(--button-radius)] text-sm font-medium whitespace-nowrap transition-[background-color,color,border-color,box-shadow] duration-150 ease-out active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4";
 
 const VARIANT_CLASSES = {
   default:

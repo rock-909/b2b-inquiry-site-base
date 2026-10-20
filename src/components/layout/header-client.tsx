@@ -141,7 +141,7 @@ function LanguageToggleStaticFallback({
             hrefLang={targetLocale}
             lang={targetLocale}
             aria-current={targetLocale === locale ? "true" : undefined}
-            className="flex min-h-9 items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=true]:text-[var(--primary-text)]"
+            className="flex min-h-9 items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground aria-[current=true]:text-[var(--primary-text)]"
           >
             {LOCALES_CONFIG.displayNames[targetLocale]}
           </a>
