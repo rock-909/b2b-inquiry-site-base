@@ -95,6 +95,15 @@ describe("public launch identity values", () => {
     ).toEqual([expect.stringContaining("SITE_CONFIG.company.location.city")]);
   });
 
+  it("blocks whitespace-only company name and location", () => {
+    expect(
+      identityErrors({ company: { name: "   ", location: { city: "   " } } }),
+    ).toEqual([
+      expect.stringContaining("SITE_CONFIG.company.name"),
+      expect.stringContaining("SITE_CONFIG.company.location.city"),
+    ]);
+  });
+
   it("blocks placeholder social profiles but accepts real ones", () => {
     for (const twitter of [
       "https://x.com/example",

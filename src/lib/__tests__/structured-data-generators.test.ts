@@ -123,6 +123,19 @@ describe("structured-data generators", () => {
     expect(generateOrganizationData()).toBeUndefined();
   });
 
+  it("treats whitespace-only company facts as empty", () => {
+    SITE_CONFIG.company = { name: "   " };
+    expect(generateOrganizationData()).toBeUndefined();
+    SITE_CONFIG.company = {
+      name: "Acme Manufacturing",
+      location: { address: "1 Harbour Road", city: "   " },
+    };
+    expect(generateOrganizationData()?.address).toEqual({
+      "@type": "PostalAddress",
+      streetAddress: "1 Harbour Road",
+    });
+  });
+
   // 运行时不再按文本猜占位：真实地址里含旧触发词也照常输出，占位只由上线门禁拦截。
   it("publishes real facts that contain former placeholder trigger words", () => {
     SITE_CONFIG.company = {

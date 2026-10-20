@@ -143,6 +143,7 @@ function containsStarterMarker(value) {
 function isPlaceholderFact(value) {
   return (
     containsStarterMarker(value) ||
+    !value.trim() ||
     /(?:^|[\s[(])TODO(?:$|[\s:\]_-])/u.test(value) ||
     /placeholder/iu.test(value)
   );

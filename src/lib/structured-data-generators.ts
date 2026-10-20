@@ -27,7 +27,9 @@ export function websiteStructuredDataId(baseUrl: string = FALLBACK_BASE_URL) {
 export function generateOrganizationData() {
   // 只读显式字段：留空即省略；占位值由上线门禁拦截，这里不猜。
   const { company, contact, social, brandAssets } = SINGLE_SITE_CONFIG;
-  if (!company?.name) return undefined;
+  // 纯空白等同留空：不输出。
+  const name = company?.name?.trim();
+  if (!company || !name) return undefined;
   const { email, phone: telephone } = contact;
   const logoPath =
     brandAssets.logo?.status === "ready"
@@ -39,13 +41,13 @@ export function generateOrganizationData() {
       streetAddress,
       addressLocality: city,
       addressCountry: country,
-    }).filter(([, value]) => value),
+    }).filter(([, value]) => value?.trim()),
   );
   const sameAs = Object.values(social).filter(Boolean);
   return {
     "@type": "Organization",
     "@id": organizationStructuredDataId(),
-    name: company.name,
+    name,
     url: FALLBACK_BASE_URL,
     ...(email ? { email } : {}),
     ...(company.established
