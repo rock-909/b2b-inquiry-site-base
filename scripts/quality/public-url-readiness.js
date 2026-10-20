@@ -7,8 +7,11 @@
  *
  * Accepts only an https origin suitable as a public production base URL:
  * https, non-empty hostname, no credentials, no query/hash, pathname `/` only,
- * and not local / example / reserved special-use / workers.dev hosts.
+ * and not local / example / reserved special-use / workers.dev hosts,
+ * IP literals or single-label hosts.
  */
+
+const { isIP } = require("node:net");
 
 /**
  * @param {string} hostname
@@ -63,6 +66,8 @@ function isReservedSpecialUseHostname(hostname) {
  * @returns {boolean}
  */
 function isPlaceholderHostname(hostname) {
+  // 带尾点的 FQDN（example.invalid.）与不带尾点的是同一个主机。
+  hostname = hostname.replace(/\.$/u, "");
   return (
     isLocalHostname(hostname) ||
     isExampleHostname(hostname) ||
@@ -96,8 +101,11 @@ function isPublicBaseUrlReady(baseUrl) {
 
   if (url.protocol !== "https:") return false;
 
-  const hostname = url.hostname.toLowerCase();
+  const hostname = url.hostname.toLowerCase().replace(/\.$/u, "");
   if (!hostname) return false;
+  // 公开站点必须是公网域名：IP 字面量（含内网、元数据地址）和单标签主机一律不算。
+  if (isIP(hostname.replace(/^\[|\]$/gu, "")) !== 0) return false;
+  if (!hostname.includes(".")) return false;
   if (url.username || url.password) return false;
   if (url.search.length > 0 || url.hash.length > 0) return false;
   if (url.pathname !== "/" && url.pathname !== "") return false;

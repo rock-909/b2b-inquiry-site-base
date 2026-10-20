@@ -222,4 +222,49 @@ describe("Cloudflare artifact config proof", () => {
       ).toThrow("No prerendered cache entries");
     });
   });
+
+  // OpenNext 把本地 .env* 的值写进 next-env.mjs 随 Worker 上传，同名 shell 变量也拦不住。
+  // 真实 OpenNext 构建的红绿证明记录在引入本用例的提交里；这里锁定上传前的 CLI 判定。
+  describe("bundled private env values", () => {
+    function runPrivateEnvCheck(envModule: string) {
+      const rootDir = createFixture();
+      writeCacheFile(
+        rootDir,
+        ".open-next/cloudflare",
+        "next-env.mjs",
+        envModule,
+      );
+      return spawnSync(process.execPath, [SCRIPT_PATH, "--private-env"], {
+        cwd: rootDir,
+        encoding: "utf8",
+      });
+    }
+
+    it("rejects non-public keys from any env mode and names them", () => {
+      const result = runPrivateEnvCheck(
+        [
+          'export const production = {"NEXT_PUBLIC_SITE_URL":"https://acme.com","RESEND_API_KEY":"re_x"};',
+          'export const development = {"AIRTABLE_API_KEY":"pat_x"};',
+          "export const test = {};",
+          "",
+        ].join("\n"),
+      );
+
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("AIRTABLE_API_KEY, RESEND_API_KEY");
+    });
+
+    it("accepts a bundle with only NEXT_PUBLIC_ keys", () => {
+      const result = runPrivateEnvCheck(
+        [
+          'export const production = {"NEXT_PUBLIC_SITE_URL":"https://acme.com"};',
+          "export const development = {};",
+          "export const test = {};",
+          "",
+        ].join("\n"),
+      );
+
+      expect(result.status).toBe(0);
+    });
+  });
 });

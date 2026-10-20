@@ -98,6 +98,18 @@ describe("template placeholder files", () => {
     expect(result.errors).toEqual([]);
   });
 
+  it("accepts an https security.txt Contact", () => {
+    const result = validateProductionConfig(
+      strictEnv,
+      inputWithFiles({
+        "public/.well-known/security.txt":
+          "Contact: https://acme-industrial.com/security\nExpires: 2999-01-01T00:00:00.000Z\n",
+      }),
+    );
+
+    expect(result.errors).toEqual([]);
+  });
+
   // 只拦模板占位本身：正常条款里的相同短语、不会输出的注释都不能阻断上线。
   it.each([
     {
@@ -207,6 +219,21 @@ describe("template placeholder files", () => {
       file: "public/.well-known/security.txt",
       content: "Contact: mailto:security@acme-industrial.com\n",
     },
+    // RFC 9116 要求至少一个可用的 Contact；保留域名同样联系不上。
+    {
+      file: "public/.well-known/security.txt",
+      content: "Expires: 2999-01-01T00:00:00.000Z\n",
+    },
+    {
+      file: "public/.well-known/security.txt",
+      content:
+        "Contact: http://acme-industrial.com/security\nExpires: 2999-01-01T00:00:00.000Z\n",
+    },
+    {
+      file: "public/.well-known/security.txt",
+      content:
+        "Contact: mailto:security@acme-industrial.test\nExpires: 2999-01-01T00:00:00.000Z\n",
+    },
     {
       file: ".env.production",
       content: "NEXT_PUBLIC_SITE_URL=https://example.invalid\n",
@@ -228,7 +255,16 @@ describe("template placeholder files", () => {
     },
   );
 
-  it("blocks the template Turnstile site key in wrangler production vars", () => {
+  // 门禁进程的 NODE_ENV 由 workflow 固定为 production，Worker 真正拿到的是这里的 vars。
+  it.each([
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "0x4AAAAAADvC8KDbJ54402pb"],
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "1x00000000000000000000AA"],
+    ["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "3x00000000000000000000FF"],
+    ["TURNSTILE_SECRET_KEY", "2x0000000000000000000000000000000AA"],
+    ["NODE_ENV", "development"],
+    ["NODE_ENV", "test"],
+    ["TURNSTILE_BYPASS", "true"],
+  ])("blocks %s=%s in wrangler production vars", (key, value) => {
     const input = inputWithFiles();
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- 写入本测试刚创建的临时目录
     writeFileSync(
@@ -241,7 +277,7 @@ describe("template placeholder files", () => {
               NEXT_PUBLIC_SITE_URL: "https://reference-site.com",
               NEXT_PUBLIC_BASE_URL: "https://reference-site.com",
               TURNSTILE_ALLOWED_HOSTS: "reference-site.com",
-              NEXT_PUBLIC_TURNSTILE_SITE_KEY: "0x4AAAAAADvC8KDbJ54402pb",
+              [key]: value,
             },
           },
         },
@@ -251,7 +287,7 @@ describe("template placeholder files", () => {
     const result = validateProductionConfig(strictEnv, input);
 
     expect(result.errors).toEqual([
-      expect.stringContaining("NEXT_PUBLIC_TURNSTILE_SITE_KEY"),
+      expect.stringContaining(`env.production.vars.${key}`),
     ]);
   });
 

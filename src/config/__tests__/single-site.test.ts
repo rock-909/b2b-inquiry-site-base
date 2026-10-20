@@ -90,4 +90,31 @@ describe("single-site", () => {
       /width/u,
     );
   });
+
+  it("rejects whitespace-only identity text and unsafe brand asset URLs", () => {
+    expect(() =>
+      assertValidSiteConfig({ ...SINGLE_SITE_CONFIG, name: "   " }),
+    ).toThrow(/name/u);
+    expect(() =>
+      assertValidSiteConfig({
+        ...SINGLE_SITE_CONFIG,
+        seo: { ...SINGLE_SITE_CONFIG.seo, defaultDescription: " " },
+      }),
+    ).toThrow(/defaultDescription/u);
+    const withAssets = (overrides: object) => ({
+      ...SINGLE_SITE_CONFIG,
+      brandAssets: { ...SINGLE_SITE_CONFIG.brandAssets, ...overrides },
+    });
+    expect(() =>
+      assertValidSiteConfig(withAssets({ ogImage: "javascript:alert(1)" })),
+    ).toThrow(/ogImage/u);
+    expect(() =>
+      assertValidSiteConfig(withAssets({ favicon: "//evil.example/icon.svg" })),
+    ).toThrow(/favicon/u);
+    expect(() =>
+      assertValidSiteConfig(
+        withAssets({ ogImage: "https://cdn.acme-industrial.com/og.png" }),
+      ),
+    ).not.toThrow();
+  });
 });

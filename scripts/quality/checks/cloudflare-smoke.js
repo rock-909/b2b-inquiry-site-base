@@ -1,6 +1,7 @@
 const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
+const { findBundledPrivateEnvKeys } = require("./cloudflare-artifact-config");
 
 const ROOT = process.cwd();
 
@@ -742,21 +743,6 @@ function printCloudflarePreviewProofOutput(label, result) {
   console.log(
     `[proof:cf:preview-deployed] ${label} exit=${result.status ?? 1}`,
   );
-}
-
-// OpenNext 把本地 .env* 文件的值写进 next-env.mjs，随 Worker 一起上传，Cloudflare
-// 账号成员都能下载。公开的 NEXT_PUBLIC_* 本来就内联进页面，其余键一律拒绝上传。
-function findBundledPrivateEnvKeys(
-  filePath = path.join(ROOT, ".open-next", "cloudflare", "next-env.mjs"),
-) {
-  if (!fs.existsSync(filePath)) return [];
-  const source = fs.readFileSync(filePath, "utf8");
-  const keys = [...source.matchAll(/^export const \w+ = (.*);$/gmu)].flatMap(
-    ([, json]) => Object.keys(JSON.parse(json)),
-  );
-  return [
-    ...new Set(keys.filter((key) => !key.startsWith("NEXT_PUBLIC_"))),
-  ].sort();
 }
 
 // 构建产物能否上传：缺翻译消息、构建失败、本地 env 文件混入非公开值时都拒绝。

@@ -110,6 +110,18 @@ describe("verifyTurnstileDetailed server-side guards", () => {
     },
   );
 
+  // 生产构建里这条分支被内联删除（见 turnstile.ts）；本地 next dev 仍需可用。
+  it("keeps the local development bypass when NODE_ENV is development", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("TURNSTILE_BYPASS", "true");
+    const fetchMock = stubSiteverify({ success: false });
+
+    await expect(
+      verifyTurnstileDetailed("any-token", "203.0.113.10"),
+    ).resolves.toEqual({ status: "verified" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("fails closed without calling Cloudflare when TURNSTILE_SECRET_KEY is missing", async () => {
     vi.stubEnv("TURNSTILE_SECRET_KEY", undefined);
     const fetchMock = stubSiteverify({
