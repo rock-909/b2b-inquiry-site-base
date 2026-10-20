@@ -179,6 +179,6 @@ describe("CI workflow contract", () => {
     // 「only」是契约的一半：规则必须命中 lead writer，且不得外溢到其他文件。
     expect(includes).toEqual(["src/app/api/inquiry/route.ts"]);
     // 路由被移动或改名后，规则会静默指向不存在的文件；Semgrep 不会因此报错。
-    expect(existsSync("src/app/api/inquiry/route.ts")).toBe(true);
+    expect(existsSync("src/app/api/inquiry/route.ts")).toBe(true); // nosemgrep: test-no-file-existence-assertion -- 校验 Semgrep 规则路径指向真实文件，规则本身不会对不存在的路径报错。
   });
 });
