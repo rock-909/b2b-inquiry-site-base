@@ -25,7 +25,7 @@ function LinkifiedText({ text }: InlineMarkdownProps): ReactNode {
       <Link
         key={`link-${index}`}
         href={href}
-        className="text-[var(--primary-text)] font-medium underline underline-offset-4 hover:no-underline"
+        className="text-link"
       >
         {label}
       </Link>,

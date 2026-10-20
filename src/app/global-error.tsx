@@ -71,7 +71,7 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
               {/* 根布局已经失败，用整页跳转而不是客户端路由。 */}
               <a
                 href={HOME_HREF}
-                className="inline-flex h-[38px] w-full shrink-0 items-center justify-center rounded-[6px] border-2 border-[var(--button-primary-bg)] bg-transparent px-5 py-2.5 text-sm font-semibold text-[var(--primary-text)] transition-colors duration-150 hover:bg-[color-mix(in_oklch,var(--button-primary-bg)_10%,transparent)]"
+                className="inline-flex h-[38px] w-full shrink-0 items-center justify-center rounded-[6px] border-2 border-[var(--button-outline-border)] bg-transparent px-5 py-2.5 text-sm font-semibold text-[var(--button-outline-fg)] transition-colors duration-150 hover:bg-[var(--button-outline-hover-bg)]"
                 data-testid="go-home-button"
               >
                 {translations.goHome}

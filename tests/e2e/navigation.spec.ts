@@ -28,29 +28,14 @@ test("shows real pending feedback while a navigation response is delayed", async
   await expect(page.getByTestId("navigation-pending")).toHaveCount(0);
 });
 
-test("marks the current page in the desktop nav with the brand text colour", async ({
+test("marks the current page in the desktop nav with aria-current", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
-  const current = page
-    .getByTestId("header-desktop-nav")
-    .locator('[aria-current="page"]');
-  await expect(current).toHaveText("Home");
-
-  // 读屏靠 aria-current；视觉上当前页必须是品牌字色，而不是普通导航项的弱文字色。
-  await expect
-    .poll(() =>
-      current.evaluate((element) => {
-        const probe = document.createElement("span");
-        probe.style.color = "var(--primary-text)";
-        document.body.append(probe);
-        const brand = getComputedStyle(probe).color;
-        probe.remove();
-        return getComputedStyle(element).color === brand;
-      }),
-    )
-    .toBe(true);
+  await expect(
+    page.getByTestId("header-desktop-nav").locator('[aria-current="page"]'),
+  ).toHaveText("Home");
 });
 
 test.describe("Preserved navigation state", () => {

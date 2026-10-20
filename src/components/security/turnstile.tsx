@@ -109,7 +109,7 @@ function TurnstileRescueStatus({
         <p className="mt-1 text-sm leading-6 text-muted-foreground">
           {labels.rescueBeforeEmail}{" "}
           <a
-            className="font-medium text-[var(--primary-text)] underline underline-offset-4 hover:no-underline"
+            className="text-link"
             href={`mailto:${labels.rescueEmail}?subject=${encodeURIComponent(labels.rescueSubject)}`}
           >
             {labels.rescueEmail}

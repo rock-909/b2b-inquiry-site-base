@@ -227,6 +227,11 @@
     @apply text-base leading-relaxed;
   }
 
+  /* 正文链接：正文黑字 + 常驻灰下划线（下划线是非颜色提示），悬停下划线变黑。 */
+  .text-link {
+    @apply font-medium text-foreground underline decoration-muted-foreground/70 underline-offset-4 transition-colors duration-150 ease-out hover:decoration-foreground;
+  }
+
   footer {
     padding-bottom: var(--cookie-banner-height, 0px);
   }

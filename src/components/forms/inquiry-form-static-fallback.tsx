@@ -16,10 +16,7 @@ export function InquiryFormStaticFallback({ copy }: { copy: InquiryFormCopy }) {
       {publicEmail ? (
         <p className="mt-4 text-sm leading-6 text-foreground">
           {copy.noJsEmailPrefix}{" "}
-          <a
-            className="font-medium underline underline-offset-4 hover:no-underline"
-            href={`mailto:${publicEmail}`}
-          >
+          <a className="text-link" href={`mailto:${publicEmail}`}>
             {publicEmail}
           </a>
         </p>
