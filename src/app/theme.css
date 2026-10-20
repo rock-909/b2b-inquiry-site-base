@@ -9,49 +9,58 @@
 :root {
   color-scheme: light;
 
-  /* Visual materials: components consume the semantic roles below. */
-  --brand-soft: oklch(0.9392 0.0166 250.8453);
-  --brand-border: oklch(0.75 0.12 245);
-  --brand-focus: oklch(0.58 0.15 245);
-  --brand-focus-strong: oklch(0.58 0.15 245);
-  --brand-solid: oklch(0.6723 0.1606 244.9955);
-  --brand-text: oklch(0.45 0.12 245);
-  --brand-action: oklch(0.45 0.12 245);
-  --brand-action-hover: oklch(0.3 0.08 245);
+  /*
+   * Visual materials: Radix-style 12-step scales (https://www.radix-ui.com/colors/docs/palette-composition/understanding-the-scale).
+   * Steps 1-2 backgrounds, 3-5 component backgrounds, 6-8 borders, 9-10 solid
+   * fills, 11-12 text. To recolor, paste generated light and dark scales here.
+   */
+  --brand-1: oklch(0.99 0.006 245);
+  --brand-2: oklch(0.97 0.012 248);
+  --brand-3: oklch(0.9392 0.0166 250.8453);
+  --brand-4: oklch(0.91 0.04 247);
+  --brand-5: oklch(0.87 0.065 246);
+  --brand-6: oklch(0.82 0.09 245);
+  --brand-7: oklch(0.75 0.12 245);
+  --brand-8: oklch(0.7 0.14 245);
+  --brand-9: oklch(0.6723 0.1606 244.9955);
+  --brand-10: oklch(0.62 0.155 245);
+  --brand-11: oklch(0.45 0.12 245);
+  --brand-12: oklch(0.3 0.08 245);
 
-  --neutral-canvas: oklch(1 0 0);
-  --neutral-surface: oklch(0.98 0 0);
-  --neutral-muted: oklch(0.93 0 0);
-  --neutral-border-light: oklch(0.94 0 0);
-  --neutral-border: oklch(0.92 0 0);
-  --neutral-control-border: oklch(0.5637 0.0078 247.9662);
-  --neutral-text-muted: oklch(0.446 0.012 250);
-  --neutral-text: oklch(0.1884 0.0128 248.5103);
-  --neutral-text-subtle: oklch(0.373 0.012 250);
-  --neutral-heading-subtle: oklch(0.278 0.01 250);
+  --neutral-1: oklch(1 0 0);
+  --neutral-2: oklch(0.98 0 0);
+  --neutral-3: oklch(0.955 0 0);
+  --neutral-4: oklch(0.93 0 0);
+  --neutral-5: oklch(0.925 0 0);
+  --neutral-6: oklch(0.92 0 0);
+  --neutral-7: oklch(0.85 0.004 248);
+  --neutral-8: oklch(0.72 0.006 248);
+  --neutral-9: oklch(0.5637 0.0078 247.9662);
+  --neutral-10: oklch(0.5 0.01 249);
+  --neutral-11: oklch(0.446 0.012 250);
+  --neutral-12: oklch(0.1884 0.0128 248.5103);
 
-  /* Semantic color roles. */
-  --background: var(--neutral-canvas);
-  --foreground: var(--neutral-text);
-  --card: var(--neutral-surface);
-  --card-foreground: var(--neutral-text);
-  --popover: var(--neutral-canvas);
-  --popover-foreground: var(--neutral-text);
-  --primary: var(--brand-solid);
-  --primary-foreground: var(--neutral-canvas);
-  --primary-hover: var(--brand-action-hover);
-  --primary-text: var(--brand-text);
-  --secondary: var(--neutral-text);
-  --secondary-foreground: var(--neutral-canvas);
-  --accent: var(--brand-soft);
-  --accent-foreground: var(--brand-text);
-  --muted: var(--neutral-muted);
-  --muted-foreground: var(--neutral-text-muted);
-  --border: var(--neutral-border);
-  --border-light: var(--neutral-border-light);
-  --input: var(--neutral-control-border);
-  --ring: var(--brand-focus);
-  --divider: var(--neutral-border);
+  /* Semantic color roles: the same step mapping serves light and dark. */
+  --background: var(--neutral-1);
+  --foreground: var(--neutral-12);
+  --card: var(--neutral-2);
+  --card-foreground: var(--neutral-12);
+  --popover: var(--neutral-1);
+  --popover-foreground: var(--neutral-12);
+  --primary: var(--brand-9);
+  --primary-foreground: var(--neutral-1);
+  --primary-hover: var(--brand-12);
+  --primary-text: var(--brand-11);
+  --secondary: var(--neutral-12);
+  --secondary-foreground: var(--neutral-1);
+  --accent: var(--brand-3);
+  --accent-foreground: var(--brand-12);
+  --muted: var(--neutral-4);
+  --muted-foreground: var(--neutral-11);
+  --border: var(--neutral-6);
+  /* Input borders and focus rings sit on steps 9 and 11, not Radix's 7-8, to keep 3:1 non-text contrast. */
+  --input: var(--neutral-9);
+  --ring: var(--brand-11);
 
   --success: oklch(0.56 0.13 155);
   --success-muted: oklch(0.965 0.025 155);
@@ -66,19 +75,19 @@
   --error-border: oklch(0.86 0.065 27);
   --error-foreground: oklch(0.35 0.13 27);
   --info: var(--primary);
-  --info-muted: var(--brand-soft);
-  --info-border: var(--brand-border);
-  --info-foreground: var(--brand-text);
+  --info-muted: var(--brand-3);
+  --info-border: var(--brand-7);
+  --info-foreground: var(--brand-12);
   --destructive: var(--error);
-  --destructive-foreground: var(--neutral-canvas);
+  --destructive-foreground: var(--neutral-1);
 
   /* Region-specific roles that do not map cleanly to general surfaces. */
-  --footer-bg: var(--neutral-canvas);
-  --footer-text: var(--neutral-text-subtle);
-  --footer-heading: var(--neutral-heading-subtle);
-  --footer-divider: color-mix(in oklch, var(--neutral-text) 10%, transparent);
-  --grid-guide: color-mix(in oklch, var(--neutral-text) 6%, transparent);
-  /* 遮罩两个主题都用固定的半透明深色；不要由 --neutral-text 派生（深色主题下会变白）。 */
+  --footer-bg: var(--neutral-1);
+  --footer-text: var(--neutral-11);
+  --footer-heading: var(--neutral-12);
+  --footer-divider: color-mix(in oklch, var(--neutral-12) 10%, transparent);
+  --grid-guide: color-mix(in oklch, var(--neutral-12) 6%, transparent);
+  /* 遮罩两个主题都用固定的半透明深色；不要由 --neutral-12 派生（深色主题下会变白）。 */
   --overlay-scrim: oklch(0 0 0 / 0.5);
 
   /* Global visual feel. */
@@ -110,7 +119,8 @@
   --button-radius: var(--control-radius);
   --button-height-sm: var(--control-height-sm);
   --button-height-default: var(--control-height);
-  --button-primary-bg: var(--brand-action);
+  /* Buttons use steps 11-12 rather than 9-10 so the step-1 label keeps 4.5:1. */
+  --button-primary-bg: var(--brand-11);
   --button-primary-fg: var(--primary-foreground);
   --button-primary-hover-bg: var(--primary-hover);
   --button-outline-fg: var(--primary-text);
@@ -126,29 +136,31 @@
 .dark {
   color-scheme: dark;
 
-  --brand-soft: oklch(0.1928 0.0331 242.5459);
-  --brand-border: oklch(0.4 0.08 245);
-  --brand-focus: oklch(0.6818 0.1584 243.354);
-  --brand-focus-strong: oklch(0.58 0.14 245);
-  --brand-solid: oklch(0.6692 0.1607 245.011);
-  --brand-text: oklch(0.78 0.08 245);
-  --brand-action: oklch(0.78 0.08 245);
-  --brand-action-hover: oklch(0.9 0.04 245);
+  --brand-1: oklch(0.15 0.015 245);
+  --brand-2: oklch(0.17 0.025 244);
+  --brand-3: oklch(0.1928 0.0331 242.5459);
+  --brand-4: oklch(0.24 0.05 245);
+  --brand-5: oklch(0.29 0.065 245);
+  --brand-6: oklch(0.34 0.075 245);
+  --brand-7: oklch(0.4 0.08 245);
+  --brand-8: oklch(0.5 0.12 245);
+  --brand-9: oklch(0.6692 0.1607 245.011);
+  --brand-10: oklch(0.72 0.14 245);
+  --brand-11: oklch(0.78 0.08 245);
+  --brand-12: oklch(0.9 0.04 245);
 
-  --neutral-canvas: oklch(0 0 0);
-  --neutral-surface: oklch(0.2097 0.008 274.5332);
-  --neutral-muted: oklch(0.209 0 0);
-  --neutral-border-light: oklch(0.2674 0.0047 248.0045);
-  --neutral-border: oklch(0.2674 0.0047 248.0045);
-  --neutral-control-border: oklch(0.5637 0.0078 247.9662);
-  --neutral-text-muted: oklch(0.64 0.008 248);
-  --neutral-text: oklch(0.9328 0.0025 228.7857);
-  --neutral-text-subtle: oklch(0.74 0.006 248);
-  --neutral-heading-subtle: oklch(0.84 0.004 248);
-
-  --card-foreground: oklch(0.8853 0 0);
-  --secondary: oklch(0.9622 0.0035 219.5331);
-  --secondary-foreground: oklch(0.1884 0.0128 248.5103);
+  --neutral-1: oklch(0 0 0);
+  --neutral-2: oklch(0.2097 0.008 274.5332);
+  --neutral-3: oklch(0.225 0.006 260);
+  --neutral-4: oklch(0.24 0.005 255);
+  --neutral-5: oklch(0.255 0.005 250);
+  --neutral-6: oklch(0.2674 0.0047 248.0045);
+  --neutral-7: oklch(0.33 0.006 248);
+  --neutral-8: oklch(0.45 0.007 248);
+  --neutral-9: oklch(0.5637 0.0078 247.9662);
+  --neutral-10: oklch(0.6 0.008 248);
+  --neutral-11: oklch(0.64 0.008 248);
+  --neutral-12: oklch(0.9328 0.0025 228.7857);
 
   --success-muted: oklch(0.22 0.03 155);
   --success-border: oklch(0.34 0.05 155);
@@ -160,12 +172,12 @@
   --error-border: oklch(0.36 0.08 27);
   --error-foreground: oklch(0.84 0.1 27);
 
-  --footer-bg: var(--neutral-surface);
+  --footer-bg: var(--neutral-2);
 }
 
 @media (prefers-contrast: more) {
   :root {
-    --border: var(--neutral-control-border);
-    --ring: var(--brand-focus-strong);
+    --border: var(--neutral-9);
+    --ring: var(--brand-12);
   }
 }
