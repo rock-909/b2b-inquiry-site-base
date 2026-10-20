@@ -77,5 +77,30 @@ describe("single-site", () => {
         company: { name: "Acme", established: 9999 },
       }),
     ).toThrow(/established/u);
+    const logo = {
+      status: "ready",
+      horizontal: "/logo.svg",
+      width: 240,
+      height: 72,
+    };
+    const withLogo = (overrides: object) => ({
+      ...SINGLE_SITE_CONFIG,
+      brandAssets: {
+        ...SINGLE_SITE_CONFIG.brandAssets,
+        logo: { ...logo, ...overrides },
+      },
+    });
+    expect(() => assertValidSiteConfig(withLogo({}))).not.toThrow();
+    expect(() =>
+      assertValidSiteConfig(withLogo({ status: "pending" })),
+    ).not.toThrow();
+    expect(() =>
+      assertValidSiteConfig(
+        withLogo({ horizontal: "//evil.example/logo.svg" }),
+      ),
+    ).toThrow(/horizontal/u);
+    expect(() => assertValidSiteConfig(withLogo({ width: 0 }))).toThrow(
+      /width/u,
+    );
   });
 });

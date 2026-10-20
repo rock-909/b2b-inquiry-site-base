@@ -1,4 +1,5 @@
 import {
+  discriminatedUnion,
   email,
   literal,
   number,
@@ -25,6 +26,16 @@ const phone = string()
   .regex(/^\+?[\d\s().-]{7,25}$/u, "must be a phone number")
   .refine((value) => (value.match(/\d/gu) ?? []).length >= 7, "too few digits");
 
+const readyLogo = object({
+  status: literal("ready"),
+  horizontal: string().regex(
+    /^\/(?!\/)[^\s\\]+$/u,
+    "must be a root-relative path",
+  ),
+  width: number().int().positive(),
+  height: number().int().positive(),
+});
+
 const siteIdentitySchema = object({
   company: object({
     established: number()
@@ -40,6 +51,12 @@ const siteIdentitySchema = object({
   social: object({
     linkedin: blankOr(httpsUrl),
     twitter: blankOr(httpsUrl),
+  }),
+  brandAssets: object({
+    logo: discriminatedUnion("status", [
+      readyLogo,
+      object({ status: literal("pending") }),
+    ]).optional(),
   }),
 });
 
