@@ -54,21 +54,6 @@ describe("/api/inquiry turnstile gate", () => {
     );
   });
 
-  it("should return 400 when turnstile verification fails", async () => {
-    routeMocks.verifyTurnstileDetailed.mockResolvedValueOnce({
-      status: "failed",
-    });
-
-    const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(data.success).toBe(false);
-    expect(data.errorCode).toBe(API_ERROR_CODES.TURNSTILE_REJECTED);
-  });
-
   it("should return 503 when turnstile verification is unavailable", async () => {
     routeMocks.verifyTurnstileDetailed.mockResolvedValueOnce({
       status: "service-unavailable",

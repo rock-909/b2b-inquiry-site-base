@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import os from "node:os";
@@ -520,6 +521,45 @@ describe("Cloudflare config source contract", () => {
         [],
       );
     });
+  });
+
+  // release:verify 第一步只看退出码，所以要从真实 CLI 入口证明失败会变成非零退出。
+  it.each([
+    { name: "valid config", r2: false, status: 0 },
+    { name: "R2 binding in wrangler.jsonc", r2: true, status: 1 },
+  ])("exits $status from the CLI for $name", ({ r2, status }) => {
+    const rootDir = createFixture();
+    writePassingSideFiles(rootDir);
+    writePassingWranglerConfig(rootDir);
+    if (r2) {
+      writeFixtureFile(
+        rootDir,
+        "wrangler.jsonc",
+        [
+          "{",
+          '  "main": ".open-next/worker.js",',
+          '  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],',
+          '  "assets": { "binding": "ASSETS" },',
+          '  "r2_buckets": [{ "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "cache" }],',
+          '  "env": {',
+          '    "preview": { "vars": { "APP_ENV": "preview" } },',
+          '    "production": { "vars": { "APP_ENV": "production" } }',
+          "  }",
+          "}",
+        ].join("\n"),
+      );
+    }
+
+    const result = spawnSync(process.execPath, [SCRIPT_PATH], {
+      cwd: rootDir,
+      encoding: "utf8",
+      timeout: 30_000,
+    });
+
+    expect(result.status).toBe(status);
+    if (status !== 0) {
+      expect(result.stderr).toContain("cloudflare-config-check: failed");
+    }
   });
 
   it("passes against the real repository configuration", () => {

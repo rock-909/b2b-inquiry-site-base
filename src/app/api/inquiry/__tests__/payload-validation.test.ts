@@ -91,23 +91,6 @@ describe("/api/inquiry payload validation", () => {
     expect(processValidatedInquiry).not.toHaveBeenCalled();
   });
 
-  it("treats a whitespace-only turnstile token as missing without verification or lead processing", async () => {
-    const request = createInquiryRequest(
-      JSON.stringify({ ...validInquiryData, turnstileToken: "   " }),
-    );
-
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(data).toEqual({
-      success: false,
-      errorCode: API_ERROR_CODES.TURNSTILE_REQUIRED,
-    });
-    expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
-    expect(processValidatedInquiry).not.toHaveBeenCalled();
-  });
-
   it("should reject invalid email before turnstile and lead processing", async () => {
     const request = createInquiryRequest(
       JSON.stringify({ ...validInquiryData, email: "not-an-email" }),

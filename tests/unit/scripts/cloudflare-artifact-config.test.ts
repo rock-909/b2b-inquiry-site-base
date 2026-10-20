@@ -95,16 +95,23 @@ describe("Cloudflare artifact config proof", () => {
     );
   });
 
-  it("rejects non-canonical generated config", () => {
+  // 每行只坏一个字段，证明两项检查各自生效。
+  it.each([
+    [
+      { productionBrowserSourceMaps: true, images: { unoptimized: true } },
+      "productionBrowserSourceMaps must be false",
+    ],
+    [
+      { productionBrowserSourceMaps: false, images: { unoptimized: false } },
+      "images.unoptimized must be true",
+    ],
+  ])("rejects non-canonical generated config %j", (config, message) => {
     const rootDir = createFixture();
     writeValidArtifacts(rootDir);
-    writeArtifact(rootDir, ".next/required-server-files.json", {
-      productionBrowserSourceMaps: true,
-      images: { unoptimized: false },
-    });
+    writeArtifact(rootDir, ".next/required-server-files.json", config);
 
     expect(() => loadChecker().verifyCloudflareArtifactConfig(rootDir)).toThrow(
-      "productionBrowserSourceMaps must be false",
+      message,
     );
   });
 
@@ -205,26 +212,6 @@ describe("Cloudflare artifact config proof", () => {
       expect(() =>
         loadChecker().verifyStaticAssetsCachePopulated(rootDir),
       ).toThrow("missing 1 of 1 prerendered cache entries");
-    });
-
-    it("accepts a populated target with identical non-empty content", () => {
-      const rootDir = createFixture();
-      writeCacheFile(
-        rootDir,
-        BUILD_CACHE,
-        "build-id/index.cache",
-        '{"page":1}',
-      );
-      writeCacheFile(
-        rootDir,
-        STATIC_ASSETS_CACHE,
-        "build-id/index.cache",
-        '{"page":1}',
-      );
-
-      expect(loadChecker().verifyStaticAssetsCachePopulated(rootDir)).toEqual([
-        "build-id/index.cache",
-      ]);
     });
 
     it("rejects a build with no prerendered cache entries", () => {

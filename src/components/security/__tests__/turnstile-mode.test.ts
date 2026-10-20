@@ -50,8 +50,10 @@ describe("resolveTurnstileWidgetMode", () => {
 
   it("rejects test mode when the deployment label claims production", () => {
     expect(
-      resolveTurnstileWidgetMode(input({ testModeEnabled: true })),
-    ).not.toBe("test");
+      resolveTurnstileWidgetMode(
+        input({ testModeEnabled: true, isProductionBuild: false }),
+      ),
+    ).toBe("live");
   });
 
   it("falls back to live only with a site key", () => {

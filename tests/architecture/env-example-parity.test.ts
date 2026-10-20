@@ -6,20 +6,6 @@ const ENV_SOURCE_PATH = "src/lib/env.ts";
 const ENV_EXAMPLE_PATH = ".env.example";
 const SENSITIVE_ENV_KEY_PATTERN =
   /(?:_API_KEY|_TOKEN|_SECRET(?:_KEY)?|_ACCESS_KEY|_ENCRYPTION_KEY|_PEPPER(?:_PREVIOUS)?)$/u;
-const SENSITIVE_ENV_KEYS = [
-  "RESEND_API_KEY",
-  "AIRTABLE_API_KEY",
-  "TURNSTILE_SECRET_KEY",
-  "CLOUDFLARE_API_TOKEN",
-  "RATE_LIMIT_PEPPER",
-  "UPSTASH_REDIS_REST_TOKEN",
-] as const;
-// This is the adopter-facing deployment surface, not inferred from secret-like names.
-const DEPLOYMENT_CRITICAL_ENV_KEYS = [
-  "CLOUDFLARE_ACCOUNT_ID",
-  "CLOUDFLARE_API_TOKEN",
-  "DEPLOYMENT_PLATFORM",
-] as const;
 const NON_RUNTIME_EXAMPLE_ENV_KEYS = new Set([
   "CLOUDFLARE_ACCOUNT_ID",
   "CLOUDFLARE_API_TOKEN",
@@ -182,12 +168,6 @@ function parseEnvExample(source: string) {
   return values;
 }
 
-function getDiscoveredSensitiveEnvKeys(envExample: Map<string, string>) {
-  return [...envExample.keys()].filter((key) =>
-    SENSITIVE_ENV_KEY_PATTERN.test(key),
-  );
-}
-
 function sortedStrings(values: Iterable<string>) {
   return Array.from(values).sort();
 }
@@ -231,12 +211,14 @@ describe(".env.example parity", () => {
     expect(unknownExampleKeys).toEqual([]);
     expect(envExample.get("CLOUDFLARE_API_TOKEN")).toBeDefined();
     expect(schemaKeys.has("CLOUDFLARE_API_TOKEN")).toBe(false);
+    // Wrangler 与 CI 部署需要它，但它不是运行时 schema key，上面的对齐检查看不到。
+    expect(envExample.has("CLOUDFLARE_ACCOUNT_ID")).toBe(true);
   });
 
   // public-runtime-env 的 allowlist 是客户端读 env 的唯一合法入口。它每多一个
-  // key 就绕过一次中心 schema 的登记，而上面的扫描根恰好不含 src/，这条漂移
-  // 只有这里能看见。只守「allowlist 的读取都有登记」这一个方向：反向（schema
-  // 每个 key 都要进 allowlist）不是已证明的契约，不做。
+  // key 就绕过一次中心 schema 的登记，这条漂移只有这里能看见。只守「allowlist
+  // 的读取都有登记」这一个方向：反向（schema 每个 key 都要进 allowlist）不是
+  // 已证明的契约，不做。
   it("keeps public runtime allowlist reads registered in the client env schema", () => {
     const allowlistKeys = extractObjectLiteralKeys(
       readRepoFile(PUBLIC_RUNTIME_ENV_SOURCE_PATH),
@@ -271,39 +253,20 @@ describe(".env.example parity", () => {
     expect(sortedStrings(unregistered)).toEqual([]);
   });
 
-  it("keeps all sensitive keys in the env example and server-only", () => {
+  // 密钥形状的 key 一旦以 NEXT_PUBLIC_ 开头就会被打进浏览器 bundle。
+  it("keeps secret-shaped keys out of the public env surface", () => {
     const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-    const sensitiveEnvKeys = sortedStrings(
-      new Set([
-        ...SENSITIVE_ENV_KEYS,
-        ...getDiscoveredSensitiveEnvKeys(envExample),
-      ]),
+    const clientSchemaKeys = extractObjectLiteralKeys(
+      readRepoFile(ENV_SOURCE_PATH),
+      "clientEnvSchema",
     );
-    const publicSensitiveKeys = [...envExample.keys()].filter(
-      (key) =>
-        key.startsWith("NEXT_PUBLIC_") && SENSITIVE_ENV_KEY_PATTERN.test(key),
+    const publicSensitiveKeys = new Set(
+      [...envExample.keys(), ...clientSchemaKeys].filter(
+        (key) =>
+          key.startsWith("NEXT_PUBLIC_") && SENSITIVE_ENV_KEY_PATTERN.test(key),
+      ),
     );
 
-    expect(publicSensitiveKeys).toEqual([]);
-
-    for (const key of sensitiveEnvKeys) {
-      expect(envExample.has(key), `${key} should remain in .env.example`).toBe(
-        true,
-      );
-      expect(
-        key.startsWith("NEXT_PUBLIC_"),
-        `${key} must stay server-only and must not be public`,
-      ).toBe(false);
-    }
-  });
-
-  it("keeps deployment-critical keys in the env example", () => {
-    const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-
-    for (const key of DEPLOYMENT_CRITICAL_ENV_KEYS) {
-      expect(envExample.has(key), `${key} should remain in .env.example`).toBe(
-        true,
-      );
-    }
+    expect(sortedStrings(publicSensitiveKeys)).toEqual([]);
   });
 });

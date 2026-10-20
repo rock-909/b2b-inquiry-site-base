@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { routing } from "@/i18n/routing";
+import { getFlatMessages } from "@/test/i18n-messages";
 import CatchAllNotFound, {
   generateMetadata,
   generateStaticParams,
@@ -36,11 +37,17 @@ describe("CatchAllNotFound", () => {
   });
 
   it("titles the 404 page as not found instead of inheriting the home title", async () => {
+    // 有第二语言时用它，证明标题按请求语言取文案；否则退回默认语言。
+    const locale =
+      routing.locales.find((entry) => entry !== routing.defaultLocale) ??
+      routing.defaultLocale;
     const metadata = await generateMetadata({
-      params: Promise.resolve({ locale: "es" }),
+      params: Promise.resolve({ locale }),
     });
 
-    expect(metadata.title).toBe("Página no encontrada");
+    expect(metadata.title).toBe(
+      getFlatMessages(locale).get("errors.notFound.title"),
+    );
     expect(metadata.robots).toEqual({ index: false, follow: false });
   });
 });

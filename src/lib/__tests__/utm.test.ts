@@ -26,14 +26,18 @@ describe("UTM attribution", () => {
   });
 
   it("captures sanitized UTM values and ignores click ids", () => {
+    const longTerm = "a".repeat(300);
     window.history.replaceState(
       {},
       "",
-      "/quote?utm_source=google&utm_campaign=spring&gclid=unused",
+      `/quote?utm_source=google&utm_campaign=spring&gclid=unused` +
+        `&utm_medium=%3Cscript%3E&utm_content=ad%07copy&utm_term=${longTerm}`,
     );
+    // HTML 分隔符和控制字符整项丢弃，超长值截到 256 字符。
     expect(captureUtmParams()).toEqual({
       utmSource: "google",
       utmCampaign: "spring",
+      utmTerm: "a".repeat(256),
     });
   });
 

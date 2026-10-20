@@ -114,17 +114,6 @@ describe("ContactPage static content", () => {
     },
   );
 
-  it("builds contact metadata from the static content manifest", async () => {
-    const enMetadata = await generateMetadata({
-      params: Promise.resolve({ locale: "en" }),
-    });
-
-    expect(enMetadata.title).toBe(contactContent.metadata.seo.title);
-    expect(enMetadata.description).toBe(
-      contactContent.metadata.seo.description,
-    );
-  });
-
   it("generates runtime SEO metadata for the actual localized contact route", async () => {
     vi.stubEnv("APP_ENV", "production");
 
@@ -132,6 +121,8 @@ describe("ContactPage static content", () => {
       params: Promise.resolve({ locale: "en" }),
     });
 
+    expect(metadata.title).toBe(contactContent.metadata.seo.title);
+    expect(metadata.description).toBe(contactContent.metadata.seo.description);
     expect(metadata.alternates).toEqual(
       expect.objectContaining({
         canonical: "https://example.com/contact",

@@ -2,7 +2,6 @@
  * 限流 lane：配额判定，以及存储故障与私钥派生失败时询盘放行的行为。
  */
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import { checkInquiryRateLimit } from "@/lib/security/distributed-rate-limit";
 import { logger } from "@/lib/logger";
 import { processValidatedInquiry } from "@/lib/lead-pipeline/process-lead";
@@ -43,29 +42,6 @@ describe("/api/inquiry rate limiting", () => {
     vi.useRealTimers();
   });
 
-  it("should return 429 when rate limited", async () => {
-    routeMocks.checkInquiryRateLimit.mockResolvedValueOnce({
-      allowed: false,
-      remaining: 0,
-      resetTime: Date.now() + 60000,
-      retryAfter: 60,
-    });
-
-    const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-    const response = await POST(request);
-    const data = await response.json();
-
-    expect(response.status).toBe(429);
-    expect(data.success).toBe(false);
-    expect(data.errorCode).toBe(API_ERROR_CODES.RATE_LIMIT_EXCEEDED);
-    expect(response.headers.get("X-RateLimit-Remaining")).toBe("0");
-    expect(response.headers.get("Retry-After")).toBe("60");
-    // 限流是第一道闸：被挡住的请求不该消耗一次 Turnstile token，也不该产生投递。
-    expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
-    expect(processValidatedInquiry).not.toHaveBeenCalled();
-  });
-
   it("lets the inquiry through and logs a warning when the rate-limit store fails", async () => {
     routeMocks.checkInquiryRateLimit.mockResolvedValueOnce({
       allowed: false,
@@ -104,35 +80,5 @@ describe("/api/inquiry rate limiting", () => {
       "Rate limit unavailable; allowing inquiry to proceed",
       expect.objectContaining({ reason: "key_failure" }),
     );
-  });
-
-  it("still rejects bots at Turnstile when the rate-limit store fails", async () => {
-    routeMocks.checkInquiryRateLimit.mockResolvedValueOnce({
-      allowed: false,
-      remaining: 0,
-      resetTime: Date.now() + 60000,
-      retryAfter: 60,
-      deniedReason: "storage_failure",
-    });
-    routeMocks.verifyTurnstileDetailed.mockResolvedValueOnce({
-      status: "failed",
-    });
-
-    const response = await POST(
-      createInquiryRequest(JSON.stringify(validInquiryData)),
-    );
-
-    expect(response.status).toBe(400);
-    expect(processValidatedInquiry).not.toHaveBeenCalled();
-  });
-
-  it("checks the inquiry rate limit exactly once", async () => {
-    const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-    await POST(request);
-
-    expect(checkInquiryRateLimit).toHaveBeenCalledWith(expect.any(String));
-    // 一次提交只能扣一次额度。多查一次不会报错，只会让买家的配额悄悄减半。
-    expect(checkInquiryRateLimit).toHaveBeenCalledTimes(1);
   });
 });

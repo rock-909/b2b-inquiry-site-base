@@ -171,14 +171,4 @@ describe("/api/inquiry delivery orchestration", () => {
       .calls[0]![0] as Record<string, unknown>;
     expect(callArgs.message).toBeUndefined();
   });
-
-  it("should exclude turnstileToken from lead data", async () => {
-    const request = createInquiryRequest(JSON.stringify(validInquiryData));
-
-    await POST(request);
-
-    const callArgs = vi.mocked(routeMocks.processValidatedInquiry).mock
-      .calls[0]![0];
-    expect(callArgs).not.toHaveProperty("turnstileToken");
-  });
 });

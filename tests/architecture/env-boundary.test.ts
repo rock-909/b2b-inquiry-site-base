@@ -11,7 +11,6 @@ describe("public env runtime boundary", () => {
     "TURNSTILE_SECRET_KEY",
     "RATE_LIMIT_PEPPER",
     "UPSTASH_REDIS_REST_TOKEN",
-    "NEXT_PUBLIC_CSP_NONCE",
   ])("rejects %s at the public runtime boundary", (key) => {
     expect(() => getPublicRuntimeEnvString(key as PublicRuntimeEnvKey)).toThrow(
       "not on the public runtime allowlist",

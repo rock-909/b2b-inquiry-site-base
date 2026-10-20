@@ -44,16 +44,14 @@ function requireStep(predicate: (step: WorkflowStep) => boolean): WorkflowStep {
 }
 
 describe("weekly dependency audit workflow", () => {
-  it("runs the production audit every Monday with the required permissions", () => {
-    expect(workflow.on?.schedule).toEqual([{ cron: "0 9 * * 1" }]);
+  it("runs the production audit on a schedule with least-privilege permissions", () => {
+    // 具体 cron 和并发组名是派生站可改的模板值，不是契约。
+    expect(workflow.on?.schedule?.[0]?.cron).toEqual(expect.any(String));
     expect(workflow.permissions).toEqual({
       contents: "read",
       issues: "write",
     });
-    expect(workflow.concurrency).toEqual({
-      group: "weekly-production-dependency-audit",
-      "cancel-in-progress": false,
-    });
+    expect(workflow.concurrency?.["cancel-in-progress"]).toBe(false);
   });
 
   it("gates the issue and the failing exit on the audit outcome, in order", () => {

@@ -133,12 +133,18 @@ describe("GlobalError", () => {
 
   describe("production mode", () => {
     it("should not show error details when NODE_ENV is production", () => {
-      // Note: We can't easily change NODE_ENV at runtime in tests
-      // This test verifies the component renders correctly
-      renderGlobalError();
+      vi.stubEnv("NODE_ENV", "production");
+      const errorWithStack = new Error("Secret production failure");
+      errorWithStack.stack = "Error: Secret production failure\n    at hidden";
 
-      // The heading should always be visible
+      renderGlobalError(errorWithStack);
+
       expect(screen.getByText("Something went wrong!")).toBeInTheDocument();
+      expect(
+        screen.queryByText("Error Details (Development Only)"),
+      ).not.toBeInTheDocument();
+      expect(document.body).not.toHaveTextContent("Secret production failure");
+      expect(document.body).not.toHaveTextContent("at hidden");
     });
   });
 });

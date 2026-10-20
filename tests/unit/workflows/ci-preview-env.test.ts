@@ -64,7 +64,8 @@ describe("CI preview environment contract", () => {
     expect(testStep?.run?.trim()).toBe("pnpm exec playwright test");
   });
 
-  it("keeps the client-boundary proof immediately after the isolated analysis build", () => {
+  // 契约是顺序：两项证明读取带 sourcemap 的分析构建，必须在它之后、OpenNext 构建覆盖 .next 之前。
+  it("runs the client-boundary and prerender proofs between the analysis build and the OpenNext build", () => {
     const workflow = readCiWorkflow();
     const cloudflareBuildSteps =
       workflow.jobs?.["cloudflare-build"]?.steps ?? [];
@@ -87,12 +88,17 @@ describe("CI preview environment contract", () => {
     const prerenderStep = cloudflareBuildSteps[prerenderStepIndex];
 
     expect(analysisStep?.env?.DEPLOYMENT_PLATFORM).toBeUndefined();
-    expect(clientBoundaryStepIndex).toBe(analysisStepIndex + 1);
-    expect(prerenderStepIndex).toBe(clientBoundaryStepIndex + 1);
+    expect(analysisStepIndex).toBeGreaterThan(-1);
+    for (const proofStepIndex of [
+      clientBoundaryStepIndex,
+      prerenderStepIndex,
+    ]) {
+      expect(proofStepIndex).toBeGreaterThan(analysisStepIndex);
+      expect(proofStepIndex).toBeLessThan(cloudflareBuildStepIndex);
+    }
     expect(prerenderStep?.env?.NEXT_PUBLIC_SITE_URL).toBe(
       analysisStep?.env?.NEXT_PUBLIC_SITE_URL,
     );
-    expect(prerenderStepIndex).toBeLessThan(cloudflareBuildStepIndex);
   });
 
   it("runs canonical Cloudflare build proof against a public preview URL", () => {
@@ -131,12 +137,10 @@ describe("CI preview environment contract", () => {
         candidate.run ===
         "node scripts/quality/checks/cloudflare-artifact-config.js",
     );
-    const artifactProof = cloudflareBuildSteps[artifactProofStepIndex]?.run;
 
-    expect(artifactProofStepIndex).toBe(cloudflareBuildStepIndex + 1);
-    expect(artifactProof).toBe(
-      "node scripts/quality/checks/cloudflare-artifact-config.js",
-    );
+    // 证明必须读新鲜产物：排在 OpenNext 构建之后即可，不要求紧邻。
+    expect(cloudflareBuildStepIndex).toBeGreaterThan(-1);
+    expect(artifactProofStepIndex).toBeGreaterThan(cloudflareBuildStepIndex);
   });
 
   it("checks the Static Assets cache after populate and before the dry-run", () => {
@@ -152,7 +156,7 @@ describe("CI preview environment contract", () => {
     const dryRun = indexOf("pnpm exec wrangler deploy --dry-run --env preview");
 
     expect(populate).toBeGreaterThan(-1);
-    expect(cacheProof).toBe(populate + 1);
-    expect(dryRun).toBe(cacheProof + 1);
+    expect(cacheProof).toBeGreaterThan(populate);
+    expect(dryRun).toBeGreaterThan(cacheProof);
   });
 });

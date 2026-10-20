@@ -23,6 +23,14 @@ const openServers: http.Server[] = [];
 const FIXTURE_PREFIX = "b2b-minimal-cloudflare-smoke-";
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
 const MISSING_OFFERING_PATH = "/products/__smoke-missing-offering__";
+const DEPLOYED_SMOKE_PATHS = [
+  ...CORE_PUBLIC_PAGE_PATHS,
+  MISSING_OFFERING_PATH,
+  "/api/health",
+  "/.well-known/security.txt",
+  "/security-policy.txt",
+  "/api/inquiry",
+];
 
 interface ChildProcessResult {
   status: number | null;
@@ -85,18 +93,6 @@ function createPreviewFetchMock() {
       });
     },
   );
-}
-
-function createExternalUrlFetchMock() {
-  return vi.fn(async (input: RequestInfo | URL): Promise<Response> => {
-    const pathname = getRequestPath(input);
-
-    if (PAGE_PATHS.includes(pathname)) {
-      return response(200, "healthy external page");
-    }
-
-    return response(404, "not found");
-  });
 }
 
 function createDeployedFetchMock() {
@@ -312,19 +308,6 @@ afterEach(async () => {
 });
 
 describe("external URL smoke", () => {
-  it("checks an externally supplied URL surface without claiming deploy identity", async () => {
-    const fetchMock = createExternalUrlFetchMock();
-    vi.stubGlobal("fetch", fetchMock);
-
-    await expect(
-      runExternalUrlSmoke(["--base-url", "https://external.example"]),
-    ).resolves.toBe(true);
-
-    expect(
-      fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
-    ).toEqual([...CORE_PUBLIC_PAGE_PATHS]);
-  });
-
   it("runs external-url-smoke through the direct CLI", async () => {
     const { baseUrl, paths } = await listenForExternalUrlSmoke();
 
@@ -384,18 +367,11 @@ describe("cloudflare preview smoke", () => {
   });
 
   it("starts every route in a smoke round before the first response settles", async () => {
-    const discoveryFetchMock = createPreviewFetchMock();
-    vi.stubGlobal("fetch", discoveryFetchMock);
-    await runCloudflarePreviewSmoke([
-      "--base-url",
-      "https://preview.example",
-      "--include-api-health",
-      "--rounds",
-      "1",
-    ]);
-    const expectedPaths = discoveryFetchMock.mock.calls.map(([input]) =>
-      getRequestPath(input),
-    );
+    const expectedPaths = [
+      ...CORE_PUBLIC_PAGE_PATHS,
+      MISSING_OFFERING_PATH,
+      "/api/health",
+    ];
     let releaseRoot!: () => void;
     const started: string[] = [];
     const previewFetchMock = createPreviewFetchMock();
@@ -473,25 +449,18 @@ describe("cloudflare preview smoke", () => {
     ).toEqual([...expectedRound, ...expectedRound]);
   });
 
-  it("proves preview pages and optional api-health probes", async () => {
+  // release-verify 只传 --base-url：默认必须是 page 模式、不探测 /api/health、只跑一轮。
+  it("defaults to one page-mode round without api-health probes", async () => {
     const fetchMock = createPreviewFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      runCloudflarePreviewSmoke([
-        "--base-url",
-        "https://preview.example",
-        "--include-api-health",
-      ]),
+      runCloudflarePreviewSmoke(["--base-url", "https://preview.example"]),
     ).resolves.toBe(true);
 
     expect(
       fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
-    ).toEqual([
-      ...CORE_PUBLIC_PAGE_PATHS,
-      MISSING_OFFERING_PATH,
-      "/api/health",
-    ]);
+    ).toEqual([...CORE_PUBLIC_PAGE_PATHS, MISSING_OFFERING_PATH]);
   });
 
   it.each([
@@ -592,14 +561,7 @@ describe("deployed smoke", () => {
     expect(CORE_PUBLIC_PAGE_PATHS).toContain("/");
     expect(
       fetchMock.mock.calls.map(([input]) => getRequestPath(input)),
-    ).toEqual([
-      ...CORE_PUBLIC_PAGE_PATHS,
-      MISSING_OFFERING_PATH,
-      "/api/health",
-      "/.well-known/security.txt",
-      "/security-policy.txt",
-      "/api/inquiry",
-    ]);
+    ).toEqual(DEPLOYED_SMOKE_PATHS);
     expect(
       fetchMock.mock.calls.every(
         ([, init]) =>
@@ -851,39 +813,34 @@ describe("deployed smoke", () => {
     ).rejects.toThrow("post-deploy-smoke retry loop exited without a response");
     await vi.runAllTimersAsync();
     await smoke;
-    // 1 次初始请求 + DEPLOY_SMOKE_REQUEST_RETRIES 次重试，全部失败后包装。
-    expect(fetchSpy).toHaveBeenCalled();
+    // 每条路由 1 次初始请求 + 2 次重试（DEPLOY_SMOKE_REQUEST_RETRIES），全部失败后包装。
+    expect(fetchSpy).toHaveBeenCalledTimes(DEPLOYED_SMOKE_PATHS.length * 3);
 
     fetchSpy.mockRestore();
   });
 });
 
 describe("smoke argument contracts", () => {
-  it("keeps the unknown-argument error for a valueless --base-url in cf-preview-smoke", async () => {
-    await expect(runCloudflarePreviewSmoke(["--base-url"])).rejects.toThrow(
-      "Unknown argument: --base-url",
-    );
-  });
-
-  it("keeps the unknown-argument error for a valueless --base-url in external-url-smoke", async () => {
-    await expect(runExternalUrlSmoke(["--base-url"])).rejects.toThrow(
-      "Unknown argument: --base-url",
-    );
-  });
-
-  it("keeps the unknown-argument error for a valueless --header-name in deployed-smoke", async () => {
-    await expect(
-      runDeployedSmoke([
-        "--base-url",
-        "https://deployed.example",
-        "--header-name",
-      ]),
-    ).rejects.toThrow("Unknown argument: --header-name");
-  });
-
-  it("keeps the unknown-argument error for unrecognized flags", async () => {
-    await expect(runCloudflarePreviewSmoke(["--rounds"])).rejects.toThrow(
-      "Unknown argument: --rounds",
-    );
-  });
+  // 未知参数与缺值参数共用同一个 fail-closed 错误合同。
+  it.each([
+    [
+      "cf-preview-smoke",
+      ["--base-url"],
+      "--base-url",
+      runCloudflarePreviewSmoke,
+    ],
+    ["external-url-smoke", ["--base-url"], "--base-url", runExternalUrlSmoke],
+    [
+      "deployed-smoke",
+      ["--base-url", "https://deployed.example", "--header-name"],
+      "--header-name",
+      runDeployedSmoke,
+    ],
+    ["cf-preview-smoke", ["--bogus"], "--bogus", runCloudflarePreviewSmoke],
+  ])(
+    "%s rejects %j with the unknown-argument error",
+    async (_lane, args, arg, run) => {
+      await expect(run(args)).rejects.toThrow(`Unknown argument: ${arg}`);
+    },
+  );
 });

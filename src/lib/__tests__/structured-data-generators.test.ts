@@ -42,24 +42,6 @@ describe("structured-data generators", () => {
         url: pageUrl,
         isPartOf: { "@id": "https://example.com#website" },
       });
-      expect(schema).not.toHaveProperty("additionalType");
-    });
-
-    it("When building a WebPage, Then the node references stable site identities", () => {
-      const pageUrl = new URL("/contact", SITE_CONFIG.baseUrl).toString();
-      const schema = buildWebPageSchema({
-        locale: "en",
-        name: "Request a Quote",
-        description: "Request pricing for the confirmed scope.",
-        url: pageUrl,
-      });
-
-      expect(schema).toMatchObject({
-        "@type": "WebPage",
-        "@id": pageUrl,
-        url: pageUrl,
-        isPartOf: { "@id": "https://example.com#website" },
-      });
     });
   });
 

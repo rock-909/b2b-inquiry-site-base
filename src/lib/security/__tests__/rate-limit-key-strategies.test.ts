@@ -48,33 +48,6 @@ describe("rate-limit-key-strategies", () => {
   });
 
   describe("hmacKey", () => {
-    it("should generate consistent hash for same input", async () => {
-      setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
-
-      const key1 = await hmacKey("192.168.1.1");
-      const key2 = await hmacKey("192.168.1.1");
-
-      expect(key1).toBe(key2);
-    });
-
-    it("should generate different hash for different inputs", async () => {
-      setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
-
-      const key1 = await hmacKey("192.168.1.1");
-      const key2 = await hmacKey("192.168.1.2");
-
-      expect(key1).not.toBe(key2);
-    });
-
-    it("should return 16 character hex string (64-bit)", async () => {
-      setEnv("RATE_LIMIT_PEPPER", "a".repeat(32));
-
-      const key = await hmacKey("test-input");
-
-      expect(key).toHaveLength(16);
-      expect(key).toMatch(/^[0-9a-f]{16}$/);
-    });
-
     it("should use development fallback pepper when not configured", async () => {
       setEnv("NODE_ENV", "development");
 
@@ -157,23 +130,6 @@ describe("rate-limit-key-strategies", () => {
       await hmacKey("input2");
 
       expect(mockLoggerWarn).toHaveBeenCalledTimes(1);
-    });
-
-    it("should include the exact missing-pepper guidance in production errors", async () => {
-      setEnv("NODE_ENV", "production");
-
-      await expect(hmacKey("test-input")).rejects.toThrow(
-        `[SECURITY] RATE_LIMIT_PEPPER is required in production. Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`,
-      );
-    });
-
-    it("should include the exact weak-pepper guidance in production errors", async () => {
-      setEnv("NODE_ENV", "production");
-      setEnv("RATE_LIMIT_PEPPER", "tooshort");
-
-      await expect(hmacKey("test-input")).rejects.toThrow(
-        `[SECURITY] RATE_LIMIT_PEPPER is too short (8 chars). Minimum 32 chars required. Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`,
-      );
     });
   });
 

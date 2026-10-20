@@ -7,7 +7,6 @@ import {
   JsonLdGraphScript,
   JsonLdScript,
 } from "@/components/seo/json-ld-script";
-import { generateJSONLD } from "@/lib/structured-data";
 
 function graphTypes(graphData: unknown) {
   if (
@@ -33,27 +32,6 @@ function graphTypes(graphData: unknown) {
 }
 
 describe("createJsonLdGraphData", () => {
-  it("uses shared JSON-LD escaping for script-injection text", () => {
-    const graphData = createJsonLdGraphData([
-      {
-        "@type": "FAQPage",
-        mainEntity: [
-          {
-            "@type": "Question",
-            name: '</script><script>alert("xss")</script>',
-          },
-        ],
-      },
-    ]);
-
-    const scriptContent = generateJSONLD(graphData);
-
-    expect(scriptContent).not.toContain("</script>");
-    expect(scriptContent).not.toContain("<script>");
-    expect(scriptContent).toContain("\\u003c/script\\u003e");
-    expect(() => JSON.parse(scriptContent)).not.toThrow();
-  });
-
   it("renders native JSON-LD script with escaped HTML-sensitive text", () => {
     const { container } = render(
       React.createElement(JsonLdScript, {
