@@ -79,14 +79,12 @@ function MobileNavigationHeader({
   mobileNavigationLabel: string;
 }) {
   return (
-    <SheetHeader className="text-left">
+    <SheetHeader className="h-10 justify-center p-0 pr-12 text-left">
       <SheetTitle className="sr-only">{mobileNavigationLabel}</SheetTitle>
-      <div className="text-lg font-semibold" aria-hidden="true">
+      <div className="truncate text-base font-semibold" aria-hidden="true">
         {siteName}
       </div>
-      <SheetDescription className="text-sm text-muted-foreground">
-        {siteDescription}
-      </SheetDescription>
+      <SheetDescription className="sr-only">{siteDescription}</SheetDescription>
     </SheetHeader>
   );
 }
@@ -130,7 +128,7 @@ export function MobileNavigationInteractive({
         />
         <SheetContent
           closeLabel={closeMenuLabel}
-          className="w-[300px] overflow-y-auto sm:w-[350px]"
+          className="w-[320px] gap-3 overflow-y-auto p-4 sm:w-[360px]"
           id="mobile-navigation"
           data-testid="mobile-menu-content"
         >
@@ -139,7 +137,7 @@ export function MobileNavigationInteractive({
             siteDescription={tNavigation("siteDescription")}
             siteName={siteName}
           />
-          <div className="my-4 h-px w-full shrink-0 bg-border" />
+
           <MobileNavigationLinks
             currentPathname={pathname}
             languageSwitcher={languageSwitcher}

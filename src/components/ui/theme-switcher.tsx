@@ -46,7 +46,7 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
     <div
       aria-label={tAccessibility("themeSelector")}
       className={cn(
-        "relative isolate flex h-7 items-center gap-0.5 rounded-md border border-[var(--footer-divider)] bg-transparent p-0.5",
+        "flex h-9 items-center gap-0.5 rounded-[var(--control-radius)] border border-border bg-transparent p-0.5",
         className,
       )}
       role="group"
@@ -59,29 +59,18 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
           <button
             aria-label={tTheme(labelKey)}
             aria-pressed={isHydrated ? isActive : undefined}
-            className="relative flex size-6 items-center justify-center rounded-[calc(var(--control-radius)-0.25rem)] text-[var(--footer-text)] transition-[background-color,color] duration-150 hover:bg-muted hover:text-[var(--footer-heading)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--footer-bg)] focus-visible:outline-none"
+            className={cn(
+              "flex size-8 items-center justify-center rounded-[calc(var(--control-radius)-0.125rem)] transition-colors duration-150 ease-out hover:bg-muted",
+              isHydrated && isActive
+                ? "text-[var(--primary-text)]"
+                : "text-muted-foreground hover:text-foreground",
+            )}
             disabled={!isHydrated}
             key={key}
             onClick={() => setTheme(key)}
             type="button"
           >
-            {isHydrated && isActive ? (
-              <div
-                className="pointer-events-none absolute inset-0 rounded-[calc(var(--control-radius)-0.25rem)] bg-muted transition-colors duration-150"
-                data-testid="theme-switcher-highlight"
-                style={{
-                  transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)",
-                }}
-              />
-            ) : null}
-            <Icon
-              className={cn(
-                "relative z-10 size-3.5",
-                isHydrated && isActive
-                  ? "text-[var(--footer-heading)]"
-                  : "text-[var(--footer-text)]",
-              )}
-            />
+            <Icon aria-hidden="true" className="size-4" />
           </button>
         );
       })}

@@ -17,7 +17,7 @@ export function Logo() {
     <Link
       href="/"
       prefetch={false}
-      className="flex max-w-full min-w-0 items-center gap-2 transition-opacity hover:opacity-80"
+      className="flex max-w-full min-w-0 items-center gap-2 rounded-sm transition-opacity hover:opacity-80"
       aria-label={SINGLE_SITE_CONFIG.name}
     >
       {logoPath && logo ? (

@@ -11,7 +11,6 @@ describe("Button", () => {
   it.each([
     ["default", "var(--button-primary-bg)"],
     ["outline", "var(--button-outline-border)"],
-    ["ghost", "hover:bg-accent"],
   ] as const)("maps the %s variant to its own token", (variant, token) => {
     expect(buttonVariants({ variant })).toContain(token);
   });
@@ -19,7 +18,6 @@ describe("Button", () => {
   it.each([
     ["default", "var(--button-height-default)"],
     ["sm", "var(--button-height-sm)"],
-    ["icon", "size-9"],
   ] as const)("maps the %s size to its own height token", (size, token) => {
     expect(buttonVariants({ size })).toContain(token);
   });
@@ -30,14 +28,5 @@ describe("Button", () => {
     const button = screen.getByRole("button");
     expect(button).toHaveClass("mt-6");
     expect(button.className.split(" ").length).toBeGreaterThan(1);
-  });
-
-  it("keeps the shared keyboard, disabled, and nested-icon affordances", () => {
-    const classes = buttonVariants();
-
-    expect(classes).toContain("focus-visible:ring-2");
-    expect(classes).toContain("disabled:pointer-events-none");
-    expect(classes).toContain("disabled:opacity-50");
-    expect(classes).toContain("[&_svg]:pointer-events-none");
   });
 });

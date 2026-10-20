@@ -10,6 +10,7 @@ import { PATHS_CONFIG } from "@/config/paths/paths-config";
 import { Link } from "@/i18n/routing";
 import type { Locale } from "@/i18n/routing-config";
 import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
   LanguageToggleIsland,
   MobileNavigationIsland,
@@ -19,8 +20,7 @@ import { Logo } from "@/components/layout/logo";
 import { MobileLanguageSwitcher } from "@/components/layout/mobile-language-switcher";
 import { MobileNavigationLinks } from "@/components/layout/mobile-navigation";
 
-const HEADER_CTA_CLASS =
-  "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[var(--button-primary-bg)] px-3.5 text-xs font-medium text-[var(--button-primary-fg)] shadow-none transition-colors duration-150 ease-out hover:bg-[var(--button-primary-hover-bg)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background";
+const HEADER_CTA_CLASS = buttonVariants({ size: "sm" });
 
 /**
  * Header Component
@@ -58,7 +58,7 @@ export function Header({
   mainNavItems = EMPTY_MAIN_NAV_ITEMS,
 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/10 bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md transition-[background-color,border-color] duration-200">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md transition-[background-color,border-color] duration-200">
       <div className="mx-auto max-w-[1080px] px-6">
         <div className="header-nav-layout">
           {/* Left section: Logo */}
@@ -110,10 +110,10 @@ function CenterNav({
             <HeaderNavLink
               href={item.href}
               className={cn(
-                "relative inline-flex items-center rounded-full bg-transparent px-2 py-2 text-sm font-medium tracking-[0.01em] xl:px-3",
-                "text-muted-foreground hover:text-foreground",
-                "hover:bg-muted/40 dark:hover:bg-foreground/10",
-                "transition-colors duration-100 ease-out",
+                "relative inline-flex h-8 items-center rounded-[var(--control-radius)] px-3 text-sm font-medium",
+                "text-muted-foreground hover:bg-muted hover:text-foreground",
+                "aria-[current=page]:text-[var(--primary-text)]",
+                "transition-colors duration-150 ease-out",
               )}
             >
               <span data-testid={`header-nav-label-${item.key}`} translate="no">

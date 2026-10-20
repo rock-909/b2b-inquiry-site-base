@@ -17,7 +17,7 @@ export function MobileNavigationFallback({
       data-testid="header-mobile-navigation-fallback"
     >
       <summary
-        className="relative inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-foreground transition-colors duration-150 hover:bg-accent [&::-webkit-details-marker]:hidden"
+        className="relative inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-[var(--control-radius)] text-foreground transition-colors duration-150 hover:bg-muted [&::-webkit-details-marker]:hidden"
         aria-controls="mobile-navigation"
         data-testid="header-mobile-menu-button"
         onClick={onActivate}

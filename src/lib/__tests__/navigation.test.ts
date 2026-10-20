@@ -19,10 +19,10 @@ vi.mock("@/config/paths/locales-config", () => ({
 
 describe("navigation", () => {
   describe("main navigation", () => {
-    it("lists every page with a navigationKey, in registry order, home first", () => {
+    it("lists pages with a navigationKey in registry order, home first, leaving contact to the header CTA", () => {
       expect(SINGLE_SITE_NAVIGATION.map((item) => item.href)).toEqual(
         PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
-          (page) => page.navigationKey !== null,
+          (page) => page.navigationKey !== null && page.path !== "/contact",
         ).map((page) => page.path),
       );
       expect(SINGLE_SITE_NAVIGATION[0]).toEqual({

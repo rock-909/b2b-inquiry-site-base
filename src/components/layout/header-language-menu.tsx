@@ -62,19 +62,18 @@ export function HeaderLanguageMenu({
           language: currentLanguageLabel,
         })}
         className={cn(
-          "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground",
-          "transition-colors duration-100 ease-out hover:bg-accent hover:text-foreground",
-          "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none",
+          "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-[var(--control-radius)] px-3 text-sm font-medium text-muted-foreground",
+          "transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground data-[popup-open]:bg-muted data-[popup-open]:text-foreground",
         )}
       >
-        <Globe aria-hidden="true" className="size-3.5" />
+        <Globe aria-hidden="true" className="size-4" />
         <span data-testid="language-current-label" translate="no">
           {LOCALES_CONFIG.triggerLabels[currentLocale]}
         </span>
         <ChevronDown
           aria-hidden="true"
           className={cn(
-            "size-3.5 transition-transform duration-150 ease-out motion-reduce:transition-none",
+            "size-4 transition-transform duration-150 ease-out motion-reduce:transition-none",
             open && "rotate-180",
           )}
         />
@@ -97,7 +96,7 @@ export function HeaderLanguageMenu({
                     {isCurrent ? (
                       <Check
                         aria-hidden="true"
-                        className="ml-auto size-4 text-foreground"
+                        className="ml-auto size-4 text-[var(--primary-text)]"
                       />
                     ) : null}
                   </>
@@ -108,7 +107,7 @@ export function HeaderLanguageMenu({
                     <DropdownMenuItem
                       key={option.locale}
                       aria-current="true"
-                      className="text-foreground data-[disabled]:opacity-100"
+                      className="text-[var(--primary-text)] data-[disabled]:opacity-100"
                       data-locale={option.locale}
                       data-testid={`language-option-${option.locale}`}
                       disabled

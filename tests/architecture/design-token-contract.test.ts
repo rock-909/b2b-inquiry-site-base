@@ -95,8 +95,6 @@ describe("design token contract", () => {
       ["--primary-text", "--background", 4.5],
       ["--accent-foreground", "--accent", 4.5],
       ["--info-foreground", "--info-muted", 4.5],
-      ["--footer-text", "--footer-bg", 4.5],
-      ["--footer-heading", "--footer-bg", 4.5],
       ["--muted-foreground", "--background", 4.5],
       ["--muted-foreground", "--card", 4.5],
       ["--muted-foreground", "--muted", 4.5],

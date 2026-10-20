@@ -24,7 +24,7 @@ export function Footer({ themeToggleSlot, className }: FooterProps) {
                   <Link
                     href={link.href}
                     prefetch={false}
-                    className="inline-block py-2 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+                    className="inline-block rounded-sm py-2 text-sm text-muted-foreground underline-offset-4 transition-colors duration-150 ease-out hover:text-foreground hover:underline"
                   >
                     {t(link.translationKey)}
                   </Link>
