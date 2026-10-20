@@ -107,6 +107,26 @@ function sortedStrings(values: Iterable<string>) {
 }
 
 describe(".env.example parity", () => {
+  // runtimeEnv 必须逐项手写 KEY: process.env.KEY；接错名字时 schema 校验看不出来。
+  it("wires every runtimeEnv key to the process.env variable of the same name", async () => {
+    for (const key of Object.keys(runtimeEnv)) {
+      vi.stubEnv(key, `wired:${key}`);
+    }
+    // 跳过 createEnv 校验，让唯一标记值原样留在 runtimeEnv 里。
+    vi.stubEnv("SKIP_ENV_VALIDATION", "true");
+    vi.resetModules();
+
+    const fresh =
+      await vi.importActual<typeof import("@/lib/env")>("@/lib/env");
+    const miswired = Object.entries(fresh.runtimeEnv)
+      .filter(([key]) => key !== "SKIP_ENV_VALIDATION")
+      .filter(([key, value]) => value !== `wired:${key}`)
+      .map(([key]) => key);
+
+    expect(miswired).toEqual([]);
+    expect(fresh.runtimeEnv.SKIP_ENV_VALIDATION).toBe("true");
+  });
+
   it("keeps env example aligned with the central runtime env contract", () => {
     const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
     const schemaKeys = new Set([
