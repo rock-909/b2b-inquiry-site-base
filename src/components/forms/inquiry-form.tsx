@@ -473,7 +473,7 @@ export function InquiryForm({ copy, fallback }: InquiryFormProps) {
     // 静态卡片约 160px；compact 表单按断点实测约 624–804px。
     // Without reserved space the swap pushes everything below it down
     // (measured CLS 0.203 on the inquiry form swap). The bands track the live form's
-    // measured height per breakpoint; tests/e2e/layout-stability.spec.ts fails
+    // measured height per breakpoint; tests/e2e/turnstile-layout.spec.ts fails
     // if they drift far enough to move the page.
     return (
       <div

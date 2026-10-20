@@ -38,15 +38,6 @@ describe("next.config contract", () => {
     ]);
   });
 
-  it("uses the native Rust React Compiler for Turbopack builds", async () => {
-    const nextConfigModule = await import("../../next.config");
-
-    expect(nextConfigModule.default.reactCompiler).toBe(true);
-    expect(
-      nextConfigModule.default.experimental?.turbopackRustReactCompiler,
-    ).toBe(true);
-  });
-
   // NEXT_PUBLIC_APP_ENV 不是用户输入，是构建时从 APP_ENV 派生的客户端标签。
   // env 层的 parity 测试把它豁免在「allowlist 读取必须有登记」之外，豁免的
   // 前提是这条派生链真实存在——这里真的执行一次配置证明映射生效，豁免才

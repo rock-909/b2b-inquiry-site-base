@@ -240,5 +240,4 @@ if (require.main === module) {
 
 module.exports = {
   collectPrerenderStaticFindings,
-  runPrerenderStaticCheck,
 };

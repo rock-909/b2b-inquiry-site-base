@@ -256,12 +256,9 @@ if (require.main === module) {
 }
 
 module.exports = {
-  BUILD_CHUNKS_DIR,
   INQUIRY_FORM_CHUNK_MARKER,
   INQUIRY_FORM_SOURCE,
   collectForbiddenBuildSources,
   collectInquiryFormBuildArtifactFindings,
-  runClientBoundaryBuildArtifactsCli,
-  runClientBoundaryCli,
   runInquiryFormBuildArtifactCheck,
 };

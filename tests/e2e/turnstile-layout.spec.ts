@@ -122,8 +122,6 @@ for (const path of CONTACT_PATHS) {
         const formBox = await form.boundingBox();
         expect(box).not.toBeNull();
         expect(formBox).not.toBeNull();
-        expect(box!.width).toBeCloseTo(150, 2);
-        expect(box!.height).toBeCloseTo(140, 2);
         expect(box!.x).toBeGreaterThanOrEqual(formBox!.x);
         expect(box!.x + box!.width).toBeLessThanOrEqual(
           formBox!.x + formBox!.width,

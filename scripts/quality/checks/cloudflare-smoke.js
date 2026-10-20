@@ -962,7 +962,6 @@ module.exports = {
   CORE_PUBLIC_PAGE_PATHS,
   parseCloudflarePreviewUrl,
   runChildCommand,
-  runCloudflarePreviewDeployedProof,
   runCloudflarePreviewSmoke,
   runDeployedSmoke,
   runExternalUrlSmoke,

@@ -29,6 +29,8 @@ test.describe("404 recovery without JavaScript", () => {
         "/products/not-real",
         "/random.txt",
         "/images/retired-asset.jpg",
+        "/does-not-exist.svg",
+        "/__e2e-missing-section/offering",
         "/__not-found-placeholder",
       ]) {
         test(`${prefix}${path} serves a localized recovery document`, async ({
@@ -50,28 +52,17 @@ test.describe("404 recovery without JavaScript", () => {
           });
           await expect(home).toBeVisible();
           await expect(home).toHaveAttribute("href", homePath);
+          // 404 不应继承页面的分享图片元数据。
+          await expect(page.locator('meta[property="og:image"]')).toHaveCount(
+            0,
+          );
+          await expect(page.locator('meta[name="twitter:image"]')).toHaveCount(
+            0,
+          );
         });
       }
     }
   }
-});
-
-test("unknown routes render the site 404 with a homepage recovery link", async ({
-  page,
-}) => {
-  const response = await page.goto("/this-page-does-not-exist", {
-    waitUntil: "domcontentloaded",
-  });
-  expect(response?.status()).toBe(404);
-
-  const main = page.getByRole("main");
-  await expect(main.getByText("404", { exact: true })).toBeVisible();
-  await expect(
-    main.getByRole("heading", { name: "Page not found" }),
-  ).toBeVisible();
-  await expect(
-    main.getByRole("link", { name: "Back to homepage" }),
-  ).toBeVisible();
 });
 
 for (const { locale, title, homeLabel, homePath } of LOCALE_CASES) {
@@ -121,8 +112,6 @@ test("real resources retain their response bodies and MIME types", async ({
   expect(await policy.text()).toBe("");
 
   await page.goto("/");
-  // 当前站点使用系统字体，无字体文件请求；保留该基线而不虚构资源。
-  await expect(page.locator('link[as="font"]')).toHaveCount(0);
   for (const [selector, attribute, mime] of [
     ['link[rel="stylesheet"]', "href", "text/css"],
     ['script[src^="/_next/"]', "src", "javascript"],

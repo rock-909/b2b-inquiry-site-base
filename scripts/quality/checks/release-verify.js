@@ -194,8 +194,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  MANUAL_PROOF_LANES,
   RELEASE_VERIFY_COMMANDS,
   runReleaseVerify,
-  runReleaseVerifyCommand,
 };

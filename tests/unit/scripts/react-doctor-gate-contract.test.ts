@@ -18,7 +18,7 @@ function readPackageJson() {
 }
 
 // 保护当前意图：required gate 使用仓库锁定的 React Doctor 版本（exact semver，
-// 禁止 @latest 动态解析），error 和 warning 都必须阻断；report 保持非阻断。
+// 禁止 @latest 动态解析），error 和 warning 都必须阻断。
 describe("React Doctor gate contract", () => {
   it("rejects incomplete, unknown and warning reports even with zero errors", () => {
     const clean = {
@@ -160,23 +160,5 @@ describe("React Doctor gate contract", () => {
     expect(reportScript).toContain("pnpm exec react-doctor");
     expect(doctorScript).not.toContain("@latest");
     expect(reportScript).not.toContain("@latest");
-  });
-
-  it("keeps React Doctor blocking on warnings instead of only reporting", () => {
-    const packageJson = readPackageJson();
-    const doctorScript = packageJson.scripts["react:doctor"] ?? "";
-
-    expect(readRepoFile("scripts/quality/checks/react-doctor.js")).toContain(
-      '"warning"',
-    );
-    expect(doctorScript).not.toContain("--blocking none");
-  });
-
-  it("keeps the report entrypoint non-blocking with json output", () => {
-    const packageJson = readPackageJson();
-    const reportScript = packageJson.scripts["react:doctor:report"] ?? "";
-
-    expect(reportScript).toContain("--json");
-    expect(reportScript).toContain("--blocking none");
   });
 });

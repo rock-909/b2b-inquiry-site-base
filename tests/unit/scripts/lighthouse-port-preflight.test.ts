@@ -107,11 +107,9 @@ describe("lighthouse 端口预检", () => {
   // 这条是整个改动的核心：一个查不动的探测必须抛出来，不能返回 false。
   // 返回 false 就等于旧版那句 `if lsof ...` —— 门禁静默放行。
   //
-  // 两种"查不动"都覆盖：地址根本不是本机的（EADDRNOTAVAIL），和有地址但没权限
-  // 绑（EACCES，1 是特权端口）。第一版把 EADDRNOTAVAIL 无条件当成空闲，正是
-  // 同一个洞换了个位置——现在它只在 `::1` 上被接受，因为那才真的可能没有协议栈。
+  // 除 EADDRINUSE 外的错误（EADDRNOTAVAIL、EACCES…）都走同一个 reject 分支，
+  // 用非本机地址触发即可；特权端口在 root/Docker 下能绑，不能当探针。
   it("throws instead of answering false when the probe itself cannot run", async () => {
     await expect(isPortTaken("203.0.113.9", 4173)).rejects.toThrow();
-    await expect(isPortTaken("127.0.0.1", 1)).rejects.toThrow();
   });
 });
