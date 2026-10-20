@@ -11,6 +11,13 @@ const UI_SOURCE_FILES = globSync("src/**/*.{ts,tsx}").filter(
 // Base UI 在运行时写到弹层元素上的变量，不属于主题 token。
 const RUNTIME_PROVIDED_VARS = new Set(["--transform-origin"]);
 
+const THEME_MODES = [
+  ["light", "default"],
+  ["light", "more"],
+  ["dark", "default"],
+  ["dark", "more"],
+] as const;
+
 const RAW_PALETTE_CLASS =
   /\b(?:(?:hover|dark|focus-visible):)*(?:bg|text|border|ring|outline)-(?:neutral|gray|slate|zinc|stone|blue|sky|cyan|green|red|amber|yellow|emerald)-\d{2,3}\b/u;
 
@@ -34,9 +41,7 @@ describe("design token contract", () => {
 
     expect(globals).toContain('@import "./theme.css";');
 
-    const defined = new Set(
-      captureAll(`${theme}\n${globals}`, /(--[\w-]+)\s*:/gu),
-    );
+    const css = `${theme}\n${globals}`;
     const sources: Array<[string, string]> = [
       [GLOBALS_CSS, globals],
       [THEME_CSS, theme],
@@ -47,10 +52,16 @@ describe("design token contract", () => {
     ];
     const undefinedTokens = sources.flatMap(([filePath, source]) =>
       captureAll(source, /var\((--[\w-]+)/gu)
-        .filter(
-          (name) => !defined.has(name) && !RUNTIME_PROVIDED_VARS.has(name),
-        )
-        .map((name) => `${filePath}: ${name}`),
+        .filter((name) => !RUNTIME_PROVIDED_VARS.has(name))
+        .flatMap((name) =>
+          THEME_MODES.filter(
+            ([themeName, contrastMode]) =>
+              !buildThemeTokenMap(css, themeName, contrastMode).has(name),
+          ).map(
+            ([themeName, contrastMode]) =>
+              `${filePath}: ${name} (${themeName}/${contrastMode})`,
+          ),
+        ),
     );
 
     expect(undefinedTokens).toEqual([]);
