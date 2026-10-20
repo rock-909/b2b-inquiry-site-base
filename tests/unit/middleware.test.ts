@@ -220,6 +220,7 @@ describe("middleware next-intl boundary", () => {
       "/_next/static/test.js",
       "/_next/image",
       "/robots.txt",
+      "/llms.txt",
       "/sitemap.xml",
       "/icon.svg",
       "/security-policy.txt",

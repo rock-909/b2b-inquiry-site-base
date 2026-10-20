@@ -48,6 +48,36 @@ describe("EnterpriseAnalyticsIsland", () => {
     expect(Reflect.get(window, GA_DISABLE_KEY)).toBe(true);
   });
 
+  it("sends Consent Mode v2 signals on allow and on withdraw", () => {
+    const allSignals = (value: "granted" | "denied") => ({
+      analytics_storage: value,
+      ad_storage: value,
+      ad_user_data: value,
+      ad_personalization: value,
+    });
+    const consentCommands = () =>
+      (window.dataLayer as ArrayLike<unknown>[])
+        .map((entry) => Array.from(entry))
+        .filter((args) => args[0] === "consent");
+
+    const { rerender } = render(<EnterpriseAnalyticsIsland analyticsAllowed />);
+    // gtag.js 只处理 Arguments 对象，数组形式的命令会被静默丢弃。
+    for (const entry of window.dataLayer) {
+      expect(Object.prototype.toString.call(entry)).toBe("[object Arguments]");
+    }
+    expect(consentCommands()).toEqual([
+      ["consent", "default", allSignals("denied")],
+      ["consent", "update", allSignals("granted")],
+    ]);
+
+    rerender(<EnterpriseAnalyticsIsland analyticsAllowed={false} />);
+    expect(consentCommands()).toEqual([
+      ["consent", "default", allSignals("denied")],
+      ["consent", "update", allSignals("granted")],
+      ["consent", "update", allSignals("denied")],
+    ]);
+  });
+
   it("loads configured GA after consent", () => {
     render(<EnterpriseAnalyticsIsland analyticsAllowed />);
     expect(screen.getByTestId("ga")).toHaveAttribute(

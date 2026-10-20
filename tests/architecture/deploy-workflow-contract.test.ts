@@ -317,7 +317,7 @@ describe("Cloudflare deploy workflow contract", () => {
     expect(proof, "production release proof step must exist").toBeDefined();
     for (const [name, value] of Object.entries(proof?.env ?? {})) {
       expect(String(value), name).not.toMatch(
-        /secrets\.(?!NEXT_PUBLIC_|GOOGLE_SITE_)/u,
+        /secrets\.(?!NEXT_PUBLIC_|GOOGLE_SITE_|BING_SITE_)/u,
       );
     }
   });
