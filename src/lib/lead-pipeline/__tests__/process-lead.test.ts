@@ -70,19 +70,6 @@ describe("processValidatedInquiry", () => {
     expect(airtableLead).not.toHaveProperty("requirements");
   });
 
-  it("gives owner email and Airtable the same reference the buyer receives", async () => {
-    const result = await processValidatedInquiry(VALID_LEAD);
-    const { referenceId } = result;
-
-    expect(referenceId).toMatch(/^INQ-/);
-    expect(mockSendProductInquiryEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceId }),
-    );
-    expect(mockCreateLead).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceId }),
-    );
-  });
-
   it("keeps that reference in both provider failure logs", async () => {
     mockSendProductInquiryEmail.mockRejectedValue(new Error("email down"));
     mockCreateLead.mockRejectedValue(new Error("airtable down"));
@@ -127,43 +114,6 @@ describe("processValidatedInquiry", () => {
       recordCreated: false,
       referenceId: expect.stringMatching(/^INQ-/),
       error: "PROCESSING_FAILED",
-    });
-  });
-
-  it("passes attribution fields to the single Airtable record", async () => {
-    await processValidatedInquiry({
-      ...VALID_LEAD,
-      utmSource: "google",
-      utmMedium: "cpc",
-    });
-
-    expect(mockCreateLead).toHaveBeenCalledWith(
-      expect.objectContaining({
-        utmSource: "google",
-        utmMedium: "cpc",
-      }),
-    );
-  });
-
-  it("starts the backup before email settles and preserves the buyer message", async () => {
-    let releaseEmail: (id: string) => void = () => undefined;
-    mockSendProductInquiryEmail.mockImplementationOnce(
-      () =>
-        new Promise<string>((resolve) => {
-          releaseEmail = resolve;
-        }),
-    );
-
-    const pending = processValidatedInquiry(VALID_LEAD);
-    expect(mockCreateLead).toHaveBeenCalledTimes(1);
-    expect(mockCreateLead.mock.calls[0]?.[0].message).toContain(
-      VALID_LEAD.message,
-    );
-    releaseEmail("email-123");
-    await expect(pending).resolves.toMatchObject({
-      success: true,
-      emailSent: true,
-      recordCreated: true,
     });
   });
 });

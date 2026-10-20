@@ -6,12 +6,11 @@
 const HEX_PAD_LENGTH = 2;
 
 /**
- * Generate HMAC signature
+ * Generate HMAC-SHA256 signature
  */
 export async function generateHMAC(
   data: string,
   secret: string,
-  algorithm: "SHA-256" | "SHA-512" = "SHA-256",
 ): Promise<string> {
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secret);
@@ -20,7 +19,7 @@ export async function generateHMAC(
   const key = await crypto.subtle.importKey(
     "raw",
     keyData,
-    { name: "HMAC", hash: algorithm },
+    { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
   );

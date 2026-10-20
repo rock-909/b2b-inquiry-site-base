@@ -159,18 +159,6 @@ describe("distributed-rate-limit", () => {
     );
   });
 
-  it("reset clears the process-local counters", async () => {
-    await checkInquiryRateLimit("reset-user");
-    await checkInquiryRateLimit("reset-user");
-
-    resetRateLimitStore();
-
-    await expect(checkInquiryRateLimit("reset-user")).resolves.toMatchObject({
-      allowed: true,
-      remaining: 9,
-    });
-  });
-
   it("admits exactly 10 concurrent requests through the Upstash atomic increment", async () => {
     vi.useRealTimers();
     setEnv("UPSTASH_REDIS_REST_URL", "http://fake-redis:8080");

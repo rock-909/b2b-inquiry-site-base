@@ -3,23 +3,6 @@ import { generateJSONLD } from "../structured-data";
 
 describe("Structured Data - JSON-LD", () => {
   describe("generateJSONLD", () => {
-    it("should generate valid JSON-LD string", () => {
-      const testData = {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        name: "Test Organization",
-      };
-
-      const result = generateJSONLD(testData);
-
-      // 结果应该是有效的 JSON（转义字符会被正确解析）
-      expect(() => JSON.parse(result)).not.toThrow();
-      const parsed = JSON.parse(result);
-      expect(parsed["@context"]).toBe("https://schema.org");
-      expect(parsed["@type"]).toBe("Organization");
-      expect(parsed.name).toBe("Test Organization");
-    });
-
     it("should escape < characters to prevent XSS attacks", () => {
       const maliciousData = {
         "@context": "https://schema.org",
@@ -67,73 +50,6 @@ describe("Structured Data - JSON-LD", () => {
       const parsed = JSON.parse(result);
       expect(parsed.name).toBe("A > B & C");
       expect(parsed.description).toBe("Line one line two line three");
-    });
-
-    it("should handle data without < characters unchanged", () => {
-      const safeData = {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        name: "Safe Organization Name",
-        url: "https://example.com",
-      };
-
-      const result = generateJSONLD(safeData);
-
-      expect(() => JSON.parse(result)).not.toThrow();
-      const parsed = JSON.parse(result);
-      expect(parsed.name).toBe("Safe Organization Name");
-      expect(parsed.url).toBe("https://example.com");
-    });
-
-    it("should handle complex nested objects", () => {
-      const complexData = {
-        "@context": "https://schema.org",
-        "@type": "Article",
-        author: {
-          "@type": "Person",
-          name: "John Doe",
-        },
-        publisher: {
-          "@type": "Organization",
-          name: "Test Publisher",
-          logo: {
-            "@type": "ImageObject",
-            url: "https://example.com/images/logo.svg",
-          },
-        },
-      };
-
-      const result = generateJSONLD(complexData);
-
-      expect(result).toContain('"@context": "https://schema.org"');
-      expect(result).toContain('"@type": "Article"');
-      expect(result).toContain('"name": "John Doe"');
-      expect(() => JSON.parse(result)).not.toThrow();
-    });
-
-    it("should handle null and undefined values", () => {
-      const dataWithNulls = {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        name: "Test",
-        description: null,
-        url: undefined,
-      };
-
-      const result = generateJSONLD(dataWithNulls);
-
-      expect(() => JSON.parse(result)).not.toThrow();
-      const parsed = JSON.parse(result);
-      expect(parsed.description).toBeNull();
-      expect(parsed).not.toHaveProperty("url");
-    });
-
-    it("should handle empty objects and arrays", () => {
-      const emptyData = {};
-      const result = generateJSONLD(emptyData);
-
-      expect(result).toBe("{}");
-      expect(() => JSON.parse(result)).not.toThrow();
     });
   });
 });

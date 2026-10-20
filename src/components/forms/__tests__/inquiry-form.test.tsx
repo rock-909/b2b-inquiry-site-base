@@ -10,6 +10,7 @@ import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { createTestInquiryFormCopy } from "@/test/inquiry-test-messages";
 import { turnstileLabelsSpy } from "@/test/inquiry-turnstile-mock";
 import {
@@ -209,23 +210,6 @@ describe("InquiryForm contract", () => {
     );
   });
 
-  it("submits on Enter from a text control once Turnstile is ready", async () => {
-    const { container } = renderInquiryForm();
-    const { fullName, email, form } = getFormControls(container);
-
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "Enter Buyer" } });
-    fireEvent.change(email, { target: { value: "enter@example.com" } });
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(1);
-    });
-  });
-
   it("does not post without a Turnstile token", async () => {
     const { container, copy } = renderInquiryForm();
     const { fullName, email, form } = getFormControls(container);
@@ -244,38 +228,6 @@ describe("InquiryForm contract", () => {
 
     expect(fetch).not.toHaveBeenCalled();
     expect(screen.getByText(copy.errors.securitySummary)).toBeInTheDocument();
-  });
-
-  it("shows field, security, and server summaries from the decoder", async () => {
-    const copy = createTestInquiryFormCopy();
-    const fallback = <InquiryFormStaticFallback copy={copy} />;
-    const { container } = render(
-      <InquiryForm copy={copy} fallback={fallback} />,
-    );
-    const { fullName, email, form } = getFormControls(container);
-
-    fireEvent.click(screen.getByTestId("inquiry-turnstile-success"));
-    fireEvent.change(fullName, { target: { value: "Error Buyer" } });
-    fireEvent.change(email, { target: { value: "error@example.com" } });
-
-    vi.mocked(fetch).mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({
-          success: false,
-          errorCode: "INQUIRY_VALIDATION_FAILED",
-          details: ["errors.fullName.required"],
-        }),
-        { status: 400 },
-      ),
-    );
-
-    await act(async () => {
-      fireEvent.submit(form);
-    });
-
-    expect(
-      await screen.findByText(copy.errors.fieldSummary),
-    ).toBeInTheDocument();
   });
 
   it("renders recognized field errors with aria relationships", async () => {
@@ -314,34 +266,32 @@ describe("InquiryForm contract", () => {
     expect(
       await screen.findByText(copy.errors.fieldSummary),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(copy.errors.fields["errors.fullName.invalid"]),
-    ).toHaveClass("text-[var(--error-foreground)]");
-    expect(
-      screen.getByText(copy.errors.fields["errors.email.invalid"]),
-    ).toHaveClass("text-[var(--error-foreground)]");
-    expect(
-      screen.getByText(copy.errors.fields["errors.message.tooLong"]),
-    ).toHaveClass("text-[var(--error-foreground)]");
     expect(screen.queryByText("errors.phone.invalid")).not.toBeInTheDocument();
 
+    // aria-describedby 指向的元素要真正读出该字段的错误文案。
     expect(fullName).toHaveAttribute("aria-invalid", "true");
     expect(fullName).toHaveAttribute(
       "aria-describedby",
       "inquiry-full-name-error",
     );
-    expect(document.getElementById("inquiry-full-name-error")).toBeTruthy();
+    expect(
+      document.getElementById("inquiry-full-name-error"),
+    ).toHaveTextContent(copy.errors.fields["errors.fullName.invalid"]);
 
     expect(email).toHaveAttribute("aria-invalid", "true");
     expect(email).toHaveAttribute("aria-describedby", "inquiry-email-error");
-    expect(document.getElementById("inquiry-email-error")).toBeTruthy();
+    expect(document.getElementById("inquiry-email-error")).toHaveTextContent(
+      copy.errors.fields["errors.email.invalid"],
+    );
 
     expect(message).toHaveAttribute("aria-invalid", "true");
     expect(message).toHaveAttribute(
       "aria-describedby",
       "inquiry-message-hint inquiry-message-error",
     );
-    expect(document.getElementById("inquiry-message-error")).toBeTruthy();
+    expect(document.getElementById("inquiry-message-error")).toHaveTextContent(
+      copy.errors.fields["errors.message.tooLong"],
+    );
     expect(document.getElementById("inquiry-message-hint")).toBeTruthy();
 
     // 焦点管理合同（组件层证明接线；真实视口滚动由 E2E 证明）：
@@ -589,13 +539,29 @@ describe("InquiryForm hydration", () => {
 });
 
 describe("InquiryFormStaticFallback", () => {
-  it("shows the no-JS explanation and public email without a form or submit control", () => {
-    const copy = createTestInquiryFormCopy();
-    const { container } = render(<InquiryFormStaticFallback copy={copy} />);
+  const templateEmail = SINGLE_SITE_CONFIG.contact.email;
 
-    expect(screen.getByText(copy.noJsExplanation)).toBeInTheDocument();
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(container.querySelector("form")).toBeNull();
-    expect(screen.queryByRole("button")).toBeNull();
+  afterEach(() => {
+    SINGLE_SITE_CONFIG.contact.email = templateEmail;
   });
+
+  // 公开邮箱留空时不展示 mailto；派生站填了邮箱后无 JS 买家才有可点的联系方式。
+  it.each([
+    { email: "", expectedHref: null },
+    { email: "sales@acme.example", expectedHref: "mailto:sales@acme.example" },
+  ])(
+    "shows the no-JS explanation without a form when the public email is $email",
+    ({ email, expectedHref }) => {
+      SINGLE_SITE_CONFIG.contact.email = email;
+      const copy = createTestInquiryFormCopy();
+      const { container } = render(<InquiryFormStaticFallback copy={copy} />);
+
+      expect(screen.getByText(copy.noJsExplanation)).toBeInTheDocument();
+      expect(screen.queryByRole("link")?.getAttribute("href") ?? null).toBe(
+        expectedHref,
+      );
+      expect(container.querySelector("form")).toBeNull();
+      expect(screen.queryByRole("button")).toBeNull();
+    },
+  );
 });

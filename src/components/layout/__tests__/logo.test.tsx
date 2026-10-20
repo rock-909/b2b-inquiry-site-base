@@ -4,7 +4,7 @@
  */
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_CONFIG as SITE_CONFIG } from "@/config/single-site";
 import { Logo } from "../logo";
 
@@ -21,148 +21,48 @@ vi.mock("@/i18n/routing", () => ({
     className?: string;
     "aria-label"?: string;
   }) => (
-    <a
-      href={href}
-      className={className}
-      aria-label={ariaLabel}
-      data-testid="logo-link"
-    >
+    <a href={href} className={className} aria-label={ariaLabel}>
       {children}
     </a>
   ),
 }));
 
 describe("Logo", () => {
-  describe("basic rendering", () => {
-    it("renders link to homepage", () => {
+  const templateBrandAssets = SITE_CONFIG.brandAssets;
+
+  afterEach(() => {
+    SITE_CONFIG.brandAssets = templateBrandAssets;
+  });
+
+  it("renders text fallback by default", () => {
+    render(<Logo />);
+
+    expect(screen.getByText(SITE_CONFIG.name)).toBeInTheDocument();
+  });
+
+  // 派生站把 logo 置为 ready 之前，品牌名是唯一标识；ready 后图片出现，文字只在桌面保留。
+  it.each([
+    { status: "pending" as const, imageSrc: null, textDesktopOnly: false },
+    { status: "ready" as const, imageSrc: "/logo.svg", textDesktopOnly: true },
+  ])(
+    "renders the $status logo state",
+    ({ status, imageSrc, textDesktopOnly }) => {
+      SITE_CONFIG.brandAssets = {
+        ...templateBrandAssets,
+        logo: { status, horizontal: "/logo.svg", width: 240, height: 72 },
+      };
+
       render(<Logo />);
 
-      const link = screen.getByTestId("logo-link");
-      expect(link).toHaveAttribute("href", "/");
-    });
-
-    it("does not render a logo image until public assets are configured", () => {
-      render(<Logo />);
-
+      const image = screen.queryByRole("img", {
+        name: `${SITE_CONFIG.name} Logo`,
+      });
+      expect(image?.getAttribute("src") ?? null).toBe(imageSrc);
       expect(
-        screen.queryByRole("img", { name: `${SITE_CONFIG.name} Logo` }),
-      ).not.toBeInTheDocument();
-    });
-
-    it("renders text fallback by default", () => {
-      render(<Logo />);
-
-      expect(screen.getByText(SITE_CONFIG.name)).toBeInTheDocument();
-    });
-
-    it("has default aria-label", () => {
-      render(<Logo />);
-
-      const link = screen.getByTestId("logo-link");
-      expect(link).toHaveAttribute("aria-label", SITE_CONFIG.name);
-    });
-  });
-
-  describe("showText prop", () => {
-    it("keeps text when showText is false but no public logo is ready", () => {
-      render(<Logo showText={false} />);
-
-      expect(screen.getByText(SITE_CONFIG.name)).toBeInTheDocument();
-    });
-
-    it("shows text when showText is true", () => {
-      render(<Logo showText={true} />);
-
-      expect(screen.getByText(SITE_CONFIG.name)).toBeInTheDocument();
-    });
-  });
-
-  describe("size prop", () => {
-    it("applies sm text size class", () => {
-      render(<Logo size="sm" />);
-
-      const text = screen.getByText(SITE_CONFIG.name);
-      expect(text).toHaveClass("text-lg");
-    });
-
-    it("applies md text size class (default)", () => {
-      render(<Logo size="md" />);
-
-      const text = screen.getByText(SITE_CONFIG.name);
-      expect(text).toHaveClass("text-xl");
-    });
-
-    it("applies lg text size class", () => {
-      render(<Logo size="lg" />);
-
-      const text = screen.getByText(SITE_CONFIG.name);
-      expect(text).toHaveClass("text-2xl");
-    });
-  });
-
-  describe("custom className", () => {
-    it("applies custom className to link", () => {
-      render(<Logo className="custom-logo-class" />);
-
-      const link = screen.getByTestId("logo-link");
-      expect(link).toHaveClass("custom-logo-class");
-    });
-
-    it("preserves default flex classes with custom className", () => {
-      render(<Logo className="my-custom" />);
-
-      const link = screen.getByTestId("logo-link");
-      expect(link).toHaveClass("flex");
-      expect(link).toHaveClass("items-center");
-      expect(link).toHaveClass("my-custom");
-    });
-  });
-
-  describe("custom ariaLabel", () => {
-    it("applies custom aria-label", () => {
-      render(<Logo ariaLabel="Custom Brand" />);
-
-      const link = screen.getByTestId("logo-link");
-      expect(link).toHaveAttribute("aria-label", "Custom Brand");
-    });
-  });
-
-  describe("text styling", () => {
-    it("text has font-semibold class", () => {
-      render(<Logo />);
-
-      const text = screen.getByText(SITE_CONFIG.name);
-      expect(text).toHaveClass("font-semibold");
-    });
-
-    it("text has text-foreground class", () => {
-      render(<Logo />);
-
-      const text = screen.getByText(SITE_CONFIG.name);
-      expect(text).toHaveClass("text-foreground");
-    });
-
-    it("does not use the desktop-only class until a logo image is visible", () => {
-      render(<Logo />);
-
-      const text = screen.getByText(SITE_CONFIG.name);
-      expect(text).not.toHaveClass("header-logo-text-desktop-only");
-    });
-  });
-
-  describe("link styling", () => {
-    it("link has hover opacity transition", () => {
-      render(<Logo />);
-
-      const link = screen.getByTestId("logo-link");
-      expect(link).toHaveClass("hover:opacity-80");
-    });
-
-    it("link has gap between image and text", () => {
-      render(<Logo />);
-
-      const link = screen.getByTestId("logo-link");
-      expect(link).toHaveClass("gap-2");
-    });
-  });
+        screen
+          .getByText(SITE_CONFIG.name)
+          .classList.contains("header-logo-text-desktop-only"),
+      ).toBe(textDesktopOnly);
+    },
+  );
 });

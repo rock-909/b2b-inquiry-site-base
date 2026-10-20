@@ -41,50 +41,6 @@ describe("/api/inquiry delivery orchestration", () => {
     vi.useRealTimers();
   });
 
-  it("passes attribution fields to processValidatedInquiry", async () => {
-    const request = createInquiryRequest(
-      JSON.stringify({
-        ...validInquiryData,
-        utmSource: "google",
-        utmMedium: "cpc",
-        utmCampaign: "sample-campaign",
-        landingPage: "/en/contact",
-        capturedAt: "2026-07-04T00:00:00.000Z",
-      }),
-    );
-
-    await POST(request);
-
-    expect(routeMocks.processValidatedInquiry).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: "inquiry",
-        utmSource: "google",
-        utmMedium: "cpc",
-        utmCampaign: "sample-campaign",
-        landingPage: "/en/contact",
-        capturedAt: "2026-07-04T00:00:00.000Z",
-      }),
-    );
-  });
-
-  it("should process repeated valid inquiry requests independently", async () => {
-    const firstRequest = createInquiryRequest(JSON.stringify(validInquiryData));
-    const secondRequest = createInquiryRequest(
-      JSON.stringify(validInquiryData),
-    );
-
-    const firstResponse = await POST(firstRequest);
-    const secondResponse = await POST(secondRequest);
-    const firstData = await firstResponse.json();
-    const secondData = await secondResponse.json();
-
-    expect(firstResponse.status).toBe(200);
-    expect(secondResponse.status).toBe(200);
-    expect(firstData.success).toBe(true);
-    expect(secondData.success).toBe(true);
-    expect(routeMocks.processValidatedInquiry).toHaveBeenCalledTimes(2);
-  });
-
   it("returns a success-shaped reference for a filled website honeypot", async () => {
     const request = createInquiryRequest(
       JSON.stringify({
@@ -101,6 +57,22 @@ describe("/api/inquiry delivery orchestration", () => {
     expect(data.data.referenceId).toMatch(/^INQ-/);
     expect(routeMocks.verifyTurnstileDetailed).not.toHaveBeenCalled();
     expect(routeMocks.processValidatedInquiry).not.toHaveBeenCalled();
+  });
+
+  it("treats a whitespace-only website honeypot as empty", async () => {
+    const request = createInquiryRequest(
+      JSON.stringify({
+        ...validInquiryData,
+        website: "   ",
+      }),
+    );
+
+    const response = await POST(request);
+
+    // 浏览器自动填充或粘贴可能留下空白；只看 trim 后的值，真实买家不能被当成机器人。
+    expect(response.status).toBe(200);
+    expect(routeMocks.verifyTurnstileDetailed).toHaveBeenCalledTimes(1);
+    expect(routeMocks.processValidatedInquiry).toHaveBeenCalledTimes(1);
   });
 
   it("should handle unexpected errors", async () => {

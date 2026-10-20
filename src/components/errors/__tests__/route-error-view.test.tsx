@@ -52,7 +52,10 @@ describe("RouteErrorView", () => {
     expect(
       screen.getByRole("button", { name: copy.tryAgain }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: copy.goHome })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: copy.goHome })).toHaveAttribute(
+      "href",
+      "/",
+    );
   });
 
   it("retries the failed route segment when the retry button is clicked", () => {
@@ -68,22 +71,6 @@ describe("RouteErrorView", () => {
     fireEvent.click(screen.getByRole("button", { name: copy.tryAgain }));
 
     expect(retry).toHaveBeenCalledTimes(1);
-  });
-
-  it("offers the homepage as the way out", () => {
-    render(
-      <RouteErrorView
-        error={error}
-        retry={retry}
-        logContext="Contact"
-        copy={copy}
-      />,
-    );
-
-    expect(screen.getByRole("link", { name: copy.goHome })).toHaveAttribute(
-      "href",
-      "/",
-    );
   });
 
   it("logs the failure once, under the caller's context", () => {

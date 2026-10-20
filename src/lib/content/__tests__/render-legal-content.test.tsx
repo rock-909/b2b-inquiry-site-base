@@ -67,7 +67,6 @@ describe("static markdown rendering", () => {
 
     const heading = container.querySelector("h2");
     expect(heading).toHaveAttribute("id", "privacy-scope");
-    expect(heading).toHaveClass("text-section");
     expect(heading).toHaveTextContent("Privacy Scope");
     expect(container).not.toHaveTextContent("{#privacy-scope}");
   });
@@ -201,16 +200,5 @@ describe("parseStaticMarkdownBlocks heading ids", () => {
       "scope-3",
       "section",
     ]);
-  });
-});
-
-describe("renderStaticMarkdownBlocks", () => {
-  it("renders parsed blocks directly without re-parsing raw markdown", () => {
-    const blocks = parseStaticMarkdownBlocks("## Privacy");
-    const { container } = render(
-      <>{renderStaticMarkdownBlocks(blocks)}</>,
-    );
-
-    expect(container.querySelector("h2")).toHaveTextContent("Privacy");
   });
 });

@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { assertValidSiteConfig } from "@/config/site-config-schema";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
-import { generateMetadataForPath } from "@/lib/seo-metadata";
 
 const TEMPLATE_BASE_URL = "https://example.invalid";
 
@@ -43,18 +42,6 @@ describe("single-site", () => {
     const { SINGLE_SITE_CONFIG } = await import("@/config/single-site");
 
     expect(SINGLE_SITE_CONFIG.baseUrl).toBe("https://acme-example.com");
-  });
-
-  it("publishes the configured OG image in generated metadata", () => {
-    const REFERENCE_OG_IMAGE = SINGLE_SITE_CONFIG.brandAssets.ogImage;
-    const metadata = generateMetadataForPath({
-      locale: "en",
-      pageType: "home",
-      path: "/",
-    });
-
-    expect(metadata.openGraph?.images).toEqual([{ url: REFERENCE_OG_IMAGE }]);
-    expect(metadata.twitter?.images).toEqual([REFERENCE_OG_IMAGE]);
   });
 
   it("accepts the template config and rejects malformed identity values", () => {

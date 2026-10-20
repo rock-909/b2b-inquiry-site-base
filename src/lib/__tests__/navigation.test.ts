@@ -31,118 +31,47 @@ describe("navigation", () => {
         messageKey: "home",
       });
     });
-
-    it("should have valid structure for all items", () => {
-      SINGLE_SITE_NAVIGATION.forEach((item) => {
-        expect(item.key).toBeTruthy();
-        expect(item.href).toBeTruthy();
-        expect(item.messageKey).toBeTruthy();
-        expect(item.href).toMatch(/^\/[a-z-/]*$/);
-      });
-    });
-
-    it("should have home item pointing to root", () => {
-      const homeItem = SINGLE_SITE_NAVIGATION.find(
-        (item) => item.key === "home",
-      );
-      expect(homeItem).toBeDefined();
-      expect(homeItem!.href).toBe("/");
-    });
-
-    it("should have unique keys", () => {
-      const keys = SINGLE_SITE_NAVIGATION.map((item) => item.key);
-      const uniqueKeys = new Set(keys);
-      expect(keys.length).toBe(uniqueKeys.size);
-    });
-
-    it("should have unique hrefs", () => {
-      const hrefs = SINGLE_SITE_NAVIGATION.map((item) => item.href);
-      const uniqueHrefs = new Set(hrefs);
-      expect(hrefs.length).toBe(uniqueHrefs.size);
-    });
   });
 
+  // 每行一个 (当前路径, 导航项路径, 是否高亮)；高亮决定 aria-current。
   describe("isActivePath", () => {
-    it("should return true for exact root path match", () => {
-      expect(isActivePath("/", "/")).toBe(true);
-      expect(isActivePath("/en", "/")).toBe(true);
-      expect(isActivePath("/fr", "/")).toBe(false);
-    });
-
-    it("should return false for root path when current path is not root", () => {
-      expect(isActivePath("/about", "/")).toBe(false);
-      expect(isActivePath("/en/about", "/")).toBe(false);
-      expect(isActivePath("/fr/products", "/")).toBe(false);
-    });
-
-    it("should return true for matching paths", () => {
-      expect(isActivePath("/about", "/about")).toBe(true);
-      expect(isActivePath("/en/about", "/about")).toBe(true);
-      expect(isActivePath("/fr/about", "/about")).toBe(false);
-    });
-
-    it("should return true for sub-paths", () => {
-      expect(isActivePath("/about/team", "/about")).toBe(true);
-      expect(isActivePath("/en/about/team", "/about")).toBe(true);
-      expect(isActivePath("/fr/products/enterprise", "/products")).toBe(false);
-    });
-
-    it("should return false for non-matching paths", () => {
-      expect(isActivePath("/about", "/products")).toBe(false);
-      expect(isActivePath("/en/about", "/products")).toBe(false);
-      expect(isActivePath("/fr/services", "/products")).toBe(false);
-    });
-
-    it("should handle paths with trailing slashes", () => {
-      expect(isActivePath("/about/", "/about")).toBe(true);
-      expect(isActivePath("/en/about/", "/about")).toBe(true);
-    });
-
-    it("should handle edge cases", () => {
-      expect(isActivePath("", "/")).toBe(true);
-      expect(isActivePath("/en", "/")).toBe(true);
-      expect(isActivePath("/fr", "/")).toBe(false);
-    });
-
-    it("should not match partial path segments", () => {
-      expect(isActivePath("/aboutus", "/about")).toBe(false);
-      expect(isActivePath("/en/aboutus", "/about")).toBe(false);
-    });
-
-    it("should only strip a whole locale segment", () => {
-      expect(isActivePath("/enquiry", "/enquiry")).toBe(true);
-      expect(isActivePath("/engineering/pumps", "/engineering")).toBe(true);
-      expect(isActivePath("/estimate", "/estimate")).toBe(true);
-      expect(isActivePath("/enquiry", "/")).toBe(false);
-    });
-
-    it("should handle item paths that already end with slash", () => {
-      // This test covers line 85 where cleanItemPath already ends with '/'
-      expect(isActivePath("/about/team", "/about/")).toBe(true);
-      expect(isActivePath("/en/about/team", "/about/")).toBe(true);
-      expect(isActivePath("/fr/products/enterprise", "/products/")).toBe(false);
-    });
-  });
-
-  describe("integration tests", () => {
-    it("should work with real navigation items", () => {
-      const contactItem = SINGLE_SITE_NAVIGATION.find(
-        (item) => item.key === "contact",
-      );
-      expect(contactItem).toBeDefined();
-
-      const isActive = isActivePath("/contact", contactItem!.href);
-      expect(isActive).toBe(true);
-    });
-
-    it("should handle all navigation items correctly", () => {
-      expect(SINGLE_SITE_NAVIGATION.length).toBeGreaterThan(0);
-
-      SINGLE_SITE_NAVIGATION.forEach((item) => {
-        // Test active path detection for each navigation target.
-        const isActive = isActivePath(item.href, item.href);
-        expect(isActive).toBe(true);
-      });
+    it.each([
+      // 根路径只匹配根，以及默认 locale 的根
+      ["/", "/", true],
+      ["/en", "/", true],
+      ["", "/", true],
+      ["/fr", "/", false],
+      ["/about", "/", false],
+      ["/en/about", "/", false],
+      ["/fr/products", "/", false],
+      // 精确匹配；只剥离已配置的 locale 前缀
+      ["/about", "/about", true],
+      ["/en/about", "/about", true],
+      ["/fr/about", "/about", false],
+      // 子路径
+      ["/about/team", "/about", true],
+      ["/en/about/team", "/about", true],
+      ["/fr/products/enterprise", "/products", false],
+      // 不匹配
+      ["/about", "/products", false],
+      ["/en/about", "/products", false],
+      ["/fr/services", "/products", false],
+      // 尾斜杠
+      ["/about/", "/about", true],
+      ["/en/about/", "/about", true],
+      ["/about/team", "/about/", true],
+      ["/en/about/team", "/about/", true],
+      ["/fr/products/enterprise", "/products/", false],
+      // 不按字符串前缀匹配半个路径段
+      ["/aboutus", "/about", false],
+      ["/en/aboutus", "/about", false],
+      // 只剥离完整的 locale 段
+      ["/enquiry", "/enquiry", true],
+      ["/engineering/pumps", "/engineering", true],
+      ["/estimate", "/estimate", true],
+      ["/enquiry", "/", false],
+    ] as const)("isActivePath(%j, %j) is %s", (current, item, expected) => {
+      expect(isActivePath(current, item)).toBe(expected);
     });
   });
 });

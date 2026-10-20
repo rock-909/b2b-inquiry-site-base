@@ -13,16 +13,11 @@ describe("resolveLocaleParam", () => {
     expect(resolveLocaleParam({ locale: "en" })).toBe("en");
   });
 
-  it("calls notFound for an unsupported locale", () => {
-    expect(() => resolveLocaleParam({ locale: "zh" })).toThrow(
-      "NEXT_NOT_FOUND",
-    );
-    expect(notFound).toHaveBeenCalled();
-  });
-
-  it("calls notFound for a value that is not a locale at all", () => {
-    expect(() => resolveLocaleParam({ locale: "nope" })).toThrow(
-      "NEXT_NOT_FOUND",
-    );
-  });
+  it.each(["zh", "nope"])(
+    "calls notFound for unsupported locale %s",
+    (locale) => {
+      expect(() => resolveLocaleParam({ locale })).toThrow("NEXT_NOT_FOUND");
+      expect(notFound).toHaveBeenCalled();
+    },
+  );
 });

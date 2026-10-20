@@ -10,11 +10,7 @@ export type { Locale, PageType } from "@/config/paths/types";
 export { LOCALES_CONFIG } from "@/config/paths/locales-config";
 
 // 重新导出工具函数
-export {
-  getCanonicalPath,
-  getLocalePath,
-  PATHNAMES,
-} from "@/config/paths/utils";
+export { getCanonicalPath, getLocalePath } from "@/config/paths/utils";
 
 // 重新导出类型
 export type { PathsConfig } from "@/config/paths/paths-config";

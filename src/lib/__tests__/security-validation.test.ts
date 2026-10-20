@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { sanitizePlainText } from "@/lib/security/validation";
+import {
+  sanitizeMultilineText,
+  sanitizePlainText,
+} from "@/lib/security/validation";
 
 describe("security-validation", () => {
   describe("sanitizePlainText", () => {
@@ -43,12 +46,6 @@ describe("security-validation", () => {
       expect(sanitizePlainText(undefined as unknown as string)).toBe("");
     });
 
-    it("should preserve combined plain text input", () => {
-      expect(
-        sanitizePlainText("<script>javascript:onclick=alert(1)</script>"),
-      ).toBe("<script>javascript:onclick=alert(1)</script>");
-    });
-
     it("should preserve buyer inquiry specification text", () => {
       expect(sanitizePlainText("width < 900mm, > 5 units")).toBe(
         "width < 900mm, > 5 units",
@@ -57,5 +54,20 @@ describe("security-validation", () => {
         "see product metadata: sheet",
       );
     });
+  });
+
+  describe("sanitizeMultilineText", () => {
+    it("strips control characters from multiline text while keeping line breaks", () => {
+      expect(sanitizeMultilineText("a\u0007b\r\nc")).toBe("ab\nc");
+    });
+  });
+
+  it("strips control and bidi override characters that disguise displayed text", () => {
+    expect(sanitizePlainText("\u202Eevil\u2066 co\u0007rp\u2069")).toBe(
+      "evil corp",
+    );
+    expect(sanitizeMultilineText("\u202Aline\u202C\nnext\u2067")).toBe(
+      "line\nnext",
+    );
   });
 });

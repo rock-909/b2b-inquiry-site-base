@@ -32,36 +32,28 @@ describe("ContactRouteError", () => {
     vi.clearAllMocks();
   });
 
-  it("passes the error and retry handler straight through", () => {
+  it("wires the contact copy, log context, error and retry into RouteErrorView", () => {
     render(<ContactRouteError error={error} retry={retry} />);
 
+    expect(mockRouteErrorView).toHaveBeenCalledTimes(1);
     const [props] = mockRouteErrorView.mock.calls[0] as unknown as [
-      { error: Error; retry: () => void },
+      {
+        error: Error;
+        retry: () => void;
+        logContext: string;
+        copy: Record<string, string>;
+      },
     ];
-    expect(props.error).toBe(error);
-    expect(props.retry).toBe(retry);
-  });
-
-  it("reads its copy from the contact error namespace", () => {
-    render(<ContactRouteError error={error} retry={retry} />);
-
-    const [props] = mockRouteErrorView.mock.calls[0] as unknown as [
-      { copy: Record<string, string> },
-    ];
-    expect(props.copy).toEqual({
-      title: "errors.contact.title",
-      description: "errors.contact.description",
-      tryAgain: "errors.contact.tryAgain",
-      goHome: "errors.contact.goHome",
+    expect(props).toEqual({
+      error,
+      retry,
+      logContext: "Contact",
+      copy: {
+        title: "errors.contact.title",
+        description: "errors.contact.description",
+        tryAgain: "errors.contact.tryAgain",
+        goHome: "errors.contact.goHome",
+      },
     });
-  });
-
-  it("logs under the Contact context", () => {
-    render(<ContactRouteError error={error} retry={retry} />);
-
-    const [props] = mockRouteErrorView.mock.calls[0] as unknown as [
-      { logContext: string },
-    ];
-    expect(props.logContext).toBe("Contact");
   });
 });

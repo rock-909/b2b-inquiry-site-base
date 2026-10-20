@@ -9,60 +9,16 @@ import { Link } from "@/i18n/routing";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { cn } from "@/lib/utils";
 
-export interface LogoProps {
-  className?: string;
-  showText?: boolean;
-  size?: "sm" | "md" | "lg";
-  ariaLabel?: string;
-  constrainText?: boolean;
-}
-
-function getSizeClass(sizeValue: "sm" | "md" | "lg"): string {
-  switch (sizeValue) {
-    case "sm":
-      return "h-6 w-auto";
-    case "md":
-      return "h-8 w-auto";
-    case "lg":
-      return "h-10 w-auto";
-    default:
-      return "h-8 w-auto";
-  }
-}
-
-function getTextSizeClass(sizeValue: "sm" | "md" | "lg"): string {
-  switch (sizeValue) {
-    case "sm":
-      return "text-lg";
-    case "md":
-      return "text-xl";
-    case "lg":
-      return "text-2xl";
-    default:
-      return "text-xl";
-  }
-}
-
-export function Logo({
-  className,
-  showText = true,
-  size = "md",
-  ariaLabel = SINGLE_SITE_CONFIG.name,
-  constrainText = false,
-}: LogoProps) {
+export function Logo() {
   const { logo } = SINGLE_SITE_CONFIG.brandAssets;
   const logoPath = logo?.status === "ready" ? logo.horizontal : undefined;
-  const shouldShowText = showText || !logoPath;
 
   return (
     <Link
       href="/"
       prefetch={false}
-      className={cn(
-        "flex max-w-full min-w-0 items-center gap-2 transition-opacity hover:opacity-80",
-        className,
-      )}
-      aria-label={ariaLabel}
+      className="flex max-w-full min-w-0 items-center gap-2 transition-opacity hover:opacity-80"
+      aria-label={SINGLE_SITE_CONFIG.name}
     >
       {logoPath && logo ? (
         <Image
@@ -70,10 +26,7 @@ export function Logo({
           alt={`${SINGLE_SITE_CONFIG.name} Logo`}
           width={logo.width}
           height={logo.height}
-          className={cn(
-            "transition-[filter,opacity] duration-200 dark:invert",
-            getSizeClass(size),
-          )}
+          className="h-8 w-auto transition-[filter,opacity] duration-200 dark:invert"
           decoding="async"
           loading="eager"
           unoptimized
@@ -81,18 +34,14 @@ export function Logo({
       ) : null}
 
       {/* Keep the brand name visible until real logo assets are public-ready. */}
-      {shouldShowText && (
-        <span
-          className={cn(
-            "header-brand-text block min-w-0 truncate font-semibold text-foreground",
-            constrainText ? "max-w-[220px] truncate" : undefined,
-            logoPath ? "header-logo-text-desktop-only" : undefined,
-            getTextSizeClass(size),
-          )}
-        >
-          {SINGLE_SITE_CONFIG.name}
-        </span>
-      )}
+      <span
+        className={cn(
+          "header-brand-text block min-w-0 truncate text-xl font-semibold text-foreground",
+          logoPath ? "header-logo-text-desktop-only" : undefined,
+        )}
+      >
+        {SINGLE_SITE_CONFIG.name}
+      </span>
     </Link>
   );
 }

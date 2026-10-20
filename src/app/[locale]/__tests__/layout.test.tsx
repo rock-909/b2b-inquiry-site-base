@@ -1,3 +1,6 @@
+import { NextIntlClientProvider } from "next-intl";
+import { getTranslations } from "next-intl/server";
+import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import LocaleLayout from "../layout";
 
@@ -52,7 +55,25 @@ describe("LocaleLayout", () => {
       suppressHydrationWarning: true,
     });
     expect(body.type).toBe("body");
-    expect(body.props.className).toBe("flex min-h-dvh flex-col antialiased");
     expect(body.props.children.props.children).toEqual(<div>Child</div>);
+  });
+
+  it("hands the client provider only the scoped client messages", async () => {
+    vi.mocked(getTranslations).mockResolvedValue(
+      ((key: string) => key) as never,
+    );
+    const page = await LocaleLayout({
+      children: <div>Child</div>,
+      params: Promise.resolve({ locale: "en" }),
+    });
+    // body 里是异步内容组件；直接调用它拿到渲染树，不为测试新增导出。
+    const content = page.props.children.props.children;
+    const tree = await content.type(content.props);
+    const provider = (tree.props.children as ReactElement[]).find(
+      (child) => child?.type === NextIntlClientProvider,
+    ) as ReactElement<{ messages: Record<string, unknown> }> | undefined;
+
+    expect(provider?.props.messages).toHaveProperty("navigation");
+    expect(provider?.props.messages).not.toHaveProperty("inquiry");
   });
 });

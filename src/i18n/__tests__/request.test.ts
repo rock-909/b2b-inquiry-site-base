@@ -62,31 +62,33 @@ describe("i18n Request Configuration", () => {
     return (await captured()) as RequestConfigResult;
   }
 
-  it("registers a getRequestConfig callback", async () => {
-    await import("../request");
-    expect(mockGetRequestConfig).toHaveBeenCalledWith(expect.any(Function));
+  it("returns the request locale with its own time zone and loaded messages", async () => {
+    const locale =
+      LOCALES_CONFIG.locales.find(
+        (candidate) => candidate !== LOCALES_CONFIG.defaultLocale,
+      ) ?? LOCALES_CONFIG.defaultLocale;
+    const loadedMessages = { navigation: { home: "Loaded home" } };
+    mockLoadCompleteMessages.mockResolvedValue(loadedMessages);
+
+    const result = await runConfig(locale);
+
+    expect(result).toEqual({
+      locale,
+      timeZone: LOCALES_CONFIG.timeZones[locale],
+      strictMessageTypeSafety: true,
+      messages: loadedMessages,
+    });
+    expect(mockLoadCompleteMessages).toHaveBeenCalledWith(locale);
   });
 
-  it("returns english request config", async () => {
-    const result = await runConfig(EN_LOCALE);
+  it.each(["invalid", null])(
+    "falls back to default locale when requestLocale is %s",
+    async (requestLocale) => {
+      const result = await runConfig(requestLocale);
 
-    expect(result.locale).toBe(EN_LOCALE);
-    expect(result.timeZone).toBe("UTC");
-    expect(result.strictMessageTypeSafety).toBe(true);
-    expect(result.messages).toBeDefined();
-  });
-
-  it("falls back to default locale when requestLocale is invalid", async () => {
-    const result = await runConfig("invalid");
-
-    expect(result.locale).toBe(LOCALES_CONFIG.defaultLocale);
-  });
-
-  it("falls back to default locale when requestLocale is null", async () => {
-    const result = await runConfig(null);
-
-    expect(result.locale).toBe(LOCALES_CONFIG.defaultLocale);
-  });
+      expect(result.locale).toBe(LOCALES_CONFIG.defaultLocale);
+    },
+  );
 
   it("surfaces deterministic message load failures without retrying", async () => {
     mockLoadCompleteMessages.mockRejectedValue(new Error("source failed"));

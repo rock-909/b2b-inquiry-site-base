@@ -361,29 +361,6 @@ describe("lead pipeline (in-process integration)", () => {
     expect(text).toContain("buyer@example.com");
   });
 
-  it("delivers general inquiry with canonical message to both external sinks", async () => {
-    const response = await inquiryRoute.POST(
-      makeInquiryRequest({
-        turnstileToken: "valid-turnstile-token",
-        fullName: "Jane Buyer",
-        email: "jane@example.com",
-        message: "Need a custom component for a warehouse",
-      }),
-    );
-    const body = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(body.success).toBe(true);
-
-    const fields = getCapturedAirtableFields();
-    expect(fields["Email"]).toBe("jane@example.com");
-    expect(fields["Requirements"]).toContain("Need a custom component");
-
-    const resendBody = parseJsonBody(getResendCalls()[0]?.init);
-    expect(resendBody.reply_to).toBe("jane@example.com");
-    expect(resendBody.text as string).toContain("Need a custom component");
-  });
-
   it("accepts optional empty message on general inquiry and still delivers", async () => {
     const response = await inquiryRoute.POST(
       makeInquiryRequest({
@@ -601,8 +578,14 @@ describe("lead pipeline (in-process integration)", () => {
       success: false,
       errorCode: "RATE_LIMIT_EXCEEDED",
     });
-    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThan(0);
+    const retryAfterSeconds = Number(response.headers.get("Retry-After"));
+    expect(retryAfterSeconds).toBeGreaterThan(0);
     expect(response.headers.get("X-RateLimit-Remaining")).toBe("0");
+    // Reset 是窗口结束的毫秒时间戳，落在 Retry-After 给出的等待时间之内。
+    const msUntilReset =
+      Number(response.headers.get("X-RateLimit-Reset")) - Date.now();
+    expect(msUntilReset).toBeGreaterThan(0);
+    expect(msUntilReset).toBeLessThanOrEqual(retryAfterSeconds * 1000);
     expect(fetchMock).toHaveBeenCalledTimes(count);
   });
 

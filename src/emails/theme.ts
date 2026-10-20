@@ -6,7 +6,6 @@
 import { STATIC_THEME_COLORS } from "@/config/static-theme-colors";
 
 export const COLORS = {
-  primary: STATIC_THEME_COLORS.primaryText,
   success: STATIC_THEME_COLORS.success,
   successLight: STATIC_THEME_COLORS.successLight,
   text: STATIC_THEME_COLORS.text,

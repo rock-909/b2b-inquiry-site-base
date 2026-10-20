@@ -9,7 +9,6 @@ const contactPage = {
     publishedAt: "2026-08-06",
     updatedAt: "2026-08-06",
     author: "B2B Inquiry Site Base",
-    lastReviewed: "2026-08-06",
     draft: false,
     seo: {
       title: "Contacto — Sitio de referencia para consultas B2B",

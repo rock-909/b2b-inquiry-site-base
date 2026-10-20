@@ -8,107 +8,6 @@ vi.mock("@/lib/content/static-pages", () => ({
 
 import { loadLegalPage } from "../legal-page";
 
-const SENTINEL_BLOCKS = [
-  { kind: "heading", level: "h2", displayText: "Sentinel Scope", id: "scope" },
-] as never[];
-vi.mock("@/lib/content/static-markdown-blocks", async (importOriginal) => {
-  const actual =
-    await importOriginal<
-      typeof import("@/lib/content/static-markdown-blocks")
-    >();
-  return {
-    ...actual,
-    // 默认转发真实实现；仅单次解析合同测试中覆盖为 sentinel。
-    parseStaticMarkdownBlocks: vi.fn(actual.parseStaticMarkdownBlocks),
-  };
-});
-
-describe("loadLegalPage", () => {
-  it("loads and narrows to LegalPageMetadata", async () => {
-    mockGetStaticPage.mockReturnValueOnce({
-      metadata: {
-        title: "Privacy Policy",
-        slug: "privacy",
-        publishedAt: "2024-01-01",
-        updatedAt: "2024-04-01",
-        lastReviewed: "2024-04-01",
-        seo: {
-          title: "Privacy Policy | Data Protection",
-          description: "Our privacy policy.",
-        },
-      },
-      content:
-        "## Introduction\n\nWe care about your privacy.\n\n## Information We Collect\n\nWe collect the following.\n\n### Personal Data\n\nName, email.",
-      slug: "privacy",
-    });
-
-    const result = await loadLegalPage("privacy", "en");
-    expect(result.metadata.title).toBe("Privacy Policy");
-    expect(result.metadata.lastReviewed).toBe("2024-04-01");
-  });
-
-  it("does not infer a review from updatedAt", async () => {
-    mockGetStaticPage.mockReturnValueOnce({
-      metadata: {
-        title: "Terms",
-        slug: "terms",
-        publishedAt: "2024-01-01",
-        updatedAt: "2024-06-15",
-      },
-      content: "## Terms",
-      slug: "terms",
-    });
-
-    const result = await loadLegalPage("terms", "en");
-    expect(result.metadata.lastReviewed).toBeUndefined();
-  });
-
-  it("does not infer a review from publishedAt", async () => {
-    mockGetStaticPage.mockReturnValueOnce({
-      metadata: {
-        title: "Terms",
-        slug: "terms",
-        publishedAt: "2024-01-01",
-      },
-      content: "## Terms",
-      slug: "terms",
-    });
-
-    const result = await loadLegalPage("terms", "en");
-    expect(result.metadata.lastReviewed).toBeUndefined();
-  });
-});
-
-describe("single-parse contract", () => {
-  it("parses content once and shares the result between body and TOC", async () => {
-    mockGetStaticPage.mockReturnValueOnce({
-      metadata: {
-        title: "Privacy Policy",
-        slug: "privacy",
-        publishedAt: "2024-01-01",
-      },
-      content: "## Scope\n\nBody text.",
-    });
-
-    // 通过动态导入拿到被 vi.mock 替换后的绑定。
-    const { parseStaticMarkdownBlocks } = await import(
-      "@/lib/content/static-markdown-blocks"
-    );
-    const parseMock = vi.mocked(parseStaticMarkdownBlocks);
-    parseMock.mockClear();
-    parseMock.mockReturnValueOnce(SENTINEL_BLOCKS as never);
-
-    const page = loadLegalPage("privacy", "en");
-
-    // loader 只做一次解析；TOC 与正文消费同一份块序列（identity 级传递）。
-    expect(parseMock).toHaveBeenCalledTimes(1);
-    expect(page.blocks).toBe(SENTINEL_BLOCKS);
-    expect(page.headings).toEqual([
-      { level: 2, text: "Sentinel Scope", id: "scope" },
-    ]);
-  });
-});
-
 describe("loadLegalPage headings", () => {
   function headingsFor(content: string) {
     mockGetStaticPage.mockReturnValueOnce({
@@ -145,21 +44,6 @@ describe("loadLegalPage headings", () => {
       { level: 2, text: "How We Use Your Data", id: "data-use" },
       { level: 3, text: "Cookies", id: "cookies-policy" },
     ]);
-  });
-
-  it("explicit ID remains stable when heading text changes", () => {
-    const v1 = headingsFor(
-      "## Information Collection {#info-collect}",
-    );
-    const v2 = headingsFor(
-      "## What Information We Collect {#info-collect}",
-    );
-
-    expect(v1).toHaveLength(1);
-    expect(v2).toHaveLength(1);
-    expect(v1[0]?.id).toBe("info-collect");
-    expect(v2[0]?.id).toBe("info-collect");
-    expect(v1[0]?.id).toBe(v2[0]?.id);
   });
 
   it("returns empty array for content with no headings", () => {

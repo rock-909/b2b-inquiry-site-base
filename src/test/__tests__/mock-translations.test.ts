@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getSourceMessages } from "@/lib/i18n/load-messages";
-import { getFlatMessages, lookupMessage } from "@/test/i18n-messages";
+import { lookupMessage } from "@/test/i18n-messages";
 import { createMockTranslations } from "@/test/utils";
 
 /**
@@ -27,14 +27,12 @@ describe("createMockTranslations 的取值语义", () => {
     ).toBe("");
   });
 
-  // 消息包当下确实留空了几条（社交链接），顺带扫一遍走完整条链路。包里一条
-  // 空串都没有时这个循环空转，不构成断言——上面那条才是证明。
-  it("消息包里现存的空串条目走完整链路也返回空字符串", () => {
-    const t = createMockTranslations();
+  // 同一语义要经过 createMockTranslations 整条链路：把真实 key 覆写成空串，
+  // 取值仍是空串，而不是回退成 key 名。
+  it("真实 key 的空字符串经 createMockTranslations 取回仍是空字符串", () => {
+    const t = createMockTranslations({ "navigation.home": "" });
 
-    for (const [key, value] of getFlatMessages()) {
-      if (value === "") expect(t(key)).toBe("");
-    }
+    expect(t("navigation.home")).toBe("");
   });
 
   // 真实 next-intl 对缺失 key 报 MISSING_MESSAGE；回退成 key 名会让断言 key

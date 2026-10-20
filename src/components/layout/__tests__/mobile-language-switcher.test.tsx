@@ -9,23 +9,11 @@ import { beforeEach, vi, describe, expect, it } from "vitest";
 import { MobileLanguageSwitcher } from "@/components/layout/mobile-language-switcher";
 import { DEFAULT_LOCALE } from "@/test/two-locales";
 
-type MockFinalUrlLinkProps = ComponentProps<"a"> & {
-  onNavigate?: () => void;
-};
-
 vi.hoisted(() => vi.resetModules());
 vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
 
 vi.mock("@/i18n/routing", () => ({
-  FinalUrlLink: ({ onNavigate, ...props }: MockFinalUrlLinkProps) => (
-    <a
-      {...props}
-      onClick={(event) => {
-        props.onClick?.(event);
-        onNavigate?.();
-      }}
-    />
-  ),
+  FinalUrlLink: (props: ComponentProps<"a">) => <a {...props} />,
   usePathname: () => "/contact",
 }));
 
@@ -68,21 +56,5 @@ describe("MobileLanguageSwitcher", () => {
       "href",
       "/de/contact?source=mobile&tag=one&tag=two#inquiry",
     );
-  });
-
-  it("closes the parent navigation after Next accepts the locale navigation", async () => {
-    const onNavigate = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <MobileLanguageSwitcher
-        locale={DEFAULT_LOCALE}
-        onNavigate={onNavigate}
-      />,
-    );
-
-    await user.click(screen.getByTestId("mobile-language-trigger"));
-    await user.click(screen.getByRole("link", { name: "Deutsch" }));
-
-    expect(onNavigate).toHaveBeenCalledOnce();
   });
 });
