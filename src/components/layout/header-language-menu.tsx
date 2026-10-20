@@ -63,7 +63,7 @@ export function HeaderLanguageMenu({
         })}
         className={cn(
           "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-[var(--control-radius)] px-3 text-sm font-medium text-muted-foreground",
-          "transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground data-[popup-open]:bg-muted data-[popup-open]:text-foreground",
+          "transition-colors duration-150 ease-out hover:text-foreground data-[popup-open]:text-foreground",
         )}
       >
         <Globe aria-hidden="true" className="size-4" />
@@ -94,10 +94,7 @@ export function HeaderLanguageMenu({
                       {option.label}
                     </span>
                     {isCurrent ? (
-                      <Check
-                        aria-hidden="true"
-                        className="ml-auto size-4 text-[var(--primary-text)]"
-                      />
+                      <Check aria-hidden="true" className="ml-auto size-4" />
                     ) : null}
                   </>
                 );
@@ -107,7 +104,7 @@ export function HeaderLanguageMenu({
                     <DropdownMenuItem
                       key={option.locale}
                       aria-current="true"
-                      className="text-[var(--primary-text)] data-[disabled]:opacity-100"
+                      className="text-foreground data-[disabled]:opacity-100"
                       data-locale={option.locale}
                       data-testid={`language-option-${option.locale}`}
                       disabled

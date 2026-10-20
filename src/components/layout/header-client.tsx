@@ -10,7 +10,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { ChevronDown, Globe } from "lucide-react";
+import { Check, ChevronDown, Globe } from "lucide-react";
 import { usePathname } from "@/i18n/routing";
 import {
   LOCALES_CONFIG,
@@ -99,7 +99,7 @@ function LanguageToggleTrigger({
       aria-haspopup="menu"
       className={cn(
         "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-[var(--control-radius)] px-3 text-sm font-medium text-muted-foreground",
-        "transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground data-[popup-open]:bg-muted data-[popup-open]:text-foreground",
+        "transition-colors duration-150 ease-out hover:text-foreground data-[popup-open]:text-foreground",
       )}
       onClick={onClick}
     >
@@ -127,7 +127,7 @@ function LanguageToggleStaticFallback({
       <summary
         data-testid="language-toggle-button"
         aria-label={ariaLabel}
-        className="inline-flex h-8 cursor-pointer list-none items-center justify-center gap-1.5 rounded-[var(--control-radius)] px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden"
+        className="inline-flex h-8 cursor-pointer list-none items-center justify-center gap-1.5 rounded-[var(--control-radius)] px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground [&::-webkit-details-marker]:hidden"
       >
         <Globe aria-hidden="true" className="size-4" />
         <span>{LOCALES_CONFIG.triggerLabels[locale]}</span>
@@ -141,9 +141,12 @@ function LanguageToggleStaticFallback({
             hrefLang={targetLocale}
             lang={targetLocale}
             aria-current={targetLocale === locale ? "true" : undefined}
-            className="flex min-h-9 items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground aria-[current=true]:text-[var(--primary-text)]"
+            className="flex min-h-9 items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground aria-[current=true]:text-foreground"
           >
             {LOCALES_CONFIG.displayNames[targetLocale]}
+            {targetLocale === locale ? (
+              <Check aria-hidden="true" className="ml-auto size-4" />
+            ) : null}
           </a>
         ))}
       </div>

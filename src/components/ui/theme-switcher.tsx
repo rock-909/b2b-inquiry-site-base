@@ -60,9 +60,9 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
             aria-label={tTheme(labelKey)}
             aria-pressed={isHydrated ? isActive : undefined}
             className={cn(
-              "flex size-8 items-center justify-center rounded-[calc(var(--control-radius)-0.125rem)] transition-colors duration-150 ease-out hover:bg-muted",
+              "flex size-8 items-center justify-center rounded-[calc(var(--control-radius)-0.125rem)] transition-colors duration-150 ease-out",
               isHydrated && isActive
-                ? "text-[var(--primary-text)]"
+                ? "bg-background text-foreground ring-1 ring-border"
                 : "text-muted-foreground hover:text-foreground",
             )}
             disabled={!isHydrated}

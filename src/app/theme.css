@@ -107,10 +107,10 @@
   --button-radius: var(--control-radius);
   --button-height-sm: var(--control-height-sm);
   --button-height-default: var(--control-height);
-  /* Buttons use steps 11-12 rather than 9-10 so the step-1 label keeps 4.5:1. */
-  --button-primary-bg: var(--brand-11);
-  --button-primary-fg: var(--primary-foreground);
-  --button-primary-hover-bg: var(--primary-hover);
+  /* 主按钮用正文色（浅色为黑底、深色为浅底），品牌色留给焦点框与描边按钮。 */
+  --button-primary-bg: var(--foreground);
+  --button-primary-fg: var(--background);
+  --button-primary-hover-bg: var(--muted-foreground);
   --button-outline-fg: var(--primary-text);
   --button-outline-border: var(--primary-text);
   --button-outline-hover-bg: color-mix(

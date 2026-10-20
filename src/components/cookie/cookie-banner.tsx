@@ -55,7 +55,7 @@ export function CookieBanner({
           <Link
             href="/privacy"
             prefetch={false}
-            className="rounded-sm font-medium text-[var(--primary-text)] underline underline-offset-4 transition-colors duration-150 ease-out hover:text-foreground"
+            className="text-link rounded-sm"
           >
             {t("learnMore")}
           </Link>

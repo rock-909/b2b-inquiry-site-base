@@ -111,8 +111,10 @@ function CenterNav({
               href={item.href}
               className={cn(
                 "relative inline-flex h-8 items-center rounded-[var(--control-radius)] px-3 text-sm font-medium",
-                "text-muted-foreground hover:bg-muted hover:text-foreground",
-                "aria-[current=page]:text-[var(--primary-text)]",
+                "text-muted-foreground hover:text-foreground",
+                "aria-[current=page]:text-foreground",
+                // 悬停其它项时当前页文字退回次要色，一次只高亮一处。
+                "[ul:has(a:hover)_&[aria-current=page]:not(:hover)]:text-muted-foreground",
                 "transition-colors duration-150 ease-out",
               )}
             >

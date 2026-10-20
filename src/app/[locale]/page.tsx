@@ -51,7 +51,7 @@ export default async function HomePage({ params }: HomePageProps) {
         </p>
         <Link
           href={getCanonicalPath("contact")}
-          className="mt-6 inline-block py-2 text-[var(--primary-text)] underline underline-offset-4"
+          className="text-link mt-6 inline-block py-2"
           prefetch={false}
         >
           {t("contactLink")}

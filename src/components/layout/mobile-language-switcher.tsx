@@ -39,7 +39,7 @@ export function MobileLanguageSwitcher({
       translate="no"
     >
       <summary
-        className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-[var(--control-radius)] px-3 text-base font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden"
+        className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-[var(--control-radius)] px-3 text-base font-medium text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground [&::-webkit-details-marker]:hidden"
         aria-label={tAccessibility("language", {
           language: currentLanguageLabel,
         })}
@@ -68,7 +68,7 @@ export function MobileLanguageSwitcher({
               key={option.locale}
               aria-current="true"
               lang={option.locale}
-              className="flex min-h-11 items-center justify-between rounded-[var(--control-radius)] px-3 pl-9 text-base font-medium text-[var(--primary-text)]"
+              className="flex min-h-11 items-center justify-between rounded-[var(--control-radius)] px-3 pl-9 text-base font-medium text-foreground"
             >
               {option.label}
               <Check aria-hidden="true" className="size-4" />

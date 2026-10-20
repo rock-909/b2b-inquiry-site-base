@@ -13,7 +13,7 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
       <h2 className="font-semibold">{t("contactTitle")}</h2>
       {email ? (
         <a
-          className="block w-fit py-2 break-all underline underline-offset-4"
+          className="text-link block w-fit py-2 break-all"
           href={`mailto:${email}`}
         >
           {email}
@@ -23,7 +23,7 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
       )}
       {phone ? (
         <a
-          className="block w-fit py-2 break-words underline underline-offset-4"
+          className="text-link block w-fit py-2 break-words"
           href={`tel:${phone}`}
         >
           {phone}
