@@ -97,7 +97,7 @@
       "fullName": "Full name",
       "email": "Email address",
       "message": "Message",
-      "messageHint": "Optional — share your requirement, timing, market or any useful context.",
+      "messageHint": "Share your requirement, timing, market or any useful context.",
       "submit": "Send inquiry",
       "submitting": "Sending...",
       "success": "Received. The team can review your inquiry and respond with the next useful step or the details still needed.",

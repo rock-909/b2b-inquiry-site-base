@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const THEME_CSS = "src/app/theme.css";
 const GLOBALS_CSS = "src/app/globals.css";
+const CONTRAST_MORE_MEDIA = "@media (prefers-contrast: more)";
 
 const SEMANTIC_COLOR_FILES = [
   "src/components/ui/button.tsx",
@@ -69,8 +70,17 @@ describe("design token contract", () => {
       ["--input", "--card", 3],
       ["--ring", "--background", 3],
       ["--ring", "--card", 3],
+      ["--border", "--background", 3, "more"],
+      ["--foreground", "--background", 4.5],
+      ["--card-foreground", "--card", 4.5],
+      ["--popover-foreground", "--popover", 4.5],
       ["--button-primary-fg", "--button-primary-bg", 4.5],
+      ["--button-primary-fg", "--button-primary-hover-bg", 4.5],
       ["--primary-text", "--background", 4.5],
+      ["--accent-foreground", "--accent", 4.5],
+      ["--info-foreground", "--info-muted", 4.5],
+      ["--footer-text", "--footer-bg", 4.5],
+      ["--footer-heading", "--footer-bg", 4.5],
       ["--muted-foreground", "--background", 4.5],
       ["--muted-foreground", "--card", 4.5],
       ["--muted-foreground", "--muted", 4.5],
@@ -79,16 +89,19 @@ describe("design token contract", () => {
     ] as const;
 
     for (const themeName of ["light", "dark"] as const) {
-      const tokens = buildThemeTokenMap(css, themeName);
+      for (const contrastMode of ["default", "more"] as const) {
+        const tokens = buildThemeTokenMap(css, themeName, contrastMode);
 
-      for (const [foreground, background, minimum] of pairs) {
-        expect(
-          contrastRatio(
-            resolveOklchColor(tokens, foreground),
-            resolveOklchColor(tokens, background),
-          ),
-          `${themeName} ${foreground} vs ${background}`,
-        ).toBeGreaterThanOrEqual(minimum);
+        for (const [foreground, background, minimum, onlyMode] of pairs) {
+          if (onlyMode && onlyMode !== contrastMode) continue;
+          expect(
+            contrastRatio(
+              resolveColor(tokens, foreground),
+              resolveColor(tokens, background),
+            ),
+            `${themeName}/${contrastMode} ${foreground} vs ${background}`,
+          ).toBeGreaterThanOrEqual(minimum);
+        }
       }
     }
   });
@@ -136,24 +149,40 @@ function parseCssDeclarations(body: string): Map<string, string> {
 function buildThemeTokenMap(
   css: string,
   theme: "light" | "dark",
+  contrastMode: "default" | "more",
 ): Map<string, string> {
+  const contrastMedia = extractSelectorBodies(css, CONTRAST_MORE_MEDIA);
+  // Drop media bodies first so their nested :root only applies in "more" mode.
+  const baseCss = contrastMedia.reduce(
+    (rest, body) => rest.replace(body, ""),
+    css,
+  );
   const tokens = new Map<string, string>();
-  for (const body of extractSelectorBodies(css, ":root")) {
+  for (const body of extractSelectorBodies(baseCss, ":root")) {
     for (const [name, value] of parseCssDeclarations(body)) {
       tokens.set(name, value);
     }
   }
   if (theme === "dark") {
-    for (const body of extractSelectorBodies(css, ".dark")) {
+    for (const body of extractSelectorBodies(baseCss, ".dark")) {
       for (const [name, value] of parseCssDeclarations(body)) {
         tokens.set(name, value);
+      }
+    }
+  }
+  if (contrastMode === "more") {
+    for (const media of contrastMedia) {
+      for (const body of extractSelectorBodies(media, ":root")) {
+        for (const [name, value] of parseCssDeclarations(body)) {
+          tokens.set(name, value);
+        }
       }
     }
   }
   return tokens;
 }
 
-function resolveOklchColor(
+function resolveColor(
   tokens: Map<string, string>,
   tokenName: string,
   depth = 0,
@@ -166,20 +195,31 @@ function resolveOklchColor(
 
   const varMatch = raw.match(/^var\((--[\w-]+)\)$/u);
   if (varMatch?.[1]) {
-    return resolveOklchColor(tokens, varMatch[1], depth + 1);
+    return resolveColor(tokens, varMatch[1], depth + 1);
+  }
+
+  // Hex and percent lightness cover scales pasted from the Radix custom color tool.
+  const hexMatch = raw.match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/iu);
+  if (hexMatch) {
+    return [
+      Number.parseInt(hexMatch[1] ?? "", 16) / 255,
+      Number.parseInt(hexMatch[2] ?? "", 16) / 255,
+      Number.parseInt(hexMatch[3] ?? "", 16) / 255,
+    ];
   }
 
   const oklchMatch = raw.match(
-    /^oklch\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)\s*\)$/u,
+    /^oklch\(\s*([0-9.]+)(%?)\s+([0-9.]+)\s+([0-9.]+)\s*\)$/u,
   );
   if (!oklchMatch) {
-    throw new Error(`Token ${tokenName} did not resolve to oklch: ${raw}`);
+    throw new Error(`Token ${tokenName} did not resolve to a color: ${raw}`);
   }
 
+  const lightness = Number(oklchMatch[1]);
   return oklchToSrgb(
-    Number(oklchMatch[1]),
-    Number(oklchMatch[2]),
+    oklchMatch[2] ? lightness / 100 : lightness,
     Number(oklchMatch[3]),
+    Number(oklchMatch[4]),
   );
 }
 

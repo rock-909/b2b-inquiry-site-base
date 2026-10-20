@@ -97,7 +97,7 @@
       "fullName": "Nombre completo",
       "email": "Dirección de correo electrónico",
       "message": "Mensaje",
-      "messageHint": "Opcional: comparte tus requisitos, plazos, mercado o cualquier contexto útil.",
+      "messageHint": "Comparte tus requisitos, plazos, mercado o cualquier contexto útil.",
       "submit": "Enviar consulta",
       "submitting": "Enviando...",
       "success": "Recibido. El equipo puede revisar tu consulta y responder con el siguiente paso útil o con los datos que aún falten.",
