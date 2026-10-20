@@ -112,14 +112,6 @@ describe("i18n Routing Configuration", () => {
     expect(config.localeCookie).toBe(false);
   });
 
-  it("keeps every locale code a two-letter lowercase tag", async () => {
-    const config = await getRoutingDefinition();
-
-    config.locales.forEach((locale: string) => {
-      expect(locale).toMatch(/^[a-z]{2}$/);
-    });
-  });
-
   // 用 `toBe` 比对象身份，不是比值：`routing.ts` 造一个字段相同的新对象也会让值相等
   // 的断言全绿，但那样 app 代码和 middleware 就各拿一份配置了。
   it("re-exports the very object routing-config built", async () => {
@@ -135,9 +127,5 @@ describe("i18n Routing Configuration", () => {
     const routingModule = await import("../routing");
 
     expect(mockCreateNavigation).toHaveBeenCalledWith(routingModule.routing);
-    expect(routingModule.Link).toBeDefined();
-    expect(routingModule.redirect).toBeDefined();
-    expect(routingModule.usePathname).toBeDefined();
-    expect(routingModule.useRouter).toBeDefined();
   });
 });

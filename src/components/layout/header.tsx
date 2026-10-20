@@ -37,7 +37,6 @@ interface HeaderNavItem {
 }
 
 interface HeaderProps {
-  className?: string;
   locale: Locale;
   contactSalesLabel: string;
   openMenuLabel: string;
@@ -50,7 +49,6 @@ interface HeaderProps {
 const EMPTY_MAIN_NAV_ITEMS: HeaderNavItem[] = [];
 
 export function Header({
-  className,
   locale,
   contactSalesLabel,
   openMenuLabel,
@@ -60,13 +58,7 @@ export function Header({
   mainNavItems = EMPTY_MAIN_NAV_ITEMS,
 }: HeaderProps) {
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-50 w-full bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md",
-        "border-b border-border/10 transition-[background-color,border-color] duration-200",
-        className,
-      )}
-    >
+    <header className="sticky top-0 z-50 w-full border-b border-border/10 bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md transition-[background-color,border-color] duration-200">
       <div className="mx-auto max-w-[1080px] px-6">
         <div className="header-nav-layout">
           {/* Left section: Logo */}

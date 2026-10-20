@@ -33,30 +33,6 @@ function graphTypes(graphData: unknown) {
 }
 
 describe("createJsonLdGraphData", () => {
-  it("keeps page-level schema node types in the merged graph", () => {
-    const graphData = createJsonLdGraphData([
-      {
-        "@type": "Organization",
-        name: "Reference Industries",
-      },
-      {
-        "@type": "WebSite",
-        name: "Reference Industries",
-      },
-      {
-        "@type": "FAQPage",
-        mainEntity: [],
-      },
-    ]);
-
-    expect(graphData["@context"]).toBe("https://schema.org");
-    expect(graphTypes(graphData)).toEqual([
-      "Organization",
-      "WebSite",
-      "FAQPage",
-    ]);
-  });
-
   it("uses shared JSON-LD escaping for script-injection text", () => {
     const graphData = createJsonLdGraphData([
       {

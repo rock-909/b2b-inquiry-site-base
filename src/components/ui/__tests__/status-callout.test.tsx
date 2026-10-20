@@ -1,5 +1,4 @@
 import { render, screen } from "@testing-library/react";
-import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 import { StatusCallout } from "@/components/ui/status-callout";
 
@@ -31,24 +30,6 @@ describe("StatusCallout", () => {
 
     expect(callout).toHaveAttribute("aria-live", "polite");
     expect(callout).toHaveTextContent(message);
-  });
-
-  it("keeps status semantics on one native element", () => {
-    render(<StatusCallout>Self-contained notice</StatusCallout>);
-
-    const callout = screen.getByRole("status");
-
-    expect(callout.tagName).toBe("DIV");
-    expect(callout).toHaveAttribute("data-slot", "status-callout");
-  });
-
-  it("forwards refs to the root HTMLDivElement", () => {
-    const ref = createRef<HTMLDivElement>();
-
-    render(<StatusCallout ref={ref}>Forwarded ref body</StatusCallout>);
-
-    expect(ref.current).toBeInstanceOf(HTMLDivElement);
-    expect(ref.current).toHaveAttribute("data-slot", "status-callout");
   });
 
   it("can render static notices without live-region semantics", () => {

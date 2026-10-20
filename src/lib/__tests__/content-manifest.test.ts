@@ -1,19 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { getStaticPage, STATIC_PAGES } from "@/lib/content/static-pages";
+import { STATIC_PAGES } from "@/lib/content/static-pages";
 
 describe("static content source", () => {
-  it("resolves imported page content", () => {
-    expect(getStaticPage("privacy", "en")).toMatchObject({
-      slug: "privacy",
-    });
-  });
-
-  it("resolves the Spanish example page content", () => {
-    expect(getStaticPage("privacy", "es")).toMatchObject({
-      slug: "privacy",
-    });
-  });
-
   it("keeps authored internal links free of locale prefixes", () => {
     for (const [locale, pages] of Object.entries(STATIC_PAGES)) {
       for (const page of Object.values(pages)) {

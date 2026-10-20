@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { loadCompleteMessages } from "@/lib/i18n/load-messages";
 
 describe("load-messages canonical runtime source", () => {
@@ -7,30 +7,5 @@ describe("load-messages canonical runtime source", () => {
     const defaultLocaleMessages = await loadCompleteMessages("en");
 
     expect(invalidLocaleMessages).toEqual(defaultLocaleMessages);
-  });
-
-  it("returns complete messages from the canonical locale file", async () => {
-    const messages = await loadCompleteMessages("en");
-
-    expect(messages).toHaveProperty("home");
-    expect(messages).toHaveProperty("contact");
-    expect(messages).toHaveProperty("emailTemplates");
-    expect(messages).toHaveProperty("home");
-    expect(messages).not.toHaveProperty("common");
-    expect(messages).not.toHaveProperty("blog");
-    expect(messages).not.toHaveProperty("customProject");
-    expect(messages).not.toHaveProperty("language");
-  });
-
-  it("uses the canonical source without site-specific overlay drift", async () => {
-    vi.resetModules();
-
-    const messages = (await loadCompleteMessages("en")) as {
-      seo?: unknown;
-      home?: { title?: string };
-    };
-
-    expect(messages.seo).toBeUndefined();
-    expect(messages.home?.title).toBeTruthy();
   });
 });

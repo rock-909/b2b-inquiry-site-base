@@ -8,8 +8,7 @@
  * This is the sole owner of proofs about the *content* of the mobile link
  * list: the no-JS SSR fallback, the contact CTA, active-path
  * highlighting, and the exact item set/order. Drawer interaction (opening,
- * closing, keyboard) lives in mobile-navigation.test.tsx; the standalone
- * toggle button lives in mobile-menu-button.test.tsx.
+ * closing, keyboard) and the toggle button live in mobile-navigation.test.tsx.
  */
 
 import { render, screen } from "@testing-library/react";
@@ -106,7 +105,7 @@ describe("MobileNavigationLinks", () => {
     expect(screen.queryByRole("link", { name: "Contact" })).toBeNull();
   });
 
-  it("points the CTA at the inquiry form with the mobile-nav source tag", () => {
+  it("points the CTA at the inquiry form", () => {
     render(<MobileNavigationLinks />);
 
     expect(
@@ -123,24 +122,5 @@ describe("MobileNavigationLinks", () => {
     expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
       "aria-current",
     );
-  });
-
-  it("applies the shared item styling to nav links", () => {
-    render(<MobileNavigationLinks />);
-
-    const navLinks = screen
-      .getAllByRole("link")
-      .filter((link) => link.className.includes("rounded-md px-3 py-2"));
-
-    expect(navLinks).toHaveLength(SINGLE_SITE_NAVIGATION.length);
-    for (const link of navLinks) {
-      expect(link).toHaveClass(
-        "flex",
-        "items-center",
-        "rounded-md",
-        "px-3",
-        "py-2",
-      );
-    }
   });
 });

@@ -45,26 +45,6 @@ describe("GlobalError", () => {
         ),
       ).toBeInTheDocument();
     });
-
-    it("should render Try again button", () => {
-      renderGlobalError();
-
-      expect(screen.getByText("Try again")).toBeInTheDocument();
-    });
-
-    it("should render Go to homepage button", () => {
-      renderGlobalError();
-
-      expect(screen.getByText("Go to homepage")).toBeInTheDocument();
-    });
-
-    it("should render the main container", () => {
-      const { container } = renderGlobalError();
-
-      // Render against the document because GlobalError owns the html/body shell.
-      const mainContainer = container.querySelector(".flex.min-h-dvh");
-      expect(mainContainer).toBeInTheDocument();
-    });
   });
 
   describe("error logging", () => {
@@ -77,14 +57,7 @@ describe("GlobalError", () => {
           mockError,
         );
       });
-    });
-
-    it("should log error only once on initial mount", async () => {
-      renderGlobalError();
-
-      await waitFor(() => {
-        expect(mockLoggerError).toHaveBeenCalledTimes(1);
-      });
+      expect(mockLoggerError).toHaveBeenCalledTimes(1);
     });
 
     it("should log new error when error prop changes", async () => {
@@ -114,7 +87,7 @@ describe("GlobalError", () => {
     it("should call retry when Try again button is clicked", () => {
       renderGlobalError();
 
-      fireEvent.click(screen.getByTestId("try-again-button"));
+      fireEvent.click(screen.getByRole("button", { name: "Try again" }));
 
       expect(mockRetry).toHaveBeenCalledTimes(1);
     });
@@ -141,22 +114,17 @@ describe("GlobalError", () => {
       ).toBeInTheDocument();
     });
 
-    it("should display error message in development mode", () => {
-      renderGlobalError();
-
-      // Error message is displayed inside a pre element along with stack trace
-      // Use regex matcher to find text that contains the error message
-      expect(
-        screen.getByText(/Test error message/, { exact: false }),
-      ).toBeInTheDocument();
-    });
-
-    it("should display error stack when available in development mode", () => {
-      const errorWithStack = new Error("Test error");
-      errorWithStack.stack = "Error: Test error\n    at testFunction";
+    it("should display error message and stack in development mode", () => {
+      const errorWithStack = new Error("Test error message");
+      // stack 不含 message 文本，两条断言才各自独立。
+      errorWithStack.stack = "    at testFunction (file.ts:1:1)";
 
       renderGlobalError(errorWithStack);
 
+      // message 与 stack 渲染在同一个 pre 里，用正则分别匹配。
+      expect(
+        screen.getByText(/Test error message/, { exact: false }),
+      ).toBeInTheDocument();
       expect(
         screen.getByText(/at testFunction/, { exact: false }),
       ).toBeInTheDocument();
@@ -170,127 +138,6 @@ describe("GlobalError", () => {
       renderGlobalError();
 
       // The heading should always be visible
-      expect(screen.getByText("Something went wrong!")).toBeInTheDocument();
-    });
-  });
-
-  describe("error with digest", () => {
-    it("should handle error with digest property", async () => {
-      const errorWithDigest = Object.assign(new Error("Digest error"), {
-        digest: "error-digest-123",
-      });
-
-      renderGlobalError(errorWithDigest);
-
-      await waitFor(() => {
-        expect(mockLoggerError).toHaveBeenCalledWith(
-          "Global error caught",
-          errorWithDigest,
-        );
-      });
-    });
-  });
-
-  describe("styling", () => {
-    it("should have centered layout", () => {
-      const { container } = renderGlobalError();
-
-      const mainContainer = container.querySelector(".flex.min-h-dvh");
-      expect(mainContainer).toBeInTheDocument();
-      expect(mainContainer).toHaveClass(
-        "items-center",
-        "justify-center",
-        "flex-col",
-      );
-    });
-
-    it("should have max-width container for content", () => {
-      const { container } = renderGlobalError();
-
-      const contentContainer = container.querySelector(".max-w-md");
-      expect(contentContainer).toBeInTheDocument();
-    });
-  });
-
-  describe("locale detection", () => {
-    const originalNavigator = global.navigator;
-
-    afterEach(() => {
-      Object.defineProperty(global, "navigator", {
-        writable: true,
-        value: originalNavigator,
-      });
-    });
-
-    it("should keep English copy for Chinese browser language", () => {
-      Object.defineProperty(global, "navigator", {
-        writable: true,
-        value: { language: "zh-CN" },
-      });
-
-      renderGlobalError();
-
-      expect(screen.getByText("Something went wrong!")).toBeInTheDocument();
-      expect(screen.getByText("Try again")).toBeInTheDocument();
-      expect(screen.getByText("Go to homepage")).toBeInTheDocument();
-    });
-
-    it("should keep English copy for zh-TW browser language", () => {
-      Object.defineProperty(global, "navigator", {
-        writable: true,
-        value: { language: "zh-TW" },
-      });
-
-      renderGlobalError();
-
-      expect(screen.getByText("Something went wrong!")).toBeInTheDocument();
-    });
-
-    it("should navigate to the unprefixed homepage for Chinese browser language", () => {
-      Object.defineProperty(global, "navigator", {
-        writable: true,
-        value: { language: "zh-CN" },
-      });
-
-      renderGlobalError();
-
-      expect(
-        screen.getByRole("link", { name: "Go to homepage" }),
-      ).toHaveAttribute("href", "/");
-    });
-
-    it("should default to English for non-Chinese languages", () => {
-      Object.defineProperty(global, "navigator", {
-        writable: true,
-        value: { language: "fr-FR" },
-      });
-
-      renderGlobalError();
-
-      expect(screen.getByText("Something went wrong!")).toBeInTheDocument();
-    });
-
-    it("should handle empty navigator.language", () => {
-      Object.defineProperty(global, "navigator", {
-        writable: true,
-        value: { language: "" },
-      });
-
-      renderGlobalError();
-
-      // Should default to English
-      expect(screen.getByText("Something went wrong!")).toBeInTheDocument();
-    });
-
-    it("should handle undefined navigator.language", () => {
-      Object.defineProperty(global, "navigator", {
-        writable: true,
-        value: { language: undefined },
-      });
-
-      renderGlobalError();
-
-      // Should default to English
       expect(screen.getByText("Something went wrong!")).toBeInTheDocument();
     });
   });

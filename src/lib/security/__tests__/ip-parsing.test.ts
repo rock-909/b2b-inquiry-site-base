@@ -61,16 +61,8 @@ describe("ip-parsing", () => {
       expect(isValidIP(" 203.0.113.5 ")).toBe(true);
     });
 
-    it("rejects malformed or unknown values", () => {
-      expect(getIPVersion("999.0.0.1")).toBe(0);
-      expect(getIPVersion("2001:::1")).toBe(0);
-      expect(getIPVersion(":2001:db8::1")).toBe(0);
-      expect(getIPVersion("2001:db8::1:")).toBe(0);
-      expect(getIPVersion("192.0.2.1::1")).toBe(0);
-      expect(getIPVersion("1.2.3.4::")).toBe(0);
-      expect(getIPVersion("001.002.003.004")).toBe(0);
-      expect(getIPVersion("01.2.3.4")).toBe(0);
-      expect(getIPVersion("1.2.3.04")).toBe(0);
+    // 畸形地址的解析拒绝由 ip-range.test.ts 负责，这里只守 isValidIP 的入口。
+    it("rejects unknown or blank values", () => {
       expect(isValidIP("unknown")).toBe(false);
       expect(isValidIP("")).toBe(false);
       expect(isValidIP("   ")).toBe(false);

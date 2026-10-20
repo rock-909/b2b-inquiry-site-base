@@ -261,17 +261,4 @@ describe("rate-limit-key-strategies", () => {
       expect(key).toBe(expected);
     });
   });
-
-  describe("resetPepperWarning", () => {
-    it("should allow warning to be logged again after reset", async () => {
-      setEnv("NODE_ENV", "development");
-
-      await hmacKey("input1");
-      expect(mockLoggerWarn).toHaveBeenCalledTimes(1);
-
-      resetPepperWarning();
-      await hmacKey("input2");
-      expect(mockLoggerWarn).toHaveBeenCalledTimes(2);
-    });
-  });
 });

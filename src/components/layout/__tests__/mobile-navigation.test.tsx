@@ -6,11 +6,10 @@
  * MobileNavigationInteractive — the client drawer island.
  *
  * Sole owner of drawer interaction proofs against the real Base UI Sheet:
- * open/close via trigger, close button, Escape, nav-link click and route
- * change; keyboard focus movement; active-route wiring; translated chrome;
- * and graceful degradation. Static link-list content is proven in
- * mobile-navigation-links.test.tsx; the standalone toggle button in
- * mobile-menu-button.test.tsx.
+ * open/close via trigger, close button, Enter/Escape, nav-link click and route
+ * change; active-route wiring; translated chrome; and an undefined pathname.
+ * Static link-list content is proven in mobile-navigation-links.test.tsx.
+ * Focus trapping and restoration need a real browser (e2e navigation.spec.ts).
  *
  * Every test drives the component through its public surface; nothing here is
  * a bare "does not throw" smoke test, and nothing named "performance" or
@@ -140,18 +139,6 @@ describe("MobileNavigationInteractive", () => {
       expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
       expect(screen.queryByText("Home")).not.toBeInTheDocument();
     });
-
-    it("exposes accessible focus and touch-target styling on the trigger", () => {
-      render(<MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />);
-
-      const trigger = screen.getByRole("button");
-      expect(trigger).toHaveClass(
-        "focus-visible:ring-2",
-        "focus-visible:ring-ring",
-        "outline-none",
-        "size-9",
-      );
-    });
   });
 
   describe("Open and close", () => {
@@ -212,24 +199,11 @@ describe("MobileNavigationInteractive", () => {
 
       expect(trigger).toHaveAttribute("aria-expanded", "false");
     });
-
-    it("toggles reliably back to a closed state after rapid clicking", () => {
-      // Formerly "handles rapid interactions efficiently": this measures no
-      // timing, it proves that an even number of toggles ends up closed.
-      render(<MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />);
-
-      const trigger = screen.getByRole("button", { name: /menu/i });
-      for (let i = 0; i < 10; i++) {
-        fireEvent.click(trigger);
-      }
-
-      expect(trigger).toHaveAttribute("aria-expanded", "false");
-      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
-    });
   });
 
   describe("Keyboard", () => {
-    it("opens with Enter and closes with Escape, returning focus to the trigger", async () => {
+    // 焦点归还属于真实浏览器行为，由 e2e navigation.spec.ts 证明；这里只守按键接线。
+    it("opens with Enter and closes with Escape", async () => {
       render(<MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />);
 
       const trigger = screen.getByRole("button", { name: /menu/i });
@@ -241,29 +215,6 @@ describe("MobileNavigationInteractive", () => {
 
       await user.keyboard("{Escape}");
       expect(trigger).toHaveAttribute("aria-expanded", "false");
-      expect(trigger).toHaveFocus();
-    });
-
-    it("moves focus between navigation items with Tab", async () => {
-      render(<MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />);
-
-      await user.click(screen.getByRole("button", { name: /menu/i }));
-
-      const [homeLink, productsLink, thirdLink] = screen.getAllByRole(
-        "link",
-      ) as HTMLAnchorElement[];
-      if (!homeLink || !productsLink || !thirdLink) {
-        throw new Error("Expected at least three navigation links when open");
-      }
-
-      homeLink.focus();
-      expect(homeLink).toHaveFocus();
-
-      await user.tab();
-      expect(productsLink).toHaveFocus();
-
-      await user.tab();
-      expect(thirdLink).toHaveFocus();
     });
   });
 
@@ -357,19 +308,6 @@ describe("MobileNavigationInteractive", () => {
   });
 
   describe("Graceful degradation", () => {
-    it("renders visible fallback keys when translations are missing", () => {
-      (useTranslations as ReturnType<typeof vi.fn>).mockImplementation(
-        (namespace?: string) => (key: string) =>
-          namespace ? `${namespace}.${key}` : key,
-      );
-
-      render(<MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />);
-      fireEvent.click(screen.getByRole("button", { name: /menu/i }));
-
-      expect(screen.getByText("navigation.home")).toBeInTheDocument();
-      expect(screen.getAllByText("navigation.contactSales")).toHaveLength(2);
-    });
-
     it("renders without marking any item active when the pathname is undefined", () => {
       mockPathname.current = undefined;
       render(<MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />);
@@ -381,31 +319,6 @@ describe("MobileNavigationInteractive", () => {
       for (const link of screen.getAllByRole("link")) {
         expect(link).not.toHaveAttribute("aria-current");
       }
-    });
-
-    it("surfaces translation failures instead of swallowing them", () => {
-      (useTranslations as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        throw new Error("Translation error");
-      });
-
-      expect(() =>
-        render(
-          <MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />,
-        ),
-      ).toThrow("Translation error");
-    });
-  });
-
-  describe("Lifecycle", () => {
-    it("unmounts cleanly", () => {
-      // Formerly "handles memory efficiently" / "prevents memory leak": there
-      // is no memory measurement, only a clean-teardown assertion.
-      const { unmount } = render(
-        <MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />,
-      );
-
-      expect(screen.getByRole("button")).toBeInTheDocument();
-      expect(() => unmount()).not.toThrow();
     });
   });
 });

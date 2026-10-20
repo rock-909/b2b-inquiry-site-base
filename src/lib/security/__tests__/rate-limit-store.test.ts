@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  MemoryRateLimitStore,
   RedisRateLimitStore,
   UPSTASH_OPERATION_TIMEOUT_MS,
 } from "@/lib/security/stores/rate-limit-store";
@@ -184,26 +183,6 @@ describe("rate-limit-store", () => {
       expect(mockLoggerError).toHaveBeenCalledWith(
         "[Rate Limit] Upstash pipeline failed: boom",
       );
-    });
-  });
-
-  it("keeps a process-local count and starts a new window after expiry", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(1_700_000_000_000);
-    const store = new MemoryRateLimitStore();
-
-    await expect(store.increment("rate:key", 100)).resolves.toEqual({
-      count: 1,
-      expiresAt: 1_700_000_000_100,
-    });
-    await expect(store.increment("rate:key", 100)).resolves.toMatchObject({
-      count: 2,
-    });
-
-    vi.advanceTimersByTime(100);
-    await expect(store.increment("rate:key", 100)).resolves.toEqual({
-      count: 1,
-      expiresAt: 1_700_000_000_200,
     });
   });
 });

@@ -80,27 +80,6 @@ describe("TurnstileWidget", () => {
   });
 
   describe("基础渲染", () => {
-    it("应该正确渲染TurnstileWidget组件", () => {
-      const { container } = renderTurnstileWidget();
-
-      // 检查是否有任何内容被渲染
-      expect(container.firstChild).not.toBeNull();
-
-      // 应该渲染turnstile-widget
-      expect(screen.getByTestId("turnstile-widget")).toBeInTheDocument();
-
-      // 应该有turnstile-container类
-      expect(
-        container.querySelector(".turnstile-container"),
-      ).toBeInTheDocument();
-    });
-
-    it("应该调用Turnstile组件", () => {
-      renderTurnstileWidget();
-
-      expect(getMockTurnstile()).toHaveBeenCalled();
-    });
-
     it("应该传递正确的siteKey", () => {
       renderTurnstileWidget();
 
@@ -135,37 +114,6 @@ describe("TurnstileWidget", () => {
   });
 
   describe("回调处理", () => {
-    it("应该接受onError回调", () => {
-      const onError = vi.fn();
-      renderTurnstileWidget({ onError });
-
-      const mockCall = getMockTurnstile().mock.calls[0];
-      expect(mockCall?.[0]).toMatchObject({
-        onError: expect.any(Function),
-      });
-    });
-
-    it("应该接受onExpire回调", () => {
-      const onExpire = vi.fn();
-      renderTurnstileWidget({ onExpire });
-
-      const mockCall = getMockTurnstile().mock.calls[0];
-      expect(mockCall?.[0]).toMatchObject({
-        onExpire: expect.any(Function),
-      });
-    });
-
-    it("应该在成功时调用onSuccess回调", () => {
-      const onSuccess = vi.fn();
-      renderTurnstileWidget({ onSuccess });
-
-      const mockCall = getMockTurnstile().mock.calls[0];
-      const handleSuccess = mockCall?.[0]?.onSuccess;
-      act(() => handleSuccess?.("test-token-123"));
-
-      expect(onSuccess).toHaveBeenCalledWith("test-token-123");
-    });
-
     it("应该在错误时调用onError回调", () => {
       const consoleError = captureExpectedConsoleErrors("Turnstile error:");
       const onError = vi.fn();

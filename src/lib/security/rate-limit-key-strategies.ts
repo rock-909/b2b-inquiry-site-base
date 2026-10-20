@@ -88,7 +88,7 @@ function getPepper(): string {
  */
 export async function hmacKey(input: string): Promise<string> {
   const pepper = getPepper();
-  const digest = await generateHMAC(input, pepper, "SHA-256");
+  const digest = await generateHMAC(input, pepper);
   return digest.slice(0, HMAC_OUTPUT_LENGTH);
 }
 

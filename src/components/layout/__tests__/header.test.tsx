@@ -107,20 +107,9 @@ describe("Header", () => {
     );
   });
 
-  it("keeps the production sticky shell and accepts a custom class", () => {
-    render(
-      Header({
-        ...HEADER_LABELS,
-        locale: "en",
-        className: "custom-header-class",
-      }),
-    );
+  it("keeps the production sticky shell", () => {
+    renderHeader();
 
-    expect(screen.getByRole("banner")).toHaveClass(
-      "sticky",
-      "top-0",
-      "z-50",
-      "custom-header-class",
-    );
+    expect(screen.getByRole("banner")).toHaveClass("sticky", "top-0", "z-50");
   });
 });

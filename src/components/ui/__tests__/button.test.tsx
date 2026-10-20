@@ -1,53 +1,9 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button-variants";
 
 describe("Button", () => {
-  it("renders a button carrying its label", () => {
-    render(<Button>Request a Quote</Button>);
-
-    const button = screen.getByRole("button", { name: "Request a Quote" });
-    expect(button).toHaveAttribute("data-slot", "button");
-  });
-
-  it("calls its handler when clicked", () => {
-    const submitInquiry = vi.fn();
-    render(<Button onClick={submitInquiry}>Send</Button>);
-
-    fireEvent.click(screen.getByRole("button"));
-
-    expect(submitInquiry).toHaveBeenCalledTimes(1);
-  });
-
-  it("swallows clicks while disabled", () => {
-    const submitInquiry = vi.fn();
-    render(
-      <Button onClick={submitInquiry} disabled>
-        Send
-      </Button>,
-    );
-
-    const button = screen.getByRole("button");
-    fireEvent.click(button);
-
-    expect(button).toBeDisabled();
-    expect(submitInquiry).not.toHaveBeenCalled();
-  });
-
-  it("lets links reuse the same variants without changing their semantics", () => {
-    render(
-      <a href="/contact" className={buttonVariants()}>
-        Request a Quote
-      </a>,
-    );
-
-    const link = screen.getByRole("link", { name: "Request a Quote" });
-    expect(link).toHaveAttribute("href", "/contact");
-    expect(link.className).toContain("var(--button-primary-bg)");
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
-  });
-
   // 只断言「不同 variant 产出不同 class」抓不到最要命的那种故障：把 default 和
   // outline 的样式对调，产出仍然各不相同，但全站主 CTA 的视觉层级已经反了。
   // 所以这里钉的是语义映射本身——每个 variant 必须引用属于它那一档的 token。

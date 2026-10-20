@@ -13,7 +13,6 @@ import { useLocaleSwitchHref } from "@/components/layout/use-locale-switch-href"
 
 interface MobileLanguageSwitcherProps {
   locale: ConfiguredLocale;
-  onNavigate?: () => void;
 }
 
 const LANGUAGE_OPTIONS = LOCALES_CONFIG.locales.map((locale) => ({
@@ -23,7 +22,6 @@ const LANGUAGE_OPTIONS = LOCALES_CONFIG.locales.map((locale) => ({
 
 export function MobileLanguageSwitcher({
   locale,
-  onNavigate,
 }: MobileLanguageSwitcherProps) {
   const pathname = usePathname();
   const localeSwitchHref = useLocaleSwitchHref(pathname);
@@ -78,7 +76,6 @@ export function MobileLanguageSwitcher({
               data-locale={option.locale}
               data-testid={`mobile-language-option-${option.locale}`}
               lang={option.locale}
-              {...(onNavigate ? { onNavigate } : {})}
             >
               {option.label}
             </FinalUrlLink>

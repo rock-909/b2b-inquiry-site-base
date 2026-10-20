@@ -29,10 +29,9 @@ interface MobileNavigationInteractiveProps {
 }
 
 interface MobileMenuButtonProps extends ComponentProps<"button"> {
-  closeMenuLabel?: string | undefined;
+  closeMenuLabel: string;
   isOpen: boolean;
-  labelTestId?: string | undefined;
-  openMenuLabel?: string | undefined;
+  openMenuLabel: string;
 }
 
 interface MobileMenuState {
@@ -40,34 +39,31 @@ interface MobileMenuState {
   pathname: string;
 }
 
-export function MobileMenuButton({
+function MobileMenuButton({
   isOpen,
   className,
   onClick,
   openMenuLabel,
   closeMenuLabel,
-  labelTestId = "mobile-menu-button-label",
   ...props
 }: MobileMenuButtonProps) {
-  const t = useTranslations("accessibility");
-  const label = isOpen
-    ? (closeMenuLabel ?? t("closeMenu"))
-    : (openMenuLabel ?? t("openMenu"));
-
   return (
     <Button
       variant="ghost"
       size="icon"
       className={cn("relative", className)}
       aria-expanded={isOpen}
-      data-state={isOpen ? "open" : "closed"}
       data-testid="header-mobile-menu-button"
       onClick={onClick}
       {...props}
     >
       {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-      <span className="sr-only" data-testid={labelTestId} translate="no">
-        {label}
+      <span
+        className="sr-only"
+        data-testid="mobile-menu-toggle-label"
+        translate="no"
+      >
+        {isOpen ? closeMenuLabel : openMenuLabel}
       </span>
     </Button>
   );
@@ -129,7 +125,6 @@ export function MobileNavigationInteractive({
               aria-controls="mobile-navigation"
               closeMenuLabel={closeMenuLabel}
               openMenuLabel={openMenuLabel}
-              labelTestId="mobile-menu-toggle-label"
             />
           }
         />

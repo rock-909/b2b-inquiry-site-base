@@ -1,7 +1,9 @@
 import React from "react";
 import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import enMessages from "@messages/base/en/messages.json";
 import ContactPage, { generateMetadata } from "@/app/[locale]/contact/page";
+import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import contactContent from "@/content/pages/en/contact";
 import { renderAsyncPage } from "@/test/render-async-page";
 
@@ -42,7 +44,10 @@ vi.mock("@/components/forms/inquiry-form", () => ({
 }));
 
 describe("ContactPage static content", () => {
+  const templateEmail = SINGLE_SITE_CONFIG.contact.email;
+
   afterEach(() => {
+    SINGLE_SITE_CONFIG.contact.email = templateEmail;
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
@@ -81,23 +86,33 @@ describe("ContactPage static content", () => {
     expect(staticFallback.tagName).not.toBe("FORM");
     expect(staticFallback.querySelector("form")).toBeNull();
     expect(within(staticFallback).queryByRole("link")).toBeNull();
-    expect(
-      screen.queryByTestId("contact-page-fallback"),
-    ).not.toBeInTheDocument();
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
   });
 
-  it("renders the public email and hides the owner TODO phone", async () => {
-    const { ContactMethodsCard } = await import("../contact-page-sections");
+  // 模板邮箱留空时显示「未配置」文案；派生站填上邮箱后显示 mailto 链接。
+  it.each([
+    { email: "", expectedHref: null, showsUnavailable: true },
+    {
+      email: "sales@acme.example",
+      expectedHref: "mailto:sales@acme.example",
+      showsUnavailable: false,
+    },
+  ])(
+    "renders contact methods when the public email is '$email'",
+    async ({ email, expectedHref, showsUnavailable }) => {
+      SINGLE_SITE_CONFIG.contact.email = email;
+      const { ContactMethodsCard } = await import("../contact-page-sections");
 
-    await renderAsyncPage(<ContactMethodsCard locale="en" />);
+      await renderAsyncPage(<ContactMethodsCard locale="en" />);
 
-    expect(screen.queryByText("sales@example.invalid")).not.toBeInTheDocument();
-    expect(screen.queryByText("+86-518-0000-0000")).not.toBeInTheDocument();
-    expect(screen.queryByText("TODO-OWNER")).not.toBeInTheDocument();
-    expect(screen.queryByText("Phone")).not.toBeInTheDocument();
-    expect(screen.queryByText(/WhatsApp/i)).not.toBeInTheDocument();
-  });
+      expect(screen.queryByRole("link")?.getAttribute("href") ?? null).toBe(
+        expectedHref,
+      );
+      expect(
+        screen.queryByText(enMessages.contact.panel.emailUnavailable) !== null,
+      ).toBe(showsUnavailable);
+    },
+  );
 
   it("builds contact metadata from the static content manifest", async () => {
     const enMetadata = await generateMetadata({

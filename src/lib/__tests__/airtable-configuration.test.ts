@@ -76,26 +76,6 @@ describe("Airtable Service configuration", () => {
     vi.unstubAllGlobals();
   });
 
-  it("uses the native records API with an abort signal", async () => {
-    const service = await createService();
-    const { AIRTABLE_REQUEST_TIMEOUT_MS } = await import("../airtable/service");
-
-    await expect(service(validLeadData)).resolves.toEqual({
-      id: "rec-config",
-    });
-
-    expect(mocks.fetch).toHaveBeenCalledWith(
-      "https://api.airtable.com/v0/test-base-id/test-table",
-      expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-api-key",
-        }),
-        signal: expect.any(AbortSignal),
-      }),
-    );
-    expect(AIRTABLE_REQUEST_TIMEOUT_MS).toBe(8000);
-  });
-
   it("aborts the native request after the Airtable timeout", async () => {
     const controller = new AbortController();
     const timeout = vi
@@ -116,6 +96,8 @@ describe("Airtable Service configuration", () => {
 
     await expect(request).rejects.toThrow("Failed to create lead record");
     expect(timeout).toHaveBeenCalledWith(AIRTABLE_REQUEST_TIMEOUT_MS);
+    // 8 秒上限与 e2e 的 AIRTABLE_WRITE_CAP_MS 对齐。
+    expect(AIRTABLE_REQUEST_TIMEOUT_MS).toBe(8000);
     expect(mocks.fetch.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
   });
 
@@ -142,15 +124,6 @@ describe("Airtable Service configuration", () => {
       "Airtable service is not configured",
     );
     expect(mocks.fetch).not.toHaveBeenCalled();
-  });
-
-  it("surfaces native fetch failures from createLead", async () => {
-    mocks.fetch.mockRejectedValueOnce(new Error("Network failed"));
-    const service = await createService();
-
-    await expect(service(validLeadData)).rejects.toThrow(
-      "Failed to create lead record",
-    );
   });
 
   it("reads Cloudflare runtime env populated after construction", async () => {

@@ -25,7 +25,6 @@ export interface ContentMetadata {
 
 // Page specific metadata
 export interface PageMetadata extends ContentMetadata {
-  lastReviewed?: string;
   faq?: FaqItem[];
 }
 

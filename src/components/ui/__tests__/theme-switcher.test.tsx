@@ -9,29 +9,6 @@ import { createMockTranslations } from "@/test/utils";
 const t = createMockTranslations();
 
 describe("ThemeSwitcher", () => {
-  it("renders the active theme highlight without a second dynamic boundary", async () => {
-    const mockSetTheme = vi.fn();
-    vi.mocked(useTheme).mockReturnValue({
-      theme: "light",
-      setTheme: mockSetTheme,
-      resolvedTheme: "light",
-      themes: ["light", "dark", "system"],
-      systemTheme: "light",
-    });
-
-    const { ThemeSwitcher } = await import("../theme-switcher");
-
-    render(<ThemeSwitcher data-testid="theme-switcher" />);
-
-    expect(
-      await screen.findByTestId("theme-switcher-highlight"),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("theme-switcher")).toHaveClass(
-      "border-[var(--footer-divider)]",
-      "rounded-md",
-    );
-  });
-
   it("uses resolvedTheme for the active highlight before theme is restored after navigation", async () => {
     const mockSetTheme = vi.fn();
     vi.mocked(useTheme).mockReturnValue({

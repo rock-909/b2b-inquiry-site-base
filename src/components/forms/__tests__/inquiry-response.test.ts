@@ -38,6 +38,36 @@ describe("decodeInquirySubmitState", () => {
     });
   });
 
+  it.each([
+    [
+      "a non-ok status with a success-shaped body",
+      500,
+      '{"success":true,"data":{"referenceId":"ignored"}}',
+    ],
+    [
+      "a success body without a reference id",
+      200,
+      '{"success":true,"data":{}}',
+    ],
+    [
+      "a non-string reference id",
+      200,
+      '{"success":true,"data":{"referenceId":42}}',
+    ],
+    ["a null body", 200, "null"],
+    ["a non-object body", 200, '"boom"'],
+  ])(
+    "treats %s as a server error, not success",
+    async (_label, status, body) => {
+      const response = new Response(body, { status });
+
+      await expect(decodeInquirySubmitState(response)).resolves.toEqual({
+        status: "error",
+        errorKind: "server",
+      });
+    },
+  );
+
   it("classifies validation failures as field errors with details", async () => {
     const response = new Response(
       JSON.stringify({

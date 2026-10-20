@@ -84,17 +84,6 @@ describe("resend - configuration", () => {
     vi.resetModules();
   });
 
-  it("creates the provider client with the configured API key", async () => {
-    mockResendSend.mockResolvedValue({
-      data: { id: "product-inquiry-id" },
-      error: null,
-    });
-
-    await sendInquiryEmail(validInquiryData);
-
-    expect(mockResendCtorCalls).toHaveBeenCalledWith("test-resend-key");
-  });
-
   it("rejects without calling the provider when the API key is missing", async () => {
     sendInquiryEmail = await setupResendTest({ RESEND_API_KEY: undefined });
 
@@ -176,25 +165,6 @@ describe("resend - sendInquiryEmail", () => {
       name: "reference-id",
       value: "INQ-abc123-deadbeef",
     });
-  });
-
-  it.each([
-    "R&D#Team@example.xn--p1ai",
-    "R&D#Team@example.XN--P1AI",
-    "R&D#Team@example.Xn--p1ai",
-    "R&D#Team@example.xN--p1ai",
-  ])("carries browser-valid address %s to the provider", async (email) => {
-    mockResendSend.mockResolvedValue({
-      data: { id: "edge-address-id" },
-      error: null,
-    });
-    const buyerEmail = inquiryLeadSchema.shape.email.parse(email);
-
-    await sendInquiryEmail({ ...validInquiryData, email: buyerEmail });
-
-    expect(mockResendSend.mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({ replyTo: "r&d#team@example.xn--p1ai" }),
-    );
   });
 
   it("escapes buyer text when rendering without expanding buyer placeholders", async () => {

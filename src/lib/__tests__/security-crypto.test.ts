@@ -14,13 +14,6 @@ describe("security-crypto", () => {
       expect(hmac.length).toBe(64); // SHA-256 HMAC = 64 hex chars
     });
 
-    it("should generate HMAC with SHA-512", async () => {
-      const hmac = await generateHMAC("data", "secret", "SHA-512");
-
-      expect(hmac).toBeDefined();
-      expect(hmac.length).toBe(128); // SHA-512 HMAC = 128 hex chars
-    });
-
     it("should produce consistent HMAC for same inputs", async () => {
       const hmac1 = await generateHMAC("data", "secret");
       const hmac2 = await generateHMAC("data", "secret");

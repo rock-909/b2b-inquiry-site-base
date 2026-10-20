@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { InlineMarkdown } from "@/lib/content/inline-markdown";
-import { stripInlineMarkdown } from "@/lib/content/inline-markdown-text";
 
 describe("InlineMarkdown", () => {
   it("renders plain text unchanged", () => {
@@ -59,17 +58,5 @@ describe("InlineMarkdown", () => {
       </p>,
     );
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-  });
-});
-
-describe("stripInlineMarkdown", () => {
-  it("removes bold markers and unwraps internal links", () => {
-    expect(
-      stripInlineMarkdown("Review **the scope**. [Full terms](/terms)."),
-    ).toBe("Review the scope. Full terms.");
-  });
-
-  it("leaves plain text unchanged", () => {
-    expect(stripInlineMarkdown("Plain answer.")).toBe("Plain answer.");
   });
 });

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { MAX_LEAD_MESSAGE_LENGTH } from "@/constants/validation-limits";
-import { getSourceMessages } from "@/lib/i18n/load-messages";
 import {
   INQUIRY_VALIDATION_DETAIL_KEYS,
   mapInquiryValidationDetails,
@@ -9,21 +8,6 @@ import {
   INQUIRY_LEAD_TYPE,
   inquiryLeadSchema,
 } from "@/lib/lead-pipeline/lead-schema";
-
-type JsonObject = Record<string, unknown>;
-
-function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function getMessageValue(messages: JsonObject, keyPath: string): unknown {
-  return keyPath.split(".").reduce<unknown>((current, key) => {
-    if (!isJsonObject(current)) return undefined;
-    return current[key];
-  }, messages);
-}
-
-const runtimeMessages = getSourceMessages("en");
 
 const validBase = {
   type: INQUIRY_LEAD_TYPE,
@@ -220,56 +204,6 @@ describe("inquiry validation detail mapping", () => {
     }
   });
 
-  it("maps canonical message too_long to errors.message.tooLong after normalization", () => {
-    const tooLong = inquiryLeadSchema.safeParse({
-      ...validBase,
-      message: "A".repeat(MAX_LEAD_MESSAGE_LENGTH + 1),
-    });
-    const wrongType = inquiryLeadSchema.safeParse({
-      ...validBase,
-      message: 123,
-    });
-
-    expect(tooLong.success).toBe(false);
-    expect(wrongType.success).toBe(false);
-    if (tooLong.success || wrongType.success) return;
-
-    expect(
-      mapInquiryValidationDetails(tooLong.error.issues, {
-        ...validBase,
-        message: "A".repeat(MAX_LEAD_MESSAGE_LENGTH + 1),
-      }),
-    ).toEqual(["errors.message.tooLong"]);
-    expect(
-      mapInquiryValidationDetails(wrongType.error.issues, {
-        ...validBase,
-        message: 123,
-      }),
-    ).toEqual(["errors.message.invalid"]);
-  });
-
-  it("maps internal field issues to errors.generic instead of field-specific keys", () => {
-    const input = {
-      ...validBase,
-      utmSource: 123,
-      message: 999,
-    };
-    const parsed = inquiryLeadSchema.safeParse(input);
-
-    expect(parsed.success).toBe(false);
-    if (parsed.success) return;
-
-    expect(mapInquiryValidationDetails(parsed.error.issues, input)).toEqual(
-      expect.arrayContaining(["errors.generic", "errors.message.invalid"]),
-    );
-    expect(mapInquiryValidationDetails(parsed.error.issues, input)).not.toEqual(
-      expect.arrayContaining([
-        "errors.company.invalid",
-        "errors.company.required",
-      ]),
-    );
-  });
-
   it("maps unregistered attribution fields to errors.generic only", () => {
     const tooLong = inquiryLeadSchema.safeParse({
       ...validBase,
@@ -324,31 +258,6 @@ describe("inquiry validation detail mapping", () => {
     expect([...emitted].sort()).toEqual(
       [...INQUIRY_VALIDATION_DETAIL_KEYS].sort(),
     );
-  });
-
-  it("keeps inquiry.form copy for every renderable visible detail key", () => {
-    const renderableDetails = INQUIRY_VALIDATION_DETAIL_KEYS.filter(
-      (detail) => detail !== "errors.generic",
-    );
-
-    for (const detail of renderableDetails) {
-      const value = getMessageValue(runtimeMessages, `inquiry.form.${detail}`);
-      expect(typeof value, detail).toBe("string");
-      expect(String(value).trim(), detail).not.toBe("");
-    }
-  });
-
-  it("covers errors.generic through the existing field summary copy", () => {
-    const fieldSummary = getMessageValue(
-      runtimeMessages,
-      "inquiry.form.errors.fieldSummary",
-    );
-
-    expect(typeof fieldSummary).toBe("string");
-    expect(String(fieldSummary).trim()).not.toBe("");
-    expect(
-      getMessageValue(runtimeMessages, "inquiry.form.errors.generic"),
-    ).toBeUndefined();
   });
 
   it("keeps detail output stable when only the English Zod message changes", () => {

@@ -83,57 +83,36 @@ describe("middleware next-intl boundary", () => {
     expect(intlMiddlewareMock).toHaveBeenCalledTimes(1);
   });
 
-  it("returns the pre-rendered 404 for unsupported locale-like paths", async () => {
-    const { middleware } = await import("@/middleware");
-    const request = new NextRequest(
-      "http://localhost:3000/unsupported-locale/contact",
-    );
+  it.each(["/unsupported-locale/contact", "/fr/products/eu"])(
+    "returns the pre-rendered 404 for unsupported locale-like path %s",
+    async (pathname) => {
+      const { middleware } = await import("@/middleware");
+      const request = new NextRequest(`http://localhost:3000${pathname}`);
 
-    const response = middleware(request);
+      const response = middleware(request);
 
-    expect(response.status).toBe(404);
-    expect(intlMiddlewareMock).not.toHaveBeenCalled();
-  });
+      expect(response.headers.get("location")).toBeNull();
+      expect(response.headers.get("set-cookie")).toBeNull();
+      expect(response.status).toBe(404);
+      expect(intlMiddlewareMock).not.toHaveBeenCalled();
+    },
+  );
 
-  it("returns the pre-rendered 404 for unsupported prefixed paths", async () => {
-    const { middleware } = await import("@/middleware");
-    const request = new NextRequest("http://localhost:3000/fr/products/eu");
+  it.each(["/nope", "/products/not-a-real-product", "/products/sample.v2"])(
+    "returns a real 404 before streaming unknown route %s",
+    async (pathname) => {
+      const { middleware } = await import("@/middleware");
+      const request = new NextRequest(`http://localhost:3000${pathname}`);
 
-    const response = middleware(request);
+      const response = middleware(request);
 
-    expect(response.headers.get("location")).toBeNull();
-    expect(response.headers.get("set-cookie")).toBeNull();
-    expect(response.status).toBe(404);
-    expect(intlMiddlewareMock).not.toHaveBeenCalled();
-  });
-
-  it("returns the pre-rendered 404 for an unknown route", async () => {
-    const { middleware } = await import("@/middleware");
-    const request = new NextRequest("http://localhost:3000/nope");
-
-    const response = middleware(request);
-
-    expect(response.status).toBe(404);
-    expect(response.headers.get("x-middleware-rewrite")).toBe(
-      `http://localhost:3000/${routing.defaultLocale}/__not-found-placeholder`,
-    );
-    expect(intlMiddlewareMock).not.toHaveBeenCalled();
-  });
-
-  it("returns a real 404 before streaming an unknown product", async () => {
-    const { middleware } = await import("@/middleware");
-    const request = new NextRequest(
-      "http://localhost:3000/products/not-a-real-product",
-    );
-
-    const response = middleware(request);
-
-    expect(response.status).toBe(404);
-    expect(response.headers.get("x-middleware-rewrite")).toBe(
-      `http://localhost:3000/${routing.defaultLocale}/__not-found-placeholder`,
-    );
-    expect(intlMiddlewareMock).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(404);
+      expect(response.headers.get("x-middleware-rewrite")).toBe(
+        `http://localhost:3000/${routing.defaultLocale}/__not-found-placeholder`,
+      );
+      expect(intlMiddlewareMock).not.toHaveBeenCalled();
+    },
+  );
 
   it("keeps the locale prefix when rewriting an unknown prefixed route to 404", async () => {
     const { middleware } = await import("@/middleware");
@@ -221,17 +200,6 @@ describe("middleware next-intl boundary", () => {
       middleware(new NextRequest("http://localhost:3000/images/missing.jpg"))
         .status,
     ).toBe(404);
-    expect(intlMiddlewareMock).not.toHaveBeenCalled();
-  });
-
-  it("returns the 404 rewrite for a dotted unknown route", async () => {
-    const { middleware } = await import("@/middleware");
-    const request = new NextRequest("http://localhost:3000/products/sample.v2");
-    const response = middleware(request);
-    expect(response.status).toBe(404);
-    expect(response.headers.get("x-middleware-rewrite")).toBe(
-      `http://localhost:3000/${routing.defaultLocale}/__not-found-placeholder`,
-    );
     expect(intlMiddlewareMock).not.toHaveBeenCalled();
   });
 
