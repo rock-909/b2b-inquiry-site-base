@@ -65,7 +65,9 @@ function extractObjectLiteralKeys(source: string, variableName: string) {
         for (const property of initializer.properties) {
           if (
             ts.isPropertyAssignment(property) &&
-            ts.isIdentifier(property.name)
+            (ts.isIdentifier(property.name) ||
+              ts.isStringLiteral(property.name) ||
+              ts.isNoSubstitutionTemplateLiteral(property.name))
           ) {
             keys.push(property.name.text);
           }
