@@ -158,5 +158,4 @@ describe("distributed-rate-limit", () => {
       },
     );
   });
-
 });
