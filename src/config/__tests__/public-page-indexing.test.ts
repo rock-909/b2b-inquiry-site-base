@@ -16,12 +16,8 @@ describe("public page indexing", () => {
     }
   });
 
-  it("excludes incomplete legal pages", () => {
-    expect(shouldIndexPublicPage("privacy", "/privacy")).toBe(false);
-    expect(shouldIndexPublicPage("terms", "/terms")).toBe(false);
-  });
-
   it("does not index a core page under another path", () => {
-    expect(shouldIndexPublicPage("privacy", "/products")).toBe(false);
+    expect(shouldIndexPublicPage("contact", "/products")).toBe(false);
+    expect(shouldIndexPublicPage("home", "/contact")).toBe(false);
   });
 });

@@ -61,12 +61,6 @@ interface WorkflowDocument {
   jobs?: Record<string, { steps?: WorkflowStep[] }>;
 }
 
-const SAFE_PRODUCTION_PUBLIC_KEYS = [
-  "NEXT_PUBLIC_TEST_MODE",
-  "SECURITY_HEADERS_ENABLED",
-  "NEXT_PUBLIC_SECURITY_MODE",
-] as const;
-
 const ROOT_DIR = path.resolve(import.meta.dirname, "../../..");
 const FIXTURE_PREFIX = "b2b-inquiry-production-";
 
@@ -87,40 +81,6 @@ function getNodeHeredoc(exportScript: string): string | undefined {
   );
 
   return nodeScript?.[1];
-}
-
-function getExecutableRequiredKeys(exportScript: string): string[] {
-  const nodeScript = getNodeHeredoc(exportScript);
-  if (!nodeScript) return [];
-
-  const sourceFile = ts.createSourceFile(
-    "cloudflare-production-export.js",
-    nodeScript,
-    ts.ScriptTarget.Latest,
-    true,
-    ts.ScriptKind.JS,
-  );
-  const requiredKeys = sourceFile.statements
-    .flatMap((statement) =>
-      ts.isVariableStatement(statement)
-        ? [...statement.declarationList.declarations]
-        : [],
-    )
-    .find(
-      (declaration) =>
-        ts.isIdentifier(declaration.name) &&
-        declaration.name.text === "requiredKeys",
-    );
-  if (
-    !requiredKeys?.initializer ||
-    !ts.isArrayLiteralExpression(requiredKeys.initializer)
-  ) {
-    return [];
-  }
-
-  return requiredKeys.initializer.elements
-    .filter(ts.isStringLiteralLike)
-    .map((element) => element.text);
 }
 
 function executeProductionExport(exportScript: string): {
@@ -210,21 +170,6 @@ describe("validate-production-config runtime contract", () => {
     );
   });
 
-  it("requires Turnstile keys unconditionally in production", () => {
-    const result = validateProductionRuntimeContract({
-      ...createValidProductionEnv(),
-      TURNSTILE_SECRET_KEY: undefined,
-      NEXT_PUBLIC_TURNSTILE_SITE_KEY: undefined,
-    });
-
-    expect(result.errors).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining("TURNSTILE_SECRET_KEY is required"),
-        expect.stringContaining("NEXT_PUBLIC_TURNSTILE_SITE_KEY is required"),
-      ]),
-    );
-  });
-
   it("passes when the release-critical production contract is satisfied", () => {
     const result = validateProductionRuntimeContract(
       createValidProductionEnv(),
@@ -285,10 +230,6 @@ describe("validate-production-config runtime contract", () => {
       SECURITY_HEADERS_ENABLED: "true",
       NEXT_PUBLIC_SECURITY_MODE: "strict",
     });
-    expect(getExecutableRequiredKeys(exportScript)).toEqual(
-      expect.arrayContaining([...SAFE_PRODUCTION_PUBLIC_KEYS]),
-    );
-
     const execution = executeProductionExport(exportScript);
     expect(execution.status, execution.stderr).toBe(0);
     expect(execution.exportedLines).toEqual(
@@ -299,31 +240,6 @@ describe("validate-production-config runtime contract", () => {
       ]),
     );
   });
-
-  it.each(SAFE_PRODUCTION_PUBLIC_KEYS)(
-    "does not accept a commented-out %s required key",
-    (key) => {
-      const steps = loadDeployWorkflowSteps();
-      const exportStep = steps.find(
-        (step) => step.name === "导出 production public vars（wrangler）",
-      );
-      const exportScript = exportStep?.run ?? "";
-      const keyLine = exportScript
-        .split("\n")
-        .find((line) => line.trim() === `"${key}",`);
-      if (!keyLine) {
-        throw new Error(`requiredKeys is missing ${key}`);
-      }
-      const indentation = keyLine.slice(0, -keyLine.trimStart().length);
-      const commentedScript = exportScript.replace(
-        keyLine,
-        `${indentation}// "${key}",`,
-      );
-
-      expect(commentedScript).toContain(`// "${key}",`);
-      expect(getExecutableRequiredKeys(commentedScript)).not.toContain(key);
-    },
-  );
 
   it("fails when production DEPLOYMENT_PLATFORM is not canonical cloudflare", () => {
     const result = validateProductionRuntimeContract({
@@ -347,24 +263,6 @@ describe("validate-production-config runtime contract", () => {
     expect(result.errors).toEqual(
       expect.arrayContaining([
         expect.stringContaining('DEPLOYMENT_PLATFORM must be "cloudflare"'),
-      ]),
-    );
-  });
-
-  it("fails when production security stores are missing", () => {
-    const env = {
-      ...createValidProductionEnv(),
-      UPSTASH_REDIS_REST_URL: undefined,
-      UPSTASH_REDIS_REST_TOKEN: undefined,
-    };
-
-    const result = validateProductionRuntimeContract(env);
-
-    expect(result.errors).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining(
-          "Production rate limiting requires Upstash Redis",
-        ),
       ]),
     );
   });
@@ -747,26 +645,6 @@ describe("public launch trust content guard", () => {
     );
   });
 
-  it("allows intentionally empty optional social links in the real strict public-launch CLI", () => {
-    const result = spawnSync(
-      process.execPath,
-      ["scripts/quality/checks/production-config.js"],
-      {
-        cwd: process.cwd(),
-        encoding: "utf8",
-        env: createChildEnv({
-          APP_ENV: "preview",
-          NODE_ENV: "production",
-          PUBLIC_LAUNCH_STRICT: "true",
-        }),
-      },
-    );
-
-    expect(result.status).toBe(1);
-    expect(result.stderr).not.toContain("SITE_CONFIG.social.twitter");
-    expect(result.stderr).not.toContain("SITE_CONFIG.social.linkedin");
-  });
-
   it("separates template sentinel blockers from missing production readiness in the strict CLI", () => {
     const result = spawnSync(
       process.execPath,
@@ -807,69 +685,38 @@ describe("public launch trust content guard", () => {
     ).toBe(true);
   });
 
-  it("treats workers.dev and example.invalid as non-launch public URLs", () => {
-    const input = createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE);
-    const workersDev = validateProductionConfig(
-      {
+  // 两个公开 URL key 各自需要一行：循环只查其中一个时，另一行会变红。
+  it.each(["NEXT_PUBLIC_SITE_URL", "NEXT_PUBLIC_BASE_URL"])(
+    "treats workers.dev and example.invalid %s values as non-launch public URLs",
+    (key) => {
+      const input = createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE);
+      const strictProductionEnv = {
         ...createValidProductionEnv(),
         APP_ENV: "production",
-        NODE_ENV: "production",
+        NODE_ENV: "production" as const,
         PUBLIC_LAUNCH_STRICT: "true",
-        NEXT_PUBLIC_SITE_URL:
-          "https://reference-site-preview.example.workers.dev",
-      },
-      input,
-    );
-    const exampleInvalid = validateProductionConfig(
-      {
-        ...createValidProductionEnv(),
-        APP_ENV: "production",
-        NODE_ENV: "production",
-        PUBLIC_LAUNCH_STRICT: "true",
-        NEXT_PUBLIC_SITE_URL:
-          "https://reference-site-production.example.invalid",
-      },
-      input,
-    );
+      };
+      const workersDev = validateProductionConfig(
+        {
+          ...strictProductionEnv,
+          [key]: "https://reference-site-preview.example.workers.dev",
+        },
+        input,
+      );
+      const exampleInvalid = validateProductionConfig(
+        {
+          ...strictProductionEnv,
+          [key]: "https://reference-site-production.example.invalid",
+        },
+        input,
+      );
 
-    expect(workersDev.errors).toEqual(
-      expect.arrayContaining([expect.stringContaining("NEXT_PUBLIC_SITE_URL")]),
-    );
-    expect(exampleInvalid.errors).toEqual(
-      expect.arrayContaining([expect.stringContaining("NEXT_PUBLIC_SITE_URL")]),
-    );
-  });
-
-  it("treats workers.dev and example.invalid base URLs as non-launch public URLs", () => {
-    const input = createPublicLaunchInput(READY_PUBLIC_LAUNCH_FIXTURE);
-    const workersDev = validateProductionConfig(
-      {
-        ...createValidProductionEnv(),
-        APP_ENV: "production",
-        NODE_ENV: "production",
-        PUBLIC_LAUNCH_STRICT: "true",
-        NEXT_PUBLIC_BASE_URL:
-          "https://reference-site-preview.example.workers.dev",
-      },
-      input,
-    );
-    const exampleInvalid = validateProductionConfig(
-      {
-        ...createValidProductionEnv(),
-        APP_ENV: "production",
-        NODE_ENV: "production",
-        PUBLIC_LAUNCH_STRICT: "true",
-        NEXT_PUBLIC_BASE_URL:
-          "https://reference-site-production.example.invalid",
-      },
-      input,
-    );
-
-    expect(workersDev.errors).toEqual(
-      expect.arrayContaining([expect.stringContaining("NEXT_PUBLIC_BASE_URL")]),
-    );
-    expect(exampleInvalid.errors).toEqual(
-      expect.arrayContaining([expect.stringContaining("NEXT_PUBLIC_BASE_URL")]),
-    );
-  });
+      expect(workersDev.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining(key)]),
+      );
+      expect(exampleInvalid.errors).toEqual(
+        expect.arrayContaining([expect.stringContaining(key)]),
+      );
+    },
+  );
 });

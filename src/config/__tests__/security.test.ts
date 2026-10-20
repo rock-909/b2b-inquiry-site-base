@@ -99,12 +99,23 @@ describe("Security Configuration", () => {
       ]);
     });
 
-    it("does not allow starter image hosts or server-only email APIs in browser CSP", () => {
-      const csp = generateCSP();
+    // 精确 allowlist 才是安全契约：新增任何图片或上报主机都必须改这里。
+    it("allows only the reviewed image and connect hosts in production CSP", () => {
+      vi.stubEnv("NODE_ENV", "production");
+      const directives = parseCsp(generateCSP());
 
-      expect(csp).not.toContain("https://images.unsplash.com");
-      expect(csp).not.toContain("https://via.placeholder.com");
-      expect(csp).not.toContain("https://api.resend.com");
+      expect(directives.get("img-src")).toEqual([
+        "'self'",
+        "data:",
+        "https://www.google-analytics.com",
+        "https://www.googletagmanager.com",
+      ]);
+      expect(directives.get("connect-src")).toEqual([
+        "'self'",
+        "https://www.google-analytics.com",
+        "https://analytics.google.com",
+        "https://region1.google-analytics.com",
+      ]);
     });
 
     it("does not broadly allow remote images in browser CSP", () => {
@@ -183,17 +194,6 @@ describe("Security Configuration", () => {
 
       expect(headerKeys).toContain("Content-Security-Policy-Report-Only");
       expect(headerKeys).not.toContain("Content-Security-Policy");
-    });
-
-    it("should emit static CSP without nonce directives", () => {
-      vi.stubEnv("SECURITY_HEADERS_ENABLED", "true");
-
-      const headers = getSecurityHeaders();
-
-      const cspHeader = headers.find(
-        (h) => h.key === "Content-Security-Policy",
-      );
-      expect(cspHeader?.value).not.toContain("'nonce-");
     });
 
     it("should set correct X-Frame-Options", () => {

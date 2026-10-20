@@ -1,25 +1,10 @@
 import { readFileSync } from "node:fs";
 import ts from "typescript";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-const ENV_SOURCE_PATH = "src/lib/env.ts";
 const ENV_EXAMPLE_PATH = ".env.example";
 const SENSITIVE_ENV_KEY_PATTERN =
   /(?:_API_KEY|_TOKEN|_SECRET(?:_KEY)?|_ACCESS_KEY|_ENCRYPTION_KEY|_PEPPER(?:_PREVIOUS)?)$/u;
-const SENSITIVE_ENV_KEYS = [
-  "RESEND_API_KEY",
-  "AIRTABLE_API_KEY",
-  "TURNSTILE_SECRET_KEY",
-  "CLOUDFLARE_API_TOKEN",
-  "RATE_LIMIT_PEPPER",
-  "UPSTASH_REDIS_REST_TOKEN",
-] as const;
-// This is the adopter-facing deployment surface, not inferred from secret-like names.
-const DEPLOYMENT_CRITICAL_ENV_KEYS = [
-  "CLOUDFLARE_ACCOUNT_ID",
-  "CLOUDFLARE_API_TOKEN",
-  "DEPLOYMENT_PLATFORM",
-] as const;
 const NON_RUNTIME_EXAMPLE_ENV_KEYS = new Set([
   "CLOUDFLARE_ACCOUNT_ID",
   "CLOUDFLARE_API_TOKEN",
@@ -43,47 +28,24 @@ const PUBLIC_RUNTIME_ENV_SOURCE_PATH = "src/lib/public-runtime-env.ts";
 const FRAMEWORK_PUBLIC_ENV_KEYS = new Set(["NODE_ENV"]);
 const DERIVED_PUBLIC_ENV_KEYS = new Set(["NEXT_PUBLIC_APP_ENV"]);
 
+// 全局 setup 把 @/lib/env 整体 mock 了，这里要的是真实导出的 schema 与 runtimeEnv。
+const { clientEnvSchema, runtimeEnv, serverEnvSchema } =
+  await vi.importActual<typeof import("@/lib/env")>("@/lib/env");
+
 function readRepoFile(repoPath: string) {
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- architecture test reads fixed repo-local files
   return readFileSync(repoPath, "utf8");
 }
 
-function createSourceFile(source: string) {
-  return ts.createSourceFile(
-    ENV_SOURCE_PATH,
+function extractObjectLiteralKeys(source: string, variableName: string) {
+  const sourceFile = ts.createSourceFile(
+    PUBLIC_RUNTIME_ENV_SOURCE_PATH,
     source,
     ts.ScriptTarget.Latest,
     true,
     ts.ScriptKind.TS,
   );
-}
-
-function getPropertyName(name: ts.PropertyName): string | null {
-  if (ts.isIdentifier(name) || ts.isStringLiteral(name)) {
-    return name.text;
-  }
-
-  if (ts.isNumericLiteral(name)) {
-    return name.text;
-  }
-
-  return null;
-}
-
-function unwrapLiteralExpression(expression: ts.Expression): ts.Expression {
-  // `as const satisfies …` 会把对象字面量包进 SatisfiesExpression，直接判
-  // initializer 的 kind 会漏掉这类声明。
-  return ts.isSatisfiesExpression(expression) || ts.isAsExpression(expression)
-    ? unwrapLiteralExpression(expression.expression)
-    : expression;
-}
-
-function findObjectLiteral(
-  source: string,
-  variableName: string,
-): ts.ObjectLiteralExpression {
-  const sourceFile = createSourceFile(source);
-  let objectLiteral: ts.ObjectLiteralExpression | null = null;
+  const keys: string[] = [];
 
   function visit(node: ts.Node): void {
     if (
@@ -92,74 +54,32 @@ function findObjectLiteral(
       node.name.text === variableName &&
       node.initializer
     ) {
-      const unwrapped = unwrapLiteralExpression(node.initializer);
-
-      if (ts.isObjectLiteralExpression(unwrapped)) {
-        objectLiteral = unwrapped;
-        return;
+      let initializer = node.initializer;
+      while (
+        ts.isSatisfiesExpression(initializer) ||
+        ts.isAsExpression(initializer)
+      ) {
+        initializer = initializer.expression;
       }
+      if (ts.isObjectLiteralExpression(initializer)) {
+        for (const property of initializer.properties) {
+          if (
+            ts.isPropertyAssignment(property) &&
+            (ts.isIdentifier(property.name) ||
+              ts.isStringLiteral(property.name) ||
+              ts.isNoSubstitutionTemplateLiteral(property.name))
+          ) {
+            keys.push(property.name.text);
+          }
+        }
+      }
+      return;
     }
-
     ts.forEachChild(node, visit);
   }
 
   visit(sourceFile);
-
-  if (!objectLiteral) {
-    throw new Error(`${variableName} should be an object literal`);
-  }
-
-  return objectLiteral;
-}
-
-function extractObjectLiteralKeys(source: string, variableName: string) {
-  const objectLiteral = findObjectLiteral(source, variableName);
-
-  return objectLiteral.properties.flatMap((property) => {
-    if (!ts.isPropertyAssignment(property)) {
-      return [];
-    }
-
-    const key = getPropertyName(property.name);
-    return key ? [key] : [];
-  });
-}
-
-function extractRuntimeEnvKeys(source: string) {
-  const objectLiteral = findObjectLiteral(source, "runtimeEnv");
-
-  return objectLiteral.properties.flatMap((property) => {
-    if (
-      !ts.isPropertyAssignment(property) ||
-      !ts.isPropertyAccessExpression(property.initializer)
-    ) {
-      return [];
-    }
-
-    const key = getPropertyName(property.name);
-    const envKey = property.initializer.name.text;
-    const envObject = property.initializer.expression;
-
-    if (
-      !key ||
-      key !== envKey ||
-      !ts.isPropertyAccessExpression(envObject) ||
-      envObject.name.text !== "env" ||
-      !ts.isIdentifier(envObject.expression) ||
-      envObject.expression.text !== "process"
-    ) {
-      return [];
-    }
-
-    return [key];
-  });
-}
-
-function getSchemaKeys(envSource: string) {
-  return new Set([
-    ...extractObjectLiteralKeys(envSource, "serverEnvSchema"),
-    ...extractObjectLiteralKeys(envSource, "clientEnvSchema"),
-  ]);
+  return keys;
 }
 
 function parseEnvExample(source: string) {
@@ -182,22 +102,38 @@ function parseEnvExample(source: string) {
   return values;
 }
 
-function getDiscoveredSensitiveEnvKeys(envExample: Map<string, string>) {
-  return [...envExample.keys()].filter((key) =>
-    SENSITIVE_ENV_KEY_PATTERN.test(key),
-  );
-}
-
 function sortedStrings(values: Iterable<string>) {
   return Array.from(values).sort();
 }
 
 describe(".env.example parity", () => {
+  // runtimeEnv 必须逐项手写 KEY: process.env.KEY；接错名字时 schema 校验看不出来。
+  it("wires every runtimeEnv key to the process.env variable of the same name", async () => {
+    for (const key of Object.keys(runtimeEnv)) {
+      vi.stubEnv(key, `wired:${key}`);
+    }
+    // 跳过 createEnv 校验，让唯一标记值原样留在 runtimeEnv 里。
+    vi.stubEnv("SKIP_ENV_VALIDATION", "true");
+    vi.resetModules();
+
+    const fresh =
+      await vi.importActual<typeof import("@/lib/env")>("@/lib/env");
+    const miswired = Object.entries(fresh.runtimeEnv)
+      .filter(([key]) => key !== "SKIP_ENV_VALIDATION")
+      .filter(([key, value]) => value !== `wired:${key}`)
+      .map(([key]) => key);
+
+    expect(miswired).toEqual([]);
+    expect(fresh.runtimeEnv.SKIP_ENV_VALIDATION).toBe("true");
+  });
+
   it("keeps env example aligned with the central runtime env contract", () => {
-    const envSource = readRepoFile(ENV_SOURCE_PATH);
     const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-    const schemaKeys = getSchemaKeys(envSource);
-    const runtimeKeys = new Set<string>(extractRuntimeEnvKeys(envSource));
+    const schemaKeys = new Set([
+      ...Object.keys(serverEnvSchema),
+      ...Object.keys(clientEnvSchema),
+    ]);
+    const runtimeKeys = new Set<string>(Object.keys(runtimeEnv));
 
     expect(sortedStrings(schemaKeys)).toEqual(sortedStrings(runtimeKeys));
 
@@ -231,23 +167,21 @@ describe(".env.example parity", () => {
     expect(unknownExampleKeys).toEqual([]);
     expect(envExample.get("CLOUDFLARE_API_TOKEN")).toBeDefined();
     expect(schemaKeys.has("CLOUDFLARE_API_TOKEN")).toBe(false);
+    // Wrangler 与 CI 部署需要它，但它不是运行时 schema key，上面的对齐检查看不到。
+    expect(envExample.has("CLOUDFLARE_ACCOUNT_ID")).toBe(true);
   });
 
   // public-runtime-env 的 allowlist 是客户端读 env 的唯一合法入口。它每多一个
-  // key 就绕过一次中心 schema 的登记，而上面的扫描根恰好不含 src/，这条漂移
-  // 只有这里能看见。只守「allowlist 的读取都有登记」这一个方向：反向（schema
-  // 每个 key 都要进 allowlist）不是已证明的契约，不做。
+  // key 就绕过一次中心 schema 的登记，这条漂移只有这里能看见。只守「allowlist
+  // 的读取都有登记」这一个方向：反向（schema 每个 key 都要进 allowlist）不是
+  // 已证明的契约，不做。
   it("keeps public runtime allowlist reads registered in the client env schema", () => {
+    // allowlist 未导出且无法经 getPublicRuntimeEnvString 枚举，只能窄读这一处字面量。
     const allowlistKeys = extractObjectLiteralKeys(
       readRepoFile(PUBLIC_RUNTIME_ENV_SOURCE_PATH),
       "PUBLIC_RUNTIME_ENV_READERS",
     );
-    const clientSchemaKeys = new Set(
-      extractObjectLiteralKeys(
-        readRepoFile(ENV_SOURCE_PATH),
-        "clientEnvSchema",
-      ),
-    );
+    const clientSchemaKeys = new Set(Object.keys(clientEnvSchema));
 
     // 豁免名单里的 key 必须真的还在 allowlist 里：key 被删除时豁免也要跟着缩，
     // 不能留一张永远为真的豁免表。
@@ -271,39 +205,16 @@ describe(".env.example parity", () => {
     expect(sortedStrings(unregistered)).toEqual([]);
   });
 
-  it("keeps all sensitive keys in the env example and server-only", () => {
+  // 密钥形状的 key 一旦以 NEXT_PUBLIC_ 开头就会被打进浏览器 bundle。
+  it("keeps secret-shaped keys out of the public env surface", () => {
     const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-    const sensitiveEnvKeys = sortedStrings(
-      new Set([
-        ...SENSITIVE_ENV_KEYS,
-        ...getDiscoveredSensitiveEnvKeys(envExample),
-      ]),
-    );
-    const publicSensitiveKeys = [...envExample.keys()].filter(
-      (key) =>
-        key.startsWith("NEXT_PUBLIC_") && SENSITIVE_ENV_KEY_PATTERN.test(key),
+    const publicSensitiveKeys = new Set(
+      [...envExample.keys(), ...Object.keys(clientEnvSchema)].filter(
+        (key) =>
+          key.startsWith("NEXT_PUBLIC_") && SENSITIVE_ENV_KEY_PATTERN.test(key),
+      ),
     );
 
-    expect(publicSensitiveKeys).toEqual([]);
-
-    for (const key of sensitiveEnvKeys) {
-      expect(envExample.has(key), `${key} should remain in .env.example`).toBe(
-        true,
-      );
-      expect(
-        key.startsWith("NEXT_PUBLIC_"),
-        `${key} must stay server-only and must not be public`,
-      ).toBe(false);
-    }
-  });
-
-  it("keeps deployment-critical keys in the env example", () => {
-    const envExample = parseEnvExample(readRepoFile(ENV_EXAMPLE_PATH));
-
-    for (const key of DEPLOYMENT_CRITICAL_ENV_KEYS) {
-      expect(envExample.has(key), `${key} should remain in .env.example`).toBe(
-        true,
-      );
-    }
+    expect(sortedStrings(publicSensitiveKeys)).toEqual([]);
   });
 });

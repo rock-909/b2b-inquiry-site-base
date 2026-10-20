@@ -8,10 +8,12 @@ describe("security-crypto", () => {
 
   describe("generateHMAC", () => {
     it("should generate HMAC with SHA-256 by default", async () => {
-      const hmac = await generateHMAC("data", "secret");
+      // RFC 4231 test case 2：只有真正的 HMAC-SHA256 才得到这个值。
+      const hmac = await generateHMAC("what do ya want for nothing?", "Jefe");
 
-      expect(hmac).toBeDefined();
-      expect(hmac.length).toBe(64); // SHA-256 HMAC = 64 hex chars
+      expect(hmac).toBe(
+        "5bdcc146bf60754e6a042426089575c75a003f089d2739839dec58b964ec3843",
+      );
     });
 
     it("should produce consistent HMAC for same inputs", async () => {

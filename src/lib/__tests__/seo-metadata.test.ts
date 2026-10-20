@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { PUBLIC_STATIC_PAGE_DEFINITIONS } from "@/config/pages.config";
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import {
   buildCanonicalForPath,
@@ -142,8 +143,8 @@ describe("SEO Metadata", () => {
 
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "privacy",
-        path: "/privacy",
+        pageType: "contact",
+        path: "/contact",
       });
 
       expect(metadata.robots).toMatchObject({
@@ -171,22 +172,24 @@ describe("SEO Metadata", () => {
       });
     });
 
-    it("keeps incomplete legal pages noindex even in production, with localized canonical URLs", () => {
+    it("follows the page registry sitemap flag for production robots, with localized canonical URLs", () => {
       process.env.APP_ENV = "production";
-      for (const pageType of ["privacy", "terms"] as const) {
+      for (const page of PUBLIC_STATIC_PAGE_DEFINITIONS) {
         for (const locale of locales) {
           const metadata = generateMetadataForPath({
             locale,
-            pageType,
-            path: `/${pageType}`,
+            pageType: page.pageType,
+            path: page.path,
           });
           expect(metadata.robots).toMatchObject({
-            index: false,
-            follow: false,
-            googleBot: { index: false },
+            index: page.sitemap.include,
+            follow: page.sitemap.include,
           });
+          // 非默认语言的首页 canonical 不带结尾斜杠（/es）。
+          const canonicalPath =
+            page.path === "/" && locale !== defaultLocale ? "" : page.path;
           expect(metadata.alternates?.canonical).toBe(
-            localeUrl(locale, `/${pageType}`),
+            localeUrl(locale, canonicalPath),
           );
           expect(metadata.alternates?.languages).toHaveProperty("x-default");
         }
@@ -197,7 +200,7 @@ describe("SEO Metadata", () => {
       process.env.APP_ENV = "production";
       const metadata = generateMetadataForPath({
         locale: "en",
-        pageType: "privacy",
+        pageType: "contact",
         path: "/products",
       });
 

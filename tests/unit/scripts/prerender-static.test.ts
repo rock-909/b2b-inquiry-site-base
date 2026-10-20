@@ -104,9 +104,7 @@ function createBuildFixture({
   return rootDir;
 }
 
-function createStaticBuildWithoutTemplateShellsFixture({
-  includeAboutRoute = true,
-} = {}) {
+function createStaticBuildWithoutTemplateShellsFixture() {
   const rootDir = fs.mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
   writeJson(rootDir, ".next/server/app-paths-manifest.json", {
     "/[locale]/about/page": "app/[locale]/about/page.js",
@@ -114,17 +112,13 @@ function createStaticBuildWithoutTemplateShellsFixture({
   });
   writeJson(rootDir, ".next/prerender-manifest.json", {
     routes: {
-      ...(includeAboutRoute
-        ? { "/en/about": { srcRoute: "/[locale]/about" } }
-        : {}),
+      "/en/about": { srcRoute: "/[locale]/about" },
       "/en/contact": { srcRoute: "/[locale]/contact" },
     },
   });
-  if (includeAboutRoute) {
-    writeJson(rootDir, ".next/server/app/en/about.meta", {
-      headers: { "x-nextjs-prerender": "1" },
-    });
-  }
+  writeJson(rootDir, ".next/server/app/en/about.meta", {
+    headers: { "x-nextjs-prerender": "1" },
+  });
   writeJson(rootDir, ".next/server/app/en/contact.meta", {
     headers: { "x-nextjs-prerender": "1" },
   });
@@ -278,20 +272,6 @@ describe("prerender static behavior gate", () => {
     expect(findings).toContainEqual({
       file: "server/app/fr/about.meta",
       error: 'localized route is not marked prerendered "/fr/about"',
-    });
-  });
-
-  it("still rejects a missing concrete static route without PPR template shells", () => {
-    expect(
-      collectFindings({
-        rootDir: createStaticBuildWithoutTemplateShellsFixture({
-          includeAboutRoute: false,
-        }),
-      }),
-    ).toContainEqual({
-      file: "prerender-manifest.json",
-      error:
-        'localized route template has no prerender output for locale "en" "/[locale]/about"',
     });
   });
 

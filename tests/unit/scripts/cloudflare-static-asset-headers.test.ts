@@ -2,7 +2,7 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   collectCloudflareStaticAssetHeaderFailures,
   runCloudflareStaticAssetHeaderCli,
@@ -64,29 +64,20 @@ describe("Cloudflare static asset headers", () => {
     },
   );
 
-  it("fails when no-store has a value", () => {
+  // 带值的指令（no-store=1、s-maxage=0）也要按指令名识别。
+  it.each([
+    ["no-store=1", "no-store"],
+    ["s-maxage=0", "s-maxage"],
+  ])("fails when %s disables shared cache", (directiveWithValue, directive) => {
     expect(
       collectCloudflareStaticAssetHeaderFailures({
         rootDir: createFixture(`/_next/static/*
-  Cache-Control: public,max-age=31536000,immutable,no-store=1
+  Cache-Control: public,max-age=31536000,immutable,${directiveWithValue}
 `),
       }),
     ).toEqual([
-      "public/_headers /_next/static/* must not include Cache-Control directive: no-store",
-      ".open-next/assets/_headers /_next/static/* must not include Cache-Control directive: no-store",
-    ]);
-  });
-
-  it("fails when s-maxage disables shared cache", () => {
-    expect(
-      collectCloudflareStaticAssetHeaderFailures({
-        rootDir: createFixture(`/_next/static/*
-  Cache-Control: public,max-age=31536000,immutable,s-maxage=0
-`),
-      }),
-    ).toEqual([
-      "public/_headers /_next/static/* must not include Cache-Control directive: s-maxage",
-      ".open-next/assets/_headers /_next/static/* must not include Cache-Control directive: s-maxage",
+      `public/_headers /_next/static/* must not include Cache-Control directive: ${directive}`,
+      `.open-next/assets/_headers /_next/static/* must not include Cache-Control directive: ${directive}`,
     ]);
   });
 
@@ -180,9 +171,28 @@ https://example.com/_next/static*
     ]);
   });
 
-  it("runs the direct checker", () => {
+  // CLI 的返回值决定 process.exitCode；坏配置必须返回 false 才能让 CI 失败。
+  it("runs the direct checker and fails on a weakened bundle cache rule", () => {
     expect(
       runCloudflareStaticAssetHeaderCli({ rootDir: createFixture() }),
     ).toBe(true);
+
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    try {
+      expect(
+        runCloudflareStaticAssetHeaderCli({
+          rootDir: createFixture(`/_next/static/*
+  Cache-Control: no-store
+`),
+        }),
+      ).toBe(false);
+      expect(consoleError).toHaveBeenCalledWith(
+        "[cf-static-asset-headers] Failures detected:",
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });

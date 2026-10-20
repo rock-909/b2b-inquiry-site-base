@@ -56,12 +56,10 @@ describe("turnstile-config", () => {
       baseUrl: "https://Preview.Example.com",
     });
 
-    expect(mod.getAllowedTurnstileHosts()).toEqual(
-      expect.arrayContaining(["preview.example.com", "localhost"]),
-    );
-    expect(mod.getAllowedTurnstileHosts()).not.toEqual(
-      expect.arrayContaining(["feature-branch.preview.example"]),
-    );
+    expect(mod.getAllowedTurnstileHosts()).toEqual([
+      "preview.example.com",
+      "localhost",
+    ]);
   });
 
   it("logs and skips invalid fallback base urls", async () => {

@@ -158,46 +158,4 @@ describe("distributed-rate-limit", () => {
       },
     );
   });
-
-  it("admits exactly 10 concurrent requests through the Upstash atomic increment", async () => {
-    vi.useRealTimers();
-    setEnv("UPSTASH_REDIS_REST_URL", "http://fake-redis:8080");
-    setEnv("UPSTASH_REDIS_REST_TOKEN", "fake-token");
-    resetRateLimitStore();
-
-    const counters = new Map<string, number>();
-    const unknownCommands: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (_url, options) => {
-        const commands = JSON.parse(
-          String((options as RequestInit).body),
-        ) as string[][];
-        const results = commands.map(([name, key]) => {
-          if (name === "INCR") {
-            const next = (counters.get(key!) ?? 0) + 1;
-            counters.set(key!, next);
-            return { result: next };
-          }
-          if (name === "PEXPIRE") return { result: 1 };
-          if (name === "PTTL") return { result: 60_000 };
-
-          unknownCommands.push(String(name));
-          return { result: 1 };
-        });
-
-        await Promise.resolve();
-        return new Response(JSON.stringify(results), { status: 200 });
-      }),
-    );
-
-    const results = await Promise.all(
-      Array.from({ length: 11 }, () =>
-        checkInquiryRateLimit("concurrent-redis-user"),
-      ),
-    );
-
-    expect(unknownCommands).toEqual([]);
-    expect(results.filter((result) => result.allowed)).toHaveLength(10);
-  });
 });

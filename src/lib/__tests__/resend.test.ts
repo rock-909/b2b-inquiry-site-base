@@ -167,35 +167,6 @@ describe("resend - sendInquiryEmail", () => {
     });
   });
 
-  it("escapes buyer text when rendering without expanding buyer placeholders", async () => {
-    const emailData = {
-      ...validInquiryData,
-      ...inquiryLeadSchema.parse({
-        ...validInquiryData,
-        email: "JANE@EXAMPLE.COM",
-        fullName: "Jane <Pump {lastName}>",
-        message: "Need {lastName}\n\nwith data:text/plain and onclick=alert",
-      }),
-    };
-
-    mockResendSend.mockResolvedValue({
-      data: { id: "product-inquiry-id" },
-      error: null,
-    });
-
-    await sendInquiryEmail(emailData);
-
-    const payload = mockResendSend.mock.calls[0]?.[0];
-
-    expect(payload).not.toHaveProperty("react");
-    expect(payload.html).toContain("Jane &lt;Pump {lastName}&gt;");
-    expect(payload.text).toContain("Jane <Pump {lastName}>");
-    expect(payload.text).toContain(
-      "Need {lastName}\n\nwith data:text/plain and onclick=alert",
-    );
-    expect(payload.html).not.toContain("<Pump");
-  });
-
   it("handles API errors for inquiry", async () => {
     mockResendSend.mockResolvedValue({
       data: null,

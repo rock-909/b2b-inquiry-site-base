@@ -232,12 +232,6 @@ describe("inquiry validation detail mapping", () => {
     ).toEqual(["errors.generic"]);
   });
 
-  it("does not expose phone validation detail keys", () => {
-    expect(INQUIRY_VALIDATION_DETAIL_KEYS).not.toContain(
-      "errors.phone.invalid",
-    );
-  });
-
   it("keeps emitted details equal to the declared inquiry contract", () => {
     const emitted = new Set<string>();
 

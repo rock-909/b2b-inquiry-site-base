@@ -1,7 +1,6 @@
 import { spawnSync } from "node:child_process";
 
 import { describe, expect, it } from "vitest";
-import { collectMissingAirtableCanaryInputs } from "../../scripts/quality/checks/airtable-canary.js";
 import { isDeployedCanaryUrl } from "../e2e/smoke/post-deploy-canary-url";
 
 describe("Airtable write canary boundary", () => {
@@ -22,15 +21,11 @@ describe("Airtable write canary boundary", () => {
   });
 
   it("lists every missing prerequisite before Playwright starts", () => {
-    expect(collectMissingAirtableCanaryInputs({})).toEqual([
-      "STAGING_URL or PLAYWRIGHT_BASE_URL (deployed HTTPS URL)",
-      "AIRTABLE_BASE_ID",
-      "AIRTABLE_API_KEY",
-    ]);
-
     const result = spawnSync("pnpm", ["canary:airtable"], {
       cwd: process.cwd(),
       encoding: "utf8",
+      // 守卫若回归会启动 Playwright 及其本地构建；上限防止卡死 worker。
+      timeout: 30_000,
       env: {
         ...process.env,
         STAGING_URL: "",
@@ -43,6 +38,9 @@ describe("Airtable write canary boundary", () => {
     expect(result.status).toBe(1);
     expect(result.stderr.match(/Airtable canary 缺少前置条件/gu)).toHaveLength(
       1,
+    );
+    expect(result.stderr).toContain(
+      "STAGING_URL or PLAYWRIGHT_BASE_URL (deployed HTTPS URL)",
     );
     expect(result.stderr).toContain("AIRTABLE_BASE_ID");
     expect(result.stderr).toContain("AIRTABLE_API_KEY");

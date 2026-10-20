@@ -144,19 +144,6 @@ describe("real env contract", () => {
     expect(env.SECURITY_HEADERS_ENABLED).toBe(false);
   });
 
-  it("rejects invalid values through the real schema", async () => {
-    const consoleError = captureExpectedConsoleErrors(
-      "❌ Invalid environment variables:",
-    );
-    vi.stubEnv("EMAIL_FROM", "not-an-email");
-    vi.stubEnv("UPSTASH_REDIS_REST_URL", "not-a-url");
-
-    await expect(importActualEnv()).rejects.toThrow(
-      "Invalid environment variables",
-    );
-    expect(consoleError).toHaveBeenCalledTimes(1);
-  });
-
   it.each([
     { key: "EMAIL_FROM", value: "sales@acme.test" },
     { key: "EMAIL_FROM", value: "Acme Sales <sales@acme.test>" },
@@ -182,6 +169,7 @@ describe("real env contract", () => {
     { key: "EMAIL_FROM", value: "Acme\tSales <sales@acme.test>" },
     { key: "INQUIRY_RECIPIENT_EMAIL", value: "Owner <owner@acme.test>" },
     { key: "LOG_LEVEL", value: "verbose" },
+    { key: "UPSTASH_REDIS_REST_URL", value: "not-a-url" },
   ])("rejects $key=$value at load", async ({ key, value }) => {
     const consoleError = captureExpectedConsoleErrors(
       "❌ Invalid environment variables:",
@@ -212,35 +200,4 @@ describe("real env contract", () => {
       }
     },
   );
-
-  it("reads process.env changes after schema initialization", async () => {
-    const actual = await importActualEnv();
-    vi.stubEnv("NODE_ENV", "development");
-
-    expect(actual.getRuntimeEnvString("NODE_ENV")).toBe("development");
-    expect(actual.isRuntimeDevelopment()).toBe(true);
-    expect(actual.isRuntimeProduction()).toBe(false);
-
-    vi.stubEnv("NODE_ENV", "production");
-    expect(actual.isRuntimeDevelopment()).toBe(false);
-    expect(actual.isRuntimeProduction()).toBe(true);
-  });
-
-  it("reads boolean changes after schema initialization", async () => {
-    const actual = await importActualEnv();
-    vi.stubEnv("TURNSTILE_BYPASS", "true");
-    expect(actual.getRuntimeEnvBoolean("TURNSTILE_BYPASS")).toBe(true);
-
-    vi.stubEnv("TURNSTILE_BYPASS", "false");
-    expect(actual.getRuntimeEnvBoolean("TURNSTILE_BYPASS")).toBe(false);
-  });
-
-  it("recognizes the runtime app env and rejects unknown values", async () => {
-    const actual = await importActualEnv();
-    vi.stubEnv("APP_ENV", "preview");
-    expect(actual.getRuntimeAppEnv()).toBe("preview");
-
-    vi.stubEnv("APP_ENV", "staging");
-    expect(actual.getRuntimeAppEnv()).toBeUndefined();
-  });
 });

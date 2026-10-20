@@ -12,18 +12,40 @@ vi.mock("next/script", () => ({
 }));
 
 describe("EnterpriseAnalyticsIsland", () => {
+  const GA_DISABLE_KEY = "ga-disable-G-TEST";
+
+  function resetGaGlobals() {
+    Reflect.deleteProperty(window, "dataLayer");
+    Reflect.deleteProperty(window, "gtag");
+    Reflect.deleteProperty(window, GA_DISABLE_KEY);
+  }
+
   beforeEach(() => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+    resetGaGlobals();
   });
 
   afterEach(() => {
     window.history.replaceState(null, "", "/");
+    resetGaGlobals();
   });
 
-  it("does not load GA without consent", () => {
+  it("does not load or initialize GA without consent", () => {
     render(<EnterpriseAnalyticsIsland analyticsAllowed={false} />);
     expect(screen.queryByTestId("ga")).toBeNull();
+    // 同意前不得安装 gtag，也不得把 config/pageview 推入 dataLayer。
+    expect(window.gtag).toBeUndefined();
+    const dataLayer = (window.dataLayer ?? []) as unknown[][];
+    expect(dataLayer.filter((args) => args[0] === "config")).toEqual([]);
+  });
+
+  it("sets the GA opt-out flag when consent is withdrawn", () => {
+    const { rerender } = render(<EnterpriseAnalyticsIsland analyticsAllowed />);
+    expect(Reflect.get(window, GA_DISABLE_KEY)).toBe(false);
+
+    rerender(<EnterpriseAnalyticsIsland analyticsAllowed={false} />);
+    expect(Reflect.get(window, GA_DISABLE_KEY)).toBe(true);
   });
 
   it("loads configured GA after consent", () => {

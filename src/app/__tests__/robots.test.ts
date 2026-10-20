@@ -30,22 +30,13 @@ describe("robots.ts", () => {
   });
 
   describe("robots()", () => {
-    it("should have wildcard user agent rule", () => {
-      const result = robots();
-      const rulesArray = normalizeRules(result.rules);
-      const wildcardRule = rulesArray.find(
-        (rule) => !Array.isArray(rule.userAgent) && rule.userAgent === "*",
-      );
-
-      expect(wildcardRule).toBeDefined();
-    });
-
     it("should disallow all crawling outside production", () => {
       process.env.APP_ENV = "preview";
       const result = robots();
       const rulesArray = normalizeRules(result.rules);
       const wildcardRule = rulesArray[0];
 
+      expect(wildcardRule?.userAgent).toBe("*");
       expect(wildcardRule?.allow).toBeUndefined();
       expect(wildcardRule?.disallow).toBe("/");
     });
@@ -57,6 +48,7 @@ describe("robots.ts", () => {
       const wildcardRule = rulesArray[0];
       const disallowed = wildcardRule?.disallow;
 
+      expect(wildcardRule?.userAgent).toBe("*");
       expect(wildcardRule?.allow).toBe("/");
       expect(disallowed).toContain("/api/");
       // /_next/ 必须保持可抓取：Googlebot 渲染依赖 /_next/static 资产，

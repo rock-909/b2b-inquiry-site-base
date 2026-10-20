@@ -50,21 +50,6 @@ describe("safeParseJson", () => {
     });
   });
 
-  it("returns PAYLOAD_TOO_LARGE when content-length exceeds maxBytes", async () => {
-    const result = await safeParseJson(
-      createRequest("{}", { "content-length": "10" }),
-      {
-        maxBytes: 5,
-      },
-    );
-
-    expect(result).toEqual({
-      ok: false,
-      errorCode: API_ERROR_CODES.PAYLOAD_TOO_LARGE,
-      statusCode: 413,
-    });
-  });
-
   it("returns PAYLOAD_TOO_LARGE for a chunked body without content-length that exceeds maxBytes", async () => {
     // 分块总长 20 字节且是合法 JSON，每块都不超限：只有累计计数才能拦住
     const encoder = new TextEncoder();

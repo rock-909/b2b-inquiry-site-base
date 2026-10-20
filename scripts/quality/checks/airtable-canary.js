@@ -45,8 +45,6 @@ function runAirtableCanary(env = process.env) {
   return result.status ?? 1;
 }
 
-module.exports = { collectMissingAirtableCanaryInputs, runAirtableCanary };
-
 if (require.main === module) {
   process.exitCode = runAirtableCanary();
 }

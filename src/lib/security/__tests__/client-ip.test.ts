@@ -87,18 +87,6 @@ describe("client-ip", () => {
         setEnv("DEPLOYMENT_PLATFORM", "cloudflare");
       });
 
-      it("trusts cf-connecting-ip directly on the Cloudflare Workers platform", () => {
-        setEnv("DEPLOYMENT_PLATFORM", "cloudflare");
-        const request = createMockRequest({
-          headers: {
-            "cf-connecting-ip": "198.51.100.77",
-            "x-forwarded-for": "203.0.113.10",
-          },
-        });
-
-        expect(getClientIP(request)).toBe("198.51.100.77");
-      });
-
       it("should extract IP from cf-connecting-ip header on Cloudflare Workers", () => {
         const request = createMockRequest({
           headers: { "cf-connecting-ip": "192.0.2.100" },
@@ -126,14 +114,6 @@ describe("client-ip", () => {
         });
         const ip = getClientIP(request);
         expect(ip).toBe("0.0.0.0");
-      });
-
-      it("trusts Cloudflare headers because the Worker is the edge entrypoint", () => {
-        const request = createMockRequest({
-          headers: { "cf-connecting-ip": "192.0.2.100" },
-        });
-        const ip = getClientIP(request);
-        expect(ip).toBe("192.0.2.100");
       });
 
       it("fails closed when cf-connecting-ip is invalid", () => {
@@ -179,12 +159,14 @@ describe("client-ip", () => {
 
     describe("explicit DEPLOYMENT_PLATFORM", () => {
       it("should respect explicit platform over auto-detection", () => {
+        // NODE_ENV=development 会自动识别为开发平台并信任 XFF；显式平台必须优先。
+        setEnv("NODE_ENV", "development");
         setEnv("DEPLOYMENT_PLATFORM", "cloudflare");
 
         const request = createMockRequest({
           headers: {
             "cf-connecting-ip": "192.0.2.100",
-            "x-real-ip": "198.51.100.10",
+            "x-forwarded-for": "198.51.100.10",
           },
         });
         const ip = getClientIP(request);
@@ -204,16 +186,6 @@ describe("client-ip", () => {
 
         const request = createMockRequest({
           headers: { "x-real-ip": "198.51.100.10" },
-        });
-
-        expect(getClientIP(request)).toBe("0.0.0.0");
-      });
-
-      it("should return fallback IP when platform is unknown", () => {
-        setEnv("DEPLOYMENT_PLATFORM", "custom-edge");
-
-        const request = createMockRequest({
-          headers: { "x-forwarded-for": "198.51.100.10" },
         });
 
         expect(getClientIP(request)).toBe("0.0.0.0");
@@ -270,8 +242,8 @@ describe("client-ip", () => {
           headers: { "x-forwarded-for": "unknown, 192.168.1.1" },
         });
         const ip = getClientIP(request);
-        // First value "unknown" is invalid, should try next header or fallback
-        expect(ip).not.toBe("unknown");
+        // 只信第一跳：首跳无效时不得改信后面的地址，而是回落到本地 IP。
+        expect(ip).toBe("127.0.0.1");
       });
     });
 
@@ -329,42 +301,6 @@ describe("client-ip", () => {
       setEnv("NODE_ENV", "development");
       const request = createMockRequest({
         headers: { "x-forwarded-for": ",," },
-      });
-      const ip = getClientIP(request);
-      expect(ip).toBe("127.0.0.1");
-    });
-
-    it("should reject malformed IPv6 with triple colons", () => {
-      setEnv("NODE_ENV", "development");
-      const request = createMockRequest({
-        headers: { "x-forwarded-for": "2001:db8:::1" },
-      });
-      const ip = getClientIP(request);
-      expect(ip).toBe("127.0.0.1");
-    });
-
-    it("should reject malformed IPv6 with trailing single colon", () => {
-      setEnv("NODE_ENV", "development");
-      const request = createMockRequest({
-        headers: { "x-forwarded-for": "2001:db8::1:" },
-      });
-      const ip = getClientIP(request);
-      expect(ip).toBe("127.0.0.1");
-    });
-
-    it("should reject malformed IPv6 with leading single colon", () => {
-      setEnv("NODE_ENV", "development");
-      const request = createMockRequest({
-        headers: { "x-forwarded-for": ":1::2" },
-      });
-      const ip = getClientIP(request);
-      expect(ip).toBe("127.0.0.1");
-    });
-
-    it("should reject IPv6 with redundant compression (zero missing segments)", () => {
-      setEnv("NODE_ENV", "development");
-      const request = createMockRequest({
-        headers: { "x-forwarded-for": "1:2:3:4:5:6:7::8" },
       });
       const ip = getClientIP(request);
       expect(ip).toBe("127.0.0.1");

@@ -11,16 +11,17 @@ afterEach(() => {
 
 describe("release verify runner", () => {
   it("uses the requested deployment environment for dry-run", async () => {
-    const commands: string[][] = [];
+    const commands = new Map<string, string[]>();
     await runReleaseVerify({
       environment: "production",
       runCommand: (step) => {
-        commands.push(step.args);
+        commands.set(step.id, step.args);
         return 0;
       },
       portInUse: async () => false,
     });
-    expect(commands.at(-3)).toEqual([
+    // 按步骤 id 取命令：契约是环境透传，不是这两步在列表里的位置。
+    expect(commands.get("populate-cache")).toEqual([
       "exec",
       "opennextjs-cloudflare",
       "populateCache",
@@ -28,7 +29,7 @@ describe("release verify runner", () => {
       "--env",
       "production",
     ]);
-    expect(commands.at(-1)).toEqual([
+    expect(commands.get("wrangler-dry-run")).toEqual([
       "exec",
       "wrangler",
       "deploy",

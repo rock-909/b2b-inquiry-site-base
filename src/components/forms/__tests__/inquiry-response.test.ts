@@ -85,20 +85,28 @@ describe("decodeInquirySubmitState", () => {
     });
   });
 
-  it("classifies Turnstile failures as security errors", async () => {
-    const response = new Response(
-      JSON.stringify({
-        success: false,
-        errorCode: API_ERROR_CODES.TURNSTILE_REJECTED,
-      }),
-      { status: 400 },
-    );
+  // 服务端缺 token 时发 TURNSTILE_REQUIRED（route.ts），被拒时发 TURNSTILE_REJECTED；
+  // 两者都必须显示"安全校验"文案，而不是通用服务端错误。
+  it.each([
+    API_ERROR_CODES.TURNSTILE_REQUIRED,
+    API_ERROR_CODES.TURNSTILE_REJECTED,
+  ])(
+    "classifies Turnstile failure %s as a security error",
+    async (errorCode) => {
+      const response = new Response(
+        JSON.stringify({
+          success: false,
+          errorCode,
+        }),
+        { status: 400 },
+      );
 
-    await expect(decodeInquirySubmitState(response)).resolves.toEqual({
-      status: "error",
-      errorKind: "security",
-    });
-  });
+      await expect(decodeInquirySubmitState(response)).resolves.toEqual({
+        status: "error",
+        errorKind: "security",
+      });
+    },
+  );
 
   it("classifies an unavailable verification service as a server error", async () => {
     const response = new Response(
