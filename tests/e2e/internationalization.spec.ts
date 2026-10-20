@@ -125,7 +125,7 @@ test.describe("Second locale contract", () => {
 });
 
 test.describe("Language switcher journey", () => {
-  test("keyboard-highlighted language option keeps readable text contrast", async ({
+  test("keyboard-highlighted language option shows readable highlight instead of a focus ring", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -149,6 +149,42 @@ test.describe("Language switcher journey", () => {
     await checkA11y(page, '[data-testid="language-dropdown-content"]', {
       axeOptions: { runOnly: ["color-contrast"] },
     });
+
+    // 菜单内键盘位置只靠高亮底色指示，不叠加焦点框；底色必须与菜单底色可区分。
+    const menuBackground = await page
+      .getByTestId("language-dropdown-content")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    const highlighted = await second.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        focusVisible: element.matches(":focus-visible"),
+        outlineStyle: style.outlineStyle,
+        background: style.backgroundColor,
+      };
+    });
+    expect(highlighted.focusVisible).toBe(true);
+    expect(highlighted.outlineStyle).toBe("none");
+    expect(highlighted.background).not.toBe(menuBackground);
+    expect(highlighted.background).not.toBe("rgba(0, 0, 0, 0)");
+
+    // 菜单外的普通头部链接仍保留全局焦点框。
+    await page.keyboard.press("Escape");
+    await expect(trigger).toBeFocused();
+    const headerCta = page
+      .getByRole("banner")
+      .getByRole("link", { name: "Start an inquiry", exact: true });
+    // 已处于键盘模态，focus() 会命中 :focus-visible；macOS WebKit 的 Tab 会跳过链接。
+    await headerCta.focus();
+    await expect(headerCta).toBeFocused();
+    const ctaOutline = await headerCta.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        style: style.outlineStyle,
+        width: Number.parseFloat(style.outlineWidth),
+      };
+    });
+    expect(ctaOutline.style).toBe("solid");
+    expect(ctaOutline.width).toBeGreaterThanOrEqual(2);
   });
 
   test("desktop switch preserves the URL, inquiry draft, and keyboard lifecycle", async ({
