@@ -36,7 +36,7 @@ export function Logo() {
       {/* Keep the brand name visible until real logo assets are public-ready. */}
       <span
         className={cn(
-          "header-brand-text block min-w-0 truncate text-xl font-semibold text-foreground",
+          "block min-w-0 truncate text-xl font-semibold text-foreground",
           logoPath ? "header-logo-text-desktop-only" : undefined,
         )}
       >

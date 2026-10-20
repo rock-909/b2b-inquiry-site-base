@@ -52,11 +52,7 @@ export function CookieBanner({
         <p className="text-sm font-semibold text-foreground">{t("title")}</p>
         <p className="text-sm text-muted-foreground">
           {t("description")}{" "}
-          <Link
-            href="/privacy"
-            prefetch={false}
-            className="text-link rounded-sm"
-          >
+          <Link href="/privacy" prefetch={false} className="text-link">
             {t("learnMore")}
           </Link>
         </p>
