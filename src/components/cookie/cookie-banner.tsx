@@ -42,7 +42,7 @@ export function CookieBanner({
       ref={bannerRef}
       role="region"
       aria-label={t("title")}
-      className="fixed inset-x-0 bottom-0 z-[100] border-t bg-background/95 shadow-lg backdrop-blur-sm supports-[backdrop-filter]:bg-background/80"
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 shadow-lg backdrop-blur-sm supports-[backdrop-filter]:bg-background/80"
     >
       <div className="mx-auto flex max-w-[1080px] flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1 space-y-2">

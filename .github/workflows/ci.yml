@@ -148,6 +148,8 @@ jobs:
           NEXT_PUBLIC_APP_ENV: preview
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
           TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"
+          # 假 GA ID 只为渲染同意横幅；预览环境下 GA 脚本不会加载。
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-E2ETEST000"
 
       # 不点名文件：点名过的多份清单各不相同，
       # 结果有 3 个用例文件哪个 workflow 都没跑到。改成让 testDir 说了算。
