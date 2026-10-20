@@ -39,7 +39,7 @@ const htmlReportOpen: "always" | "never" | "on-failure" =
 // E2E 构建带假 GA ID 只为渲染同意横幅，任何用例都不该请求 GA。
 // 在浏览器启动层把 GA 域名解析掉，所有用例和独立创建的 context 都经过这里。
 // Chromium 用通配规则（解析规则在走系统代理时不生效，所以强制直连）；Firefox 只能列出具体主机；WebKit 没有等价开关，
-// 那里的保证是没有任何用例点“同意分析”。
+// 那里的保证是点“同意分析”的用例自己用 page.route 中止 GA 请求。
 const GA_HOSTS = [
   "googletagmanager.com",
   "www.googletagmanager.com",
