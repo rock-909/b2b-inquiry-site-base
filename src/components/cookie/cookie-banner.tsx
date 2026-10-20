@@ -52,11 +52,7 @@ export function CookieBanner({
         <p className="text-sm font-semibold text-foreground">{t("title")}</p>
         <p className="text-sm text-muted-foreground">
           {t("description")}{" "}
-          <Link
-            href="/privacy"
-            prefetch={false}
-            className="text-link rounded-sm"
-          >
+          <Link href="/privacy" prefetch={false} className="text-link">
             {t("learnMore")}
           </Link>
         </p>
@@ -66,7 +62,7 @@ export function CookieBanner({
               type="checkbox"
               checked={analytics}
               onChange={(event) => setAnalytics(event.target.checked)}
-              className="size-4"
+              className="size-4 accent-[var(--foreground)]"
             />
             {t("analytics")}
           </label>
@@ -75,7 +71,7 @@ export function CookieBanner({
               type="checkbox"
               checked={advertising}
               onChange={(event) => setAdvertising(event.target.checked)}
-              className="size-4"
+              className="size-4 accent-[var(--foreground)]"
             />
             {t("advertising")}
           </label>

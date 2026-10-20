@@ -229,7 +229,7 @@
 
   /* 正文链接：正文黑字 + 常驻灰下划线（下划线是非颜色提示），悬停下划线变黑。 */
   .text-link {
-    @apply font-medium text-foreground underline decoration-muted-foreground/70 underline-offset-4 transition-colors duration-150 ease-out hover:decoration-foreground;
+    @apply rounded-sm font-medium text-foreground underline decoration-muted-foreground/70 underline-offset-4 transition-colors duration-150 ease-out hover:decoration-foreground;
   }
 
   footer {
@@ -284,17 +284,7 @@
   }
 
   .header-nav-left {
-    @apply col-start-1 flex min-w-0 items-center gap-4 overflow-hidden pr-3;
-  }
-
-  .header-brand-text {
-    max-width: min(100%, 9.5rem);
-  }
-
-  @media (min-width: 1200px) {
-    .header-brand-text {
-      max-width: none;
-    }
+    @apply col-start-1 -ml-1 flex min-w-0 items-center gap-4 overflow-x-clip pr-3 pl-1;
   }
 
   .header-nav-links-compact {
