@@ -237,17 +237,17 @@ describe("MobileNavigationInteractive", () => {
     });
 
     it("marks the current route's item with aria-current", () => {
-      mockPathname.current = "/contact";
+      mockPathname.current = "/";
       render(<MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />);
 
       fireEvent.click(screen.getByRole("button", { name: /menu/i }));
 
       expect(
-        screen.getByRole("link", { name: "Start an inquiry", current: "page" }),
+        screen.getByRole("link", { name: "Home", current: "page" }),
       ).toHaveAttribute("aria-current", "page");
-      expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
-        "aria-current",
-      );
+      expect(
+        screen.getByRole("link", { name: "Start an inquiry" }),
+      ).not.toHaveAttribute("aria-current");
     });
   });
 
@@ -288,7 +288,8 @@ describe("MobileNavigationInteractive", () => {
         screen.getByRole("navigation", { name: "TEST mobile nav landmark" }),
       ).toBeInTheDocument();
       expect(screen.getByText("首页")).toBeInTheDocument();
-      expect(screen.getAllByText("联系销售")).toHaveLength(2);
+      // 联系页只由 CTA 承担，不再作为导航项重复出现。
+      expect(screen.getAllByText("联系销售")).toHaveLength(1);
     });
 
     it("renders the translated site description inside the drawer", () => {

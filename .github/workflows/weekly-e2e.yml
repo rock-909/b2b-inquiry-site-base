@@ -52,6 +52,8 @@ jobs:
           NEXT_PUBLIC_APP_ENV: preview
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA"
           TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA"
+          # 假 GA ID 只为渲染同意横幅；playwright.config.ts 在浏览器启动层屏蔽 GA 域名。
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-E2ETEST000"
           SECURITY_HEADERS_ENABLED: "false"
 
       # 同 ci.yml：不点名文件，testDir 下的用例全跑。这条 lane 浏览器矩阵全开 +

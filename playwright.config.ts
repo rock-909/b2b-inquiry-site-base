@@ -36,18 +36,43 @@ const isInteractiveTerminal = Boolean(
 const htmlReportOpen: "always" | "never" | "on-failure" =
   isCI || !isInteractiveTerminal ? "never" : "on-failure";
 
+// E2E 构建带假 GA ID 只为渲染同意横幅，任何用例都不该请求 GA。
+// 在浏览器启动层把 GA 域名解析掉，所有用例和独立创建的 context 都经过这里。
+// Chromium 用通配规则（解析规则在走系统代理时不生效，所以强制直连）；Firefox 只能列出具体主机；WebKit 没有等价开关，
+// 那里的保证是没有任何用例点“同意分析”。
+const GA_HOSTS = [
+  "googletagmanager.com",
+  "www.googletagmanager.com",
+  "google-analytics.com",
+  "www.google-analytics.com",
+  "analytics.google.com",
+];
+const chromiumBlockGa = {
+  launchOptions: {
+    args: [
+      "--proxy-server=direct://",
+      `--host-resolver-rules=${GA_HOSTS.map((host) => `MAP ${host} ~NOTFOUND`).join(", ")}, MAP *.googletagmanager.com ~NOTFOUND, MAP *.google-analytics.com ~NOTFOUND`,
+    ],
+  },
+};
+const firefoxBlockGa = {
+  launchOptions: {
+    firefoxUserPrefs: { "network.dns.localDomains": GA_HOSTS.join(",") },
+  },
+};
+
 // 全量覆盖任务才打开扩展浏览器矩阵，常规 CI 只跑 Chromium。
 const baseProjects = [
   {
     name: "chromium",
-    use: { ...devices["Desktop Chrome"] },
+    use: { ...devices["Desktop Chrome"], ...chromiumBlockGa },
   },
 ];
 
 const extendedProjects = [
   {
     name: "firefox",
-    use: { ...devices["Desktop Firefox"] },
+    use: { ...devices["Desktop Firefox"], ...firefoxBlockGa },
   },
   {
     name: "webkit",
@@ -55,7 +80,7 @@ const extendedProjects = [
   },
   {
     name: "Mobile Chrome",
-    use: { ...devices["Pixel 5"] },
+    use: { ...devices["Pixel 5"], ...chromiumBlockGa },
   },
   {
     name: "Mobile Safari",
@@ -150,6 +175,9 @@ export default defineConfig({
             // See: https://developers.cloudflare.com/turnstile/reference/testing/
             NEXT_PUBLIC_TURNSTILE_SITE_KEY: "1x00000000000000000000AA",
             TURNSTILE_SECRET_KEY: "1x0000000000000000000000000000000AA",
+
+            // 假 GA ID 只为渲染同意横幅；GA 域名在浏览器启动层被屏蔽（见 GA_HOSTS）。
+            NEXT_PUBLIC_GA_MEASUREMENT_ID: "G-E2ETEST000",
 
             // 置空即可挡住 .env.local 的同名密钥：本地 E2E 永远不能真实投递。
             RESEND_API_KEY: "",

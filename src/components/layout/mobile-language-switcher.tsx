@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, Globe } from "lucide-react";
+import { Check, ChevronDown, Globe } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { FinalUrlLink, usePathname } from "@/i18n/routing";
 import {
@@ -39,7 +39,7 @@ export function MobileLanguageSwitcher({
       translate="no"
     >
       <summary
-        className="flex min-h-10 cursor-pointer list-none items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-100 ease-out outline-none hover:bg-accent/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background [&::-webkit-details-marker]:hidden"
+        className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-[var(--control-radius)] px-3 text-base font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden"
         aria-label={tAccessibility("language", {
           language: currentLanguageLabel,
         })}
@@ -63,15 +63,24 @@ export function MobileLanguageSwitcher({
 
       <div className="mt-1 space-y-0.5">
         {LANGUAGE_OPTIONS.map((option) =>
-          option.locale === currentLocale ? null : (
+          option.locale === currentLocale ? (
+            <span
+              key={option.locale}
+              aria-current="true"
+              lang={option.locale}
+              className="flex min-h-11 items-center justify-between rounded-[var(--control-radius)] px-3 pl-9 text-base font-medium text-[var(--primary-text)]"
+            >
+              {option.label}
+              <Check aria-hidden="true" className="size-4" />
+            </span>
+          ) : (
             <FinalUrlLink
               key={option.locale}
               href={localeSwitchHref(option.locale)}
               hrefLang={option.locale}
               className={cn(
-                "flex min-h-10 items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-muted-foreground",
-                "transition-colors duration-100 ease-out hover:bg-accent/50 hover:text-foreground",
-                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none",
+                "flex min-h-11 items-center justify-between rounded-[var(--control-radius)] px-3 pl-9 text-base font-medium text-muted-foreground",
+                "transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground",
               )}
               data-locale={option.locale}
               data-testid={`mobile-language-option-${option.locale}`}

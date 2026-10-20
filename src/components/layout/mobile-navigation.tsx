@@ -6,6 +6,7 @@ import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 import { isActivePath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/routing";
+import { buttonVariants } from "@/components/ui/button-variants";
 
 export interface MobileNavigationLinksProps extends Omit<
   ComponentProps<"nav">,
@@ -48,10 +49,11 @@ export function MobileNavigationLinks({
                 href={item.href as "/"}
                 prefetch={false}
                 className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors duration-200",
+                  "flex min-h-11 items-center rounded-[var(--control-radius)] px-3 text-base font-medium transition-colors duration-150 ease-out",
+                  "hover:bg-muted",
                   isActive
-                    ? "bg-accent text-[var(--primary-text)]"
-                    : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                    ? "text-[var(--primary-text)]"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
                 aria-current={isActive ? "page" : undefined}
                 onClick={onNavigate}
@@ -62,11 +64,11 @@ export function MobileNavigationLinks({
             </li>
           );
         })}
-        <li className="pt-4">
+        <li className="pt-3">
           <Link
             href={contactHref}
             prefetch={false}
-            className="flex items-center rounded-md bg-[var(--button-primary-bg)] px-3 py-2 text-sm font-medium text-[var(--button-primary-fg)] transition-colors duration-200 hover:bg-[var(--button-primary-hover-bg)]"
+            className={buttonVariants({ className: "h-11 w-full text-base" })}
             onClick={onNavigate}
           >
             {resolvedContactSalesLabel}

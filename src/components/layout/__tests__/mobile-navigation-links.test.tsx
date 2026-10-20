@@ -114,12 +114,12 @@ describe("MobileNavigationLinks", () => {
   });
 
   it("marks the active item with aria-current and leaves others unset", () => {
-    render(<MobileNavigationLinks currentPathname="/contact" />);
+    render(<MobileNavigationLinks currentPathname="/" />);
 
     expect(
-      screen.getByRole("link", { name: "Start an inquiry", current: "page" }),
+      screen.getByRole("link", { name: "Home", current: "page" }),
     ).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Home" })).not.toHaveAttribute(
+    expect(screen.getByRole("link", { name: CTA_LABEL })).not.toHaveAttribute(
       "aria-current",
     );
   });

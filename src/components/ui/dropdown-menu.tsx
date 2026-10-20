@@ -65,8 +65,8 @@ function DropdownMenuItem({
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
       className={cn(
-        "flex min-h-9 w-full cursor-default items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground outline-none",
-        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+        "flex min-h-9 w-full cursor-default items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out",
+        "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
         "forced-colors:data-[highlighted]:outline-2 forced-colors:data-[highlighted]:outline-[color:Highlight] forced-colors:data-[highlighted]:outline-solid",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
@@ -84,8 +84,8 @@ function DropdownMenuLinkItem({
     <MenuPrimitive.LinkItem
       data-slot="dropdown-menu-link-item"
       className={cn(
-        "flex min-h-9 w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground outline-none",
-        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+        "flex min-h-9 w-full cursor-pointer items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out",
+        "data-[highlighted]:bg-muted data-[highlighted]:text-foreground",
         "forced-colors:data-[highlighted]:outline-2 forced-colors:data-[highlighted]:outline-[color:Highlight] forced-colors:data-[highlighted]:outline-solid",
         className,
       )}

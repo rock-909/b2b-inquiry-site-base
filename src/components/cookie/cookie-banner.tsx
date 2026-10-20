@@ -42,27 +42,25 @@ export function CookieBanner({
       ref={bannerRef}
       role="region"
       aria-label={t("title")}
-      className="fixed inset-x-0 bottom-0 z-[100] border-t bg-background/95 shadow-lg backdrop-blur-sm supports-[backdrop-filter]:bg-background/80"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-popover text-popover-foreground shadow-lg duration-200 animate-in fade-in-0 slide-in-from-bottom-2 sm:inset-x-auto sm:right-4 sm:bottom-4 sm:w-[24rem] sm:rounded-xl sm:border"
     >
-      <div className="mx-auto flex max-w-[1080px] flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex-1 space-y-2">
-          <p className="text-sm font-medium text-foreground">{t("title")}</p>
-          <p className="text-xs text-muted-foreground sm:text-sm">
-            {t("description")}
-          </p>
+      <div className="flex flex-col gap-3 px-6 py-4 sm:p-5">
+        <p className="text-sm font-semibold text-foreground">{t("title")}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("description")}{" "}
           <Link
             href="/privacy"
             prefetch={false}
-            className="inline-flex min-h-11 items-center rounded-sm py-2 text-xs font-medium underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none sm:text-sm"
+            className="rounded-sm font-medium text-[var(--primary-text)] underline underline-offset-4 transition-colors duration-150 ease-out hover:text-foreground"
           >
             {t("learnMore")}
           </Link>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onReject}>
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" onClick={onReject}>
             {t("rejectAll")}
           </Button>
-          <Button size="sm" onClick={onAccept}>
+          <Button variant="outline" onClick={onAccept}>
             {t("acceptAll")}
           </Button>
         </div>

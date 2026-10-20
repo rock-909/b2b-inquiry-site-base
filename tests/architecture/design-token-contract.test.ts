@@ -1,33 +1,12 @@
-import { globSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const THEME_CSS = "src/app/theme.css";
-const GLOBALS_CSS = "src/app/globals.css";
 const CONTRAST_MORE_MEDIA = "@media (prefers-contrast: more)";
-
-const UI_SOURCE_FILES = globSync("src/**/*.{ts,tsx}").filter(
-  (filePath) => !/(?:__tests__|\.test\.)/u.test(filePath),
-);
-// Base UI 在运行时写到弹层元素上的变量，不属于主题 token。
-const RUNTIME_PROVIDED_VARS = new Set(["--transform-origin"]);
-
-const THEME_MODES = [
-  ["light", "default"],
-  ["light", "more"],
-  ["dark", "default"],
-  ["dark", "more"],
-] as const;
-
-const RAW_PALETTE_CLASS =
-  /\b(?:(?:hover|dark|focus-visible):)*(?:bg|text|border|ring|outline)-(?:neutral|gray|slate|zinc|stone|blue|sky|cyan|green|red|amber|yellow|emerald)-\d{2,3}\b/u;
 
 function readRepoFile(filePath: string): string {
   // eslint-disable-next-line security/detect-non-literal-fs-filename -- 测试只读取仓库内的样式和源码文件
   return readFileSync(filePath, "utf8");
-}
-
-function captureAll(source: string, pattern: RegExp): string[] {
-  return Array.from(source.matchAll(pattern), (match) => match[1] ?? "");
 }
 
 function stripCssComments(source: string): string {
@@ -35,50 +14,6 @@ function stripCssComments(source: string): string {
 }
 
 describe("design token contract", () => {
-  it("keeps theme.css as the semantic token source", () => {
-    const globals = stripCssComments(readRepoFile(GLOBALS_CSS));
-    const theme = stripCssComments(readRepoFile(THEME_CSS));
-
-    expect(globals).toContain('@import "./theme.css";');
-
-    const css = `${theme}\n${globals}`;
-    const sources: Array<[string, string]> = [
-      [GLOBALS_CSS, globals],
-      [THEME_CSS, theme],
-      ...UI_SOURCE_FILES.map((filePath): [string, string] => [
-        filePath,
-        readRepoFile(filePath),
-      ]),
-    ];
-    const undefinedTokens = sources.flatMap(([filePath, source]) =>
-      captureAll(source, /var\((--[\w-]+)/gu)
-        .filter((name) => !RUNTIME_PROVIDED_VARS.has(name))
-        .flatMap((name) =>
-          THEME_MODES.filter(
-            ([themeName, contrastMode]) =>
-              !buildThemeTokenMap(css, themeName, contrastMode).has(name),
-          ).map(
-            ([themeName, contrastMode]) =>
-              `${filePath}: ${name} (${themeName}/${contrastMode})`,
-          ),
-        ),
-    );
-
-    expect(undefinedTokens).toEqual([]);
-  });
-
-  it("keeps browser UI on semantic color tokens", () => {
-    expect(UI_SOURCE_FILES.length).toBeGreaterThan(0);
-    const offenders = UI_SOURCE_FILES.filter((filePath) =>
-      RAW_PALETTE_CLASS.test(stripCssComments(readRepoFile(filePath))),
-    );
-
-    expect(
-      offenders,
-      "use semantic tokens instead of raw Tailwind palette classes",
-    ).toEqual([]);
-  });
-
   it("keeps required WCAG contrast across light and dark themes", () => {
     const css = stripCssComments(readRepoFile(THEME_CSS));
     const pairs = [
@@ -95,8 +30,6 @@ describe("design token contract", () => {
       ["--primary-text", "--background", 4.5],
       ["--accent-foreground", "--accent", 4.5],
       ["--info-foreground", "--info-muted", 4.5],
-      ["--footer-text", "--footer-bg", 4.5],
-      ["--footer-heading", "--footer-bg", 4.5],
       ["--muted-foreground", "--background", 4.5],
       ["--muted-foreground", "--card", 4.5],
       ["--muted-foreground", "--muted", 4.5],

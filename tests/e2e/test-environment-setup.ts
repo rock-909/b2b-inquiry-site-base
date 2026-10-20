@@ -17,15 +17,15 @@ export function collectBrowserErrors(page: Page): string[] {
 }
 
 /**
- * Close the cookie banner in flows where it is not the behavior under test.
+ * Dismiss the cookie banner in flows where it is not the behavior under test.
  * 横幅只在配置了 GA 时、水合后才出现，所以注册遮挡处理器而不是只查一次；
- * 调用方只访问默认语种页面。
+ * 用“拒绝”关闭，避免走到 GA 加载路径；调用方只访问默认语种页面。
  */
 export async function acceptCookieBannerIfVisible(page: Page): Promise<void> {
   const { cookie } = getLocaleMessages(DEFAULT_LOCALE);
   const banner = page.getByRole("region", { name: cookie.title });
 
   await page.addLocatorHandler(banner, async () => {
-    await banner.getByRole("button", { name: cookie.acceptAll }).click();
+    await banner.getByRole("button", { name: cookie.rejectAll }).click();
   });
 }

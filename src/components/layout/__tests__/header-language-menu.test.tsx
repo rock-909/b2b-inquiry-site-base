@@ -51,7 +51,6 @@ describe("HeaderLanguageMenu", () => {
     expect(currentOption).toHaveAttribute("aria-current", "true");
     expect(currentOption).toHaveAttribute("aria-disabled", "true");
     expect(currentOption).toHaveTextContent("English");
-    expect(currentOption).toHaveClass("text-foreground");
     expect(currentOption.querySelector('[lang="en"]')).not.toBeNull();
     expect(screen.queryByRole("link", { name: "English" })).toBeNull();
   });

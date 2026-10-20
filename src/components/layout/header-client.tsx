@@ -98,17 +98,16 @@ function LanguageToggleTrigger({
       aria-expanded="false"
       aria-haspopup="menu"
       className={cn(
-        "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground",
-        "transition-colors duration-100 ease-out hover:bg-accent hover:text-foreground",
-        "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background focus-visible:outline-none",
+        "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-[var(--control-radius)] px-3 text-sm font-medium text-muted-foreground",
+        "transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground data-[popup-open]:bg-muted data-[popup-open]:text-foreground",
       )}
       onClick={onClick}
     >
-      <Globe aria-hidden="true" className="size-3.5" />
+      <Globe aria-hidden="true" className="size-4" />
       <span data-testid="language-current-label" translate="no">
         {LOCALES_CONFIG.triggerLabels[locale]}
       </span>
-      <ChevronDown aria-hidden="true" className="size-3.5" />
+      <ChevronDown aria-hidden="true" className="size-4" />
     </button>
   );
 }
@@ -128,13 +127,13 @@ function LanguageToggleStaticFallback({
       <summary
         data-testid="language-toggle-button"
         aria-label={ariaLabel}
-        className="inline-flex h-9 cursor-pointer list-none items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+        className="inline-flex h-8 cursor-pointer list-none items-center justify-center gap-1.5 rounded-[var(--control-radius)] px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden"
       >
-        <Globe aria-hidden="true" className="size-3.5" />
+        <Globe aria-hidden="true" className="size-4" />
         <span>{LOCALES_CONFIG.triggerLabels[locale]}</span>
-        <ChevronDown aria-hidden="true" className="size-3.5" />
+        <ChevronDown aria-hidden="true" className="size-4" />
       </summary>
-      <div className="absolute top-full right-0 z-50 mt-2 min-w-40 rounded-xl border border-border bg-popover p-3 text-popover-foreground shadow-lg">
+      <div className="absolute top-full right-0 z-50 mt-2 min-w-40 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg">
         {LOCALES_CONFIG.locales.map((targetLocale) => (
           <a
             key={targetLocale}
@@ -142,7 +141,7 @@ function LanguageToggleStaticFallback({
             hrefLang={targetLocale}
             lang={targetLocale}
             aria-current={targetLocale === locale ? "true" : undefined}
-            className="flex min-h-10 items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+            className="flex min-h-9 items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground aria-[current=true]:text-[var(--primary-text)]"
           >
             {LOCALES_CONFIG.displayNames[targetLocale]}
           </a>

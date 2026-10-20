@@ -9,7 +9,7 @@ import { createMockTranslations } from "@/test/utils";
 const t = createMockTranslations();
 
 describe("ThemeSwitcher", () => {
-  it("uses resolvedTheme for the active highlight before theme is restored after navigation", async () => {
+  it("marks the resolvedTheme option active before theme is restored after navigation", async () => {
     const mockSetTheme = vi.fn();
     vi.mocked(useTheme).mockReturnValue({
       theme: undefined,
@@ -23,12 +23,11 @@ describe("ThemeSwitcher", () => {
 
     render(<ThemeSwitcher data-testid="theme-switcher" />);
 
-    const darkButton = screen.getByRole("button", {
-      name: t("theme.switchToDark"),
-    });
-
     expect(
-      darkButton.querySelector('[data-testid="theme-switcher-highlight"]'),
+      await screen.findByRole("button", {
+        name: t("theme.switchToDark"),
+        pressed: true,
+      }),
     ).toBeInTheDocument();
   });
 
@@ -47,8 +46,11 @@ describe("ThemeSwitcher", () => {
 
     render(<ThemeSwitcher data-testid="theme-switcher" />);
 
-    // Wait for mounted state (skeleton renders disabled buttons first)
-    await screen.findByTestId("theme-switcher-highlight");
+    // 服务端骨架先渲染禁用按钮；等到当前项带上 aria-pressed 即已水合。
+    await screen.findByRole("button", {
+      name: t("theme.switchToLight"),
+      pressed: true,
+    });
 
     const darkButton = screen.getByRole("button", {
       name: t("theme.switchToDark"),
@@ -77,11 +79,12 @@ describe("ThemeSwitcher", () => {
     });
     expect(group).toBeInTheDocument();
 
-    await screen.findByTestId("theme-switcher-highlight");
-
     expect(
-      screen.getByRole("button", { name: t("theme.switchToDark") }),
-    ).toHaveAttribute("aria-pressed", "true");
+      await screen.findByRole("button", {
+        name: t("theme.switchToDark"),
+        pressed: true,
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: t("theme.switchToLight") }),
     ).toHaveAttribute("aria-pressed", "false");
