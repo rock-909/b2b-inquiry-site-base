@@ -10,7 +10,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { ChevronDown, Globe } from "lucide-react";
+import { Check, ChevronDown, Globe } from "lucide-react";
 import { usePathname } from "@/i18n/routing";
 import {
   LOCALES_CONFIG,
@@ -144,6 +144,9 @@ function LanguageToggleStaticFallback({
             className="flex min-h-9 items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground aria-[current=true]:text-foreground"
           >
             {LOCALES_CONFIG.displayNames[targetLocale]}
+            {targetLocale === locale ? (
+              <Check aria-hidden="true" className="ml-auto size-4" />
+            ) : null}
           </a>
         ))}
       </div>
