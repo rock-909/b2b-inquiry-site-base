@@ -39,9 +39,16 @@ test("keyboard-focused inquiry input shows the global focus outline", async ({
   const fullName = page.getByLabel(/^full name/i);
   await expect(fullName).toBeEditable({ timeout: 15_000 });
 
-  // 先按一次键盘进入键盘模态，focus() 才会命中 :focus-visible。
-  await page.keyboard.press("Tab");
-  await fullName.focus();
+  // 只用真实 Tab 键到达姓名字段；超过上限仍未到达即失败。
+  const maxTabPresses = 30;
+  for (let i = 0; i < maxTabPresses; i += 1) {
+    if (
+      await fullName.evaluate((element) => element === document.activeElement)
+    ) {
+      break;
+    }
+    await page.keyboard.press("Tab");
+  }
   await expect(fullName).toBeFocused();
 
   const outline = await visibleOutline(fullName);
