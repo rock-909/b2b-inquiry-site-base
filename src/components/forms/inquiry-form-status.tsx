@@ -66,9 +66,11 @@ export function InquiryFormStatus({
         </StatusCallout>
       ) : null}
 
-      {/* 错误反馈走程序化聚焦单通道：live 关掉避免与焦点播报双重朗读。 */}
+      {/* 错误反馈走程序化聚焦单通道：live 关掉避免与焦点播报双重朗读。
+          摘要是 tabIndex=-1 的提示而非控件，不画焦点框，避免红框外再套一圈蓝框。 */}
       {errorSummary ? (
         <StatusCallout
+          className="focus-visible:outline-none"
           live={false}
           ref={errorSummaryRef}
           tabIndex={-1}

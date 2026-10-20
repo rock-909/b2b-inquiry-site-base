@@ -26,6 +26,29 @@ const visibleOutline = async (locator: Locator) =>
     };
   });
 
+// 普通配色下输入框同样必须走全局 2px 焦点轮廓：曾因 outline-none 加失效的 ring 导致焦点完全不可见。
+test("keyboard-focused inquiry input shows the global focus outline", async ({
+  page,
+}) => {
+  const response = await page.goto("/contact", {
+    waitUntil: "domcontentloaded",
+  });
+  expect(response?.status()).toBe(200);
+  await acceptCookieBannerIfVisible(page);
+
+  const fullName = page.getByLabel(/^full name/i);
+  await expect(fullName).toBeEditable({ timeout: 15_000 });
+
+  // 先按一次键盘进入键盘模态，focus() 才会命中 :focus-visible。
+  await page.keyboard.press("Tab");
+  await fullName.focus();
+  await expect(fullName).toBeFocused();
+
+  const outline = await visibleOutline(fullName);
+  expect(outline.style).not.toBe("none");
+  expect(outline.width).toBeGreaterThanOrEqual(2);
+});
+
 test.describe("forced-colors keyboard indicators", () => {
   test.beforeEach(async ({ page }) => {
     await page.emulateMedia({ forcedColors: "active" });
