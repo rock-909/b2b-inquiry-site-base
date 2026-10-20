@@ -3,6 +3,7 @@ import {
   PUBLIC_STATIC_PAGE_DEFINITIONS,
   type NavigationMessageKey,
 } from "@/config/pages.config";
+import { assertValidSiteConfig } from "@/config/site-config-schema";
 import type { SiteConfig } from "@/config/site-types";
 
 export type {
@@ -96,7 +97,7 @@ const siteName = "B2B Inquiry Template";
 /**
  * Single-site canonical source for the current cutover phase.
  */
-export const SINGLE_SITE_CONFIG: SiteConfig = {
+const siteConfig: SiteConfig = {
   baseUrl,
   name: siteName,
   description:
@@ -120,3 +121,7 @@ export const SINGLE_SITE_CONFIG: SiteConfig = {
     favicon: "/icon.svg",
   },
 };
+
+assertValidSiteConfig(siteConfig);
+
+export const SINGLE_SITE_CONFIG = siteConfig;

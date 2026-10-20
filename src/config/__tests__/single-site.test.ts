@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { assertValidSiteConfig } from "@/config/site-config-schema";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { generateMetadataForPath } from "@/lib/seo-metadata";
 
@@ -54,5 +55,27 @@ describe("single-site", () => {
 
     expect(metadata.openGraph?.images).toEqual([{ url: REFERENCE_OG_IMAGE }]);
     expect(metadata.twitter?.images).toEqual([REFERENCE_OG_IMAGE]);
+  });
+
+  it("accepts the template config and rejects malformed identity values", () => {
+    expect(() => assertValidSiteConfig(SINGLE_SITE_CONFIG)).not.toThrow();
+    expect(() =>
+      assertValidSiteConfig({
+        ...SINGLE_SITE_CONFIG,
+        social: { twitter: "javascript:alert(1)" },
+      }),
+    ).toThrow(/twitter/u);
+    expect(() =>
+      assertValidSiteConfig({
+        ...SINGLE_SITE_CONFIG,
+        contact: { email: "sales@acme.com", phone: "call me" },
+      }),
+    ).toThrow(/phone/u);
+    expect(() =>
+      assertValidSiteConfig({
+        ...SINGLE_SITE_CONFIG,
+        company: { name: "Acme", established: 9999 },
+      }),
+    ).toThrow(/established/u);
   });
 });

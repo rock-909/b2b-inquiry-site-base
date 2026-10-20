@@ -1,0 +1,53 @@
+import {
+  email,
+  literal,
+  number,
+  object,
+  prettifyError,
+  string,
+  union,
+  type ZodType,
+} from "zod";
+
+const EARLIEST_ESTABLISHED_YEAR = 1800;
+
+// 只校验格式：留空即不展示，占位判断只在上线门禁里做。
+const blankOr = (schema: ZodType<string>) =>
+  union([schema, literal("")]).optional();
+
+const httpsUrl = string().refine((value) => {
+  try {
+    return new URL(value).protocol === "https:";
+  } catch {
+    return false;
+  }
+}, "must be an https URL");
+
+const phone = string()
+  .regex(/^\+?[\d\s().-]{7,25}$/u, "must be a phone number")
+  .refine((value) => (value.match(/\d/gu) ?? []).length >= 7, "too few digits");
+
+const siteIdentitySchema = object({
+  company: object({
+    established: number()
+      .int()
+      .min(EARLIEST_ESTABLISHED_YEAR)
+      .max(new Date().getFullYear())
+      .optional(),
+  }).optional(),
+  contact: object({
+    email: blankOr(email()),
+    phone: blankOr(phone),
+  }),
+  social: object({
+    linkedin: blankOr(httpsUrl),
+    twitter: blankOr(httpsUrl),
+  }),
+});
+
+export function assertValidSiteConfig(config: object): void {
+  const result = siteIdentitySchema.safeParse(config);
+  if (!result.success) {
+    throw new Error(`Invalid site config:\n${prettifyError(result.error)}`);
+  }
+}

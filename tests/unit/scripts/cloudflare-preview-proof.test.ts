@@ -34,10 +34,9 @@ afterEach(() => {
 function createProofFixture() {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
 
-  // 脚本运行时只读取自身、共享的主机名判断和页面注册表。
+  // 脚本运行时只读取自身和页面注册表。
   for (const repoPath of [
     "scripts/quality/checks/cloudflare-smoke.js",
-    "scripts/quality/public-url-readiness.js",
     "src/config/pages.config.ts",
   ]) {
     mkdirSync(path.dirname(path.join(rootDir, repoPath)), { recursive: true });

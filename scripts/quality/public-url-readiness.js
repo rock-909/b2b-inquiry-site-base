@@ -4,7 +4,6 @@
  *
  * Shared by:
  * - scripts/quality/checks/production-config.js（base URL、Turnstile 主机、邮箱域名、社媒链接）
- * - scripts/quality/checks/cloudflare-smoke.js（preview URL）
  *
  * Accepts only an https origin suitable as a public production base URL:
  * https, non-empty hostname, no credentials, no query/hash, pathname `/` only,
