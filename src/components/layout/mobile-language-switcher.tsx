@@ -80,7 +80,8 @@ export function MobileLanguageSwitcher({
               hrefLang={option.locale}
               className={cn(
                 "flex min-h-11 items-center justify-between rounded-[var(--control-radius)] px-3 pl-9 text-base font-medium text-muted-foreground",
-                "transition-colors duration-150 ease-out hover:bg-muted hover:text-foreground",
+                "transition-colors duration-150 ease-out hover:bg-[var(--menu-highlight)] hover:text-foreground",
+                "focus-visible:bg-[var(--menu-highlight)] focus-visible:text-foreground focus-visible:outline-none",
               )}
               data-locale={option.locale}
               data-testid={`mobile-language-option-${option.locale}`}
