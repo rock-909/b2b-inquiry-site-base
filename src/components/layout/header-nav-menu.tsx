@@ -56,6 +56,10 @@ const SUB_LINK_TEXT_CLASS =
 
 const panelId = (key: string) => `header-nav-panel-${key}`;
 
+// 面板内有键盘焦点时，指针移动不收起或切换面板。
+const isFocusInPanel = () =>
+  Boolean(document.activeElement?.closest("[data-nav-panel]"));
+
 // 方向键的移动范围：面板内上下键、Home/End 走全部链接（左右键不处理）；顶层左右键走各顶层项。
 function getArrowTargets(
   list: HTMLUListElement,
@@ -263,13 +267,6 @@ export function HeaderNavMenuBar({ items }: { items: HeaderNavItem[] }) {
     clearTimer();
     setOpenState(null);
   };
-  // 面板内有键盘焦点时，指针移动不收起或切换面板。
-  const isFocusInPanel = () =>
-    Boolean(
-      listRef.current?.contains(
-        document.activeElement?.closest("[data-nav-panel]") ?? null,
-      ),
-    );
 
   useEffect(() => {
     if (openKey === null) return undefined;
@@ -355,6 +352,10 @@ export function HeaderNavMenuBar({ items }: { items: HeaderNavItem[] }) {
     <ul
       ref={listRef}
       className="header-desktop-only header-nav-links-compact items-center"
+      onFocus={(event) => {
+        if (event.target.closest("[data-nav-trigger], [data-nav-panel]"))
+          clearTimer();
+      }}
       onBlur={(event) => {
         // 焦点移到导航以外时收起，避免展开的面板遮住后续焦点。
         const next = event.relatedTarget;

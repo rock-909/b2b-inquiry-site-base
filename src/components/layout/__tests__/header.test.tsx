@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -228,5 +228,24 @@ describe("Header", () => {
     expect(other).toHaveAttribute("aria-expanded", "false");
     expect(focusedLink).toBeVisible();
     expect(focusedLink).toHaveFocus();
+  });
+
+  it("keeps a hover-opened sub-menu open once keyboard focus enters it after the pointer leaves", async () => {
+    const user = userEvent.setup();
+    renderHeader(MENU_NAV_ITEMS);
+    const trigger = screen.getByRole("button", { name: "Solutions" });
+
+    trigger.focus();
+    await user.hover(trigger);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    await user.unhover(trigger);
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Mining" })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(trigger).toHaveFocus();
+    await act(() => new Promise((resolve) => setTimeout(resolve, 200)));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
 });
