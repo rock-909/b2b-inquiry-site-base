@@ -19,6 +19,7 @@ describe("design token contract", () => {
     const pairs = [
       ["--input", "--background", 3],
       ["--input", "--card", 3],
+      ["--theme-switch-icon", "--background", 3],
       ["--ring", "--background", 3],
       ["--ring", "--card", 3],
       ["--border", "--background", 3, "more"],
