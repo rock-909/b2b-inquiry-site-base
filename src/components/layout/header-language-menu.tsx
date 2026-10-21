@@ -51,7 +51,12 @@ export function HeaderLanguageMenu({
   }, [pathname]);
 
   return (
-    <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
+    <DropdownMenu
+      modal={false}
+      highlightItemOnHover={false}
+      open={open}
+      onOpenChange={setOpen}
+    >
       <DropdownMenuTrigger
         type="button"
         openOnHover

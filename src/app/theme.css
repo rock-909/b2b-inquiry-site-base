@@ -119,8 +119,6 @@
     transparent
   );
   --card-radius: var(--surface-radius);
-  /* 菜单项高亮即键盘位置指示（菜单内不画焦点框）；step 5-6 与 --muted 几乎无差，故取 step 7。 */
-  --menu-highlight: var(--neutral-7);
 }
 
 .dark {
