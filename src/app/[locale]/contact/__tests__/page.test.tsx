@@ -49,7 +49,11 @@ describe("ContactPage static content", () => {
 
   afterEach(() => {
     SINGLE_SITE_CONFIG.contact = { ...templateContact };
-    SINGLE_SITE_CONFIG.company = templateCompany;
+    if (templateCompany) {
+      SINGLE_SITE_CONFIG.company = templateCompany;
+    } else {
+      delete SINGLE_SITE_CONFIG.company;
+    }
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
