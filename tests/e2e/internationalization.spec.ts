@@ -125,7 +125,7 @@ test.describe("Second locale contract", () => {
 });
 
 test.describe("Language switcher journey", () => {
-  test("keyboard-highlighted language option shows readable highlight instead of a focus ring", async ({
+  test("keyboard-highlighted language option shows the focus ring without a background block", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -150,22 +150,20 @@ test.describe("Language switcher journey", () => {
       axeOptions: { runOnly: ["color-contrast"] },
     });
 
-    // 菜单内键盘位置只靠高亮底色指示，不叠加焦点框；底色必须与菜单底色可区分。
-    const menuBackground = await page
-      .getByTestId("language-dropdown-content")
-      .evaluate((element) => getComputedStyle(element).backgroundColor);
+    // 菜单内键盘位置只靠全站焦点框指示，不再画灰底块。
     const highlighted = await second.evaluate((element) => {
       const style = getComputedStyle(element);
       return {
         focusVisible: element.matches(":focus-visible"),
         outlineStyle: style.outlineStyle,
+        outlineWidth: Number.parseFloat(style.outlineWidth),
         background: style.backgroundColor,
       };
     });
     expect(highlighted.focusVisible).toBe(true);
-    expect(highlighted.outlineStyle).toBe("none");
-    expect(highlighted.background).not.toBe(menuBackground);
-    expect(highlighted.background).not.toBe("rgba(0, 0, 0, 0)");
+    expect(highlighted.outlineStyle).toBe("solid");
+    expect(highlighted.outlineWidth).toBeGreaterThanOrEqual(2);
+    expect(highlighted.background).toBe("rgba(0, 0, 0, 0)");
 
     // 菜单外的普通头部链接仍保留全局焦点框。
     await page.keyboard.press("Escape");
@@ -185,6 +183,33 @@ test.describe("Language switcher journey", () => {
     });
     expect(ctaOutline.style).toBe("solid");
     expect(ctaOutline.width).toBeGreaterThanOrEqual(2);
+  });
+
+  test("mouse-hovered language option does not show the keyboard focus ring", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/contact", { waitUntil: "domcontentloaded" });
+
+    const trigger = page.getByRole("button", {
+      name: languageTriggerName(DEFAULT_LOCALE),
+    });
+    await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+    await trigger.hover();
+    await expect(page.getByTestId("language-dropdown-content")).toBeVisible();
+
+    // 悬停若把真实焦点移到菜单项，Chrome 会把它算作 :focus-visible，鼠标悬停也会出现焦点框。
+    const second = page.getByRole("menuitem", { name: SECOND_NAME });
+    await second.hover();
+    await expect
+      .poll(() => second.evaluate((element) => element.matches(":hover")))
+      .toBe(true);
+    expect(
+      await second.evaluate((element) => ({
+        focusVisible: element.matches(":focus-visible"),
+        outlineStyle: getComputedStyle(element).outlineStyle,
+      })),
+    ).toEqual({ focusVisible: false, outlineStyle: "none" });
   });
 
   test("desktop switch preserves the URL, inquiry draft, and keyboard lifecycle", async ({

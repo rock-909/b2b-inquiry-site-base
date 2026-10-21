@@ -141,7 +141,7 @@ function LanguageToggleStaticFallback({
             hrefLang={targetLocale}
             lang={targetLocale}
             aria-current={targetLocale === locale ? "true" : undefined}
-            className="flex min-h-9 items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:bg-[var(--menu-highlight)] hover:text-foreground focus-visible:bg-[var(--menu-highlight)] focus-visible:text-foreground focus-visible:outline-none aria-[current=true]:text-foreground"
+            className="flex min-h-9 items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground focus-visible:text-foreground aria-[current=true]:text-foreground"
           >
             {LOCALES_CONFIG.displayNames[targetLocale]}
             {targetLocale === locale ? (
