@@ -50,10 +50,37 @@ export interface SiteConfig {
   brandAssets: BrandAssets;
 }
 
-import type { NavigationNamespaceKey } from "@/config/pages.config";
+import type enBaseMessages from "@messages/base/en/messages.json";
 
-export interface SiteNavigationItem {
+// 导航文案都在 messages 的 navigation 命名空间里；新增 key 后类型检查自动放行。
+export type NavigationLabelKey = keyof (typeof enBaseMessages)["navigation"];
+
+export interface SiteNavigationLink {
   key: string;
+  // 站内链接用 PATHS_CONFIG[pageType]；站外链接写完整 URL 并设 external。
   href: string;
-  messageKey: NavigationNamespaceKey;
+  messageKey: NavigationLabelKey;
+  // 新标签页打开并显示 ↗。
+  external?: boolean;
 }
+
+export interface SiteNavigationGroup {
+  key: string;
+  messageKey: NavigationLabelKey;
+  links: readonly SiteNavigationLink[];
+}
+
+// 带 groups 的项是展开二级菜单的按钮，本身不跳转（同 Vercel）。
+export type SiteNavigationItem =
+  | {
+      key: string;
+      messageKey: NavigationLabelKey;
+      href: string;
+      groups?: never;
+    }
+  | {
+      key: string;
+      messageKey: NavigationLabelKey;
+      href?: never;
+      groups: readonly SiteNavigationGroup[];
+    };

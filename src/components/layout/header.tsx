@@ -15,7 +15,10 @@ import {
   LanguageToggleIsland,
   MobileNavigationIsland,
 } from "@/components/layout/header-client";
-import { HeaderNavLink } from "@/components/layout/header-nav-link";
+import {
+  HeaderNavMenuBar,
+  type HeaderNavItem,
+} from "@/components/layout/header-nav-menu";
 import { Logo } from "@/components/layout/logo";
 import { MobileLanguageSwitcher } from "@/components/layout/mobile-language-switcher";
 import { MobileNavigationLinks } from "@/components/layout/mobile-navigation";
@@ -28,13 +31,6 @@ const HEADER_CTA_CLASS = buttonVariants({ size: "sm" });
  * Main navigation header with responsive design, logo, navigation menus,
  * and utility controls.
  */
-
-// Simplified header props interface
-interface HeaderNavItem {
-  key: string;
-  href: string;
-  label: string;
-}
 
 interface HeaderProps {
   locale: Locale;
@@ -58,7 +54,7 @@ export function Header({
   mainNavItems = EMPTY_MAIN_NAV_ITEMS,
 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md transition-[background-color,border-color] duration-200">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md transition-[background-color,border-color] duration-200 has-[[data-nav-panel]:not([hidden])]:bg-background">
       <div className="mx-auto max-w-[1080px] px-6">
         <div className="header-nav-layout">
           {/* Left section: Logo */}
@@ -89,11 +85,7 @@ function CenterNav({
   mainNavItems,
   mainNavigationLabel,
 }: {
-  mainNavItems: Array<{
-    key: string;
-    href: string;
-    label: string;
-  }>;
+  mainNavItems: HeaderNavItem[];
   mainNavigationLabel: string;
 }) {
   if (mainNavItems.length === 0) return null;
@@ -104,28 +96,7 @@ function CenterNav({
       aria-label={mainNavigationLabel}
       data-testid="header-desktop-nav"
     >
-      <ul className="header-desktop-only header-nav-links-compact items-center">
-        {mainNavItems.map((item) => (
-          <li key={item.key}>
-            <HeaderNavLink
-              href={item.href}
-              className={cn(
-                "relative inline-flex h-8 items-center rounded-[var(--control-radius)] px-3 text-sm font-medium",
-                "text-muted-foreground hover:text-foreground",
-                "aria-[current=page]:text-foreground",
-                // 悬停其它项时当前页文字退回次要色，一次只高亮一处。
-                "[ul:has(a:hover)_&[aria-current=page]:not(:hover)]:text-muted-foreground",
-                "transition-colors duration-150 ease-out",
-              )}
-            >
-              <span data-testid={`header-nav-label-${item.key}`} translate="no">
-                {item.label}
-              </span>
-              <NavigationPending />
-            </HeaderNavLink>
-          </li>
-        ))}
-      </ul>
+      <HeaderNavMenuBar items={mainNavItems} />
     </nav>
   );
 }

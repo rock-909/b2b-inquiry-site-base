@@ -1,6 +1,9 @@
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/layout/header";
+import type { HeaderNavItem } from "@/components/layout/header-nav-menu";
 import { usePathname } from "@/i18n/routing";
 
 // 语言切换只在多语言时出现；用固定双语 fixture，和站点当前配几种语言解耦。
@@ -25,6 +28,30 @@ const MAIN_NAV_ITEMS = [
   { key: "products", href: "/products", label: "Products" },
 ];
 
+// 模板不带二级菜单示例数据；这里的菜单项只存在于测试里。
+const MENU_NAV_ITEMS: HeaderNavItem[] = [
+  { key: "home", href: "/", label: "Home" },
+  {
+    key: "solutions",
+    label: "Solutions",
+    groups: [
+      {
+        key: "industries",
+        label: "Industries",
+        links: [
+          { key: "mining", href: "/terms", label: "Mining" },
+          {
+            key: "catalog",
+            href: "https://example.com/catalog",
+            label: "Catalog",
+            external: true,
+          },
+        ],
+      },
+    ],
+  },
+];
+
 const HEADER_LABELS = {
   contactSalesLabel: "Start an inquiry",
   openMenuLabel: "Open navigation menu",
@@ -33,14 +60,8 @@ const HEADER_LABELS = {
   mainNavigationLabel: "Main navigation",
 } as const;
 
-function renderHeader() {
-  return render(
-    Header({
-      ...HEADER_LABELS,
-      locale: "en",
-      mainNavItems: MAIN_NAV_ITEMS,
-    }),
-  );
+function renderHeader(mainNavItems: HeaderNavItem[] = MAIN_NAV_ITEMS) {
+  return render(Header({ ...HEADER_LABELS, locale: "en", mainNavItems }));
 }
 
 describe("Header", () => {
@@ -107,5 +128,124 @@ describe("Header", () => {
     renderHeader();
 
     expect(screen.getByRole("banner")).toHaveClass("sticky", "top-0", "z-50");
+  });
+
+  it("server-renders an item with sub-items as a disclosure trigger and its grouped links", () => {
+    // 无 JS 的 HTML 里就要有二级链接，搜索引擎和 AI 抓取才能读到。
+    const html = renderToStaticMarkup(
+      Header({ ...HEADER_LABELS, locale: "en", mainNavItems: MENU_NAV_ITEMS }),
+    );
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const nav = doc.querySelector('nav[aria-label="Main navigation"]');
+    const trigger = [...(nav?.querySelectorAll("button") ?? [])].find(
+      (button) => button.textContent === "Solutions",
+    );
+
+    expect(trigger?.getAttribute("aria-expanded")).toBe("false");
+    const panel = doc.getElementById(
+      trigger?.getAttribute("aria-controls") ?? "",
+    );
+    expect(panel?.hasAttribute("hidden")).toBe(true);
+    expect(nav?.contains(panel ?? null)).toBe(true);
+
+    const group = panel?.querySelector('ul[aria-label="Industries"]');
+    const links = [...(group?.querySelectorAll("a") ?? [])].map((link) => ({
+      text: link.textContent,
+      href: link.getAttribute("href"),
+      target: link.getAttribute("target"),
+      rel: link.getAttribute("rel"),
+    }));
+    expect(links).toEqual([
+      { text: "Mining", href: "/terms", target: null, rel: null },
+      {
+        text: "Catalog↗",
+        href: "https://example.com/catalog",
+        target: "_blank",
+        rel: "noopener noreferrer",
+      },
+    ]);
+  });
+
+  it("opens the sub-menu by click or keyboard and closes it by click, Escape or an outside press", async () => {
+    const user = userEvent.setup();
+    renderHeader(MENU_NAV_ITEMS);
+    const trigger = screen.getByRole("button", { name: "Solutions" });
+    const panelLinks = () => screen.queryByRole("list", { name: "Industries" });
+
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(panelLinks()).not.toBeNull();
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(panelLinks()).toBeNull();
+
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await user.keyboard("{Escape}");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+    trigger.focus();
+    await user.keyboard("{ArrowDown}");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await user.click(document.body);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("keeps a sub-menu holding keyboard focus open when the pointer leaves or enters another item", async () => {
+    const user = userEvent.setup();
+    renderHeader([
+      ...MENU_NAV_ITEMS,
+      {
+        key: "resources",
+        label: "Resources",
+        groups: [
+          {
+            key: "guides",
+            label: "Guides",
+            links: [{ key: "privacy", href: "/privacy", label: "Privacy" }],
+          },
+        ],
+      },
+    ]);
+    const trigger = screen.getByRole("button", { name: "Solutions" });
+    const other = screen.getByRole("button", { name: "Resources" });
+
+    await user.hover(trigger);
+    trigger.focus();
+    await user.keyboard("{ArrowDown}");
+    const focusedLink = screen.getByRole("link", { name: "Mining" });
+    expect(focusedLink).toHaveFocus();
+
+    await user.unhover(trigger);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(focusedLink).toBeVisible();
+
+    await user.hover(other);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(other).toHaveAttribute("aria-expanded", "false");
+    expect(focusedLink).toBeVisible();
+    expect(focusedLink).toHaveFocus();
+  });
+
+  it("keeps a hover-opened sub-menu open once keyboard focus enters it after the pointer leaves", async () => {
+    const user = userEvent.setup();
+    renderHeader(MENU_NAV_ITEMS);
+    const trigger = screen.getByRole("button", { name: "Solutions" });
+
+    trigger.focus();
+    await user.hover(trigger);
+    await act(() => new Promise((resolve) => setTimeout(resolve, 150)));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    await user.unhover(trigger);
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Mining" })).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(trigger).toHaveFocus();
+    await act(() => new Promise((resolve) => setTimeout(resolve, 200)));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
 });

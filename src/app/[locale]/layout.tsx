@@ -14,12 +14,32 @@ import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { coerceLocale, isLocale } from "@/i18n/locale-utils";
 import { loadClientMessages } from "@/lib/i18n/client-messages";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
+import type {
+  NavigationLabelKey,
+  SiteNavigationGroup,
+} from "@/config/site-types";
 import { LOCALES_CONFIG } from "@/config/paths";
 
 // Client analytics are rendered as an island to avoid impacting LCP
 
 // 重新导出元数据生成函数
 export const generateMetadata = generateLocaleMetadata;
+
+function toHeaderNavGroup(
+  group: SiteNavigationGroup,
+  t: (key: NavigationLabelKey) => string,
+) {
+  return {
+    key: group.key,
+    label: t(group.messageKey),
+    links: group.links.map((link) => ({
+      key: link.key,
+      href: link.href,
+      label: t(link.messageKey),
+      external: link.external,
+    })),
+  };
+}
 
 interface LocaleLayoutProps {
   children: ReactNode;
@@ -56,11 +76,17 @@ async function AsyncLocaleLayoutContent({
   const languageAriaLabel = tAccessibility("language", {
     language: LOCALES_CONFIG.displayNames[locale],
   });
-  const mainNavItems = SINGLE_SITE_NAVIGATION.map((item) => ({
-    key: item.key,
-    href: item.href,
-    label: tNavigation(item.messageKey),
-  }));
+  const mainNavItems = SINGLE_SITE_NAVIGATION.map((item) =>
+    item.groups
+      ? {
+          key: item.key,
+          label: tNavigation(item.messageKey),
+          groups: item.groups.map((group) =>
+            toHeaderNavGroup(group, tNavigation),
+          ),
+        }
+      : { key: item.key, href: item.href, label: tNavigation(item.messageKey) },
+  );
 
   return (
     <>
