@@ -309,6 +309,11 @@ describe("deployed smoke production indexing gate", () => {
       "Cloudflare prepends blocks for training crawlers only",
       CLOUDFLARE_TRAINING_BLOCK + TEMPLATE_ROBOTS,
     ],
+    // 尾部 `*` 不增加特异性：`/*` 与 `/` 等长，等长时 Allow 胜出。
+    [
+      "an equally specific Allow: / beside Disallow: /*",
+      `User-agent: Googlebot\nAllow: /\nDisallow: /*\n\n${TEMPLATE_ROBOTS}`,
+    ],
   ])("passes with %s", async (_case, robotsBody) => {
     vi.stubEnv("APP_ENV", "production");
     stubProductionSite(robotsBody);
@@ -335,6 +340,23 @@ describe("deployed smoke production indexing gate", () => {
     [
       "Googlebot's own group overrides the * allow",
       `User-agent: Googlebot\nDisallow: /\n\n${TEMPLATE_ROBOTS}`,
+      "Googlebot",
+    ],
+    // RFC 9309 的换行可以是单独的 CR。
+    [
+      "the * group disallows / with CR-only line breaks",
+      "User-agent: *\rDisallow: /\r",
+      "*, OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Googlebot, Bingbot",
+    ],
+    // Google 把 `googlebot*`、`googlebot/2.1` 视同 googlebot。
+    [
+      "a Googlebot* group disallows /",
+      `User-agent: Googlebot*\nDisallow: /\n\n${TEMPLATE_ROBOTS}`,
+      "Googlebot",
+    ],
+    [
+      "a Googlebot/2.1 group disallows /",
+      `User-agent: Googlebot/2.1\nDisallow: /\n\n${TEMPLATE_ROBOTS}`,
       "Googlebot",
     ],
   ])("fails when %s", async (_case, robotsBody, blockedAgents) => {

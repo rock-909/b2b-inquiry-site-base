@@ -24,7 +24,7 @@ const REQUIRED_CRAWLER_TOKENS = [
 function parseRobotsGroups(body) {
   const groups = [];
   let current = null;
-  for (const rawLine of body.split(/\r?\n/u)) {
+  for (const rawLine of body.split(/\r\n|\r|\n/u)) {
     const line = rawLine.replace(/#.*/u, "").trim();
     const separator = line.indexOf(":");
     if (separator === -1) continue;
@@ -35,7 +35,10 @@ function parseRobotsGroups(body) {
         current = { agents: [], rules: [] };
         groups.push(current);
       }
-      current.agents.push(value.toLowerCase());
+      // 只取 product token：`Googlebot*`、`Googlebot/2.1` 都视同 googlebot。
+      // 不做前缀匹配，ClaudeBot 不会命中 Claude-SearchBot。
+      const token = value.split("/")[0].trim().replace(/\*+$/u, "");
+      current.agents.push(token.toLowerCase() || "*");
     } else if (current && (key === "allow" || key === "disallow")) {
       current.rules.push({ allow: key === "allow", pattern: value });
     }
@@ -55,7 +58,8 @@ function patternMatchesRoot(pattern) {
 }
 
 // 爬虫遵守匹配自己 token 的所有组（合并）；没有时才退回 `*` 组。
-// 最长匹配规则胜出，长度相同时 allow 胜出；无匹配规则即允许。
+// 最长匹配规则胜出（尾部 `*` 不计入，`/*` 等同 `/`），长度相同时 allow 胜出；
+// 无匹配规则即允许。
 function isRootAllowedFor(groups, token) {
   const agent = token.toLowerCase();
   const own = groups.filter((group) => group.agents.includes(agent));
@@ -64,12 +68,13 @@ function isRootAllowedFor(groups, token) {
   let best = null;
   for (const rule of applicable.flatMap((group) => group.rules)) {
     if (!patternMatchesRoot(rule.pattern)) continue;
+    const length = rule.pattern.replace(/\*+$/u, "").length;
     if (
       !best ||
-      rule.pattern.length > best.pattern.length ||
-      (rule.pattern.length === best.pattern.length && rule.allow)
+      length > best.length ||
+      (length === best.length && rule.allow)
     ) {
-      best = rule;
+      best = { allow: rule.allow, length };
     }
   }
   return best?.allow ?? true;
