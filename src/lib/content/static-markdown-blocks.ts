@@ -6,7 +6,7 @@
  * 解析结果的数据形状，保证锚点永远不会漂移。
  *
  * 支持的语法：H2/H3 标题（含 {#anchor} 显式 id）、有序/无序列表、管道表格、
- * **加粗** 段落，以及行内加粗与内部链接（InlineMarkdown）。
+ * **加粗** 段落，以及行内加粗与链接（站内路径和 http(s) 网址，InlineMarkdown）。
  */
 
 import { parseHeadingId } from "@/lib/content/heading-id";

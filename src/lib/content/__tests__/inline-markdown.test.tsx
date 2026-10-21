@@ -50,13 +50,4 @@ describe("InlineMarkdown", () => {
     expect(link.closest("strong")).not.toBeNull();
     expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument();
   });
-
-  it("does not link external urls", () => {
-    render(
-      <p>
-        <InlineMarkdown text="Ignore [external](https://example.com) syntax." />
-      </p>,
-    );
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-  });
 });
