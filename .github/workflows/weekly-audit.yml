@@ -53,24 +53,55 @@ jobs:
           pnpm audit >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Open dependency audit issue
-        if: steps.audit.outcome == 'failure'
+      - name: Sync dependency audit issue
+        # 失败时开 issue 或在已开的 issue 上追加评论；恢复后关闭，避免旧 issue 让之后的失败静默。
+        if: ${{ !cancelled() && (steps.audit.outcome == 'failure' || steps.audit.outcome == 'success') }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          AUDIT_OUTCOME: ${{ steps.audit.outcome }}
         with:
           script: |
             const title = "Weekly production dependency audit failed";
+            const { owner, repo } = context.repo;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
             const issues = await github.paginate(github.rest.issues.listForRepo, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner,
+              repo,
               state: "open",
               per_page: 100,
             });
-            if (!issues.some((issue) => !issue.pull_request && issue.title === title)) {
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title,
-                body: `The scheduled production dependency audit failed.\n\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            const open = issues.filter((issue) => !issue.pull_request && issue.title === title);
+            if (process.env.AUDIT_OUTCOME === "failure") {
+              if (open.length === 0) {
+                await github.rest.issues.create({
+                  owner,
+                  repo,
+                  title,
+                  body: `The scheduled production dependency audit failed.\n\nRun: ${runUrl}`,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: open[0].number,
+                  body: `The production dependency audit failed again.\n\nRun: ${runUrl}`,
+                });
+              }
+              return;
+            }
+            for (const issue of open) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: issue.number,
+                body: `The production dependency audit passed; closing.\n\nRun: ${runUrl}`,
+              });
+              await github.rest.issues.update({
+                owner,
+                repo,
+                issue_number: issue.number,
+                state: "closed",
+                state_reason: "completed",
               });
             }
 

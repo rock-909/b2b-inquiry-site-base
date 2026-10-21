@@ -3,8 +3,6 @@ paths:
   - "src/lib/structured-data*.ts"
   - "src/components/seo/**"
   - "src/app/**/page.tsx"
-  - "src/app/**/*jsonld.ts"
-  - "src/app/**/*page-data.ts"
   - "src/content/pages/**/*.ts"
 ---
 

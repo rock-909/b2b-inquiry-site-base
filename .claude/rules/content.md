@@ -4,7 +4,6 @@ paths:
   - "src/content/**/*"
   - "src/config/single-site*.ts"
   - "src/lib/content/**"
-  - "src/lib/content-query/**"
   - "src/app/**/page.tsx"
 ---
 
