@@ -122,6 +122,7 @@ describe("/api/inquiry delivery orchestration", () => {
     fullName: "Full Coverage Buyer",
     email: "coverage@example.com",
     message: "Every declared field carries a value.",
+    locale: "es",
     utmSource: "google",
     utmMedium: "cpc",
     utmCampaign: "sample-2026",
@@ -129,6 +130,7 @@ describe("/api/inquiry delivery orchestration", () => {
     utmContent: "hero-cta",
     landingPage: "/products",
     capturedAt: "2026-07-27T00:00:00.000Z",
+    gclid: "Cj0KCQjw-sample_gclid",
   };
 
   it("keeps a sample value for every field the schema declares", () => {

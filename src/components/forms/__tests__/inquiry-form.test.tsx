@@ -203,6 +203,8 @@ describe("InquiryForm contract", () => {
       email: "ada@example.com",
       website: "",
       turnstileToken: "mock-inquiry-turnstile-token",
+      // 页面语言随询盘提交，业主邮件据此显示买家语言（测试环境 useLocale 为 en）。
+      locale: "en",
     });
     expect(getFetchBody()).not.toHaveProperty("message");
     await screen.findByText(

@@ -49,6 +49,23 @@ describe("inquiryLeadSchema", () => {
     expect(result.landingPage).toBe("/contact");
   });
 
+  it("accepts only configured locales and well-formed click ids", () => {
+    expect(
+      inquiryLeadSchema.parse({ ...GENERAL_INQUIRY, locale: "es" }).locale,
+    ).toBe("es");
+    // 语言和 gclid 会进业主邮件，自由文本和畸形值在信任边界上拒绝。
+    for (const extra of [
+      { locale: "fr" },
+      { locale: "Español <b>" },
+      { gclid: "abc<script>" },
+      { gclid: "a".repeat(257) },
+    ]) {
+      expect(
+        inquiryLeadSchema.safeParse({ ...GENERAL_INQUIRY, ...extra }).success,
+      ).toBe(false);
+    }
+  });
+
   it.each([
     ["punycode TLD", "buyer@example.xn--p1ai"],
     ["uppercase punycode TLD", "buyer@example.XN--P1AI"],

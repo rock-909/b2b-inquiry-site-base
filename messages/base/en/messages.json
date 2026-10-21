@@ -53,7 +53,9 @@
         "contactName": "Contact Name",
         "email": "Email",
         "reference": "Reference",
-        "requirements": "Requirements"
+        "requirements": "Requirements",
+        "language": "Language",
+        "attribution": "Attribution"
       }
     },
     "inquiry": {

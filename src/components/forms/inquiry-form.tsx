@@ -9,6 +9,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { useLocale } from "next-intl";
 import { InquiryFormFields } from "@/components/forms/inquiry-form-fields";
 import type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryFormStatus } from "@/components/forms/inquiry-form-status";
@@ -281,13 +282,16 @@ function createRequestBudgetSignal(): AbortSignal | undefined {
 async function postInquiry(
   formData: FormData,
   turnstileToken: string,
+  locale: string,
 ): Promise<InquirySubmitState> {
   try {
     const signal = createRequestBudgetSignal();
     const response = await fetch(INQUIRY_ENDPOINT, {
       method: "POST",
       headers: JSON_HEADERS,
-      body: JSON.stringify(createInquiryPayload(formData, turnstileToken)),
+      body: JSON.stringify(
+        createInquiryPayload(formData, turnstileToken, locale),
+      ),
       ...(signal ? { signal } : {}),
     });
     return await decodeInquirySubmitState(response);
@@ -347,6 +351,7 @@ function useSubmitErrorFocus(
 }
 
 function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
+  const locale = useLocale();
   const formRef = useRef<HTMLFormElement>(null);
   const [displayState, setDisplayState] = useState<InquirySubmitState>({
     status: "idle",
@@ -374,7 +379,7 @@ function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
     setDisplayState({ status: "submitting" });
 
     try {
-      const decoded = await postInquiry(formData, turnstile.token);
+      const decoded = await postInquiry(formData, turnstile.token, locale);
       setDisplayState(decoded);
 
       if (decoded.status === "error" && decoded.errorKind === "rateLimit") {

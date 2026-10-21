@@ -4,9 +4,11 @@ import { AttributionBootstrap } from "@/components/attribution-bootstrap";
 import { shouldLoadAttribution } from "@/components/attribution-bootstrap-utils";
 
 describe("AttributionBootstrap", () => {
-  it("loads only for UTM parameters, not unconfigured click ids", () => {
+  it("loads for UTM parameters and Google Ads click ids only", () => {
     expect(shouldLoadAttribution("?utm_source=google")).toBe(true);
-    expect(shouldLoadAttribution("?gclid=unused")).toBe(false);
+    // Google Ads 自动标记的点击通常只带 gclid、不带 UTM。
+    expect(shouldLoadAttribution("?gclid=Cj0KCQ")).toBe(true);
+    expect(shouldLoadAttribution("?fbclid=unused")).toBe(false);
     expect(shouldLoadAttribution("")).toBe(false);
   });
 
