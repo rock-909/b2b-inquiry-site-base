@@ -2,6 +2,7 @@
 
 import {
   ATTRIBUTION_FIELD_NAMES,
+  GCLID_PATTERN,
   type MarketingAttributionFields,
 } from "@/lib/marketing/attribution-fields";
 
@@ -11,10 +12,18 @@ function sanitizeParam(value: string | null): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim().slice(0, 256);
   if (!trimmed) return undefined;
-  // Allow printable ASCII while blocking control chars and dangerous HTML delimiters.
-  return /^[\x20-\x7E]+$/.test(trimmed) && !/[<>"'`\\]/.test(trimmed)
+  // 允许可打印 ASCII 和 Unicode 字母、组合符号、数字（如 "promoción"），
+  // 仍拦截控制/格式字符和危险的 HTML 分隔符。
+  return /^[\x20-\x7E\p{L}\p{M}\p{N}]+$/u.test(trimmed) &&
+    !/[<>"'`\\]/.test(trimmed)
     ? trimmed
     : undefined;
+}
+
+// 截断后的点击 ID 没有用，所以 gclid 整体校验，不截到 256。
+function sanitizeGclid(value: string | null): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed && GCLID_PATTERN.test(trimmed) ? trimmed : undefined;
 }
 
 export function captureUtmParams(): MarketingAttributionFields {
@@ -29,12 +38,14 @@ export function captureUtmParams(): MarketingAttributionFields {
   const utmCampaign = sanitizeParam(searchParams.get("utm_campaign"));
   const utmTerm = sanitizeParam(searchParams.get("utm_term"));
   const utmContent = sanitizeParam(searchParams.get("utm_content"));
+  const gclid = sanitizeGclid(searchParams.get("gclid"));
 
   if (utmSource) params.utmSource = utmSource;
   if (utmMedium) params.utmMedium = utmMedium;
   if (utmCampaign) params.utmCampaign = utmCampaign;
   if (utmTerm) params.utmTerm = utmTerm;
   if (utmContent) params.utmContent = utmContent;
+  if (gclid) params.gclid = gclid;
 
   return params;
 }
@@ -51,7 +62,7 @@ export function storeAttributionData(): void {
   // Only store if we have any attribution data
   if (!Object.values(utmParams).some(Boolean)) return;
 
-  // Safe: UTM values are derived from sanitizeParam(), which blocks control chars and dangerous HTML delimiters.
+  // Safe: values come from sanitizeParam()/sanitizeGclid(), which block control chars and dangerous HTML delimiters.
   const data: MarketingAttributionFields = {
     ...utmParams,
     landingPage: window.location.pathname,
@@ -77,8 +88,10 @@ export function getAttributionSnapshot(): MarketingAttributionFields {
     }
     const result: MarketingAttributionFields = {};
     for (const fieldName of ATTRIBUTION_FIELD_NAMES) {
-      const value = (parsed as Record<string, unknown>)[fieldName];
-      const sanitized = sanitizeParam(typeof value === "string" ? value : null);
+      const raw = (parsed as Record<string, unknown>)[fieldName];
+      const value = typeof raw === "string" ? raw : null;
+      const sanitized =
+        fieldName === "gclid" ? sanitizeGclid(value) : sanitizeParam(value);
       if (sanitized) result[fieldName] = sanitized;
     }
     return result;

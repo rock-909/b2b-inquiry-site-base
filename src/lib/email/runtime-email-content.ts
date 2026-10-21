@@ -1,4 +1,6 @@
 import type { ValidatedInquiry } from "@/lib/lead-pipeline/lead-schema";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
+import { ATTRIBUTION_FIELD_NAMES } from "@/lib/marketing/attribution-fields";
 import { EMAIL_COPY } from "@/emails/email-copy";
 import {
   COLORS,
@@ -114,9 +116,19 @@ function renderEmailDocument({
   };
 }
 
+// 每个已捕获的来源值一行，用网址参数名作键（utm_campaign、gclid 等）。
+function formatAttribution(data: ValidatedInquiry): string {
+  return ATTRIBUTION_FIELD_NAMES.flatMap((fieldName) => {
+    const value = data[fieldName];
+    const key = fieldName.replace(/[A-Z]/gu, (c) => `_${c.toLowerCase()}`);
+    return value ? [`${key}: ${value}`] : [];
+  }).join("\n");
+}
+
 export function buildInquiryEmailContent(
   data: ValidatedInquiry,
 ): RuntimeEmailContent {
+  const attribution = formatAttribution(data);
   const fields = compactFields([
     { label: EMAIL_COPY.common.fields.reference, value: data.referenceId },
     {
@@ -124,10 +136,23 @@ export function buildInquiryEmailContent(
       value: data.fullName,
     },
     { label: EMAIL_COPY.common.fields.email, value: data.email },
+    data.locale
+      ? {
+          label: EMAIL_COPY.common.fields.language,
+          value: LOCALES_CONFIG.displayNames[data.locale],
+        }
+      : null,
     data.message
       ? {
           label: EMAIL_COPY.common.fields.requirements,
           value: data.message,
+          multiline: true,
+        }
+      : null,
+    attribution
+      ? {
+          label: EMAIL_COPY.common.fields.attribution,
+          value: attribution,
           multiline: true,
         }
       : null,

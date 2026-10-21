@@ -137,6 +137,42 @@ describe("EnterpriseAnalyticsIsland", () => {
     );
   });
 
+  const contactClickEvents = () =>
+    ((window.dataLayer ?? []) as ArrayLike<unknown>[])
+      .map((entry) => Array.from(entry))
+      .filter((args) => args[0] === "event" && args[1] === "contact_click")
+      .map((args) => (args[2] as Record<string, unknown>).channel);
+
+  function clickLink(href: string) {
+    const link = document.createElement("a");
+    link.href = href;
+    link.innerHTML = "<span>contact</span>";
+    // 阻止 jsdom 尝试导航；捕获阶段的监听仍会先收到点击。
+    link.addEventListener("click", (event) => event.preventDefault());
+    document.body.append(link);
+    link.querySelector("span")!.click();
+    link.remove();
+  }
+
+  it("records contact link clicks by channel only after analytics consent", () => {
+    const { rerender } = render(
+      <EnterpriseAnalyticsIsland analyticsAllowed advertisingAllowed={false} />,
+    );
+    clickLink("mailto:sales@example.com");
+    clickLink("tel:+34123456789");
+    clickLink("https://wa.me/34123456789");
+    clickLink("https://example.com/products");
+    expect(contactClickEvents()).toEqual(["email", "phone", "whatsapp"]);
+    // 只上报渠道，地址和号码不离开页面。
+    expect(JSON.stringify(window.dataLayer)).not.toContain("sales@example.com");
+
+    rerender(
+      <EnterpriseAnalyticsIsland analyticsAllowed={false} advertisingAllowed />,
+    );
+    clickLink("mailto:sales@example.com");
+    expect(contactClickEvents()).toEqual(["email", "phone", "whatsapp"]);
+  });
+
   it("S-F02: never reports query or hash in pageview URL", () => {
     // 组件读 usePathname() 和 window.location，所以 query 必须放进真实的
     // jsdom URL，放进组件不读的 mock 证明不了任何事。

@@ -94,6 +94,9 @@ describe("createLeadRecord", () => {
         utmCampaign: '=IMPORTXML("https://example.test")',
         landingPage: "/en/contact",
         capturedAt: "2026-08-03T00:00:00.000Z",
+        // 语言和 gclid 只进邮件：派生站已建好的表没有这两列，写入会整条失败。
+        locale: "es",
+        gclid: "Cj0KCQjw",
       }),
       referenceId: "INQ-test-123",
     };

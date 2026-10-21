@@ -7,6 +7,7 @@ import {
   getPublicRuntimeEnvString,
   isPublicRuntimeProduction,
 } from "@/lib/public-runtime-env";
+import { trackContactClick } from "@/lib/marketing/lead-event";
 
 type ConsentChoice = { analytics: boolean; advertising: boolean };
 
@@ -126,6 +127,20 @@ export function EnterpriseAnalyticsIsland({
       page_location: `${window.location.origin}${pathname}`,
     });
   }, [pathname, gaEnabled, gaMeasurementId]);
+
+  useEffect(() => {
+    // 联系方式点击统计只在同意分析后挂载；撤回同意时随之卸载。
+    if (!gaEnabled || !analyticsAllowed) return undefined;
+    const onClick = (event: MouseEvent) => {
+      const link =
+        event.target instanceof Element
+          ? event.target.closest("a[href]")
+          : null;
+      if (link) trackContactClick(link.getAttribute("href") ?? "");
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [gaEnabled, analyticsAllowed]);
   /* eslint-enable react-you-might-not-need-an-effect/no-event-handler -- the exception ends after the GA synchronization effects. */
 
   if (!anyAllowed) return null;

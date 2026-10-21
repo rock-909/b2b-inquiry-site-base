@@ -81,4 +81,41 @@ describe("runtime email content", () => {
     expect(content.text).toContain("Contact Name: J&ne <Buyer>");
     expect(content.text).toContain("Requirements: Need <fast> & 'safe' output");
   });
+
+  it("shows the buyer's language and ad attribution to the owner", () => {
+    const content = buildInquiryEmailContent({
+      referenceId: "INQ-abc123-deadbeef",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "Ana García",
+        email: "ana@example.com",
+        locale: "es",
+        utmCampaign: "promoción & año",
+        gclid: "Cj0KCQjw",
+        landingPage: "/es",
+      }),
+    });
+
+    const lines = content.text.split("\n");
+    expect(lines).toContain("Language: Español");
+    // 多行字段的首行带标签，与 Requirements 的纯文本格式一致。
+    expect(lines).toContain("Attribution: utm_campaign: promoción & año");
+    expect(lines).toContain("gclid: Cj0KCQjw");
+    expect(lines).toContain("landing_page: /es");
+    expect(content.html).toContain("utm_campaign: promoción &amp; año");
+  });
+
+  it("omits language and attribution when the inquiry has neither", () => {
+    const content = buildInquiryEmailContent({
+      referenceId: "INQ-abc123-deadbeef",
+      ...inquiryLeadSchema.parse({
+        type: "inquiry",
+        fullName: "Pat Lee",
+        email: "pat@example.com",
+      }),
+    });
+
+    expect(content.text).not.toContain(`${EMAIL_COPY.common.fields.language}:`);
+    expect(content.text).not.toContain(EMAIL_COPY.common.fields.attribution);
+  });
 });

@@ -6,6 +6,7 @@
 
 import {
   email,
+  enum as zEnum,
   literal,
   object,
   type output as ZodOutput,
@@ -22,7 +23,11 @@ import {
   MAX_LEAD_MESSAGE_LENGTH,
   MAX_LEAD_NAME_LENGTH,
 } from "@/constants/validation-limits";
-import type { AttributionFieldName } from "@/lib/marketing/attribution-fields";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
+import {
+  type AttributionFieldName,
+  GCLID_PATTERN,
+} from "@/lib/marketing/attribution-fields";
 import { hasSpreadsheetFormulaPrefix } from "@/lib/security/spreadsheet-formula";
 import {
   sanitizeMultilineText,
@@ -42,6 +47,7 @@ const leadAttributionFields = {
   utmContent: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   landingPage: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   capturedAt: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
+  gclid: string().regex(GCLID_PATTERN).optional(),
 } satisfies Record<AttributionFieldName, ZodOptional<ZodString>>;
 
 function normalizeOptionalInput(value: unknown): unknown {
@@ -79,6 +85,8 @@ export const inquiryLeadSchema = object({
     .max(MAX_LEAD_EMAIL_LENGTH)
     .refine((value) => !hasSpreadsheetFormulaPrefix(value)),
   message: buyerMessageSchema.optional(),
+  // 买家提交时所在页面的语言；只接受站点配置的 locale，不收自由文本。
+  locale: zEnum(LOCALES_CONFIG.locales).optional(),
   ...leadAttributionFields,
 });
 

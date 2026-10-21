@@ -53,7 +53,9 @@
         "contactName": "Nombre de contacto",
         "email": "Correo electrónico",
         "reference": "Referencia",
-        "requirements": "Requisitos"
+        "requirements": "Requisitos",
+        "language": "Idioma",
+        "attribution": "Atribución"
       }
     },
     "inquiry": {
