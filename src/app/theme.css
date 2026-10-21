@@ -58,8 +58,8 @@
   --muted: var(--neutral-4);
   --muted-foreground: var(--neutral-11);
   --border: var(--neutral-6);
-  /* Input borders and focus rings sit on steps 9 and 11, not Radix's 7-8, to keep 3:1 non-text contrast. */
-  --input: var(--neutral-9);
+  /* 输入框边框取刚过 3:1 非文本对比的最浅灰（白底 3.23、卡片 3.05），比 step 9 轻；焦点环仍在 step 11。 */
+  --input: oklch(0.65 0.006 248);
   --ring: var(--brand-11);
 
   --success: oklch(0.56 0.13 155);
@@ -111,13 +111,10 @@
   --button-primary-bg: var(--brand-11);
   --button-primary-fg: var(--primary-foreground);
   --button-primary-hover-bg: var(--brand-12);
-  --button-outline-fg: var(--primary-text);
-  --button-outline-border: var(--primary-text);
-  --button-outline-hover-bg: color-mix(
-    in oklch,
-    var(--primary-text) 10%,
-    transparent
-  );
+  /* 描边按钮是次级动作：中性黑字 + 浅灰细边，品牌色只留给主按钮。 */
+  --button-outline-fg: var(--foreground);
+  --button-outline-border: var(--neutral-7);
+  --button-outline-hover-bg: var(--muted);
   --card-radius: var(--surface-radius);
   /* 导航二级菜单悬停下划线：浅灰细线（Vercel 实测约 rgb(201,201,201)），文字颜色不变；--border 的 step 6 太淡。 */
   --nav-link-underline: var(--neutral-7);
@@ -151,6 +148,9 @@
   --neutral-10: oklch(0.6 0.008 248);
   --neutral-11: oklch(0.64 0.008 248);
   --neutral-12: oklch(0.9328 0.0025 228.7857);
+
+  /* 深色输入框边框：近黑底 3.47、卡片 3.22。 */
+  --input: oklch(0.52 0.007 248);
 
   /* 菜单、Cookie 横幅等浮层抬高一级，避免与近黑页面融为一体。 */
   --popover: var(--neutral-2);

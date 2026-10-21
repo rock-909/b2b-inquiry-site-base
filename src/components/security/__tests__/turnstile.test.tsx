@@ -1,5 +1,6 @@
 import React from "react";
 import { act, render, screen } from "@testing-library/react";
+import { useLocale } from "next-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TurnstileWidget } from "@/components/security/turnstile";
 import { captureExpectedConsoleErrors } from "@/test/console";
@@ -89,7 +90,22 @@ describe("TurnstileWidget", () => {
       });
     });
 
-    it("uses compact dimensions and INQUIRY_TURNSTILE_ACTION", () => {
+    it("spans the form width when the container fits the 300px flexible minimum", () => {
+      const clientWidth = vi
+        .spyOn(HTMLElement.prototype, "clientWidth", "get")
+        .mockReturnValue(606);
+      try {
+        renderTurnstileWidget();
+      } finally {
+        clientWidth.mockRestore();
+      }
+
+      expect(getMockTurnstile().mock.calls.at(-1)?.[0]).toMatchObject({
+        options: { size: "flexible" },
+      });
+    });
+
+    it("falls back to compact dimensions in narrow containers", () => {
       renderTurnstileWidget();
 
       const mockCall = getMockTurnstile().mock.calls[0];
@@ -98,6 +114,20 @@ describe("TurnstileWidget", () => {
           size: "compact",
           action: "product_inquiry",
         },
+      });
+    });
+
+    it("renders in the page language, not the browser's", () => {
+      const locale = vi.mocked(useLocale).mockReturnValue("es");
+      expect(navigator.language).not.toBe("es");
+      try {
+        renderTurnstileWidget();
+      } finally {
+        locale.mockReset();
+      }
+
+      expect(getMockTurnstile().mock.calls.at(-1)?.[0]).toMatchObject({
+        options: { language: "es" },
       });
     });
   });

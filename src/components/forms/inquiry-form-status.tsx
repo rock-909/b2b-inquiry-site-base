@@ -93,15 +93,15 @@ export function InquiryFormStatus({
         <StatusCallout>{copy.submitting}</StatusCallout>
       ) : null}
 
-      <FormPrivacyNotice text={copy.privacyNotice} />
-
       <button
-        className={buttonVariants({ className: "w-full" })}
+        className={buttonVariants()}
         disabled={isSubmitting || !turnstileReady || rateLimitActive}
         type="submit"
       >
         {isSubmitting ? copy.submitting : copy.submit}
       </button>
+
+      <FormPrivacyNotice text={copy.privacyNotice} />
     </>
   );
 }

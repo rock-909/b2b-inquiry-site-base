@@ -426,11 +426,11 @@ function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
       : undefined;
 
   return (
-    <section className="surface-card p-6 md:p-8">
+    <section>
       <form
         ref={formRef}
         aria-label={ariaLabel}
-        className="space-y-6"
+        className="space-y-8"
         data-analytics-event="contact_submit"
         data-lead-path="api-inquiry"
         data-testid="inquiry-form"
@@ -475,7 +475,7 @@ export function InquiryForm({ copy, fallback }: InquiryFormProps) {
   );
 
   if (!isHydrated) {
-    // 静态卡片约 160px；compact 表单按断点实测约 624–804px。
+    // 静态卡片约 160px，远矮于真实表单。
     // Without reserved space the swap pushes everything below it down
     // (measured CLS 0.203 on the inquiry form swap). The bands track the live form's
     // measured height per breakpoint; tests/e2e/turnstile-layout.spec.ts fails
@@ -483,7 +483,7 @@ export function InquiryForm({ copy, fallback }: InquiryFormProps) {
     return (
       <div
         data-inquiry-form-reserve
-        className="min-h-[820px] min-[390px]:min-h-[760px] sm:min-h-[720px] md:min-h-[660px]"
+        className="min-h-[780px] min-[390px]:min-h-[690px] sm:min-h-[640px] md:min-h-[550px]"
       >
         {/* Without JavaScript the swap never happens, so reserving space would
             leave a permanent gap under the card. */}

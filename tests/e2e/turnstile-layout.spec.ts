@@ -12,10 +12,11 @@ const CONTACT_PATHS = [
   ...(SECOND_LOCALE ? [`${localePrefix(SECOND_LOCALE)}/contact`] : []),
 ];
 
-// 尺寸与官方 compact 一致；单元测试另守真实封装的 size 选项，CI 不请求外部服务。
+// 尺寸与官方一致：容器 ≥300px 用 flexible（通栏×65），否则 compact（150×140）；
+// 单元测试另守真实封装的 size 选项，CI 不请求外部服务。
 for (const path of CONTACT_PATHS) {
   for (const initialWidth of [320, 390, 640, 768]) {
-    test(`compact bot-check footprint fits ${path} from ${initialWidth}px`, async ({
+    test(`bot-check footprint fits ${path} from ${initialWidth}px`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: initialWidth, height: 844 });
@@ -35,11 +36,12 @@ for (const path of CONTACT_PATHS) {
         }
         const sizeMock = () => {
           for (const element of document.querySelectorAll<HTMLElement>(
-            '[data-testid="turnstile-mock"]:not([data-compact-footprint])',
+            '[data-testid="turnstile-mock"]:not([data-footprint])',
           )) {
-            element.dataset.compactFootprint = "true";
-            element.style.width = "150px";
-            element.style.height = "140px";
+            const fits = (element.parentElement?.clientWidth ?? 0) >= 300;
+            element.dataset.footprint = fits ? "flexible" : "compact";
+            element.style.width = fits ? "100%" : "150px";
+            element.style.height = fits ? "65px" : "140px";
           }
         };
         new MutationObserver(sizeMock).observe(document, {
@@ -80,7 +82,10 @@ for (const path of CONTACT_PATHS) {
       const form = page.getByTestId("inquiry-form");
       await expect(form.locator('[name="fullName"]')).toBeEditable();
       const widget = page.getByTestId("turnstile-mock");
-      await expect(widget).toHaveAttribute("data-compact-footprint", "true");
+      await expect(widget).toHaveAttribute(
+        "data-footprint",
+        /flexible|compact/,
+      );
       await expect(page.locator("[data-inquiry-form-reserve]")).toHaveCount(0);
       // 等两帧渲染完成，让 layout-shift 观察者记录替换造成的位移。
       await page.evaluate(
