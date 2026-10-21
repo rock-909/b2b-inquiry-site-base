@@ -242,3 +242,142 @@ describe.each(GATE_LANES)("$name gate failures", (lane) => {
     await expect(lane.run()).resolves.toBe(true);
   });
 });
+
+// production lane 额外核对 robots.txt 与首页 noindex；fixture 取自模板的真实输出
+// 和 Cloudflare 托管 robots.txt 文档里前置的屏蔽块。
+const TEMPLATE_ROBOTS = `User-Agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://deployed.example/sitemap.xml
+`;
+const NON_PRODUCTION_ROBOTS = `User-Agent: *
+Disallow: /
+
+Sitemap: https://deployed.example/sitemap.xml
+`;
+const CLOUDFLARE_TRAINING_BLOCK = `# BEGIN Cloudflare Managed content
+
+User-Agent: *
+Content-signal: search=yes,ai-train=no
+Allow: /
+
+${[
+  "Amazonbot",
+  "Applebot-Extended",
+  "Bytespider",
+  "CCBot",
+  "ClaudeBot",
+  "Google-Extended",
+  "GPTBot",
+  "meta-externalagent",
+]
+  .map((agent) => `User-agent: ${agent}\nDisallow: /\n`)
+  .join("\n")}
+# END Cloudflare Managed Content
+
+`;
+
+function stubProductionSite(robotsBody: string, homeHeaders = {}) {
+  const baseFetchMock = createHealthyFetchMock();
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const pathname = getRequestPath(input);
+      if (pathname === "/robots.txt") {
+        return response(200, robotsBody, { "content-type": "text/plain" });
+      }
+      if (pathname === "/") {
+        return response(200, HEALTHY_HTML, {
+          "content-type": "text/html; charset=utf-8",
+          ...SECURITY_HEADERS,
+          ...homeHeaders,
+        });
+      }
+      return baseFetchMock(input, init);
+    }),
+  );
+}
+
+const runProductionDeployedSmoke = () =>
+  runDeployedSmoke(["--base-url", "https://deployed.example"]);
+
+describe("deployed smoke production indexing gate", () => {
+  it.each([
+    ["the template robots.txt", TEMPLATE_ROBOTS],
+    [
+      "Cloudflare prepends blocks for training crawlers only",
+      CLOUDFLARE_TRAINING_BLOCK + TEMPLATE_ROBOTS,
+    ],
+  ])("passes with %s", async (_case, robotsBody) => {
+    vi.stubEnv("APP_ENV", "production");
+    stubProductionSite(robotsBody);
+
+    await expect(runProductionDeployedSmoke()).resolves.toBe(true);
+  });
+
+  it.each([
+    [
+      "the * group disallows /",
+      NON_PRODUCTION_ROBOTS,
+      "*, OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Googlebot, Bingbot",
+    ],
+    [
+      "a shared group blocks OAI-SearchBot (case-insensitive)",
+      `User-agent: GPTBot\nuser-agent: oai-searchbot\nDisallow: /\n\n${TEMPLATE_ROBOTS}`,
+      "OAI-SearchBot",
+    ],
+    [
+      "Cloudflare also blocks PerplexityBot",
+      `${CLOUDFLARE_TRAINING_BLOCK}User-agent: PerplexityBot\nDisallow: /\n\n${TEMPLATE_ROBOTS}`,
+      "PerplexityBot",
+    ],
+    [
+      "Googlebot's own group overrides the * allow",
+      `User-agent: Googlebot\nDisallow: /\n\n${TEMPLATE_ROBOTS}`,
+      "Googlebot",
+    ],
+  ])("fails when %s", async (_case, robotsBody, blockedAgents) => {
+    vi.stubEnv("APP_ENV", "production");
+    const consoleError = captureExpectedConsoleErrors(
+      "[post-deploy-smoke] Failures detected:",
+      "  - ",
+    );
+    stubProductionSite(robotsBody);
+
+    await expect(runProductionDeployedSmoke()).resolves.toBe(false);
+    expect(consoleError.mock.calls).toEqual([
+      ["[post-deploy-smoke] Failures detected:"],
+      [
+        `  - Expected /robots.txt to allow / for search and agent crawlers; disallowed for: ${blockedAgents}`,
+      ],
+    ]);
+  });
+
+  it("fails when / carries X-Robots-Tag noindex", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    const consoleError = captureExpectedConsoleErrors(
+      "[post-deploy-smoke] Failures detected:",
+      "  - ",
+    );
+    stubProductionSite(TEMPLATE_ROBOTS, {
+      "x-robots-tag": "noindex, nofollow",
+    });
+
+    await expect(runProductionDeployedSmoke()).resolves.toBe(false);
+    expect(consoleError.mock.calls).toEqual([
+      ["[post-deploy-smoke] Failures detected:"],
+      ["  - Expected / to be indexable, got X-Robots-Tag: noindex, nofollow"],
+    ]);
+  });
+
+  // preview proof 也跑 deployed-smoke，而非 production 构建本来就禁止抓取。
+  it("does not apply outside the production lane", async () => {
+    vi.stubEnv("APP_ENV", "preview");
+    stubProductionSite(NON_PRODUCTION_ROBOTS, {
+      "x-robots-tag": "noindex, nofollow",
+    });
+
+    await expect(runProductionDeployedSmoke()).resolves.toBe(true);
+  });
+});
