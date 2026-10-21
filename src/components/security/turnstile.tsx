@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { type ComponentProps, useEffect, useRef, useState } from "react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { useLocale } from "next-intl";
 import { resolveTurnstileWidgetMode } from "@/components/security/turnstile-mode";
 import {
   INQUIRY_TURNSTILE_ACTION,
@@ -38,6 +39,9 @@ const TURNSTILE_BYPASS_TOKEN = "TURNSTILE_BYPASS_TOKEN";
  * 被代理或拦截插件挂起（既不成功也不报错）的请求只能靠这个超时兜底。
  */
 const WIDGET_LOAD_TIMEOUT_MS = 10_000;
+
+/** Turnstile flexible 尺寸的官方最小宽度。 */
+const FLEXIBLE_MIN_WIDTH_PX = 300;
 
 interface TurnstileLabels {
   unavailable: string;
@@ -159,6 +163,41 @@ function useWidgetLoadFallback(rendersWidget: boolean) {
   return { degradedKind, setDegradedKind, scriptHandlers };
 }
 
+/**
+ * 真实控件：语言跟随页面（默认 auto 跟的是浏览器语言，不是页面语言）；
+ * 容器放得下官方 flexible 的 300px 最小宽度时通栏显示，否则用 compact。
+ */
+function LiveTurnstile({
+  className,
+  ...props
+}: ComponentProps<typeof Turnstile> & { className: string | undefined }) {
+  const locale = useLocale();
+  const [fitsFlexible, setFitsFlexible] = useState<boolean | null>(null);
+
+  return (
+    <div
+      ref={(element) => {
+        if (element && fitsFlexible === null) {
+          setFitsFlexible(element.clientWidth >= FLEXIBLE_MIN_WIDTH_PX);
+        }
+      }}
+      className={`turnstile-container ${className || ""}`}
+    >
+      {fitsFlexible === null ? null : (
+        <Turnstile
+          {...props}
+          options={{
+            theme: "auto",
+            language: locale,
+            size: fitsFlexible ? "flexible" : "compact",
+            action: INQUIRY_TURNSTILE_ACTION,
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 export function TurnstileWidget({
   onSuccess,
   onError,
@@ -270,19 +309,13 @@ export function TurnstileWidget({
 
   return (
     <>
-      <div className={`turnstile-container ${className || ""}`}>
-        <Turnstile
-          ref={turnstileRef}
-          siteKey={siteKey}
-          {...widgetHandlers}
-          {...fallback.scriptHandlers}
-          options={{
-            theme: "auto",
-            size: "compact",
-            action: INQUIRY_TURNSTILE_ACTION,
-          }}
-        />
-      </div>
+      <LiveTurnstile
+        ref={turnstileRef}
+        siteKey={siteKey}
+        className={className}
+        {...widgetHandlers}
+        {...fallback.scriptHandlers}
+      />
       {fallback.degradedKind ? (
         <TurnstileRescueStatus kind={fallback.degradedKind} labels={labels} />
       ) : null}

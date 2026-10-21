@@ -6,13 +6,11 @@ import {
 import type { InquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 
 const FIELD_CLASS = "min-w-0 space-y-2";
-const LABEL_CLASS = "block text-sm leading-none font-medium text-foreground";
+const LABEL_CLASS = "block text-sm leading-5 text-foreground";
 const INPUT_CLASS =
-  "min-h-11 w-full min-w-0 rounded-[var(--control-radius)] border border-input bg-background px-3.5 py-2 text-sm text-foreground shadow-[var(--control-shadow)] read-only:opacity-70";
+  "h-10 w-full min-w-0 rounded-[var(--control-radius)] border border-input bg-background px-3 text-sm text-foreground read-only:opacity-70";
 const HINT_CLASS = "text-xs leading-5 text-muted-foreground";
 const ERROR_CLASS = "text-xs leading-5 text-[var(--error-foreground)]";
-const REQUIRED_CLASS =
-  "after:ml-0.5 after:text-destructive after:content-['*']";
 
 function isFieldErrorDetail(detail: string): detail is InquiryFieldErrorDetail {
   return (INQUIRY_FIELD_ERROR_DETAILS as readonly string[]).includes(detail);
@@ -54,10 +52,10 @@ export function InquiryFormFields({
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-x-4 gap-y-8 md:grid-cols-2">
         <div className={FIELD_CLASS}>
           <label
-            className={`${LABEL_CLASS} ${REQUIRED_CLASS}`}
+            className={LABEL_CLASS}
             htmlFor="inquiry-fullName"
           >
             {copy.fullName}
@@ -83,7 +81,7 @@ export function InquiryFormFields({
         </div>
         <div className={FIELD_CLASS}>
           <label
-            className={`${LABEL_CLASS} ${REQUIRED_CLASS}`}
+            className={LABEL_CLASS}
             htmlFor="inquiry-email"
           >
             {copy.email}
@@ -122,7 +120,7 @@ export function InquiryFormFields({
               : messageHintId
           }
           aria-invalid={messageError ? true : undefined}
-          className={`${INPUT_CLASS} min-h-32 resize-y leading-6`}
+          className={`${INPUT_CLASS} h-auto min-h-32 resize-y py-2 leading-6`}
           id="inquiry-message"
           maxLength={messageMaxLength}
           name="message"

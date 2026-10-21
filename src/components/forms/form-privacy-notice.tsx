@@ -10,7 +10,7 @@
 export function FormPrivacyNotice({ text }: { text: string }) {
   return (
     <p
-      className="text-center text-sm text-muted-foreground"
+      className="-mt-3 text-xs leading-5 text-muted-foreground"
       data-testid="form-privacy-notice"
     >
       {text}

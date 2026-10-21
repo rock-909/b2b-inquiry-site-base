@@ -89,7 +89,22 @@ describe("TurnstileWidget", () => {
       });
     });
 
-    it("uses compact dimensions and INQUIRY_TURNSTILE_ACTION", () => {
+    it("spans the form width when the container fits the 300px flexible minimum", () => {
+      const clientWidth = vi
+        .spyOn(HTMLElement.prototype, "clientWidth", "get")
+        .mockReturnValue(606);
+      try {
+        renderTurnstileWidget();
+      } finally {
+        clientWidth.mockRestore();
+      }
+
+      expect(getMockTurnstile().mock.calls.at(-1)?.[0]).toMatchObject({
+        options: { size: "flexible" },
+      });
+    });
+
+    it("falls back to compact dimensions in narrow containers", () => {
       renderTurnstileWidget();
 
       const mockCall = getMockTurnstile().mock.calls[0];
@@ -98,6 +113,15 @@ describe("TurnstileWidget", () => {
           size: "compact",
           action: "product_inquiry",
         },
+      });
+    });
+
+    it("renders in the page language, not the browser's", () => {
+      renderTurnstileWidget();
+
+      const mockCall = getMockTurnstile().mock.calls[0];
+      expect(mockCall?.[0]).toMatchObject({
+        options: { language: "en" },
       });
     });
   });

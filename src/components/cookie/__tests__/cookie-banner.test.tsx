@@ -35,8 +35,20 @@ describe("CookieBanner", () => {
     expect(onReject).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps the category choices behind an expandable Customize button", () => {
+    renderBanner();
+    const customize = screen.getByRole("button", { name: t("cookie.customize") });
+    expect(customize).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("checkbox")).toBeNull();
+
+    click(t("cookie.customize"));
+    expect(customize).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getAllByRole("checkbox")).toHaveLength(2);
+  });
+
   it("starts with both categories unchecked and saves nothing granted by default", () => {
     const { onSave } = renderBanner();
+    click(t("cookie.customize"));
     expect(
       screen.getByRole("checkbox", { name: t("cookie.analytics") }),
     ).not.toBeChecked();
@@ -53,6 +65,7 @@ describe("CookieBanner", () => {
 
   it("lets the visitor grant analytics without advertising", () => {
     const { onSave } = renderBanner();
+    click(t("cookie.customize"));
     fireEvent.click(
       screen.getByRole("checkbox", { name: t("cookie.analytics") }),
     );
@@ -65,6 +78,7 @@ describe("CookieBanner", () => {
 
   it("lets the visitor grant advertising without analytics", () => {
     const { onSave } = renderBanner();
+    click(t("cookie.customize"));
     fireEvent.click(
       screen.getByRole("checkbox", { name: t("cookie.advertising") }),
     );

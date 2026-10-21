@@ -421,11 +421,11 @@ function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
       : undefined;
 
   return (
-    <section className="surface-card p-6 md:p-8">
+    <section>
       <form
         ref={formRef}
         aria-label={ariaLabel}
-        className="space-y-6"
+        className="space-y-8"
         data-analytics-event="contact_submit"
         data-lead-path="api-inquiry"
         data-testid="inquiry-form"
@@ -478,7 +478,7 @@ export function InquiryForm({ copy, fallback }: InquiryFormProps) {
     return (
       <div
         data-inquiry-form-reserve
-        className="min-h-[820px] min-[390px]:min-h-[760px] sm:min-h-[720px] md:min-h-[660px]"
+        className="min-h-[780px] min-[390px]:min-h-[690px] sm:min-h-[640px] md:min-h-[550px]"
       >
         {/* Without JavaScript the swap never happens, so reserving space would
             leave a permanent gap under the card. */}

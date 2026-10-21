@@ -7,7 +7,7 @@ const VARIANT_CLASSES = {
   default:
     "bg-[var(--button-primary-bg)] text-[var(--button-primary-fg)] hover:bg-[var(--button-primary-hover-bg)]",
   outline:
-    "border-2 border-[var(--button-outline-border)] bg-transparent text-[var(--button-outline-fg)] hover:bg-[var(--button-outline-hover-bg)]",
+    "border border-[var(--button-outline-border)] bg-transparent text-[var(--button-outline-fg)] hover:bg-[var(--button-outline-hover-bg)]",
   ghost: "hover:bg-muted hover:text-foreground",
 } as const;
 
