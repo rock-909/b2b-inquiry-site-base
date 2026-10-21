@@ -191,4 +191,42 @@ describe("Header", () => {
     await user.click(document.body);
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
+
+  it("keeps a sub-menu holding keyboard focus open when the pointer leaves or enters another item", async () => {
+    const user = userEvent.setup();
+    renderHeader([
+      ...MENU_NAV_ITEMS,
+      {
+        key: "resources",
+        label: "Resources",
+        groups: [
+          {
+            key: "guides",
+            label: "Guides",
+            links: [{ key: "privacy", href: "/privacy", label: "Privacy" }],
+          },
+        ],
+      },
+    ]);
+    const trigger = screen.getByRole("button", { name: "Solutions" });
+    const other = screen.getByRole("button", { name: "Resources" });
+
+    await user.hover(trigger);
+    trigger.focus();
+    await user.keyboard("{ArrowDown}");
+    const focusedLink = screen.getByRole("link", { name: "Mining" });
+    expect(focusedLink).toHaveFocus();
+
+    await user.unhover(trigger);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(focusedLink).toBeVisible();
+
+    await user.hover(other);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(other).toHaveAttribute("aria-expanded", "false");
+    expect(focusedLink).toBeVisible();
+    expect(focusedLink).toHaveFocus();
+  });
 });

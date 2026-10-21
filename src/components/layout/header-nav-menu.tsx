@@ -263,6 +263,13 @@ export function HeaderNavMenuBar({ items }: { items: HeaderNavItem[] }) {
     clearTimer();
     setOpenState(null);
   };
+  // 面板内有键盘焦点时，指针移动不收起或切换面板。
+  const isFocusInPanel = () =>
+    Boolean(
+      listRef.current?.contains(
+        document.activeElement?.closest("[data-nav-panel]") ?? null,
+      ),
+    );
 
   useEffect(() => {
     if (openKey === null) return undefined;
@@ -278,6 +285,7 @@ export function HeaderNavMenuBar({ items }: { items: HeaderNavItem[] }) {
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
   const openAndFocusFirstLink = (key: string) => {
+    clearTimer();
     flushSync(() => open(key, "keyboard"));
     document.getElementById(panelId(key))?.querySelector("a")?.focus();
   };
@@ -285,7 +293,7 @@ export function HeaderNavMenuBar({ items }: { items: HeaderNavItem[] }) {
   const handlePointerEnter = (key: string, event: PointerEvent) => {
     if (event.pointerType === "touch") return;
     clearTimer();
-    if (openKey === key) return;
+    if (openKey === key || isFocusInPanel()) return;
     // 已有面板展开时直接切换，不再等待。
     if (openKey !== null) open(key, "pointer");
     else
@@ -299,7 +307,9 @@ export function HeaderNavMenuBar({ items }: { items: HeaderNavItem[] }) {
     if (event.pointerType === "touch") return;
     clearTimer();
     if (openKey !== null)
-      timerRef.current = setTimeout(close, HOVER_CLOSE_DELAY_MS);
+      timerRef.current = setTimeout(() => {
+        if (!isFocusInPanel()) close();
+      }, HOVER_CLOSE_DELAY_MS);
   };
 
   const handleTriggerClick = (key: string, event: MouseEvent) => {
