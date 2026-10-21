@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { KeyboardEventHandler, ReactNode } from "react";
 import { Link, usePathname } from "@/i18n/routing";
 import { isActivePath } from "@/lib/navigation";
 
@@ -9,10 +9,14 @@ export function HeaderNavLink({
   href,
   className,
   children,
+  onClick,
+  onKeyDown,
 }: {
   href: string;
   className: string;
   children: ReactNode;
+  onClick?: () => void;
+  onKeyDown?: KeyboardEventHandler<HTMLAnchorElement>;
 }) {
   const pathname = usePathname();
 
@@ -22,6 +26,8 @@ export function HeaderNavLink({
       prefetch={false}
       className={className}
       aria-current={isActivePath(pathname, href) ? "page" : undefined}
+      onClick={onClick}
+      onKeyDown={onKeyDown}
     >
       {children}
     </Link>

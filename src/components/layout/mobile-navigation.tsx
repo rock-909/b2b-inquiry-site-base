@@ -1,8 +1,12 @@
 import { NavigationPending } from "@/components/navigation/navigation-pending";
 import type { ComponentProps, ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import { ChevronDown } from "lucide-react";
 import { PATHS_CONFIG } from "@/config/paths/paths-config";
-import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
+import {
+  SINGLE_SITE_NAVIGATION,
+  type SiteNavigationItem,
+} from "@/config/single-site-navigation";
 import { isActivePath } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/routing";
@@ -39,6 +43,17 @@ export function MobileNavigationLinks({
     >
       <ul className="space-y-1">
         {SINGLE_SITE_NAVIGATION.map((item) => {
+          if (item.groups) {
+            return (
+              <li key={item.key}>
+                <MobileNavigationGroups
+                  item={item}
+                  currentPathname={currentPathname}
+                  onNavigate={onNavigate}
+                />
+              </li>
+            );
+          }
           const isActive =
             typeof currentPathname === "string" &&
             isActivePath(currentPathname, item.href);
@@ -81,5 +96,79 @@ export function MobileNavigationLinks({
         </div>
       ) : null}
     </nav>
+  );
+}
+
+const SUB_LINK_CLASS =
+  "flex min-h-11 items-center gap-1 rounded-[var(--control-radius)] px-3 text-base text-foreground decoration-[var(--nav-link-underline)] decoration-1 underline-offset-[5px] aria-[current=page]:underline";
+
+// 带 groups 的项在抽屉里用原生 details 折叠展开（同 Vercel），无 JS 也能用。
+function MobileNavigationGroups({
+  item,
+  currentPathname,
+  onNavigate,
+}: {
+  item: Extract<SiteNavigationItem, { groups: readonly unknown[] }>;
+  currentPathname?: string | undefined;
+  onNavigate?: (() => void) | undefined;
+}) {
+  const t = useTranslations("navigation");
+
+  return (
+    <details name="mobile-navigation-groups" className="group">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-[var(--control-radius)] px-3 text-base font-medium text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground [&::-webkit-details-marker]:hidden">
+        {t(item.messageKey)}
+        <ChevronDown
+          aria-hidden="true"
+          className="size-4 shrink-0 text-foreground group-open:rotate-180"
+        />
+      </summary>
+      <div className="flex flex-col gap-6 px-3 pt-2 pb-4">
+        {item.groups.map((group) => (
+          <div key={group.key}>
+            <div className="mb-2 text-sm font-medium text-muted-foreground">
+              {t(group.messageKey)}
+            </div>
+            <ul
+              aria-label={t(group.messageKey)}
+              className="-mx-3 flex flex-col"
+            >
+              {group.links.map((link) => (
+                <li key={link.key}>
+                  {link.external ? (
+                    <a
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={SUB_LINK_CLASS}
+                      onClick={onNavigate}
+                    >
+                      {t(link.messageKey)}
+                      <span aria-hidden="true">↗</span>
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href as "/"}
+                      prefetch={false}
+                      className={SUB_LINK_CLASS}
+                      aria-current={
+                        currentPathname !== undefined &&
+                        isActivePath(currentPathname, link.href)
+                          ? "page"
+                          : undefined
+                      }
+                      onClick={onNavigate}
+                    >
+                      {t(link.messageKey)}
+                      <NavigationPending />
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }

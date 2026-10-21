@@ -119,6 +119,8 @@
     transparent
   );
   --card-radius: var(--surface-radius);
+  /* 导航二级菜单悬停下划线：浅灰细线（Vercel 实测约 rgb(201,201,201)），文字颜色不变；--border 的 step 6 太淡。 */
+  --nav-link-underline: var(--neutral-7);
 }
 
 .dark {
@@ -152,6 +154,8 @@
 
   /* 菜单、Cookie 横幅等浮层抬高一级，避免与近黑页面融为一体。 */
   --popover: var(--neutral-2);
+  /* 近黑背景上 step 7 几乎看不见，二级菜单下划线提高一级（Vercel 深色实测约 rgb(69,69,69)）。 */
+  --nav-link-underline: var(--neutral-8);
 
   /* 深色主按钮取亮的 step 9 配近黑字（--primary-foreground 即 --neutral-1）。 */
   --button-primary-bg: var(--brand-9);
