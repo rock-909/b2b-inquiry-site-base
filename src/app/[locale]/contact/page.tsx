@@ -38,11 +38,7 @@ export default async function ContactPage({
   return await StaticContentPage({
     params,
     config: pageConfig,
-    children: (
-      <>
-        <ContactFormWithFallback locale={locale} />
-        <ContactMethodsCard locale={locale} />
-      </>
-    ),
+    children: <ContactMethodsCard locale={locale} />,
+    aside: <ContactFormWithFallback locale={locale} />,
   });
 }

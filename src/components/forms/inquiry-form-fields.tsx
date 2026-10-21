@@ -52,7 +52,8 @@ export function InquiryFormFields({
 
   return (
     <>
-      <div className="grid gap-x-4 gap-y-8 md:grid-cols-2">
+      {/* Side by side only in the single-column page; the lg form column is too narrow. */}
+      <div className="grid gap-x-4 gap-y-8 md:grid-cols-2 lg:grid-cols-1">
         <div className={FIELD_CLASS}>
           <label className={LABEL_CLASS} htmlFor="inquiry-fullName">
             {copy.fullName}
@@ -114,12 +115,12 @@ export function InquiryFormFields({
               : messageHintId
           }
           aria-invalid={messageError ? true : undefined}
-          className={`${INPUT_CLASS} h-auto min-h-32 resize-y py-2 leading-6`}
+          className={`${INPUT_CLASS} h-auto resize-y py-2 leading-6`}
           id="inquiry-message"
           maxLength={messageMaxLength}
           name="message"
           readOnly={readOnly}
-          rows={5}
+          rows={3}
         />
         <p className={HINT_CLASS} id={messageHintId}>
           {copy.messageHint}

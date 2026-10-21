@@ -41,10 +41,13 @@ export async function StaticContentPage({
   config,
   params,
   children,
+  aside,
 }: StaticContentPageProps & {
   config: StaticContentPageConfig;
-  /** Page-specific sections rendered after the content, e.g. the contact form. */
+  /** Page-specific sections rendered after the content, e.g. the contact details. */
   children?: ReactNode;
+  /** Wide-screen right column, e.g. the contact form. */
+  aside?: ReactNode;
 }) {
   const locale = resolveLocaleParam(await params);
 
@@ -61,6 +64,7 @@ export async function StaticContentPage({
       headings={headings}
       locale={locale}
       pagePath={pagePath}
+      aside={aside}
     >
       {children}
     </LegalPageShell>

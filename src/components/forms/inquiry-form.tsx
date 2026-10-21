@@ -483,7 +483,7 @@ export function InquiryForm({ copy, fallback }: InquiryFormProps) {
     return (
       <div
         data-inquiry-form-reserve
-        className="min-h-[780px] min-[390px]:min-h-[690px] sm:min-h-[640px] md:min-h-[550px]"
+        className="min-h-[690px] min-[390px]:min-h-[600px] sm:min-h-[560px] md:min-h-[460px] lg:min-h-[580px]"
       >
         {/* Without JavaScript the swap never happens, so reserving space would
             leave a permanent gap under the card. */}
