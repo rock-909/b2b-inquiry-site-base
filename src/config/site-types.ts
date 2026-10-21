@@ -17,6 +17,8 @@ export interface CompanyInfo {
 export interface ContactInfo {
   phone?: string;
   email: string;
+  // 国际格式（+国家码 号码），页面显示为 wa.me 链接。
+  whatsapp?: string;
 }
 
 export interface SocialLinks {

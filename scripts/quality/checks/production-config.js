@@ -597,6 +597,11 @@ function validateOptionalPublicFacts(target, config) {
       "SITE_CONFIG.contact.phone is not public-launch ready. Remove it or supply a valid public phone.",
     );
   }
+  if (contact.whatsapp && !isPublicPhoneReady(contact.whatsapp)) {
+    target.push(
+      "SITE_CONFIG.contact.whatsapp is not public-launch ready. Remove it or supply a valid public WhatsApp number.",
+    );
+  }
   if (
     brandAssets.logo &&
     !isPublicLogoReady(brandAssets.logo, config.baseUrl)

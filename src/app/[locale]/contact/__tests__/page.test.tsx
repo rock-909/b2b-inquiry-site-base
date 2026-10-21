@@ -44,10 +44,12 @@ vi.mock("@/components/forms/inquiry-form", () => ({
 }));
 
 describe("ContactPage static content", () => {
-  const templateEmail = SINGLE_SITE_CONFIG.contact.email;
+  const templateContact = { ...SINGLE_SITE_CONFIG.contact };
+  const templateCompany = SINGLE_SITE_CONFIG.company;
 
   afterEach(() => {
-    SINGLE_SITE_CONFIG.contact.email = templateEmail;
+    SINGLE_SITE_CONFIG.contact = { ...templateContact };
+    SINGLE_SITE_CONFIG.company = templateCompany;
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
   });
@@ -113,6 +115,25 @@ describe("ContactPage static content", () => {
       ).toBe(showsUnavailable);
     },
   );
+
+  it("adds the configured WhatsApp link and company address", async () => {
+    SINGLE_SITE_CONFIG.contact = {
+      email: "sales@acme.com",
+      whatsapp: "+34 600 123 456",
+    };
+    SINGLE_SITE_CONFIG.company = {
+      name: "Acme",
+      location: { address: "Calle Mayor 1", city: "Valencia" },
+    };
+    const { ContactMethodsCard } = await import("../contact-page-sections");
+
+    await renderAsyncPage(<ContactMethodsCard locale="en" />);
+
+    expect(
+      screen.getByRole("link", { name: /WhatsApp/u }).getAttribute("href"),
+    ).toBe("https://wa.me/34600123456");
+    expect(screen.getByText("Calle Mayor 1, Valencia")).toBeInTheDocument();
+  });
 
   it("generates runtime SEO metadata for the actual localized contact route", async () => {
     vi.stubEnv("APP_ENV", "production");

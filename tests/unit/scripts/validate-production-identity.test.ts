@@ -65,6 +65,15 @@ describe("public launch identity values", () => {
         contact: { email: "hello@starter.dev", phone: "+86-138-0013-8000" },
       }),
     ).toEqual([]);
+    for (const whatsapp of ["+86-518-0000-0000", "+1-312-555-0198"])
+      expect(
+        identityErrors({ contact: { ...READY.contact, whatsapp } }),
+      ).toEqual([expect.stringContaining("SITE_CONFIG.contact.whatsapp")]);
+    expect(
+      identityErrors({
+        contact: { ...READY.contact, whatsapp: "+34 600 123 456" },
+      }),
+    ).toEqual([]);
   });
 
   it("blocks sentinel company names and explicit TODO markers but accepts real names", () => {
