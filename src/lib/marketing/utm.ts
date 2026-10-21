@@ -2,7 +2,9 @@
 
 import {
   ATTRIBUTION_FIELD_NAMES,
-  GCLID_PATTERN,
+  CLICK_ID_FIELD_NAMES,
+  CLICK_ID_PATTERN,
+  isClickIdField,
   isSafeAttributionValue,
   type MarketingAttributionFields,
 } from "@/lib/marketing/attribution-fields";
@@ -16,10 +18,10 @@ function sanitizeParam(value: string | null): string | undefined {
   return isSafeAttributionValue(trimmed) ? trimmed : undefined;
 }
 
-// 截断后的点击 ID 没有用，所以 gclid 整体校验，不截到 256。
-function sanitizeGclid(value: string | null): string | undefined {
+// 截断后的点击 ID 没有用，所以点击 ID 整体校验，不截到 256。
+function sanitizeClickId(value: string | null): string | undefined {
   const trimmed = value?.trim();
-  return trimmed && GCLID_PATTERN.test(trimmed) ? trimmed : undefined;
+  return trimmed && CLICK_ID_PATTERN.test(trimmed) ? trimmed : undefined;
 }
 
 export function captureUtmParams(): MarketingAttributionFields {
@@ -34,14 +36,16 @@ export function captureUtmParams(): MarketingAttributionFields {
   const utmCampaign = sanitizeParam(searchParams.get("utm_campaign"));
   const utmTerm = sanitizeParam(searchParams.get("utm_term"));
   const utmContent = sanitizeParam(searchParams.get("utm_content"));
-  const gclid = sanitizeGclid(searchParams.get("gclid"));
 
   if (utmSource) params.utmSource = utmSource;
   if (utmMedium) params.utmMedium = utmMedium;
   if (utmCampaign) params.utmCampaign = utmCampaign;
   if (utmTerm) params.utmTerm = utmTerm;
   if (utmContent) params.utmContent = utmContent;
-  if (gclid) params.gclid = gclid;
+  for (const fieldName of CLICK_ID_FIELD_NAMES) {
+    const clickId = sanitizeClickId(searchParams.get(fieldName));
+    if (clickId) params[fieldName] = clickId;
+  }
 
   return params;
 }
@@ -58,7 +62,7 @@ export function storeAttributionData(): void {
   // Only store if we have any attribution data
   if (!Object.values(utmParams).some(Boolean)) return;
 
-  // Safe: values come from sanitizeParam()/sanitizeGclid(), which block control chars and dangerous HTML delimiters.
+  // Safe: values come from sanitizeParam()/sanitizeClickId(), which block control chars and dangerous HTML delimiters.
   const data: MarketingAttributionFields = {
     ...utmParams,
     landingPage: window.location.pathname,
@@ -86,8 +90,9 @@ export function getAttributionSnapshot(): MarketingAttributionFields {
     for (const fieldName of ATTRIBUTION_FIELD_NAMES) {
       const raw = (parsed as Record<string, unknown>)[fieldName];
       const value = typeof raw === "string" ? raw : null;
-      const sanitized =
-        fieldName === "gclid" ? sanitizeGclid(value) : sanitizeParam(value);
+      const sanitized = isClickIdField(fieldName)
+        ? sanitizeClickId(value)
+        : sanitizeParam(value);
       if (sanitized) result[fieldName] = sanitized;
     }
     return result;

@@ -92,6 +92,8 @@ describe("runtime email content", () => {
         locale: "es",
         utmCampaign: "promoción & año",
         gclid: "Cj0KCQjw",
+        wbraid: "CjkKCQjw",
+        gbraid: "0AAAAADd",
         landingPage: "/es",
       }),
     });
@@ -101,6 +103,8 @@ describe("runtime email content", () => {
     // 多行字段的首行带标签，与 Requirements 的纯文本格式一致。
     expect(lines).toContain("Attribution: utm_campaign: promoción & año");
     expect(lines).toContain("gclid: Cj0KCQjw");
+    expect(lines).toContain("wbraid: CjkKCQjw");
+    expect(lines).toContain("gbraid: 0AAAAADd");
     expect(lines).toContain("landing_page: /es");
     expect(content.html).toContain("utm_campaign: promoción &amp; año");
   });

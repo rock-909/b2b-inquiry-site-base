@@ -44,13 +44,17 @@ describe("UTM attribution", () => {
     });
   });
 
-  it.each(["abc%3Cdef", "a%20b", `${"a".repeat(257)}`])(
-    "drops a malformed or truncated-length gclid: %s",
-    (gclid) => {
-      window.history.replaceState({}, "", `/?gclid=${gclid}`);
-      expect(captureUtmParams()).toEqual({});
-    },
-  );
+  it.each(
+    ["gclid", "wbraid", "gbraid"].flatMap((param) =>
+      ["abc%3Cdef", "a%20b", `${"a".repeat(257)}`].map((value) => [
+        param,
+        value,
+      ]),
+    ),
+  )("drops a malformed or truncated-length %s: %s", (param, value) => {
+    window.history.replaceState({}, "", `/?${param}=${value}`);
+    expect(captureUtmParams()).toEqual({});
+  });
 
   it("keeps the first touch across pages and sends it with the inquiry", () => {
     window.history.replaceState({}, "", "/landing?utm_source=google");
@@ -72,5 +76,19 @@ describe("UTM attribution", () => {
     const payload = createInquiryPayload(new FormData(), "token", "es");
     expect(payload.gclid).toBe("Cj0KCQjw");
     expect(payload.landingPage).toBe("/es");
+  });
+
+  it("sends an iOS ad click tagged with wbraid and gbraid with the inquiry", () => {
+    window.history.replaceState(
+      {},
+      "",
+      "/es/contact?wbraid=test-w&gbraid=test-g",
+    );
+    storeAttributionData();
+
+    const payload = createInquiryPayload(new FormData(), "token", "es");
+    expect(payload.wbraid).toBe("test-w");
+    expect(payload.gbraid).toBe("test-g");
+    expect(payload.landingPage).toBe("/es/contact");
   });
 });

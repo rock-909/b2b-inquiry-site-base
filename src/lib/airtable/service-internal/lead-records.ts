@@ -8,6 +8,8 @@ import { logger, sanitizeEmail } from "@/lib/logger";
 import {
   ATTRIBUTION_FIELD_NAMES,
   type AttributionFieldName,
+  type ClickIdFieldName,
+  isClickIdField,
   type MarketingAttributionFields,
 } from "@/lib/marketing/attribution-fields";
 
@@ -16,7 +18,7 @@ type AirtableFields = Record<string, AirtableFieldValue>;
 
 const INQUIRY_SOURCE = "Website Inquiry" as const;
 
-// gclid 只进业主邮件：Airtable 表缺列会让整条记录写入失败，派生站的现有表没有这一列。
+// 点击 ID（gclid、wbraid、gbraid）只进业主邮件：Airtable 表缺列会让整条记录写入失败，派生站的现有表没有这些列。
 const AIRTABLE_ATTRIBUTION_FIELD_NAMES = {
   utmSource: "UTM Source",
   utmMedium: "UTM Medium",
@@ -25,7 +27,7 @@ const AIRTABLE_ATTRIBUTION_FIELD_NAMES = {
   utmContent: "UTM Content",
   landingPage: "Landing Page",
   capturedAt: "Captured At",
-} satisfies Record<Exclude<AttributionFieldName, "gclid">, string>;
+} satisfies Record<Exclude<AttributionFieldName, ClickIdFieldName>, string>;
 
 function buildBaseFields(email: string, now: string): AirtableFields {
   return {
@@ -56,7 +58,7 @@ function addAttributionFields(
   data: MarketingAttributionFields,
 ): void {
   for (const fieldName of ATTRIBUTION_FIELD_NAMES) {
-    if (fieldName === "gclid") continue;
+    if (isClickIdField(fieldName)) continue;
     const value = data[fieldName];
     if (value) {
       fields[AIRTABLE_ATTRIBUTION_FIELD_NAMES[fieldName]] =

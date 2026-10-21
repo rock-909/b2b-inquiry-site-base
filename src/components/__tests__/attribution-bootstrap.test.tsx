@@ -8,6 +8,9 @@ describe("AttributionBootstrap", () => {
     expect(shouldLoadAttribution("?utm_source=google")).toBe(true);
     // Google Ads 自动标记的点击通常只带 gclid、不带 UTM。
     expect(shouldLoadAttribution("?gclid=Cj0KCQ")).toBe(true);
+    // iOS 上的广告点击可能只带 wbraid 或 gbraid。
+    expect(shouldLoadAttribution("?wbraid=CjkKCQjw")).toBe(true);
+    expect(shouldLoadAttribution("?x=1&gbraid=0AAAAA")).toBe(true);
     expect(shouldLoadAttribution("?fbclid=unused")).toBe(false);
     expect(shouldLoadAttribution("")).toBe(false);
   });

@@ -1,4 +1,4 @@
-const ATTRIBUTION_PARAM_PATTERN = /(?:^|[?&])(?:utm_|gclid=)/i;
+const ATTRIBUTION_PARAM_PATTERN = /(?:^|[?&])(?:utm_|gclid=|wbraid=|gbraid=)/i;
 
 export function loadAttributionModule() {
   return import("@/lib/marketing/utm");

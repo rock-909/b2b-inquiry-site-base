@@ -131,6 +131,8 @@ describe("/api/inquiry delivery orchestration", () => {
     landingPage: "/products",
     capturedAt: "2026-07-27T00:00:00.000Z",
     gclid: "Cj0KCQjw-sample_gclid",
+    wbraid: "CjkKCQjw-sample_wbraid",
+    gbraid: "0AAAAADd-sample_gbraid",
   };
 
   it("keeps a sample value for every field the schema declares", () => {

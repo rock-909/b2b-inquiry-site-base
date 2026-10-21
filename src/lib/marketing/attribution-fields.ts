@@ -7,6 +7,8 @@ export const ATTRIBUTION_FIELD_NAMES = [
   "landingPage",
   "capturedAt",
   "gclid",
+  "wbraid",
+  "gbraid",
 ] as const;
 
 export type AttributionFieldName = (typeof ATTRIBUTION_FIELD_NAMES)[number];
@@ -20,10 +22,22 @@ export interface MarketingAttributionFields {
   landingPage?: string | undefined;
   capturedAt?: string | undefined;
   gclid?: string | undefined;
+  wbraid?: string | undefined;
+  gbraid?: string | undefined;
 }
 
-// Google Ads 点击 ID 是 URL 安全的 base64 字符；其他字符都不是真实的点击 ID。
-export const GCLID_PATTERN = /^[A-Za-z0-9_-]{1,256}$/;
+// Google Ads 点击 ID：iOS 上的点击可能只带 wbraid 或 gbraid，不带 gclid。
+export const CLICK_ID_FIELD_NAMES = ["gclid", "wbraid", "gbraid"] as const;
+export type ClickIdFieldName = (typeof CLICK_ID_FIELD_NAMES)[number];
+
+export function isClickIdField(
+  fieldName: AttributionFieldName,
+): fieldName is ClickIdFieldName {
+  return (CLICK_ID_FIELD_NAMES as readonly string[]).includes(fieldName);
+}
+
+// 点击 ID 是 URL 安全的 base64 字符；其他字符都不是真实的点击 ID。
+export const CLICK_ID_PATTERN = /^[A-Za-z0-9_-]{1,256}$/;
 
 // 归因值字符规则，浏览器捕获和服务端入口共用：允许可打印 ASCII 和 Unicode
 // 字母、组合符号、数字（如 "promoción"），拦截控制/格式字符和危险的 HTML 分隔符。
