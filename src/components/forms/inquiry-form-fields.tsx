@@ -54,10 +54,7 @@ export function InquiryFormFields({
     <>
       <div className="grid gap-x-4 gap-y-8 md:grid-cols-2">
         <div className={FIELD_CLASS}>
-          <label
-            className={LABEL_CLASS}
-            htmlFor="inquiry-fullName"
-          >
+          <label className={LABEL_CLASS} htmlFor="inquiry-fullName">
             {copy.fullName}
           </label>
           <input
@@ -80,10 +77,7 @@ export function InquiryFormFields({
           ) : null}
         </div>
         <div className={FIELD_CLASS}>
-          <label
-            className={LABEL_CLASS}
-            htmlFor="inquiry-email"
-          >
+          <label className={LABEL_CLASS} htmlFor="inquiry-email">
             {copy.email}
           </label>
           <input

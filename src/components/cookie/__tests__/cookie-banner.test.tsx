@@ -37,7 +37,9 @@ describe("CookieBanner", () => {
 
   it("keeps the category choices behind an expandable Customize button", () => {
     renderBanner();
-    const customize = screen.getByRole("button", { name: t("cookie.customize") });
+    const customize = screen.getByRole("button", {
+      name: t("cookie.customize"),
+    });
     expect(customize).toHaveAttribute("aria-expanded", "false");
     expect(screen.queryByRole("checkbox")).toBeNull();
 

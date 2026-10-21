@@ -82,7 +82,10 @@ for (const path of CONTACT_PATHS) {
       const form = page.getByTestId("inquiry-form");
       await expect(form.locator('[name="fullName"]')).toBeEditable();
       const widget = page.getByTestId("turnstile-mock");
-      await expect(widget).toHaveAttribute("data-footprint", /flexible|compact/);
+      await expect(widget).toHaveAttribute(
+        "data-footprint",
+        /flexible|compact/,
+      );
       await expect(page.locator("[data-inquiry-form-reserve]")).toHaveCount(0);
       // 等两帧渲染完成，让 layout-shift 观察者记录替换造成的位移。
       await page.evaluate(
