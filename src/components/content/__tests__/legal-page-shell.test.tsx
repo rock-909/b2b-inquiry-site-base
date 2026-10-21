@@ -50,7 +50,12 @@ describe("LegalPageShell structured data", () => {
 
 async function renderShell(faq: FaqItem[] | undefined) {
   const shell = (await LegalPageShell({
-    metadata: { title: "Contact", slug: "contact", publishedAt: "2024-01-01", faq },
+    metadata: {
+      title: "Contact",
+      slug: "contact",
+      publishedAt: "2024-01-01",
+      ...(faq && { faq }),
+    },
     blocks: [],
     headings: [],
     locale: "en",
