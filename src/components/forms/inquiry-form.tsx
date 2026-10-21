@@ -470,7 +470,7 @@ export function InquiryForm({ copy, fallback }: InquiryFormProps) {
   );
 
   if (!isHydrated) {
-    // 静态卡片约 160px；compact 表单按断点实测约 624–804px。
+    // 静态卡片约 160px，远矮于真实表单。
     // Without reserved space the swap pushes everything below it down
     // (measured CLS 0.203 on the inquiry form swap). The bands track the live form's
     // measured height per breakpoint; tests/e2e/turnstile-layout.spec.ts fails
