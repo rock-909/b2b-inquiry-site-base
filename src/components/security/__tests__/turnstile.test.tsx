@@ -1,5 +1,6 @@
 import React from "react";
 import { act, render, screen } from "@testing-library/react";
+import { useLocale } from "next-intl";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TurnstileWidget } from "@/components/security/turnstile";
 import { captureExpectedConsoleErrors } from "@/test/console";
@@ -117,11 +118,16 @@ describe("TurnstileWidget", () => {
     });
 
     it("renders in the page language, not the browser's", () => {
-      renderTurnstileWidget();
+      const locale = vi.mocked(useLocale).mockReturnValue("es");
+      expect(navigator.language).not.toBe("es");
+      try {
+        renderTurnstileWidget();
+      } finally {
+        locale.mockReset();
+      }
 
-      const mockCall = getMockTurnstile().mock.calls[0];
-      expect(mockCall?.[0]).toMatchObject({
-        options: { language: "en" },
+      expect(getMockTurnstile().mock.calls.at(-1)?.[0]).toMatchObject({
+        options: { language: "es" },
       });
     });
   });

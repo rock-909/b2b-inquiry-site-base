@@ -62,9 +62,9 @@ export function CookieBanner({
         {customizing ? (
           <div
             id={CATEGORY_PANEL_ID}
-            className="flex items-center justify-between gap-2 border-t border-border pt-1"
+            className="flex flex-wrap items-center justify-between gap-x-2 border-t border-border pt-1"
           >
-            <div className="flex gap-5">
+            <div className="flex flex-wrap gap-x-5">
               <label className="flex min-h-11 items-center gap-2 text-sm">
                 <input
                   type="checkbox"
