@@ -5,7 +5,6 @@ paths:
   - "src/app/**/layout.tsx"
   - "src/app/theme.css"
   - "src/app/globals.css"
-  - "src/**/*.stories.tsx"
   - "components.json"
 ---
 
