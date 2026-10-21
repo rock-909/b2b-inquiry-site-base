@@ -118,8 +118,8 @@
   --card-radius: var(--surface-radius);
   /* 导航二级菜单悬停下划线：浅灰细线（Vercel 实测约 rgb(201,201,201)），文字颜色不变；--border 的 step 6 太淡。 */
   --nav-link-underline: var(--neutral-7);
-  /* 页脚主题切换图标平时比页脚链接浅一档（Vercel 实测 #8f8f8f），悬停变黑；取对白底刚过 3:1 的 --input。 */
-  --theme-switch-icon: var(--input);
+  /* 页脚主题切换图标平时比页脚链接浅一档，悬停变黑；白底 3.10:1，与 Vercel 实测（#8f8f8f 对 #fafafa）同一对比。 */
+  --theme-switch-icon: oklch(0.66 0.006 248);
 }
 
 .dark {
@@ -158,8 +158,8 @@
   --popover: var(--neutral-2);
   /* 近黑背景上 step 7 几乎看不见，二级菜单下划线提高一级（Vercel 深色实测约 rgb(69,69,69)）。 */
   --nav-link-underline: var(--neutral-8);
-  /* 深色 --input 偏暗；muted-foreground 与 Vercel 深色实测一致。 */
-  --theme-switch-icon: var(--muted-foreground);
+  /* 深色比页脚链接（step 11）暗一档，同 Vercel 深色图标比链接暗一档；近黑底 4.86:1。 */
+  --theme-switch-icon: var(--neutral-10);
 
   /* 深色主按钮取亮的 step 9 配近黑字（--primary-foreground 即 --neutral-1）。 */
   --button-primary-bg: var(--brand-9);
