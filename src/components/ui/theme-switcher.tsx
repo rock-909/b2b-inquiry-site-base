@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, MoonStar, Sun } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ const themes = [
   },
   {
     key: "dark",
-    icon: Moon,
+    icon: MoonStar,
     labelKey: "switchToDark",
   },
 ] as const;
@@ -46,7 +46,7 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
     <div
       aria-label={tAccessibility("themeSelector")}
       className={cn(
-        "flex items-center rounded-[var(--control-radius)] border border-border bg-transparent",
+        "flex items-center rounded-full ring-1 ring-border",
         className,
       )}
       role="group"
@@ -60,10 +60,10 @@ export const ThemeSwitcher = ({ className, ...rest }: ThemeSwitcherProps) => {
             aria-label={tTheme(labelKey)}
             aria-pressed={isHydrated ? isActive : undefined}
             className={cn(
-              "flex size-6 items-center justify-center rounded-[calc(var(--control-radius)-0.125rem)] transition-colors duration-150 ease-out",
+              "flex size-6 cursor-pointer items-center justify-center rounded-full transition-colors duration-150 ease-out hover:text-foreground focus-visible:text-foreground disabled:cursor-default",
               isHydrated && isActive
-                ? "bg-background text-foreground ring-1 ring-input"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-popover text-foreground shadow-xs ring-1 ring-border"
+                : "text-[var(--theme-switch-icon)]",
             )}
             disabled={!isHydrated}
             key={key}
