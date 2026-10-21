@@ -38,7 +38,8 @@ export function GET(): Response {
   for (const locale of LOCALES_CONFIG.locales) {
     lines.push(`## ${LOCALES_CONFIG.displayNames[locale]}`, "");
     for (const page of PUBLIC_STATIC_PAGE_DEFINITIONS) {
-      lines.push(pageLink(page, locale));
+      // 与 sitemap 同一索引规则：noindex 页面（如占位法务页）不列出。
+      if (page.sitemap.include) lines.push(pageLink(page, locale));
     }
     lines.push("");
   }
