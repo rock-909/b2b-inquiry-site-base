@@ -64,10 +64,10 @@ test.describe("Core page visual calibration", () => {
             colorScheme === "dark" ? /\bdark\b/u : /\blight\b/u,
           );
           await page.evaluate(() => window.scrollTo(0, 0));
-          if (viewport.width < 840) {
-            const logo = await page
-              .locator("header .header-nav-left a")
-              .boundingBox();
+          // 只有派生站配置了 ready logo 时页头才有品牌链接。
+          const logoLink = page.locator("header .header-nav-left a");
+          if (viewport.width < 840 && (await logoLink.count()) > 0) {
+            const logo = await logoLink.boundingBox();
             const contact = await page
               .getByTestId("header-mobile-cta")
               .boundingBox();

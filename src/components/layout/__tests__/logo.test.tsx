@@ -3,7 +3,7 @@
  * Tests for the Logo component.
  */
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { SINGLE_SITE_CONFIG as SITE_CONFIG } from "@/config/single-site";
 import { Logo } from "../logo";
@@ -34,35 +34,46 @@ describe("Logo", () => {
     SITE_CONFIG.brandAssets = templateBrandAssets;
   });
 
-  it("renders text fallback by default", () => {
-    render(<Logo />);
+  // 没有可公开的 logo 时页头不留品牌位，也不留空的可聚焦链接。
+  it.each([
+    { name: "no logo", brandAssets: templateBrandAssets },
+    {
+      name: "pending logo",
+      brandAssets: {
+        ...templateBrandAssets,
+        logo: {
+          status: "pending" as const,
+          horizontal: "/logo.svg",
+          width: 240,
+          height: 72,
+        },
+      },
+    },
+  ])("renders nothing with $name", ({ brandAssets }) => {
+    SITE_CONFIG.brandAssets = brandAssets;
 
-    expect(screen.getByText(SITE_CONFIG.name)).toBeInTheDocument();
+    const { container } = render(<Logo />);
+
+    expect(container).toBeEmptyDOMElement();
   });
 
-  // 派生站把 logo 置为 ready 之前，品牌名是唯一标识；ready 后图片出现，文字只在桌面保留。
-  it.each([
-    { status: "pending" as const, imageSrc: null, textDesktopOnly: false },
-    { status: "ready" as const, imageSrc: "/logo.svg", textDesktopOnly: true },
-  ])(
-    "renders the $status logo state",
-    ({ status, imageSrc, textDesktopOnly }) => {
-      SITE_CONFIG.brandAssets = {
-        ...templateBrandAssets,
-        logo: { status, horizontal: "/logo.svg", width: 240, height: 72 },
-      };
+  it("renders the ready logo image as the home link", () => {
+    SITE_CONFIG.brandAssets = {
+      ...templateBrandAssets,
+      logo: {
+        status: "ready",
+        horizontal: "/logo.svg",
+        width: 240,
+        height: 72,
+      },
+    };
 
-      render(<Logo />);
+    render(<Logo />);
 
-      const image = screen.queryByRole("img", {
-        name: `${SITE_CONFIG.name} Logo`,
-      });
-      expect(image?.getAttribute("src") ?? null).toBe(imageSrc);
-      expect(
-        screen
-          .getByText(SITE_CONFIG.name)
-          .classList.contains("header-logo-text-desktop-only"),
-      ).toBe(textDesktopOnly);
-    },
-  );
+    const link = screen.getByRole("link", { name: SITE_CONFIG.name });
+    expect(link).toHaveAttribute("href", "/");
+    expect(
+      within(link).getByRole("img", { name: `${SITE_CONFIG.name} Logo` }),
+    ).toHaveAttribute("src", "/logo.svg");
+  });
 });
