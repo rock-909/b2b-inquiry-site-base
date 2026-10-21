@@ -52,7 +52,7 @@ const SUB_LINK_CLASS =
 
 // 下划线只画在文字 span 上，不延伸到 ↗；颜色不变、无底色。
 const SUB_LINK_TEXT_CLASS =
-  "decoration-[var(--nav-link-underline)] decoration-1 underline-offset-[5px] group-hover:underline group-aria-[current=page]:underline";
+  "decoration-[var(--nav-link-underline)] decoration-1 underline-offset-[5px] group-hover:underline";
 
 const panelId = (key: string) => `header-nav-panel-${key}`;
 

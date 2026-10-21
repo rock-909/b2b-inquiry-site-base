@@ -100,7 +100,7 @@ export function MobileNavigationLinks({
 }
 
 const SUB_LINK_CLASS =
-  "flex min-h-11 items-center gap-1 rounded-[var(--control-radius)] px-3 text-base text-foreground decoration-[var(--nav-link-underline)] decoration-1 underline-offset-[5px] aria-[current=page]:underline";
+  "flex min-h-11 items-center gap-1 rounded-[var(--control-radius)] px-3 text-base text-foreground";
 
 // 带 groups 的项在抽屉里用原生 details 折叠展开（同 Vercel），无 JS 也能用。
 function MobileNavigationGroups({
