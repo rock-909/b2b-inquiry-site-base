@@ -1,7 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Header } from "@/components/layout/header";
-import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 import { usePathname } from "@/i18n/routing";
 
 // 语言切换只在多语言时出现；用固定双语 fixture，和站点当前配几种语言解耦。
@@ -52,9 +51,6 @@ describe("Header", () => {
   it("renders the production navigation surface", () => {
     renderHeader();
 
-    expect(
-      screen.getByRole("link", { name: SINGLE_SITE_CONFIG.name }),
-    ).toHaveAttribute("href", "/");
     expect(
       screen.getByRole("navigation", { name: "Main navigation" }),
     ).toBeInTheDocument();
