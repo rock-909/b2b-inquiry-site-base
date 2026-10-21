@@ -1,19 +1,45 @@
 import type { ReactNode } from "react";
 import { Link } from "@/i18n/routing";
-import { createInternalLinkPattern } from "@/lib/content/inline-markdown-text";
+import { createMarkdownLinkPattern } from "@/lib/content/inline-markdown-text";
 
 const BOLD_WRAPPER_LENGTH = 2;
+
+// Last path segment has an extension, e.g. /downloads/catalog.pdf?v=2.
+const PUBLIC_FILE_PATH = /^\/[^?#]*\.[a-z0-9]+(?:[?#]|$)/iu;
 
 interface InlineMarkdownProps {
   readonly text: string;
 }
 
-/** Renders internal `[label](/path)` links inside otherwise-plain text. */
+function MarkdownLink({ href, label }: { href: string; label: string }) {
+  if (href.startsWith("/") && !PUBLIC_FILE_PATH.test(href)) {
+    return (
+      <Link href={href} className="text-link">
+        {label}
+      </Link>
+    );
+  }
+
+  // public/ files are served only without a locale prefix, so they and
+  // external URLs bypass next-intl's Link.
+  const isExternal = !href.startsWith("/");
+  return (
+    <a
+      href={href}
+      className="text-link"
+      {...(isExternal && { target: "_blank", rel: "noopener noreferrer" })}
+    >
+      {label}
+    </a>
+  );
+}
+
+/** Renders `[label](/path)` and `[label](https://...)` links inside plain text. */
 function LinkifiedText({ text }: InlineMarkdownProps): ReactNode {
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
 
-  for (const match of text.matchAll(createInternalLinkPattern())) {
+  for (const match of text.matchAll(createMarkdownLinkPattern())) {
     const [fullMatch, label = "", href = ""] = match;
     const { index } = match;
 
@@ -21,15 +47,7 @@ function LinkifiedText({ text }: InlineMarkdownProps): ReactNode {
       nodes.push(text.slice(lastIndex, index));
     }
 
-    nodes.push(
-      <Link
-        key={`link-${index}`}
-        href={href}
-        className="text-link"
-      >
-        {label}
-      </Link>,
-    );
+    nodes.push(<MarkdownLink key={`link-${index}`} href={href} label={label} />);
 
     lastIndex = index + fullMatch.length;
   }

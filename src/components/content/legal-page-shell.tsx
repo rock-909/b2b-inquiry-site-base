@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
+import { FaqSection } from "@/components/content/faq-section";
 import { JsonLdGraphScript } from "@/components/seo/json-ld-script";
 import {
   renderStaticMarkdownBlocks,
@@ -7,6 +8,7 @@ import {
 import type { HeadingItem } from "@/lib/content/legal-page";
 import {
   buildBreadcrumbListSchema,
+  buildFaqPageSchema,
   buildWebPageSchema,
 } from "@/lib/structured-data-generators";
 import { buildCanonicalForPath } from "@/lib/seo-metadata";
@@ -75,6 +77,9 @@ export async function LegalPageShell({
       { name: metadata.title, url: pageUrl },
     ]),
   ];
+  if (metadata.faq?.length) {
+    schemas.push(buildFaqPageSchema(metadata.faq));
+  }
 
   const tocHeadings = headings.filter((heading) => heading.level === 2);
   const hasToc = tocHeadings.length > 0;
@@ -126,6 +131,8 @@ export async function LegalPageShell({
             </aside>
           )}
         </div>
+
+        <FaqSection heading={t("faq")} items={metadata.faq} />
 
         {children ? (
           <div className="mt-6 min-w-0 space-y-8">{children}</div>

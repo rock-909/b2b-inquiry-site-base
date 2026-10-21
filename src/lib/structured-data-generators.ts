@@ -113,3 +113,16 @@ export function buildBreadcrumbListSchema(
     })),
   };
 }
+
+export function buildFaqPageSchema(
+  items: ReadonlyArray<{ question: string; answer: string }>,
+): Record<string, unknown> {
+  return {
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: { "@type": "Answer", text: item.answer },
+    })),
+  };
+}

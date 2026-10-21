@@ -44,7 +44,8 @@
     }
   },
   "legal": {
-    "tableOfContents": "Índice"
+    "tableOfContents": "Índice",
+    "faq": "Preguntas frecuentes"
   },
   "emailTemplates": {
     "common": {
