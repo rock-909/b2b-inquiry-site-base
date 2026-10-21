@@ -67,6 +67,11 @@ describe("public launch identity values", () => {
         contact: { email: "hello@starter.dev", phone: "+86-138-0013-8000" },
       }),
     ).toEqual([]);
+    expect(
+      identityErrors({
+        contact: { ...READY.contact, phone: "+34 600 120000" },
+      }),
+    ).toEqual([]);
     for (const whatsapp of [
       "+86-518-0000-0000",
       "+8651800000000",
@@ -83,7 +88,7 @@ describe("public launch identity values", () => {
     ).toEqual([]);
     expect(
       identityErrors({
-        contact: { ...READY.contact, whatsapp: "+34.600.123.456" },
+        contact: { ...READY.contact, whatsapp: "+34.600.120000" },
       }),
     ).toEqual([]);
   });
