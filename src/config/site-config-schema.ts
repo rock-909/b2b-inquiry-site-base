@@ -37,6 +37,16 @@ const phone = string()
   .regex(/^\+?[\d\s().-]{7,25}$/u, "must be a phone number")
   .refine((value) => (value.match(/\d/gu) ?? []).length >= 7, "too few digits");
 
+// wa.me 只认带国家码的号码：要求 + 开头，E.164 最多 15 位数字。
+const WHATSAPP_MIN_DIGITS = 8;
+const E164_MAX_DIGITS = 15;
+const whatsapp = string()
+  .regex(/^\+[1-9][\d\s().-]{6,24}$/u, "must be an international number")
+  .refine((value) => {
+    const digits = (value.match(/\d/gu) ?? []).length;
+    return digits >= WHATSAPP_MIN_DIGITS && digits <= E164_MAX_DIGITS;
+  }, "must have 8-15 digits");
+
 const readyLogo = object({
   status: literal("ready"),
   horizontal: rootRelativePath,
@@ -62,6 +72,7 @@ const siteIdentitySchema = object({
   contact: object({
     email: blankOr(email()),
     phone: blankOr(phone),
+    whatsapp: blankOr(whatsapp),
   }),
   social: object({
     linkedin: blankOr(httpsUrl),

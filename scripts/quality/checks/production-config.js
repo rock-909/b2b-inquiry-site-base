@@ -204,7 +204,8 @@ function isPublicEmailReady(email) {
   return !isPlaceholderFact(email) && !isPlaceholderHostname(domain);
 }
 
-const PHONE_ZERO_BLOCK_PATTERN = /(?:^|[-\s])0{3,}(?:[-\s]|$)/u;
+const PHONE_ZERO_BLOCK_PATTERN = /(?:^|[-.\s])0{3,}(?:[-.\s]|$)/u;
+const TEMPLATE_PLACEHOLDER_PHONE_DIGITS = "8651800000000";
 const US_COUNTRY_CODE_WITH_NATIONAL_LENGTH = 11;
 const US_NATIONAL_PHONE_LENGTH = 10;
 const US_AREA_CODE_END = 3;
@@ -218,6 +219,7 @@ function isFakePublicPhoneNumber(phone) {
       ? digits.slice(1)
       : digits;
 
+  if (digits === TEMPLATE_PLACEHOLDER_PHONE_DIGITS) return true;
   if (nationalDigits === "1234567890") return true;
   if (nationalDigits.length !== US_NATIONAL_PHONE_LENGTH) return false;
 
@@ -229,8 +231,9 @@ function isFakePublicPhoneNumber(phone) {
 
 function isPublicPhoneReady(phone) {
   if (typeof phone !== "string") return false;
-  if (!/^\+?[\d ()-]{7,25}$/u.test(phone)) return false;
-  if (!/^[1-9]\d{6,14}$/u.test(phone.replace(/\D/gu, ""))) return false;
+  if (!/^\+?[\d\s().-]{7,25}$/u.test(phone)) return false;
+  const digits = phone.replace(/\D/gu, "");
+  if (!/^[1-9]\d{6,14}$/u.test(digits)) return false;
   return (
     !PHONE_ZERO_BLOCK_PATTERN.test(phone) && !isFakePublicPhoneNumber(phone)
   );
@@ -595,6 +598,11 @@ function validateOptionalPublicFacts(target, config) {
   if (contact.phone && !isPublicPhoneReady(contact.phone)) {
     target.push(
       "SITE_CONFIG.contact.phone is not public-launch ready. Remove it or supply a valid public phone.",
+    );
+  }
+  if (contact.whatsapp && !isPublicPhoneReady(contact.whatsapp)) {
+    target.push(
+      "SITE_CONFIG.contact.whatsapp is not public-launch ready. Remove it or supply a valid public WhatsApp number.",
     );
   }
   if (

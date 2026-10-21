@@ -58,6 +58,19 @@ describe("single-site", () => {
         contact: { email: "sales@acme.com", phone: "call me" },
       }),
     ).toThrow(/phone/u);
+    // wa.me 需要国家码：本地格式号码会生成打不通的链接。
+    expect(() =>
+      assertValidSiteConfig({
+        ...SINGLE_SITE_CONFIG,
+        contact: { email: "sales@acme.com", whatsapp: "600 123 456" },
+      }),
+    ).toThrow(/whatsapp/u);
+    expect(() =>
+      assertValidSiteConfig({
+        ...SINGLE_SITE_CONFIG,
+        contact: { email: "sales@acme.com", whatsapp: "+34 600 123 456" },
+      }),
+    ).not.toThrow();
     expect(() =>
       assertValidSiteConfig({
         ...SINGLE_SITE_CONFIG,

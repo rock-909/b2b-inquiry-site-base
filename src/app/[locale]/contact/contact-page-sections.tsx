@@ -4,10 +4,12 @@ import type { Locale } from "@/types/content.types";
 import { createInquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
+import { formatCompanyAddress, whatsappHref } from "@/lib/site-contact";
 
 export async function ContactMethodsCard({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: "contact.panel" });
-  const { email, phone } = SINGLE_SITE_CONFIG.contact;
+  const { email, phone, whatsapp } = SINGLE_SITE_CONFIG.contact;
+  const address = formatCompanyAddress(SINGLE_SITE_CONFIG.company?.location);
   return (
     <section className="space-y-3 text-sm">
       <h2 className="font-semibold">{t("contactTitle")}</h2>
@@ -28,6 +30,17 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
         >
           {phone}
         </a>
+      ) : null}
+      {whatsapp ? (
+        <a
+          className="text-link block w-fit py-2 break-words"
+          href={whatsappHref(whatsapp)}
+        >
+          WhatsApp {whatsapp}
+        </a>
+      ) : null}
+      {address ? (
+        <address className="py-2 not-italic">{address}</address>
       ) : null}
     </section>
   );

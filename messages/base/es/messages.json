@@ -70,6 +70,11 @@
     "siteDescription": "Sitio de referencia neutral para consultas B2B."
   },
   "footer": {
+    "columns": {
+      "navigation": "Sitio",
+      "support": "Legal",
+      "social": "Redes sociales"
+    },
     "sections": {
       "navigation": {
         "home": "Inicio",
