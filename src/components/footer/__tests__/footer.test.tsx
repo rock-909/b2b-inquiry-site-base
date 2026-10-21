@@ -10,15 +10,18 @@ describe("Footer", () => {
     Object.assign(SINGLE_SITE_CONFIG, structuredClone(template));
   });
 
-  it("shows only the copyright with the site name when no company facts are configured", () => {
+  it("shows only the site name and copyright when no company facts are configured", () => {
     const { container } = render(<Footer />);
     expect(
       screen.getByText(`© ${new Date().getFullYear()} ${template.name}`),
     ).toBeInTheDocument();
     expect(container.querySelector("address")).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Connect" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("shows the configured company name, contact links and address", () => {
+  it("shows the configured company name, contact links, address and social column", () => {
     Object.assign(SINGLE_SITE_CONFIG, {
       company: {
         name: "Acme Valves S.L.",
@@ -36,7 +39,9 @@ describe("Footer", () => {
     });
     const { container } = render(<Footer />);
     const address = container.querySelector("address") as HTMLElement;
-    expect(screen.getByText(/Acme Valves S\.L\./u)).toBeInTheDocument();
+    expect(
+      screen.getByText(`© ${new Date().getFullYear()} Acme Valves S.L.`),
+    ).toBeInTheDocument();
     expect(
       within(address)
         .getAllByRole("link")
@@ -45,9 +50,14 @@ describe("Footer", () => {
       "mailto:sales@acme.com",
       "tel:+34 960 123 456",
       "https://wa.me/34600123456",
-      "https://www.linkedin.com/company/acme",
     ]);
     expect(address).toHaveTextContent("Calle Mayor 1, Valencia, ES");
+    expect(
+      screen.getByRole("heading", { name: "Connect" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "LinkedIn" }).getAttribute("href"),
+    ).toBe("https://www.linkedin.com/company/acme");
   });
 
   it("keeps core links and theme control without placeholder contact details", () => {
