@@ -3,6 +3,7 @@
 import {
   ATTRIBUTION_FIELD_NAMES,
   GCLID_PATTERN,
+  isSafeAttributionValue,
   type MarketingAttributionFields,
 } from "@/lib/marketing/attribution-fields";
 
@@ -12,12 +13,7 @@ function sanitizeParam(value: string | null): string | undefined {
   if (!value) return undefined;
   const trimmed = value.trim().slice(0, 256);
   if (!trimmed) return undefined;
-  // 允许可打印 ASCII 和 Unicode 字母、组合符号、数字（如 "promoción"），
-  // 仍拦截控制/格式字符和危险的 HTML 分隔符。
-  return /^[\x20-\x7E\p{L}\p{M}\p{N}]+$/u.test(trimmed) &&
-    !/[<>"'`\\]/.test(trimmed)
-    ? trimmed
-    : undefined;
+  return isSafeAttributionValue(trimmed) ? trimmed : undefined;
 }
 
 // 截断后的点击 ID 没有用，所以 gclid 整体校验，不截到 256。

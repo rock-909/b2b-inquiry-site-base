@@ -217,4 +217,26 @@ describe("/api/inquiry payload validation", () => {
       .calls[0]![0] as Record<string, unknown>;
     expect(callArgs).not.toHaveProperty("utmSource");
   });
+
+  it("applies the browser's UTM character rule to direct API input", async () => {
+    const request = createInquiryRequest(
+      JSON.stringify({
+        ...validInquiryData,
+        utmSource: "promoción año",
+        utmCampaign: "promo<tion",
+        utmTerm: "a`b",
+      }),
+    );
+
+    const response = await POST(request);
+
+    // 直接 POST 绕过浏览器捕获，服务端入口仍要丢弃浏览器会丢的 UTM 值，
+    // 但西语重音照常保留，买家询盘也不因营销参数被拒。
+    expect(response.status).toBe(200);
+    const callArgs = vi.mocked(routeMocks.processValidatedInquiry).mock
+      .calls[0]![0] as Record<string, unknown>;
+    expect(callArgs.utmSource).toBe("promoción año");
+    expect(callArgs).not.toHaveProperty("utmCampaign");
+    expect(callArgs).not.toHaveProperty("utmTerm");
+  });
 });
