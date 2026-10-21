@@ -107,10 +107,10 @@
   --button-radius: var(--control-radius);
   --button-height-sm: var(--control-height-sm);
   --button-height-default: var(--control-height);
-  /* 主按钮用正文色（浅色为黑底、深色为浅底），品牌色留给焦点框与描边按钮。 */
-  --button-primary-bg: var(--foreground);
-  --button-primary-fg: var(--background);
-  --button-primary-hover-bg: var(--muted-foreground);
+  /* 主按钮用品牌色：浅色取深一级 step 11 配白字（step 9 配白字常不到 4.5:1）；导航、页脚和正文链接保持中性色。 */
+  --button-primary-bg: var(--brand-11);
+  --button-primary-fg: var(--primary-foreground);
+  --button-primary-hover-bg: var(--brand-12);
   --button-outline-fg: var(--primary-text);
   --button-outline-border: var(--primary-text);
   --button-outline-hover-bg: color-mix(
@@ -139,7 +139,7 @@
   --brand-11: oklch(0.78 0.08 245);
   --brand-12: oklch(0.9 0.04 245);
 
-  --neutral-1: oklch(0 0 0);
+  --neutral-1: oklch(0.17 0.004 250);
   --neutral-2: oklch(0.2097 0.008 274.5332);
   --neutral-3: oklch(0.225 0.006 260);
   --neutral-4: oklch(0.24 0.005 255);
@@ -152,8 +152,12 @@
   --neutral-11: oklch(0.64 0.008 248);
   --neutral-12: oklch(0.9328 0.0025 228.7857);
 
-  /* 菜单、Cookie 横幅等浮层抬高一级，避免与纯黑页面融为一体。 */
+  /* 菜单、Cookie 横幅等浮层抬高一级，避免与近黑页面融为一体。 */
   --popover: var(--neutral-2);
+
+  /* 深色主按钮取亮的 step 9 配近黑字（--primary-foreground 即 --neutral-1）。 */
+  --button-primary-bg: var(--brand-9);
+  --button-primary-hover-bg: var(--brand-10);
 
   --success-muted: oklch(0.22 0.03 155);
   --success-border: oklch(0.34 0.05 155);
