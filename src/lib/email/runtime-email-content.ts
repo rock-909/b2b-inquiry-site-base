@@ -116,7 +116,7 @@ function renderEmailDocument({
   };
 }
 
-// 每个已捕获的来源值一行，用网址参数名作键（utm_campaign、gclid 等）。
+// 每个已捕获的来源值一行，用网址参数名作键（utm_campaign、gclid、wbraid 等）。
 function formatAttribution(data: ValidatedInquiry): string {
   return ATTRIBUTION_FIELD_NAMES.flatMap((fieldName) => {
     const value = data[fieldName];

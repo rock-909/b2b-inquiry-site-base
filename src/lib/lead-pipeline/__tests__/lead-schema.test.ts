@@ -59,6 +59,8 @@ describe("inquiryLeadSchema", () => {
       { locale: "Español <b>" },
       { gclid: "abc<script>" },
       { gclid: "a".repeat(257) },
+      { wbraid: "a b" },
+      { gbraid: "a".repeat(257) },
     ]) {
       expect(
         inquiryLeadSchema.safeParse({ ...GENERAL_INQUIRY, ...extra }).success,

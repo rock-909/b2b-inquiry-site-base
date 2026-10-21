@@ -26,7 +26,7 @@ import {
 import { LOCALES_CONFIG } from "@/config/paths/locales-config";
 import {
   type AttributionFieldName,
-  GCLID_PATTERN,
+  CLICK_ID_PATTERN,
 } from "@/lib/marketing/attribution-fields";
 import { hasSpreadsheetFormulaPrefix } from "@/lib/security/spreadsheet-formula";
 import {
@@ -47,7 +47,9 @@ const leadAttributionFields = {
   utmContent: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   landingPage: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
   capturedAt: sanitizedString().max(MAX_ATTRIBUTION_FIELD_LENGTH).optional(),
-  gclid: string().regex(GCLID_PATTERN).optional(),
+  gclid: string().regex(CLICK_ID_PATTERN).optional(),
+  wbraid: string().regex(CLICK_ID_PATTERN).optional(),
+  gbraid: string().regex(CLICK_ID_PATTERN).optional(),
 } satisfies Record<AttributionFieldName, ZodOptional<ZodString>>;
 
 function normalizeOptionalInput(value: unknown): unknown {
