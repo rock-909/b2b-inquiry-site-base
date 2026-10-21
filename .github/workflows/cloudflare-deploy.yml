@@ -373,6 +373,8 @@ jobs:
       - name: 健康检查
         env:
           DEPLOYMENT_URL: ${{ needs.build-and-deploy.outputs.deployment_url }}
+          # 让 deployed-smoke 额外断言 robots.txt 与 noindex（只对 production 有意义）。
+          APP_ENV: production
         run: |
           set -euo pipefail
           echo "Cloudflare deployed proof: running final post-deploy smoke against the deployed URL"

@@ -2,6 +2,10 @@ const { spawn } = require("node:child_process");
 const fs = require("node:fs");
 const path = require("node:path");
 const { findBundledPrivateEnvKeys } = require("./cloudflare-artifact-config");
+const {
+  findIndexingFailures,
+  getProductionIndexingExpectations,
+} = require("./robots-indexing");
 
 const ROOT = process.cwd();
 
@@ -254,6 +258,7 @@ function collectProbeFields(pathname, response, body, retries) {
     nosniff: response.headers.get("x-content-type-options"),
     referrerPolicy: response.headers.get("referrer-policy"),
     csp: response.headers.get("content-security-policy"),
+    robotsTag: response.headers.get("x-robots-tag"),
     body,
     ...(retries !== undefined ? { retries } : {}),
   };
@@ -486,6 +491,7 @@ function evaluateProbe(
 ) {
   pushExpectedStatus(response, expectation.status, failures);
   pushCacheControlCheck(response, expectation, failures);
+  failures.push(...findIndexingFailures(response, expectation));
 
   if (expectation.html && htmlChecks) {
     pushHealthyHtmlResponse(response, failures);
@@ -627,11 +633,15 @@ async function runDeployedSmoke(args = []) {
   console.log(
     "[post-deploy-smoke] Scope: deployed routes only; DNS, TLS, and custom-domain confirmation stay manual.",
   );
+  const expectations = [
+    ...DEPLOYED_SMOKE_EXPECTATIONS,
+    ...getProductionIndexingExpectations(POST_DEPLOY_SMOKE_LOG_TAG),
+  ];
 
   // One concurrent round so every mandatory route is probed together; per-route
   // retry state stays local inside probePathname.
   const responses = await probeRound(
-    DEPLOYED_SMOKE_EXPECTATIONS,
+    expectations,
     ({ pathname, method, headers }) =>
       probePathname(baseUrl, pathname, {
         userAgent: POST_DEPLOY_SMOKE_LOG_TAG,
@@ -644,7 +654,7 @@ async function runDeployedSmoke(args = []) {
   );
 
   for (const [index, response] of responses.entries()) {
-    const expectation = DEPLOYED_SMOKE_EXPECTATIONS[index];
+    const expectation = expectations[index];
     evaluateProbe(
       response,
       expectation,

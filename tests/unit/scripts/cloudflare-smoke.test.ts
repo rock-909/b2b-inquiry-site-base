@@ -250,10 +250,11 @@ function listenForDeployedSmoke(): Promise<{
 
 function createMinimalCloudflareSmokeFixture(): string {
   const rootDir = mkdtempSync(path.join(os.tmpdir(), FIXTURE_PREFIX));
-  // 部署冒烟作业没有 node_modules，只需要脚本本身、同目录的产物检查和页面注册表。
+  // 部署冒烟作业没有 node_modules，只需要脚本本身、同目录的产物检查、收录检查和页面注册表。
   for (const repoPath of [
     "scripts/quality/checks/cloudflare-smoke.js",
     "scripts/quality/checks/cloudflare-artifact-config.js",
+    "scripts/quality/checks/robots-indexing.js",
     "src/config/pages.config.ts",
   ]) {
     // eslint-disable-next-line security/detect-non-literal-fs-filename -- test-owned temp path created above
