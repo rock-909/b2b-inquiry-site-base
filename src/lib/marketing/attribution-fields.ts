@@ -55,7 +55,8 @@ export function pickAttributionFields(
 
   for (const fieldName of ATTRIBUTION_FIELD_NAMES) {
     const value = data[fieldName];
-    // 不合规的值整项丢弃而不是拒绝询盘，与浏览器捕获一致。
+    // 非字符串或含危险字符的值整项丢弃，不拒绝询盘，与浏览器捕获一致；
+    // 超长或点击 ID 格式不符的值不在这里处理，仍由 lead schema 返回 400。
     if (typeof value === "string" && isSafeAttributionValue(value.trim())) {
       fields[fieldName] = value.trim();
     }

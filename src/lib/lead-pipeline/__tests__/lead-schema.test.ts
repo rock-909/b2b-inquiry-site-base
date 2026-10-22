@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { OTHER_LOCALE } from "@/test/two-locales";
 import { INQUIRY_LEAD_TYPE, inquiryLeadSchema } from "../lead-schema";
+
+// 非默认语言用固定双语 fixture，派生站去掉 es 时这里不用改。
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
 
 const BASE_GENERAL_INQUIRY = {
   type: INQUIRY_LEAD_TYPE,
@@ -51,8 +56,9 @@ describe("inquiryLeadSchema", () => {
 
   it("accepts only configured locales and well-formed click ids", () => {
     expect(
-      inquiryLeadSchema.parse({ ...GENERAL_INQUIRY, locale: "es" }).locale,
-    ).toBe("es");
+      inquiryLeadSchema.parse({ ...GENERAL_INQUIRY, locale: OTHER_LOCALE })
+        .locale,
+    ).toBe(OTHER_LOCALE);
     // 语言和 gclid 会进业主邮件，自由文本和畸形值在信任边界上拒绝。
     for (const extra of [
       { locale: "fr" },

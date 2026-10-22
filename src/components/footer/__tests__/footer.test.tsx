@@ -66,14 +66,19 @@ describe("Footer", () => {
     const hrefs = within(nav)
       .getAllByRole("link")
       .map((link) => link.getAttribute("href"));
+    // 预期集合跟随页面注册表：派生站合法删掉 Terms 时这里不用改。
+    const legalPaths = PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
+      (page) => page.pageType === "privacy" || page.pageType === "terms",
+    ).map((page) => page.path);
     expect(hrefs).toEqual([
       ...PUBLIC_STATIC_PAGE_DEFINITIONS.filter(
         (page) => page.navigationKey !== null,
       ).map((page) => page.path),
-      "/privacy",
-      "/terms",
+      ...legalPaths,
     ]);
+    // 独立锚点：首页在最前，隐私政策是法务链接的第一项。
     expect(hrefs[0]).toBe("/");
+    expect(legalPaths[0]).toBe("/privacy");
     expect(
       screen.getByRole("button", { name: "Toggle Theme" }),
     ).toBeInTheDocument();

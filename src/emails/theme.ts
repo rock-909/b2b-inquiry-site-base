@@ -7,14 +7,12 @@ import { STATIC_THEME_COLORS } from "@/config/static-theme-colors";
 
 export const COLORS = {
   success: STATIC_THEME_COLORS.success,
-  successLight: STATIC_THEME_COLORS.successLight,
   text: STATIC_THEME_COLORS.text,
   textLight: STATIC_THEME_COLORS.textLight,
   muted: STATIC_THEME_COLORS.muted,
   background: STATIC_THEME_COLORS.background,
   contentBackground: STATIC_THEME_COLORS.contentBackground,
   headerText: STATIC_THEME_COLORS.headerText,
-  border: STATIC_THEME_COLORS.border,
 } as const;
 
 export const SPACING = {
