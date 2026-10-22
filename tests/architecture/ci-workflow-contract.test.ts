@@ -19,7 +19,6 @@ interface WorkflowStep {
   readonly "continue-on-error"?: boolean;
   readonly name?: string;
   readonly run?: string;
-  readonly uses?: string;
 }
 
 interface CiJob {
@@ -102,14 +101,13 @@ describe("CI workflow contract", () => {
     expect(unpinned).toEqual([]);
   });
 
-  // CI 作业和步骤都必须传播失败；只有诊断上传可尽力而为。其他工作流有自己的契约。
+  // CI 作业和步骤都必须传播失败；其他工作流有自己的契约。
   it("keeps no ci.yml step or job that can never fail", () => {
     const jobs = Object.entries(readCiWorkflowConfig().jobs ?? {});
     const escapes = jobs.flatMap(([jobName, job]) => [
       ...(job?.["continue-on-error"] === true ? [`job:${jobName}`] : []),
       ...(job?.steps ?? [])
         .filter((step) => step["continue-on-error"] === true)
-        .filter((step) => !step.uses?.startsWith("actions/upload-artifact@"))
         .map((step) => `${jobName}/${step.name ?? step.run ?? "?"}`),
     ]);
 
