@@ -10,10 +10,7 @@ const enMessages = getSourceMessages("en") as JsonObject & {
   contact?: JsonObject;
 };
 
-const CONTACT_PANEL_KEYS = [
-  "contact.panel.contactTitle",
-  "contact.panel.emailUnavailable",
-] as const;
+const CONTACT_PANEL_KEYS = ["contact.panel.contactTitle"] as const;
 
 function isJsonObject(value: unknown): value is JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);

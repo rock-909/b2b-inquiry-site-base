@@ -50,7 +50,7 @@ export function CookieBanner({
       ref={bannerRef}
       role="region"
       aria-label={t("title")}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-popover text-popover-foreground shadow-lg duration-200 animate-in fade-in-0 slide-in-from-bottom-2 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[30rem] sm:rounded-[var(--card-radius)] sm:border"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-popover text-popover-foreground shadow-lg duration-200 animate-in fade-in-0 slide-in-from-bottom-2 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[30rem] sm:rounded-[var(--card-radius)] sm:border lg:right-auto lg:left-5"
     >
       <div className="flex flex-col gap-3 p-4">
         <p className="text-[13px] leading-5 text-muted-foreground">

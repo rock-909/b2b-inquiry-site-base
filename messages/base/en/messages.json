@@ -99,8 +99,7 @@
   },
   "contact": {
     "panel": {
-      "contactTitle": "Email & inquiry",
-      "emailUnavailable": "A contact email has not been configured."
+      "contactTitle": "Email & inquiry"
     }
   },
   "inquiry": {

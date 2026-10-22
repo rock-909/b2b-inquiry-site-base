@@ -99,8 +99,7 @@
   },
   "contact": {
     "panel": {
-      "contactTitle": "Correo y consulta",
-      "emailUnavailable": "No se ha configurado un correo de contacto."
+      "contactTitle": "Correo y consulta"
     }
   },
   "inquiry": {
