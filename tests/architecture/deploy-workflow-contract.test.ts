@@ -407,7 +407,9 @@ describe("Cloudflare deploy workflow contract", () => {
 
     for (const job of Object.values(workflow.jobs ?? {})) {
       expect(job["continue-on-error"]).toBeUndefined();
+      // 只有日志上传可尽力而为，部署和验证步骤必须传播失败。
       for (const step of job.steps ?? []) {
+        if (step.uses?.startsWith("actions/upload-artifact@")) continue;
         expect(step["continue-on-error"]).toBeUndefined();
       }
     }

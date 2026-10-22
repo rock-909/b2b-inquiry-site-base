@@ -67,7 +67,9 @@ jobs:
           CI_FLAKE_SAMPLING: "1"
 
       - name: Upload Playwright artifacts
-        if: ${{ !cancelled() }}
+        # 只在失败时上传；上传失败（如 artifact 配额满）不应把通过的测试标红。
+        if: ${{ failure() }}
+        continue-on-error: true
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: weekly-browser-matrix-artifacts
