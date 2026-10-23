@@ -7,7 +7,11 @@ import {
   inquiryLeadSchema,
   type ValidatedInquiry,
 } from "@/lib/lead-pipeline/lead-schema";
+import { OTHER_LOCALE } from "@/test/two-locales";
 
+// 非默认语言用固定双语 fixture，派生站去掉 es 时这里不用改。
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
 vi.mock("@/lib/logger", async () => {
   const mockLogger = await import("@/lib/__tests__/mocks/logger");
   return mockLogger;
@@ -95,7 +99,7 @@ describe("createLeadRecord", () => {
         landingPage: "/en/contact",
         capturedAt: "2026-08-03T00:00:00.000Z",
         // 语言和点击 ID 只进邮件：派生站已建好的表没有这些列，写入会整条失败。
-        locale: "es",
+        locale: OTHER_LOCALE,
         gclid: "Cj0KCQjw",
         wbraid: "CjkKCQjw",
         gbraid: "0AAAAADd",

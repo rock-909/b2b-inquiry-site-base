@@ -1,10 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { EMAIL_COPY } from "@/emails/email-copy";
 import { buildInquiryEmailContent } from "@/lib/email/runtime-email-content";
 import {
   inquiryLeadSchema,
   type ValidatedInquiry,
 } from "@/lib/lead-pipeline/lead-schema";
+import { OTHER_LOCALE } from "@/test/two-locales";
+
+// 非默认语言用固定双语 fixture，派生站去掉 es 时这里不用改。
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
 
 describe("runtime email content", () => {
   it("renders inquiry body fields without losing buyer details", () => {
@@ -89,7 +94,7 @@ describe("runtime email content", () => {
         type: "inquiry",
         fullName: "Ana García",
         email: "ana@example.com",
-        locale: "es",
+        locale: OTHER_LOCALE,
         utmCampaign: "promoción & año",
         gclid: "Cj0KCQjw",
         wbraid: "CjkKCQjw",
@@ -99,7 +104,7 @@ describe("runtime email content", () => {
     });
 
     const lines = content.text.split("\n");
-    expect(lines).toContain("Language: Español");
+    expect(lines).toContain("Language: Deutsch");
     // 多行字段的首行带标签，与 Requirements 的纯文本格式一致。
     expect(lines).toContain("Attribution: utm_campaign: promoción & año");
     expect(lines).toContain("gclid: Cj0KCQjw");

@@ -192,6 +192,76 @@ describe("Header", () => {
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("moves focus with arrow keys, Home and End inside the panel and Left/Right across top-level items", async () => {
+    const user = userEvent.setup();
+    renderHeader([
+      { key: "home", href: "/", label: "Home" },
+      {
+        key: "solutions",
+        label: "Solutions",
+        groups: [
+          {
+            key: "industries",
+            label: "Industries",
+            links: [
+              { key: "mining", href: "/mining", label: "Mining" },
+              { key: "ports", href: "/ports", label: "Ports" },
+              { key: "energy", href: "/energy", label: "Energy" },
+            ],
+          },
+        ],
+      },
+      { key: "contact", href: "/contact", label: "Contact" },
+    ]);
+    const focusedAfter = async (keys: string[]) => {
+      const names: (string | null | undefined)[] = [];
+      for (const key of keys) {
+        await user.keyboard(`{${key}}`);
+        names.push(document.activeElement?.textContent);
+      }
+      return names;
+    };
+
+    screen.getByRole("button", { name: "Solutions" }).focus();
+    // 面板内：上下键逐项移动并停在两端，Home/End 跳到首尾，左右键不移动。
+    expect(
+      await focusedAfter([
+        "ArrowDown",
+        "ArrowDown",
+        "ArrowDown",
+        "ArrowDown",
+        "ArrowUp",
+        "Home",
+        "End",
+        "ArrowLeft",
+        "ArrowRight",
+      ]),
+    ).toEqual([
+      "Mining",
+      "Ports",
+      "Energy",
+      "Energy",
+      "Ports",
+      "Mining",
+      "Energy",
+      "Energy",
+      "Energy",
+    ]);
+
+    // 顶层：左右键在各顶层项之间移动并停在两端。
+    screen.getByRole("link", { name: "Home" }).focus();
+    expect(
+      await focusedAfter([
+        "ArrowRight",
+        "ArrowRight",
+        "ArrowRight",
+        "ArrowLeft",
+        "ArrowLeft",
+        "ArrowLeft",
+      ]),
+    ).toEqual(["Solutions", "Contact", "Contact", "Solutions", "Home", "Home"]);
+  });
+
   it("keeps a sub-menu holding keyboard focus open when the pointer leaves or enters another item", async () => {
     const user = userEvent.setup();
     renderHeader([

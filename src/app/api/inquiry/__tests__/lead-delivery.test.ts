@@ -4,6 +4,7 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { API_ERROR_CODES } from "@/constants/api-error-codes";
 import * as leadSchemaModule from "@/lib/lead-pipeline/lead-schema";
+import { OTHER_LOCALE } from "@/test/two-locales";
 import {
   createInquiryRequest,
   generalInquiryData,
@@ -12,6 +13,9 @@ import {
 } from "./route-harness";
 import { POST } from "../route";
 
+// 非默认语言用固定双语 fixture，派生站去掉 es 时这里不用改。
+vi.hoisted(() => vi.resetModules());
+vi.mock("@/config/paths/locales-config", () => import("@/test/two-locales"));
 vi.mock("@/lib/logger", () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   sanitizeIP: (ip: string | undefined | null) =>
@@ -122,7 +126,7 @@ describe("/api/inquiry delivery orchestration", () => {
     fullName: "Full Coverage Buyer",
     email: "coverage@example.com",
     message: "Every declared field carries a value.",
-    locale: "es",
+    locale: OTHER_LOCALE,
     utmSource: "google",
     utmMedium: "cpc",
     utmCampaign: "sample-2026",

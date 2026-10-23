@@ -239,4 +239,28 @@ describe("/api/inquiry payload validation", () => {
     expect(callArgs).not.toHaveProperty("utmCampaign");
     expect(callArgs).not.toHaveProperty("utmTerm");
   });
+
+  it("rejects safe-character attribution that is too long or not a valid click id", async () => {
+    // 字符过滤只丢弃危险字符；长度和点击 ID 格式由 schema 校验，不合格仍整单 400。
+    const cases = [
+      { gclid: "a.b" },
+      { wbraid: "a b" },
+      { gbraid: "a".repeat(257) },
+      { utmCampaign: "a".repeat(257) },
+    ];
+    const statuses = [];
+    for (const extra of cases) {
+      const response = await POST(
+        createInquiryRequest(JSON.stringify({ ...validInquiryData, ...extra })),
+      );
+      const data = await response.json();
+      statuses.push([response.status, data.errorCode]);
+    }
+
+    expect(statuses).toEqual(
+      cases.map(() => [400, API_ERROR_CODES.INQUIRY_VALIDATION_FAILED]),
+    );
+    expect(verifyTurnstileDetailed).not.toHaveBeenCalled();
+    expect(processValidatedInquiry).not.toHaveBeenCalled();
+  });
 });

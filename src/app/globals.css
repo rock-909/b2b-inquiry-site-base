@@ -48,9 +48,6 @@
   --radius-lg: var(--surface-radius);
   --radius-xl: calc(var(--surface-radius) + 4px);
   --radius-2xl: calc(var(--surface-radius) + 8px);
-
-  --shadow-border: var(--control-shadow);
-  --shadow-card: var(--surface-shadow);
 }
 
 /* ==================== BASE LAYER ==================== */

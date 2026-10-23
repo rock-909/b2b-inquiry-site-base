@@ -8,7 +8,8 @@ import { collectBrowserErrors } from "./test-environment-setup";
 // A 404 page still renders main#main-content + an h1 with no overflow, so scope
 // the calibration to real public pages instead of missing-route fixtures.
 const corePages = LOCALES_CONFIG.locales.flatMap((locale) =>
-  PUBLIC_STATIC_PAGE_DEFINITIONS.map(({ path }) => ({
+  PUBLIC_STATIC_PAGE_DEFINITIONS.map(({ pageType, path }) => ({
+    pageType,
     path: localizePath(locale, path),
     theme: getLocaleMessages(locale).theme,
   })),
@@ -39,7 +40,7 @@ test.describe("Core page visual calibration", () => {
     for (const colorScheme of viewport.name === "desktop"
       ? (["light", "dark"] as const)
       : (["light"] as const)) {
-      for (const { path, theme } of corePages) {
+      for (const { pageType, path, theme } of corePages) {
         test(`${viewport.name} ${colorScheme} ${path} stays readable without overflow`, async ({
           page,
         }) => {
@@ -79,6 +80,21 @@ test.describe("Core page visual calibration", () => {
           await expect(
             page.locator("main#main-content h1").first(),
           ).toBeVisible();
+          if (viewport.name === "desktop" && pageType === "contact") {
+            // 宽屏联系页：正文在左、表单在右，两列上下有重叠（并排而不是叠放）。
+            const text = await page
+              .locator("main#main-content h1")
+              .first()
+              .boundingBox();
+            const form = await page
+              .locator("main#main-content form")
+              .first()
+              .boundingBox();
+            expect(text).not.toBeNull();
+            expect(form).not.toBeNull();
+            expect(text!.x + text!.width).toBeLessThanOrEqual(form!.x);
+            expect(form!.y).toBeLessThan(text!.y + text!.height);
+          }
           await expectNoHorizontalOverflow(page);
           expect(pageErrors).toStrictEqual([]);
         });

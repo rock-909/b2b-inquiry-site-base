@@ -301,8 +301,8 @@ async function postInquiry(
 }
 
 /**
- * 成功后清空三个可见输入。`form.reset()` 只回到 defaultValue，估算器预填的那条
- * message 会原样回来，所以再显式清一遍。
+ * 成功后清空三个可见输入。`form.reset()` 只回到各输入的 defaultValue，
+ * 所以再显式置空，保证不残留任何预设文本。
  */
 function clearSubmittedFields(form: HTMLFormElement | null) {
   if (!form) {
