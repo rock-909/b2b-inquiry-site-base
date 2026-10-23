@@ -10,6 +10,7 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
   const t = await getTranslations({ locale, namespace: "contact.panel" });
   const { email, phone, whatsapp } = SINGLE_SITE_CONFIG.contact;
   const address = formatCompanyAddress(SINGLE_SITE_CONFIG.company?.location);
+  if (!email && !phone && !whatsapp && !address) return null;
   return (
     <section className="space-y-3 text-sm">
       <h2 className="font-semibold">{t("contactTitle")}</h2>
@@ -20,9 +21,7 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
         >
           {email}
         </a>
-      ) : (
-        <p className="text-muted-foreground">{t("emailUnavailable")}</p>
-      )}
+      ) : null}
       {phone ? (
         <a
           className="text-link block w-fit py-2 break-words"

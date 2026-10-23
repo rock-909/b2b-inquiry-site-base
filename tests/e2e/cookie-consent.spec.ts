@@ -69,3 +69,34 @@ test("withdrawing consent in cookie settings removes GA cookies", async ({
   await expect(page.getByRole("region", { name: cookie.title })).toBeVisible();
   await expect.poll(gaCookies).toEqual([]);
 });
+
+test.describe("on a laptop-sized window", () => {
+  test.use({ viewport: { width: 1280, height: 720 } });
+
+  test("the open cookie card leaves the contact submit button clickable", async ({
+    page,
+  }) => {
+    await page.goto("/contact");
+    const { cookie } = getLocaleMessages(DEFAULT_LOCALE);
+    const banner = page.getByRole("region", { name: cookie.title });
+    await banner.getByRole("button", { name: cookie.customize }).click();
+    await expect(
+      banner.getByRole("checkbox", { name: cookie.analytics }),
+    ).toBeVisible();
+
+    // 不滚动、不关闭卡片：提交按钮中心点处最上层的元素必须是按钮本身。
+    const submit = page.locator("#inquiry button[type=submit]");
+    await expect
+      .poll(() =>
+        submit.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const hit = document.elementFromPoint(
+            rect.left + rect.width / 2,
+            rect.top + rect.height / 2,
+          );
+          return hit !== null && element.contains(hit);
+        }),
+      )
+      .toBe(true);
+  });
+});

@@ -95,17 +95,17 @@ describe("ContactPage static content", () => {
     expect(screen.getByTestId("inquiry-form")).toBeInTheDocument();
   });
 
-  // 模板邮箱留空时显示「未配置」文案；派生站填上邮箱后显示 mailto 链接。
+  // 留空即不展示：联系方式全空时整块不渲染；派生站填上邮箱后显示 mailto 链接。
   it.each([
-    { email: "", expectedHref: null, showsUnavailable: true },
+    { email: "", expectedHref: null, showsSection: false },
     {
       email: "sales@acme.example",
       expectedHref: "mailto:sales@acme.example",
-      showsUnavailable: false,
+      showsSection: true,
     },
   ])(
     "renders contact methods when the public email is '$email'",
-    async ({ email, expectedHref, showsUnavailable }) => {
+    async ({ email, expectedHref, showsSection }) => {
       SINGLE_SITE_CONFIG.contact.email = email;
       const { ContactMethodsCard } = await import("../contact-page-sections");
 
@@ -115,8 +115,10 @@ describe("ContactPage static content", () => {
         expectedHref,
       );
       expect(
-        screen.queryByText(enMessages.contact.panel.emailUnavailable) !== null,
-      ).toBe(showsUnavailable);
+        screen.queryByRole("heading", {
+          name: enMessages.contact.panel.contactTitle,
+        }) !== null,
+      ).toBe(showsSection);
     },
   );
 
