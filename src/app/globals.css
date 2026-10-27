@@ -16,6 +16,8 @@
 :root {
   /* Runtime layout state updated by the cookie banner. */
   --cookie-banner-height: 0px;
+  /* 语言建议条显示时写入，页脚据此多留出空白。 */
+  --language-suggestion-space: 0px;
 }
 
 /* ==================== TAILWIND THEME BINDINGS ==================== */
@@ -230,7 +232,9 @@
   }
 
   footer {
-    padding-bottom: var(--cookie-banner-height, 0px);
+    padding-bottom: calc(
+      var(--cookie-banner-height, 0px) + var(--language-suggestion-space, 0px)
+    );
   }
 }
 

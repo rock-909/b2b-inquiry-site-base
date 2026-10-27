@@ -3,22 +3,31 @@ import "@/app/globals.css";
 import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { locale as getRootLocale } from "next/root-params";
-import { NextIntlClientProvider } from "next-intl";
+import {
+  createTranslator,
+  NextIntlClientProvider,
+  type Messages,
+} from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { ThemeProvider } from "next-themes";
 import { AttributionBootstrap } from "@/components/attribution-bootstrap";
 import { CookieConsentIsland } from "@/components/cookie/cookie-consent-island";
 import { Footer } from "@/components/footer/footer";
 import { Header } from "@/components/layout/header";
+import {
+  LanguageSuggestion,
+  type LanguageSuggestionCopy,
+} from "@/components/layout/language-suggestion";
 import { ThemeSwitcher } from "@/components/ui/theme-switcher";
 import { coerceLocale, isLocale } from "@/i18n/locale-utils";
 import { loadClientMessages } from "@/lib/i18n/client-messages";
+import { loadCompleteMessages } from "@/lib/i18n/load-messages";
 import { SINGLE_SITE_NAVIGATION } from "@/config/single-site-navigation";
 import type {
   NavigationLabelKey,
   SiteNavigationGroup,
 } from "@/config/site-types";
-import { LOCALES_CONFIG } from "@/config/paths";
+import { LOCALES_CONFIG, type ConfiguredLocale } from "@/config/paths";
 
 // Client analytics are rendered as an island to avoid impacting LCP
 
@@ -39,6 +48,32 @@ function toHeaderNavGroup(
       external: link.external,
     })),
   };
+}
+
+// 语言建议条用建议的语言显示，所以每种已配置语言的文案都要预先给到客户端。
+// getTranslations 的消息固定来自当前请求的语言，这里直接用各语言自己的消息文件。
+function loadLanguageSuggestionCopy(): Record<
+  ConfiguredLocale,
+  LanguageSuggestionCopy
+> {
+  const entries = LOCALES_CONFIG.locales.map((locale) => {
+    const t = createTranslator({
+      locale,
+      messages: loadCompleteMessages(locale) as Messages,
+      namespace: "languageSuggestion",
+    });
+    const copy: LanguageSuggestionCopy = {
+      label: t("label"),
+      message: t("message"),
+      switchAction: t("switchAction"),
+      dismiss: t("dismiss"),
+    };
+    return [locale, copy] as const;
+  });
+  return Object.fromEntries(entries) as Record<
+    ConfiguredLocale,
+    LanguageSuggestionCopy
+  >;
 }
 
 interface LocaleLayoutProps {
@@ -67,6 +102,7 @@ async function AsyncLocaleLayoutContent({
     }),
     loadClientMessages(locale),
   ]);
+  const languageSuggestionCopy = loadLanguageSuggestionCopy();
 
   const contactSalesLabel = tNavigation("contactSales");
   const openMenuLabel = tAccessibility("openMenu");
@@ -121,6 +157,9 @@ async function AsyncLocaleLayoutContent({
           />
 
           <CookieConsentIsland />
+          {LOCALES_CONFIG.locales.length > 1 ? (
+            <LanguageSuggestion locale={locale} copy={languageSuggestionCopy} />
+          ) : null}
         </ThemeProvider>
       </NextIntlClientProvider>
     </>

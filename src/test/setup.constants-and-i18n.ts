@@ -11,8 +11,12 @@ vi.mock("next-intl", async () => {
   const { getFlatMessages, lookupMessage } =
     await import("@/test/i18n-messages");
   const messages = getFlatMessages();
+  // createTranslator 只读传入的消息，不依赖请求上下文，直接用真实实现。
+  const { createTranslator } =
+    await vi.importActual<typeof import("next-intl")>("next-intl");
 
   return {
+    createTranslator,
     useTranslations: vi.fn(
       (namespace?: string) =>
         (key: string, values?: Record<string, string | number>) =>

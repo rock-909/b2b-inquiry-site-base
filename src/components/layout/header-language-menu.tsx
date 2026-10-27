@@ -10,6 +10,7 @@ import {
 } from "@/config/paths/locales-config";
 import { cn } from "@/lib/utils";
 import { useLocaleSwitchHref } from "@/components/layout/use-locale-switch-href";
+import { rememberPreferredLocale } from "@/lib/i18n/preferred-locale";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -128,6 +129,7 @@ export function HeaderLanguageMenu({
                       <FinalUrlLink
                         href={localeSwitchHref(option.locale)}
                         hrefLang={option.locale}
+                        onClick={() => rememberPreferredLocale(option.locale)}
                         translate="no"
                       >
                         {optionContent}

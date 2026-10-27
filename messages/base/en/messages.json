@@ -72,6 +72,12 @@
     "language": "Languages",
     "siteDescription": "A neutral B2B inquiry site reference."
   },
+  "languageSuggestion": {
+    "label": "Language suggestion",
+    "message": "This page is available in English.",
+    "switchAction": "Switch to English",
+    "dismiss": "Close"
+  },
   "footer": {
     "columns": {
       "navigation": "Site",

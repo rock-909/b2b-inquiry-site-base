@@ -10,6 +10,7 @@ import {
 } from "@/config/paths/locales-config";
 import { cn } from "@/lib/utils";
 import { useLocaleSwitchHref } from "@/components/layout/use-locale-switch-href";
+import { rememberPreferredLocale } from "@/lib/i18n/preferred-locale";
 
 interface MobileLanguageSwitcherProps {
   locale: ConfiguredLocale;
@@ -78,6 +79,7 @@ export function MobileLanguageSwitcher({
               key={option.locale}
               href={localeSwitchHref(option.locale)}
               hrefLang={option.locale}
+              onClick={() => rememberPreferredLocale(option.locale)}
               className={cn(
                 "flex min-h-11 items-center justify-between rounded-[var(--control-radius)] px-3 pl-9 text-base font-medium text-muted-foreground",
                 "transition-colors duration-150 ease-out hover:text-foreground focus-visible:text-foreground",

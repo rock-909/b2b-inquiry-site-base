@@ -72,6 +72,12 @@
     "language": "Idiomas",
     "siteDescription": "Sitio de referencia neutral para consultas B2B."
   },
+  "languageSuggestion": {
+    "label": "Sugerencia de idioma",
+    "message": "Esta página está disponible en español.",
+    "switchAction": "Cambiar a español",
+    "dismiss": "Cerrar"
+  },
   "footer": {
     "columns": {
       "navigation": "Sitio",
