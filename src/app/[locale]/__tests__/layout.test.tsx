@@ -2,6 +2,9 @@ import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { LanguageSuggestion } from "@/components/layout/language-suggestion";
+import { LOCALES_CONFIG } from "@/config/paths/locales-config";
+import { getFlatMessages } from "@/test/i18n-messages";
 import LocaleLayout from "../layout";
 
 const { mockNotFound, mockRootLocale } = vi.hoisted(() => ({
@@ -75,5 +78,30 @@ describe("LocaleLayout", () => {
 
     expect(provider?.props.messages).toHaveProperty("navigation");
     expect(provider?.props.messages).not.toHaveProperty("inquiry");
+  });
+
+  it("gives the language prompt each locale's copy from that locale's own messages", async () => {
+    vi.mocked(getTranslations).mockResolvedValue(
+      ((key: string) => key) as never,
+    );
+    const page = await LocaleLayout({
+      children: <div>Child</div>,
+      params: Promise.resolve({ locale: "en" }),
+    });
+    const content = page.props.children.props.children;
+    const tree = await content.type(content.props);
+    const provider = (tree.props.children as ReactElement[]).find(
+      (child) => child?.type === NextIntlClientProvider,
+    ) as ReactElement<{ children: ReactElement<{ children: ReactElement[] }> }>;
+    const suggestion = provider.props.children.props.children.find(
+      (child) => child?.type === LanguageSuggestion,
+    ) as ReactElement<{ copy: Record<string, { message: string }> }>;
+
+    // 当前页面是 en，其他语言的文案也必须来自各自的消息文件，而不是当前语言。
+    for (const locale of LOCALES_CONFIG.locales) {
+      expect(suggestion.props.copy[locale]?.message).toBe(
+        getFlatMessages(locale).get("languageSuggestion.message"),
+      );
+    }
   });
 });
