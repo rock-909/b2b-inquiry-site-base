@@ -104,7 +104,11 @@ export function assertLogoFileExists(
 ): void {
   const { logo } = config.brandAssets;
   if (!publicAssetPaths || logo?.status !== "ready" || !logo.horizontal) return;
-  if (!publicAssetPaths.includes(logo.horizontal)) {
+  const manifestPath = new URL(logo.horizontal, "https://site.invalid").pathname
+    .split("/")
+    .map((segment) => encodeURIComponent(decodeURIComponent(segment)))
+    .join("/");
+  if (!publicAssetPaths.includes(manifestPath)) {
     throw new Error(
       `Invalid site config: brandAssets.logo.horizontal "${logo.horizontal}" does not exist in public/. Add the file or remove the logo.`,
     );

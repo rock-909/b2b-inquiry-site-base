@@ -117,6 +117,19 @@ describe("single-site", () => {
     expect(() =>
       assertLogoFileExists(withLogo, ["/opengraph-image.png"]),
     ).toThrow(/"\/logo\.svg" does not exist in public\//u);
+    const withNonAsciiLogo = {
+      brandAssets: {
+        logo: { status: "ready", horizontal: "/品牌 logo.svg?v=2#mark" },
+      },
+    };
+    expect(() =>
+      assertLogoFileExists(withNonAsciiLogo, [
+        "/%E5%93%81%E7%89%8C%20logo.svg",
+      ]),
+    ).not.toThrow();
+    expect(() => assertLogoFileExists(withNonAsciiLogo, ["/logo.svg"])).toThrow(
+      /does not exist in public\//u,
+    );
     expect(() =>
       assertLogoFileExists(
         { brandAssets: { logo: { status: "pending" } } },
