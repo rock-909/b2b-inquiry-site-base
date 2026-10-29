@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { assertValidSiteConfig } from "@/config/site-config-schema";
+import {
+  assertLogoFileExists,
+  assertValidSiteConfig,
+} from "@/config/site-config-schema";
 import { SINGLE_SITE_CONFIG } from "@/config/single-site";
 
 const TEMPLATE_BASE_URL = "https://example.invalid";
@@ -102,6 +105,37 @@ describe("single-site", () => {
     expect(() => assertValidSiteConfig(withLogo({ width: 0 }))).toThrow(
       /width/u,
     );
+  });
+
+  it("rejects a ready logo whose file is missing from the built public assets", () => {
+    const withLogo = {
+      brandAssets: {
+        logo: { status: "ready", horizontal: "/logo.svg" },
+      },
+    };
+    expect(() => assertLogoFileExists(withLogo, ["/logo.svg"])).not.toThrow();
+    expect(() =>
+      assertLogoFileExists(withLogo, ["/opengraph-image.png"]),
+    ).toThrow(/"\/logo\.svg" does not exist in public\//u);
+    const withNonAsciiLogo = {
+      brandAssets: {
+        logo: { status: "ready", horizontal: "/品牌 logo.svg?v=2#mark" },
+      },
+    };
+    expect(() =>
+      assertLogoFileExists(withNonAsciiLogo, [
+        "/%E5%93%81%E7%89%8C%20logo.svg",
+      ]),
+    ).not.toThrow();
+    expect(() => assertLogoFileExists(withNonAsciiLogo, ["/logo.svg"])).toThrow(
+      /does not exist in public\//u,
+    );
+    expect(() =>
+      assertLogoFileExists(
+        { brandAssets: { logo: { status: "pending" } } },
+        [],
+      ),
+    ).not.toThrow();
   });
 
   it("rejects whitespace-only identity text and unsafe brand asset URLs", () => {

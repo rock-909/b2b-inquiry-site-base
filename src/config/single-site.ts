@@ -3,8 +3,12 @@ import {
   PUBLIC_STATIC_PAGE_DEFINITIONS,
   type NavigationMessageKey,
 } from "@/config/pages.config";
-import { assertValidSiteConfig } from "@/config/site-config-schema";
+import {
+  assertLogoFileExists,
+  assertValidSiteConfig,
+} from "@/config/site-config-schema";
 import type { SiteConfig } from "@/config/site-types";
+import { getPublicRuntimeEnvString } from "@/lib/public-runtime-env";
 
 export type {
   CompanyInfo,
@@ -123,5 +127,12 @@ const siteConfig: SiteConfig = {
 };
 
 assertValidSiteConfig(siteConfig);
+const publicAssetPathsJson = getPublicRuntimeEnvString("PUBLIC_ASSET_PATHS");
+assertLogoFileExists(
+  siteConfig,
+  publicAssetPathsJson
+    ? (JSON.parse(publicAssetPathsJson) as string[])
+    : undefined,
+);
 
 export const SINGLE_SITE_CONFIG = siteConfig;

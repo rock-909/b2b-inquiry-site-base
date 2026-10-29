@@ -116,11 +116,11 @@ function MobileNavigationGroups({
 
   return (
     <details name="mobile-navigation-groups" className="group">
-      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-[var(--control-radius)] px-3 text-base font-medium text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground [&::-webkit-details-marker]:hidden">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between rounded-[var(--control-radius)] px-3 text-base font-medium text-muted-foreground transition-colors duration-150 ease-out group-open:text-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
         {t(item.messageKey)}
         <ChevronDown
           aria-hidden="true"
-          className="size-4 shrink-0 text-foreground group-open:rotate-180"
+          className="size-4 shrink-0 text-current transition-transform duration-150 ease-out group-open:rotate-180 motion-reduce:transition-none"
         />
       </summary>
       <div className="flex flex-col gap-6 px-3 pt-2 pb-4">

@@ -10,7 +10,7 @@ import { InlineMarkdown } from "@/lib/content/inline-markdown";
 import type { StaticMarkdownBlock } from "@/lib/content/static-markdown-blocks";
 
 const LIST_CLASS_NAME =
-  "mt-3 max-w-[72ch] list-inside space-y-1 text-base leading-7 text-muted-foreground";
+  "mt-3 max-w-[72ch] list-inside space-y-1 text-base leading-7 text-pretty text-muted-foreground";
 
 function renderHeading(
   block: Extract<StaticMarkdownBlock, { kind: "heading" }>,
@@ -47,7 +47,7 @@ function renderParagraph(
     return (
       <p
         key={key}
-        className="mt-3 max-w-[72ch] text-base leading-7 font-medium text-foreground"
+        className="mt-3 max-w-[72ch] text-base leading-7 font-medium text-pretty text-foreground"
       >
         <InlineMarkdown text={block.text} />
       </p>
@@ -57,7 +57,7 @@ function renderParagraph(
   return (
     <p
       key={key}
-      className="mt-3 max-w-[72ch] whitespace-pre-line text-base leading-7 text-muted-foreground"
+      className="mt-3 max-w-[72ch] whitespace-pre-line text-base leading-7 text-pretty text-muted-foreground"
     >
       <InlineMarkdown text={block.text} />
     </p>
