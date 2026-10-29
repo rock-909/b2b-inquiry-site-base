@@ -10,6 +10,13 @@ import {
   rememberPreferredLocale,
   resolvePreferredLocale,
 } from "@/lib/i18n/preferred-locale";
+import { isConsentBannerEnabled } from "@/lib/cookie-consent/banner";
+import { loadConsent } from "@/lib/cookie-consent/storage";
+import {
+  CONSENT_CHANGE_EVENT,
+  CONSENT_STORAGE_KEY,
+  type ConsentChangeDetail,
+} from "@/lib/cookie-consent/types";
 import { cn } from "@/lib/utils";
 
 export interface LanguageSuggestionCopy {
@@ -38,9 +45,12 @@ function pageHasLocaleVersion(locale: ConfiguredLocale): boolean {
   );
 }
 
+// 同意卡片还在等访客选择时不出提示，避免两个浮层叠在一起；站点没有同意卡片时不受影响。
 function findSuggestedLocale(
   currentLocale: ConfiguredLocale,
+  consentChoiceMade: boolean,
 ): ConfiguredLocale | null {
+  if (isConsentBannerEnabled() && !consentChoiceMade) return null;
   const preferred = resolvePreferredLocale();
   return preferred &&
     preferred !== currentLocale &&
@@ -58,11 +68,37 @@ export function LanguageSuggestion({ locale, copy }: LanguageSuggestionProps) {
   const localeSwitchHref = useLocaleSwitchHref(pathname);
   const [suggested, setSuggested] = useState<ConfiguredLocale | null>(null);
   const pillRef = useRef<HTMLDivElement>(null);
+  // 挂载时与其他标签页改动后以存储为准；本页的选择以同意卡片的通知为准，存储写入失败也不丢。
+  const consentChoiceMadeRef = useRef<boolean | null>(null);
 
   useEffect(() => {
     // 浏览器语言与存储只能在挂载后读取；换路由后按新页面的备用地址重新判断。
-    const decide = () => setSuggested(findSuggestedLocale(locale));
+    const decide = () => {
+      if (consentChoiceMadeRef.current === null) {
+        consentChoiceMadeRef.current = loadConsent() !== null;
+      }
+      setSuggested(findSuggestedLocale(locale, consentChoiceMadeRef.current));
+    };
     queueMicrotask(decide);
+    // 访客在本页或其他标签页做出（或撤回）同意选择后重新判断。
+    const decideOnConsentChange = (event: Event) => {
+      consentChoiceMadeRef.current = (
+        event as CustomEvent<ConsentChangeDetail>
+      ).detail.choiceMade;
+      decide();
+    };
+    const decideOnConsentStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === CONSENT_STORAGE_KEY) {
+        consentChoiceMadeRef.current = loadConsent() !== null;
+        decide();
+      }
+    };
+    window.addEventListener(CONSENT_CHANGE_EVENT, decideOnConsentChange);
+    window.addEventListener("storage", decideOnConsentStorage);
+    return () => {
+      window.removeEventListener(CONSENT_CHANGE_EVENT, decideOnConsentChange);
+      window.removeEventListener("storage", decideOnConsentStorage);
+    };
   }, [locale, pathname]);
 
   useEffect(() => {
@@ -106,7 +142,7 @@ export function LanguageSuggestion({ locale, copy }: LanguageSuggestionProps) {
     >
       <div
         ref={pillRef}
-        className="pointer-events-auto flex max-w-full items-center gap-2 rounded-[var(--card-radius)] border border-border bg-popover/80 py-1.5 pr-1.5 pl-4 text-popover-foreground shadow-lg backdrop-blur-md duration-200 animate-in fade-in-0 slide-in-from-bottom-2 sm:gap-3 sm:rounded-full"
+        className="pointer-events-auto flex max-w-full items-center gap-2 rounded-[var(--card-radius)] border border-border bg-popover/80 py-1.5 pr-1.5 pl-4 text-popover-foreground shadow-lg backdrop-blur-md animate-in [animation-duration:200ms] fade-in-0 slide-in-from-bottom-2 sm:gap-3 sm:rounded-full"
       >
         <p className="min-w-0 text-[13px] leading-5 sm:text-sm">
           {text.message}
@@ -116,6 +152,7 @@ export function LanguageSuggestion({ locale, copy }: LanguageSuggestionProps) {
           hrefLang={suggested}
           onClick={() => rememberPreferredLocale(suggested)}
           className={buttonVariants({
+            variant: "outline",
             size: "sm",
             className: "rounded-full",
           })}

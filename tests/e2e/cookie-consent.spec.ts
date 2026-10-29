@@ -35,6 +35,53 @@ test("the open mobile menu covers the cookie banner", async ({ page }) => {
     .toBe(false);
 });
 
+test.describe("on a small phone", () => {
+  // 360×640 上首页一屏放不下页脚：Tab 到页脚链接时浏览器要滚动，滚动落点不能停在卡片后面。
+  test.use({ viewport: { width: 360, height: 640 } });
+
+  test("on a first visit, every Tab stop up to the footer links stays clear of the cookie card", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const { cookie } = getLocaleMessages(DEFAULT_LOCALE);
+    await expect(
+      page.getByRole("region", { name: cookie.title }),
+    ).toBeVisible();
+
+    // 每按一次 Tab：焦点元素中心点处最上层的元素必须是它自己（没被卡片或页头盖住）。
+    const stops: { name: string; inFooter: boolean; visible: boolean }[] = [];
+    for (let press = 0; press < 60; press += 1) {
+      await page.keyboard.press("Tab");
+      const stop = await page.evaluate(() => {
+        const element = document.activeElement;
+        // 焦点进入同意卡片，说明页面里的停点已经走完。
+        if (!(element instanceof HTMLElement)) return null;
+        if (element.closest('[role="region"]')) return null;
+        const rect = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(
+          rect.left + rect.width / 2,
+          rect.top + rect.height / 2,
+        );
+        return {
+          name:
+            element.getAttribute("aria-label") ??
+            element.textContent?.trim() ??
+            element.tagName,
+          inFooter: element.closest("footer") !== null,
+          visible: hit !== null && element.contains(hit),
+        };
+      });
+      if (stop === null) break;
+      stops.push(stop);
+    }
+
+    expect(stops.filter((stop) => stop.inFooter).length).toBeGreaterThan(0);
+    expect(
+      stops.filter((stop) => !stop.visible).map((stop) => stop.name),
+    ).toEqual([]);
+  });
+});
+
 test("withdrawing consent in cookie settings removes GA cookies", async ({
   page,
   context,
