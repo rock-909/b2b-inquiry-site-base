@@ -50,9 +50,9 @@ export function CookieBanner({
       ref={bannerRef}
       role="region"
       aria-label={t("title")}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-popover text-popover-foreground shadow-lg duration-200 animate-in fade-in-0 slide-in-from-bottom-2 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[30rem] sm:rounded-[var(--card-radius)] sm:border lg:right-auto lg:left-5"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-popover text-popover-foreground shadow-lg animate-in [animation-duration:200ms] fade-in-0 slide-in-from-bottom-2 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[30rem] sm:rounded-[var(--card-radius)] sm:border lg:right-auto lg:left-5"
     >
-      <div className="flex flex-col gap-3 p-4">
+      <div className="flex flex-col gap-2 p-3 sm:gap-3 sm:p-4">
         <p className="text-[13px] leading-5 text-muted-foreground">
           {t("description")}{" "}
           <Link href="/privacy" prefetch={false} className="text-link">
@@ -90,17 +90,20 @@ export function CookieBanner({
           </div>
         ) : null}
         {/* 拒绝与允许同级同样式（GDPR 要求拒绝和同意一样容易）；分类选择收进「自定义」。 */}
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {/* 手机上「自定义」是行首的文字链接，与两个按钮同一行，卡片少占一行；sm 起恢复描边按钮。 */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:flex-nowrap sm:justify-between">
           <Button
             variant="outline"
             size="sm"
+            className="max-sm:border-transparent max-sm:px-0 max-sm:underline max-sm:decoration-muted-foreground/70 max-sm:underline-offset-4 max-sm:hover:bg-transparent max-sm:hover:decoration-foreground"
             aria-controls={CATEGORY_PANEL_ID}
             aria-expanded={customizing}
             onClick={() => setCustomizing((open) => !open)}
           >
             {t("customize")}
           </Button>
-          <div className="grid grid-cols-2 gap-2">
+          {/* 两列等宽且不窄于较长的按钮文字；一行放不下时整组换到下一行。 */}
+          <div className="grid flex-1 grid-cols-[1fr_1fr] gap-2 sm:flex-none">
             <Button variant="outline" size="sm" onClick={onReject}>
               {t("rejectAll")}
             </Button>

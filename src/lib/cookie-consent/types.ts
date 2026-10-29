@@ -39,3 +39,6 @@ export const CONSENT_STORAGE_KEY = "cookie-consent";
 
 /** 页脚“Cookie 设置”按钮发出此事件，让同意横幅重新出现 */
 export const OPEN_CONSENT_EVENT = "cookie-consent:open";
+
+/** 同一标签页里保存或撤回选择后发出，语言建议条据此决定是否出现 */
+export const CONSENT_CHANGE_EVENT = "cookie-consent:change";

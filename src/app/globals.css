@@ -58,6 +58,14 @@
   * {
     @apply border-border outline-ring/50;
   }
+  /* 键盘聚焦或锚点跳转时，浏览器把目标滚到粘性页头之下、底部浮层之上，焦点不被遮住（WCAG 2.4.11）。 */
+  html {
+    scroll-padding-top: calc(4rem + 0.5rem + env(safe-area-inset-top, 0px));
+    scroll-padding-bottom: calc(
+      var(--cookie-banner-height, 0px) + var(--language-suggestion-space, 0px) +
+        1.5rem
+    );
+  }
   body {
     @apply bg-background text-foreground;
     position: relative;

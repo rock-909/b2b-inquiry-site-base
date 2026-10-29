@@ -11,6 +11,7 @@ import {
   saveConsent,
 } from "@/lib/cookie-consent/storage";
 import {
+  CONSENT_CHANGE_EVENT,
   CONSENT_STORAGE_KEY,
   OPEN_CONSENT_EVENT,
   type CookieConsent,
@@ -27,6 +28,7 @@ export function CookieConsentController() {
     const reopen = () => {
       clearConsent();
       setConsent(null);
+      window.dispatchEvent(new Event(CONSENT_CHANGE_EVENT));
     };
     // 其他标签页改动或撤回选择时，本标签页重新读取，保证撤回立即生效
     const syncFromOtherTab = (event: StorageEvent) => {
@@ -49,6 +51,7 @@ export function CookieConsentController() {
   const choose = (nextConsent: CookieConsent) => {
     saveConsent(nextConsent);
     setConsent(nextConsent);
+    window.dispatchEvent(new Event(CONSENT_CHANGE_EVENT));
   };
 
   return (

@@ -20,17 +20,44 @@ function suggestion(page: Page): Locator {
   return page.getByRole("region", { name: SECOND_COPY.label });
 }
 
-function boxesOverlap(
-  a: { x: number; y: number; width: number; height: number },
-  b: { x: number; y: number; width: number; height: number },
-): boolean {
-  return (
-    a.x < b.x + b.width &&
-    b.x < a.x + a.width &&
-    a.y < b.y + b.height &&
-    b.y < a.y + a.height
-  );
+// E2E 构建开着同意卡片：提示要等访客做出 cookie 选择后才出现。
+async function makeCookieChoice(page: Page): Promise<void> {
+  const { cookie } = getLocaleMessages(DEFAULT_LOCALE);
+  await page
+    .getByRole("region", { name: cookie.title })
+    .getByRole("button", { name: cookie.rejectAll })
+    .click();
 }
+
+test("the prompt waits for the cookie choice and steps aside while cookie settings are reopened", async ({
+  page,
+}) => {
+  await page.goto("/contact");
+  const { cookie } = getLocaleMessages(DEFAULT_LOCALE);
+  const banner = page.getByRole("region", { name: cookie.title });
+  await expect(banner).toBeVisible();
+  // 等到头部语言菜单水合，客户端已经有机会判断是否显示提示。
+  await expect(page.getByTestId("language-toggle-button")).toHaveAttribute(
+    "aria-haspopup",
+    "menu",
+  );
+  await expect(page.getByTestId("language-suggestion")).toHaveCount(0);
+
+  await makeCookieChoice(page);
+  await expect(banner).toHaveCount(0);
+  await expect(suggestion(page)).toBeVisible();
+
+  // 重新打开 cookie 设置时卡片回来，提示让开，两层不再叠放。
+  await page.getByRole("button", { name: cookie.settings }).click();
+  await expect(banner).toBeVisible();
+  await expect(page.getByTestId("language-suggestion")).toHaveCount(0);
+
+  // 已有选择的访客再次进入时，提示直接出现。
+  await makeCookieChoice(page);
+  await page.reload();
+  await expect(suggestion(page)).toBeVisible();
+  await expect(banner).toHaveCount(0);
+});
 
 test("the prompt is not in the server HTML and appears in the suggested language", async ({
   page,
@@ -41,6 +68,7 @@ test("the prompt is not in the server HTML and appears in the suggested language
     'data-testid="language-suggestion"',
   );
 
+  await makeCookieChoice(page);
   const region = suggestion(page);
   await expect(region).toBeVisible();
   await expect(region).toHaveAttribute("lang", SECOND);
@@ -56,6 +84,7 @@ test("switching keeps the unsubmitted inquiry draft and the prompt stays away", 
   const fullName = page.locator('input[name="fullName"]');
   await expect(fullName).toBeEditable({ timeout: 15_000 });
   await fullName.fill("Suggestion Buyer");
+  await makeCookieChoice(page);
 
   await suggestion(page)
     .getByRole("link", { name: SECOND_COPY.switchAction })
@@ -71,6 +100,7 @@ test("switching keeps the unsubmitted inquiry draft and the prompt stays away", 
 
 test("closing is remembered across reloads", async ({ page }) => {
   await page.goto("/contact");
+  await makeCookieChoice(page);
   await suggestion(page)
     .getByRole("button", { name: SECOND_COPY.dismiss })
     .click();
@@ -90,29 +120,14 @@ for (const viewport of [
   { name: "tablet", width: 820, height: 1180 },
   { name: "laptop", width: 1280, height: 720 },
 ]) {
-  test(`on a ${viewport.name} the prompt sits clear of the cookie card and the submit button`, async ({
+  test(`on a ${viewport.name} the prompt leaves the contact submit button clickable`, async ({
     page,
   }) => {
     await page.setViewportSize(viewport);
     await page.goto("/contact");
-    const { cookie } = getLocaleMessages(DEFAULT_LOCALE);
-    const banner = page.getByRole("region", { name: cookie.title });
-    await banner.getByRole("button", { name: cookie.customize }).click();
+    await makeCookieChoice(page);
     const region = suggestion(page);
     await expect(region.getByRole("link")).toBeVisible();
-
-    const pill = region.locator("> div");
-    await expect
-      .poll(async () => {
-        const [pillBox, bannerBox] = await Promise.all([
-          pill.boundingBox(),
-          banner.boundingBox(),
-        ]);
-        return pillBox !== null && bannerBox !== null
-          ? boxesOverlap(pillBox, bannerBox)
-          : null;
-      })
-      .toBe(false);
 
     // 提交按钮滚到视口中部时，中心点处最上层的元素必须是按钮本身。
     const submit = page.locator("#inquiry button[type=submit]");
