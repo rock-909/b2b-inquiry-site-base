@@ -74,7 +74,9 @@ export function LanguageSuggestion({ locale, copy }: LanguageSuggestionProps) {
   useEffect(() => {
     // 浏览器语言与存储只能在挂载后读取；换路由后按新页面的备用地址重新判断。
     const decide = () => {
-      consentChoiceMadeRef.current ??= loadConsent() !== null;
+      if (consentChoiceMadeRef.current === null) {
+        consentChoiceMadeRef.current = loadConsent() !== null;
+      }
       setSuggested(findSuggestedLocale(locale, consentChoiceMadeRef.current));
     };
     queueMicrotask(decide);
