@@ -1,4 +1,4 @@
-import type { Messages } from "next-intl";
+import { createTranslator, type Messages } from "next-intl";
 import {
   PUBLIC_STATIC_PAGE_DEFINITIONS,
   type PublicStaticPageDefinition,
@@ -19,9 +19,12 @@ function pageLink(page: PublicStaticPageDefinition, locale: Locale): string {
     page.contentSlug === null
       ? {
           title: SINGLE_SITE_CONFIG.name,
-          // getTranslations 依赖 root params，Route Handler 里不可用，直接读同一份消息文件。
-          description: (loadCompleteMessages(locale) as Messages).home.metadata
-            .description,
+          // getTranslations 依赖 root params，Route Handler 里不可用；消息会被预编译，经 translator 取值。
+          description: createTranslator({
+            locale,
+            messages: loadCompleteMessages(locale) as Messages,
+            namespace: "home.metadata",
+          })("description"),
         }
       : createStaticPageMetadataConfig(
           getStaticPage(page.contentSlug, locale).metadata,
