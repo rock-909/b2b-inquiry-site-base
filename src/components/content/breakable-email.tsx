@@ -4,10 +4,10 @@ export function BreakableEmail({ email }: { email: string }) {
   const at = email.lastIndexOf("@");
   if (at < 0) return email;
   return (
-    <>
+    <span>
       {email.slice(0, at + 1)}
       <wbr />
       {email.slice(at + 1)}
-    </>
+    </span>
   );
 }
