@@ -7,7 +7,9 @@
  * form supplies its own already-translated text so the copy stays per-form
  * plumbing while the buyer-visible statement is identical.
  */
-export function FormPrivacyNotice({ text }: { text: string }) {
+import type { ReactNode } from "react";
+
+export function FormPrivacyNotice({ text }: { text: ReactNode }) {
   return (
     <p
       className="-mt-3 text-xs leading-5 text-muted-foreground"

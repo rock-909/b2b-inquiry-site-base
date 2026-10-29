@@ -82,6 +82,31 @@ describe("TurnstileWidget when the Cloudflare script cannot load", () => {
     expect(consoleError).toHaveBeenCalled();
   });
 
+  it("collapses the empty widget slot once the script fails", async () => {
+    captureExpectedConsoleErrors("Turnstile");
+    const { container } = render(
+      <TurnstileWidget
+        labels={labels}
+        onSuccess={vi.fn()}
+        onError={vi.fn()}
+        onExpire={vi.fn()}
+        onReadyRef={vi.fn()}
+      />,
+    );
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(WIDGET_RENDER_SETTLE_MS);
+    });
+    const widgetSlot = container.querySelector(".turnstile-container");
+    expect(widgetSlot).toBeVisible();
+
+    act(() => {
+      findInjectedScript().dispatchEvent(new Event("error"));
+    });
+
+    expect(widgetSlot).not.toBeVisible();
+    expect(screen.getByRole("status")).toBeVisible();
+  });
+
   it("offers the email fallback when the script never settles and no widget renders", async () => {
     const onSuccess = vi.fn();
     render(

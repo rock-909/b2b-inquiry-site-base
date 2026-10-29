@@ -56,6 +56,12 @@ test.describe("Contact Form - Test-Mode Smoke", () => {
     const privacyNotice = page.getByTestId("form-privacy-notice");
     await expect(privacyNotice).toBeVisible();
     await expect(privacyNotice).toContainText(/privacy policy/i);
+    await expect(
+      privacyNotice.getByRole("link", { name: /privacy policy/i }),
+    ).toHaveAttribute("href", "/privacy");
+    await expect(
+      privacyNotice.getByRole("link", { name: /terms of service/i }),
+    ).toHaveAttribute("href", "/terms");
     // 只查询询盘表单：Cookie 横幅自带分类复选框，不属于提交同意。
     await expect(
       page.getByTestId("inquiry-form").getByRole("checkbox"),

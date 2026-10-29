@@ -42,5 +42,9 @@ export function getInquiryFormMessage(keyPath: string): string {
 }
 
 export function createTestInquiryFormCopy(): InquiryFormCopy {
-  return createInquiryFormCopy(getInquiryFormMessage, "sales@example.invalid");
+  return createInquiryFormCopy(
+    getInquiryFormMessage,
+    "sales@example.invalid",
+    getInquiryFormMessage("privacyNotice"),
+  );
 }

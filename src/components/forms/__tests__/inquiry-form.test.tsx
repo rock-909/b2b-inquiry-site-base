@@ -47,6 +47,7 @@ function assertThreeFieldContract(
   expect(email).toHaveAttribute("required");
   expect(email).toHaveAttribute("autocomplete", "email");
   expect(email).toHaveAttribute("type", "email");
+  expect(email).toHaveAttribute("spellcheck", "false");
 
   expect(message).toHaveAttribute("name", "message");
   expect(message).not.toHaveAttribute("required");
