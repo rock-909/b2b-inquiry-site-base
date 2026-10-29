@@ -18,6 +18,7 @@ const PUBLIC_RUNTIME_ENV_READERS = {
   NEXT_PUBLIC_SECURITY_MODE: () => process.env.NEXT_PUBLIC_SECURITY_MODE,
   NEXT_PUBLIC_DEPLOYMENT_PLATFORM: () =>
     process.env.NEXT_PUBLIC_DEPLOYMENT_PLATFORM,
+  PUBLIC_ASSET_PATHS: () => process.env.PUBLIC_ASSET_PATHS,
 } as const satisfies Record<string, () => string | undefined>;
 
 export type PublicRuntimeEnvKey = keyof typeof PUBLIC_RUNTIME_ENV_READERS;

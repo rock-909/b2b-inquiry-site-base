@@ -8,6 +8,7 @@ import {
   assertValidSiteConfig,
 } from "@/config/site-config-schema";
 import type { SiteConfig } from "@/config/site-types";
+import { getPublicRuntimeEnvString } from "@/lib/public-runtime-env";
 
 export type {
   CompanyInfo,
@@ -126,9 +127,7 @@ const siteConfig: SiteConfig = {
 };
 
 assertValidSiteConfig(siteConfig);
-const publicAssetPathsJson =
-  // eslint-disable-next-line no-process-env -- Next 构建常量必须使用直接属性访问才能内联
-  process.env.PUBLIC_ASSET_PATHS;
+const publicAssetPathsJson = getPublicRuntimeEnvString("PUBLIC_ASSET_PATHS");
 assertLogoFileExists(
   siteConfig,
   publicAssetPathsJson
