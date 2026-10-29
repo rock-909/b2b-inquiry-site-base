@@ -23,10 +23,14 @@ const NON_RUNTIME_EXAMPLE_ENV_KEYS = new Set([
 const FRAMEWORK_MANAGED_RUNTIME_KEYS = new Set(["NODE_ENV"]);
 const PUBLIC_RUNTIME_ENV_SOURCE_PATH = "src/lib/public-runtime-env.ts";
 // NODE_ENV 由框架注入；NEXT_PUBLIC_APP_ENV 由 next.config.ts 在构建时从
-// APP_ENV 派生（映射本身由 next-config-contract 的行为断言证明）。两者都不是
+// APP_ENV 派生（映射本身由 next-config-contract 的行为断言证明）；
+// PUBLIC_ASSET_PATHS 由 next.config.ts 在构建时扫描 public/ 生成。它们都不是
 // 用户输入，所以在 client schema 登记要求中显式豁免。
 const FRAMEWORK_PUBLIC_ENV_KEYS = new Set(["NODE_ENV"]);
-const DERIVED_PUBLIC_ENV_KEYS = new Set(["NEXT_PUBLIC_APP_ENV"]);
+const DERIVED_PUBLIC_ENV_KEYS = new Set([
+  "NEXT_PUBLIC_APP_ENV",
+  "PUBLIC_ASSET_PATHS",
+]);
 
 // 全局 setup 把 @/lib/env 整体 mock 了，这里要的是真实导出的 schema 与 runtimeEnv。
 const { clientEnvSchema, runtimeEnv, serverEnvSchema } =
