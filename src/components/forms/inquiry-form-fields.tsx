@@ -91,6 +91,7 @@ export function InquiryFormFields({
             name="email"
             readOnly={readOnly}
             required
+            spellCheck={false}
             type="email"
           />
           {emailError ? (

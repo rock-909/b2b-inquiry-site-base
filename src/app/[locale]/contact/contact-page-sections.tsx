@@ -4,6 +4,7 @@ import type { Locale } from "@/types/content.types";
 import { createInquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
+import { Link } from "@/i18n/routing";
 import { formatCompanyAddress, whatsappHref } from "@/lib/site-contact";
 
 export async function ContactMethodsCard({ locale }: { locale: Locale }) {
@@ -50,6 +51,18 @@ export async function ContactFormWithFallback({ locale }: { locale: Locale }) {
   const inquiryCopy = createInquiryFormCopy(
     t,
     SINGLE_SITE_CONFIG.contact.email || undefined,
+    t.rich("privacyNotice", {
+      privacy: (chunks) => (
+        <Link className="text-link" href="/privacy" prefetch={false}>
+          {chunks}
+        </Link>
+      ),
+      terms: (chunks) => (
+        <Link className="text-link" href="/terms" prefetch={false}>
+          {chunks}
+        </Link>
+      ),
+    }),
   );
   const inquiryFallback = <InquiryFormStaticFallback copy={inquiryCopy} />;
 

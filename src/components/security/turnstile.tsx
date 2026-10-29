@@ -105,7 +105,8 @@ function TurnstileRescueStatus({
   labels: TurnstileLabels;
 }) {
   return (
-    <output className="turnstile-rescue" aria-live="polite">
+    // output 默认是行内元素，拿不到表单的 space-y 间距，会贴住下面的提交按钮。
+    <output className="turnstile-rescue block" aria-live="polite">
       <div className="text-sm text-[var(--error-foreground)]">
         {kind === "unavailable" ? labels.unavailable : labels.loadFailed}
       </div>
@@ -132,6 +133,7 @@ function TurnstileRescueStatus({
  */
 function useWidgetLoadFallback(rendersWidget: boolean) {
   const widgetRenderedRef = useRef(false);
+  const [widgetRendered, setWidgetRendered] = useState(false);
   const [degradedKind, setDegradedKind] =
     useState<TurnstileDegradedKind | null>(null);
 
@@ -151,6 +153,7 @@ function useWidgetLoadFallback(rendersWidget: boolean) {
   const scriptHandlers = {
     onWidgetLoad: () => {
       widgetRenderedRef.current = true;
+      setWidgetRendered(true);
     },
     scriptOptions: {
       onError: () => {
@@ -160,7 +163,10 @@ function useWidgetLoadFallback(rendersWidget: boolean) {
     },
   };
 
-  return { degradedKind, setDegradedKind, scriptHandlers };
+  // 控件没渲染出来时容器只是一块 65px 空白，降级时收起；控件之后渲染出来会自动展开。
+  const collapsed = degradedKind !== null && !widgetRendered;
+
+  return { degradedKind, setDegradedKind, scriptHandlers, collapsed };
 }
 
 /**
@@ -169,8 +175,12 @@ function useWidgetLoadFallback(rendersWidget: boolean) {
  */
 function LiveTurnstile({
   className,
+  collapsed,
   ...props
-}: ComponentProps<typeof Turnstile> & { className: string | undefined }) {
+}: ComponentProps<typeof Turnstile> & {
+  className: string | undefined;
+  collapsed: boolean;
+}) {
   const locale = useLocale();
   const [fitsFlexible, setFitsFlexible] = useState<boolean | null>(null);
 
@@ -182,6 +192,7 @@ function LiveTurnstile({
         }
       }}
       className={`turnstile-container ${className || ""}`}
+      hidden={collapsed}
     >
       {fitsFlexible === null ? null : (
         <Turnstile
@@ -313,6 +324,7 @@ export function TurnstileWidget({
         ref={turnstileRef}
         siteKey={siteKey}
         className={className}
+        collapsed={fallback.collapsed}
         {...widgetHandlers}
         {...fallback.scriptHandlers}
       />

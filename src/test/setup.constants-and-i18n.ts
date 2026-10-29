@@ -49,6 +49,10 @@ vi.mock("next-intl/server", async () => {
   const { getFlatMessages, lookupMessage } =
     await import("@/test/i18n-messages");
   const enMessages = getFlatMessages();
+  const { getSourceMessages } = await import("@/lib/i18n/load-messages");
+  // t.rich 要真实解析标签，交给真实 createTranslator。
+  const { createTranslator } =
+    await vi.importActual<typeof import("next-intl")>("next-intl");
 
   return {
     // 生产签名是 getTranslations(namespace) 或 getTranslations({ locale, namespace })。
@@ -61,12 +65,18 @@ vi.mock("next-intl/server", async () => {
           typeof options === "string" ? undefined : options?.locale;
         const messages = locale ? getFlatMessages(locale) : enMessages;
 
-        return (key: string, values?: Record<string, string | number>) =>
+        const t = (key: string, values?: Record<string, string | number>) =>
           lookupMessage(
             messages,
             namespace ? `${namespace}.${key}` : key,
             values,
           );
+        const rich = createTranslator({
+          locale: locale ?? "en",
+          messages: getSourceMessages(locale ?? "en"),
+          ...(namespace ? { namespace } : {}),
+        } as Parameters<typeof createTranslator>[0]).rich;
+        return Object.assign(t, { rich });
       },
     ),
     getLocale: vi.fn(() => "en"),

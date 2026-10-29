@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { InquiryFieldErrorDetail } from "@/constants/inquiry-field-error-protocol";
 
 type InquiryFormMessageKey =
@@ -10,7 +11,6 @@ type InquiryFormMessageKey =
   | "submitting"
   | "success"
   | "referenceLabel"
-  | "privacyNotice"
   | "noJsExplanation"
   | "noJsEmailPrefix"
   | "contactAriaLabel"
@@ -34,6 +34,8 @@ type InquiryTranslate = (key: InquiryFormMessageKey) => string;
 export function createInquiryFormCopy(
   t: InquiryTranslate,
   rescueEmail: string | undefined,
+  // 声明里带隐私和条款链接，需要调用方用 t.rich 渲染。
+  privacyNotice: ReactNode,
 ) {
   // 以 wire detail 为键：协议新增 detail 而这里漏写时，type-check 直接红。
   const fieldErrors = {
@@ -57,7 +59,7 @@ export function createInquiryFormCopy(
     submitting: t("submitting"),
     success: t("success"),
     referenceLabel: t("referenceLabel"),
-    privacyNotice: t("privacyNotice"),
+    privacyNotice,
     noJsExplanation: t("noJsExplanation"),
     noJsEmailPrefix: t("noJsEmailPrefix"),
     contactAriaLabel: t("contactAriaLabel"),
