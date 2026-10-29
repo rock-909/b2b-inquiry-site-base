@@ -42,3 +42,8 @@ export const OPEN_CONSENT_EVENT = "cookie-consent:open";
 
 /** 同一标签页里保存或撤回选择后发出，语言建议条据此决定是否出现 */
 export const CONSENT_CHANGE_EVENT = "cookie-consent:change";
+
+/** CONSENT_CHANGE_EVENT 携带本页当前是否已有选择，存储写入失败时本页仍算已选择 */
+export interface ConsentChangeDetail {
+  choiceMade: boolean;
+}
