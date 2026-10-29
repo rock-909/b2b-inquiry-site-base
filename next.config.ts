@@ -5,7 +5,19 @@ import createNextIntlPlugin from "next-intl/plugin";
 import { LOCALES_CONFIG } from "./src/config/paths/locales-config";
 import { getSecurityHeaders } from "./src/config/security";
 
-const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+// 构建时预编译 messages/**/*.json，浏览器不再下载 ICU 解析器（experimental 例外，见 docs/技术栈.md）。
+// 预编译后带 ICU 语法的消息是数组而不是字符串，只能经 translator 取值，不能原样读取。
+const withNextIntl = createNextIntlPlugin({
+  requestConfig: "./src/i18n/request.ts",
+  experimental: {
+    messages: {
+      path: "./messages",
+      format: "json",
+      locales: "infer",
+      precompile: true,
+    },
+  },
+});
 
 // middleware 在文件路由前运行；构建时记录真实文件，不能凭扩展名放行缺失资源。
 const publicDirectory = join(__dirname, "public");
