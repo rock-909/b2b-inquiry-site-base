@@ -73,33 +73,6 @@
     letter-spacing: var(--tracking-normal);
   }
 
-  /* View Transitions API */
-  @supports (view-transition-name: none) {
-    :root {
-      view-transition-name: root;
-    }
-
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-      animation-duration: 0.4s;
-      animation-timing-function: ease-in-out;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      ::view-transition-old(root),
-      ::view-transition-new(root) {
-        animation-duration: 0.1s;
-      }
-    }
-
-    @media (prefers-contrast: more) {
-      ::view-transition-old(root),
-      ::view-transition-new(root) {
-        animation-timing-function: linear;
-      }
-    }
-  }
-
   /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -273,7 +246,7 @@
   .header-nav-layout {
     @apply grid h-16 grid-cols-[minmax(0,1fr)_auto_auto] items-center;
     @media (min-width: 840px) {
-      @apply grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)];
+      @apply grid-cols-[minmax(0,1fr)_auto_minmax(max-content,1fr)] gap-x-4;
     }
   }
 

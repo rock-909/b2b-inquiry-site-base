@@ -4,6 +4,7 @@ import type { Locale } from "@/types/content.types";
 import { createInquiryFormCopy } from "@/components/forms/inquiry-form-copy";
 import { InquiryForm } from "@/components/forms/inquiry-form";
 import { InquiryFormStaticFallback } from "@/components/forms/inquiry-form-static-fallback";
+import { BreakableEmail } from "@/components/content/breakable-email";
 import { Link } from "@/i18n/routing";
 import { formatCompanyAddress, whatsappHref } from "@/lib/site-contact";
 
@@ -17,10 +18,10 @@ export async function ContactMethodsCard({ locale }: { locale: Locale }) {
       <h2 className="font-semibold">{t("contactTitle")}</h2>
       {email ? (
         <a
-          className="text-link block w-fit py-2 break-all"
+          className="text-link block w-fit py-2 [overflow-wrap:anywhere]"
           href={`mailto:${email}`}
         >
-          {email}
+          <BreakableEmail email={email} />
         </a>
       ) : null}
       {phone ? (

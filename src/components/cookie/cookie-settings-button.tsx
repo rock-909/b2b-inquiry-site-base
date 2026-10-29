@@ -8,7 +8,7 @@ export function CookieSettingsButton({ label }: { label: string }) {
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
-      className="inline-block cursor-pointer rounded-sm py-2 text-sm text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground"
+      className="inline-block cursor-pointer rounded-sm py-1 text-left text-sm text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground"
     >
       {label}
     </button>

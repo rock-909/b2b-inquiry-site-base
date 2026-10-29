@@ -3,7 +3,10 @@ import {
   PUBLIC_STATIC_PAGE_DEFINITIONS,
   type NavigationMessageKey,
 } from "@/config/pages.config";
-import { assertValidSiteConfig } from "@/config/site-config-schema";
+import {
+  assertLogoFileExists,
+  assertValidSiteConfig,
+} from "@/config/site-config-schema";
 import type { SiteConfig } from "@/config/site-types";
 
 export type {
@@ -123,5 +126,14 @@ const siteConfig: SiteConfig = {
 };
 
 assertValidSiteConfig(siteConfig);
+const publicAssetPathsJson =
+  // eslint-disable-next-line no-process-env -- Next 构建常量必须使用直接属性访问才能内联
+  process.env.PUBLIC_ASSET_PATHS;
+assertLogoFileExists(
+  siteConfig,
+  publicAssetPathsJson
+    ? (JSON.parse(publicAssetPathsJson) as string[])
+    : undefined,
+);
 
 export const SINGLE_SITE_CONFIG = siteConfig;

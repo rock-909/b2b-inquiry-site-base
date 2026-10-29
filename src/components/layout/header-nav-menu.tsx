@@ -236,7 +236,10 @@ function MenuItem({
         <span translate="no">{item.label}</span>
         <ChevronDown
           aria-hidden="true"
-          className={cn("size-3.5", isOpen && "rotate-180")}
+          className={cn(
+            "size-3.5 transition-transform duration-150 ease-out motion-reduce:transition-none",
+            isOpen && "rotate-180",
+          )}
         />
       </button>
       <MenuPanel

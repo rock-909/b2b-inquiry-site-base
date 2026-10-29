@@ -8,6 +8,7 @@ import {
 } from "@/config/single-site";
 import { Link } from "@/i18n/routing";
 import { CookieSettingsButton } from "@/components/cookie/cookie-settings-button";
+import { BreakableEmail } from "@/components/content/breakable-email";
 import { getPublicRuntimeEnvString } from "@/lib/public-runtime-env";
 import { formatCompanyAddress, whatsappHref } from "@/lib/site-contact";
 
@@ -36,7 +37,7 @@ function getContactLinks() {
     email && {
       key: "email",
       href: `mailto:${email}`,
-      label: email,
+      label: <BreakableEmail email={email} />,
       Icon: Mail,
     },
     phone && { key: "phone", href: `tel:${phone}`, label: phone, Icon: Phone },
@@ -85,7 +86,7 @@ export function Footer({ themeToggleSlot, className }: FooterProps) {
                     href={href}
                     className={cn(
                       FOOTER_LINK,
-                      "flex w-fit items-center gap-2 py-1 break-all",
+                      "flex w-fit items-center gap-2 py-1 [overflow-wrap:anywhere]",
                     )}
                   >
                     <Icon className="size-4 shrink-0" />

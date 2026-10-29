@@ -94,3 +94,19 @@ export function assertValidSiteConfig(config: object): void {
     throw new Error(`Invalid site config:\n${prettifyError(result.error)}`);
   }
 }
+
+// 路径格式合法不代表文件存在：缺文件时页头只会显示破图。
+// publicAssetPaths 是 next.config 在构建时列出的 public/ 真实文件；
+// 不在 Next 构建里（脚本、单测）时没有清单，跳过。
+export function assertLogoFileExists(
+  config: { brandAssets: { logo?: { status: string; horizontal?: string } } },
+  publicAssetPaths: readonly string[] | undefined,
+): void {
+  const { logo } = config.brandAssets;
+  if (!publicAssetPaths || logo?.status !== "ready" || !logo.horizontal) return;
+  if (!publicAssetPaths.includes(logo.horizontal)) {
+    throw new Error(
+      `Invalid site config: brandAssets.logo.horizontal "${logo.horizontal}" does not exist in public/. Add the file or remove the logo.`,
+    );
+  }
+}
