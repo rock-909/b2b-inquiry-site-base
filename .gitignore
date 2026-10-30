@@ -72,7 +72,7 @@ skills-lock.json
 .codex/agents/
 .codex/shell_snapshots/
 
-# Superpowers local state only; process records use the tracked root plans/ directory.
+# Superpowers local state only.
 .superpowers/
 .worktrees/
 .alma-snapshots

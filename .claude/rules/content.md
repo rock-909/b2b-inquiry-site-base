@@ -32,5 +32,3 @@ Every content field has one authoring source.
   locale's static page module.
 - FAQ belongs to the page that renders it. Do not create a shared FAQ pool.
 - Home is a minimal entry page: its short localized copy stays in i18n.
-- Generated workflow/plan context under root `plans/**` can explain work,
-  but it is not a content authoring source.

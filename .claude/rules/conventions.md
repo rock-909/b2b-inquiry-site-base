@@ -77,6 +77,13 @@ is cached, so only a page reload retries the chunk.
 - Do not add new `unstable_cache` usage or Cache Components without separate
   Cloudflare/OpenNext proof.
 
+## Route addition
+
+`src/middleware.ts` rewrites every path outside its known-path allowlist to a
+404. Static pages join it through `src/config/pages.config.ts`; a new dynamic
+route (for example `/products/[slug]`) must add its own match in the middleware,
+or it will 404.
+
 ## Route deletion checklist
 
 When removing a route:
