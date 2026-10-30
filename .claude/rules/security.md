@@ -3,7 +3,8 @@ paths:
   - "src/app/api/**/*"
   - "src/lib/security/**/*"
   - "src/lib/api/**"
-  - "src/lib/lead-pipeline/lead-schema.ts"
+  - "src/lib/lead-pipeline/**"
+  - "src/lib/airtable/**"
   - "src/components/forms/**"
   - "src/config/security.ts"
   - "next.config.ts"
@@ -64,8 +65,10 @@ browser form -> route handler (exact application/json content type -> 415, same-
 - Rate-limit store or key failure (timeout, error, missing Upstash config or
   missing/weak `RATE_LIMIT_PEPPER`) lets the inquiry continue through body
   parsing, honeypot, Zod, Turnstile, and delivery with a `warn`/`error` log;
-  only a real over-limit returns 429. The production-config deploy gate blocks
-  missing production rate-limit configuration and weak peppers before deployment.
+  only a real over-limit returns 429. The production deploy gate checks the
+  GitHub-secret values (missing Upstash pair, weak pepper) and only the names of
+  the Worker secrets; a missing or weak Worker-side value still deploys, and the
+  inquiry route then fails open with the log above.
   Among anti-abuse infrastructure outages, Turnstile unavailability still rejects
   the inquiry; rate-limit unavailability does not bypass other request checks.
 - When Airtable fails but email succeeds, the route returns success and the
