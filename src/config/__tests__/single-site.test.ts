@@ -47,6 +47,26 @@ describe("single-site", () => {
     expect(SINGLE_SITE_CONFIG.baseUrl).toBe("https://acme-example.com");
   });
 
+  // workerd 顶层加载模块时 Date 为 epoch 0；校验不能依赖加载时的当前年份。
+  it("accepts a real founding year when the schema loads with the clock at epoch 0", async () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(0);
+      vi.resetModules();
+      const { assertValidSiteConfig: assertAtEpoch } =
+        await import("@/config/site-config-schema");
+
+      expect(() =>
+        assertAtEpoch({
+          ...SINGLE_SITE_CONFIG,
+          company: { name: "Acme", established: 2004 },
+        }),
+      ).not.toThrow();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("accepts the template config and rejects malformed identity values", () => {
     expect(() => assertValidSiteConfig(SINGLE_SITE_CONFIG)).not.toThrow();
     expect(() =>
