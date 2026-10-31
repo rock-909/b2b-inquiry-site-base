@@ -47,6 +47,11 @@ const whatsapp = string()
     return digits >= WHATSAPP_MIN_DIGITS && digits <= E164_MAX_DIGITS;
   }, "must have 8-15 digits");
 
+// 成立年份的固定合理区间：workerd 顶层加载时 Date 为 epoch 0，不能用当前年份做上限；
+// "不晚于今年"由 Node 侧 isFoundingYearReady 校验。
+const FOUNDING_YEAR_MIN = 1800;
+const FOUNDING_YEAR_MAX = 2100;
+
 const readyLogo = object({
   status: literal("ready"),
   horizontal: rootRelativePath,
@@ -65,8 +70,8 @@ const siteIdentitySchema = object({
   company: object({
     established: number()
       .int()
-      .positive()
-      .max(new Date().getFullYear())
+      .min(FOUNDING_YEAR_MIN)
+      .max(FOUNDING_YEAR_MAX)
       .optional(),
   }).optional(),
   contact: object({
