@@ -495,7 +495,7 @@ function validateProductionRuntimeContract(env) {
     env,
     "RATE_LIMIT_PEPPER",
     MIN_SECRET_LENGTH,
-    "production rate-limit keys rely on it and runtime already throws when it is missing or weak",
+    "production rate-limit keys rely on it and the runtime lets inquiries through with an error log when it is missing or weak",
   );
 
   validateRequiredEnv(
