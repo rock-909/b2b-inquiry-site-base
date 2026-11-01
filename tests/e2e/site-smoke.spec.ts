@@ -28,3 +28,29 @@ test.describe("site smoke", () => {
     });
   }
 });
+
+// 全站 Link 都关了预取：页面打开后不应再向 Worker 请求 RSC 数据（`?_rsc=`）。
+test.describe("router prefetch", () => {
+  for (const [path] of SITE_PAGE_CASES) {
+    test(`${path} makes no RSC prefetch requests after load`, async ({
+      page,
+    }) => {
+      const rscRequests: string[] = [];
+      page.on("request", (request) => {
+        if (new URL(request.url()).searchParams.has("_rsc")) {
+          rscRequests.push(request.url());
+        }
+      });
+
+      await page.goto(path, { waitUntil: "domcontentloaded" });
+      // 预取在 hydration 后、链接进入视口时发出；等主题按钮启用，再滚到底让所有链接进入视口。
+      await expect(
+        page.getByRole("button", { name: en.theme.switchToSystem }),
+      ).toBeEnabled();
+      await page.keyboard.press("End");
+      await page.waitForLoadState("networkidle");
+
+      expect(rscRequests).toStrictEqual([]);
+    });
+  }
+});

@@ -14,7 +14,7 @@ interface InlineMarkdownProps {
 function MarkdownLink({ href, label }: { href: string; label: string }) {
   if (href.startsWith("/") && !PUBLIC_FILE_PATH.test(href)) {
     return (
-      <Link href={href} className="text-link">
+      <Link href={href} className="text-link" prefetch={false}>
         {label}
       </Link>
     );

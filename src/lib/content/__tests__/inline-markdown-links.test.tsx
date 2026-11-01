@@ -5,7 +5,12 @@ import { InlineMarkdown } from "@/lib/content/inline-markdown";
 
 // Renders as a Spanish page: next-intl's Link prefixes every href with /es.
 vi.mock("@/i18n/routing", () => ({
-  Link: ({ href, children, ...props }: React.ComponentProps<"a">) => (
+  Link: ({
+    href,
+    children,
+    prefetch: _prefetch,
+    ...props
+  }: React.ComponentProps<"a"> & { prefetch?: boolean }) => (
     <a href={`/es${href}`} {...props}>
       {children}
     </a>
