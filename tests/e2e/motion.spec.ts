@@ -210,18 +210,42 @@ test.describe("reduced motion", () => {
   test.describe("on a phone", () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-    test("drops the drawer slide but keeps the backdrop fade", async ({
+    test("swaps the drawer slide for a short fade on open and close", async ({
       page,
     }) => {
       await page.goto("/", { waitUntil: "networkidle" });
       await slowDownAnimations(page);
       const { dialog, backdrop } = drawerOf(page);
+      const fade = [{ property: "opacity", duration: 150, easing: "ease" }];
       await getHeaderMobileMenuButton(page).tap();
       await expect(dialog).toBeVisible();
+      expect(await runningMotion(dialog)).toEqual(fade);
+      expect(await runningMotion(backdrop)).toEqual(fade);
+
+      await expect.poll(() => runningMotion(dialog)).toEqual([]);
+      await expect.poll(() => runningMotion(backdrop)).toEqual([]);
+      await page.touchscreen.tap(20, 420);
+      // 抽屉自身也淡出，遮罩的淡出才不会被提前卸载截断。
+      await expect.poll(() => runningMotion(dialog)).toEqual(fade);
+      expect(await runningMotion(backdrop)).toEqual(fade);
+      await expect(dialog).toHaveCount(0);
+      await expect(backdrop).toHaveCount(0);
+    });
+
+    test("still opens and closes instantly from the keyboard", async ({
+      page,
+    }) => {
+      await page.goto("/", { waitUntil: "networkidle" });
+      await slowDownAnimations(page);
+      const { dialog, backdrop } = drawerOf(page);
+      await getHeaderMobileMenuButton(page).focus();
+      await page.keyboard.press("Enter");
+      await expect(dialog).toBeVisible();
       expect(await runningMotion(dialog)).toEqual([]);
-      expect(await runningMotion(backdrop)).toEqual([
-        { property: "opacity", duration: 150, easing: "ease" },
-      ]);
+      expect(await runningMotion(backdrop)).toEqual([]);
+
+      await page.keyboard.press("Escape");
+      await expect(dialog).toHaveCount(0, { timeout: 500 });
     });
   });
 
@@ -261,6 +285,9 @@ test.describe("reduced motion", () => {
     const menu = page.getByTestId("language-dropdown-content");
     await trigger.hover();
     await expect(menu).toBeVisible();
+    // 岛挂载会换掉指针下的按钮；等真按钮接管后再在它上面移动一次，离开才会被识别。
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await trigger.hover({ position: { x: 4, y: 4 } });
     await page.mouse.move(640, 600);
     await expect(menu).toHaveCount(0);
     await trigger.hover();

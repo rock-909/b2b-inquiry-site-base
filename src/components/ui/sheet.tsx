@@ -103,7 +103,10 @@ function SheetContent({
             // 用过渡而不是关键帧：滑入途中关闭时从当前位置原路退回，不先跳到全开。
             // 入场用原生 @starting-style：懒加载岛首次挂载就是打开状态，Base UI 不会给它 data-starting-style。
             "transition-[translate] duration-250 ease-(--ease-drawer) data-[ending-style]:translate-x-full data-[ending-style]:duration-200 starting:translate-x-full",
-            "data-[instant]:transition-none motion-reduce:transition-none",
+            // 减少动效：去掉滑动，改为与遮罩同长的淡入淡出，Base UI 才会等它结束再卸载遮罩。
+            "motion-reduce:transition-opacity motion-reduce:duration-150 motion-reduce:ease-[ease] motion-reduce:data-[ending-style]:duration-150",
+            "motion-reduce:data-[ending-style]:translate-x-0 motion-reduce:data-[ending-style]:opacity-0 motion-reduce:starting:translate-x-0 motion-reduce:starting:opacity-0",
+            "data-[instant]:transition-none motion-reduce:data-[instant]:transition-none",
             className,
           )}
           initialFocus={initialFocus ?? closeButtonRef}
