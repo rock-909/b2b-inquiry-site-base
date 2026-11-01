@@ -8,12 +8,6 @@ import { cn } from "@/lib/utils";
 // 键盘触发（菜单按钮或链接上按 Enter、Escape）时抽屉直接开合，不播放滑动。
 const SheetInstantContext = React.createContext(false);
 
-function isKeyboardTriggered(event: Event) {
-  if (event instanceof KeyboardEvent) return true;
-  // 键盘激活按钮或链接时浏览器派发的 click 的 detail 为 0；指针点击和触屏点按为 1 及以上。
-  return event instanceof MouseEvent && event.detail === 0;
-}
-
 interface SheetProps extends React.ComponentProps<typeof SheetPrimitive.Root> {
   /** 本次开合是否来自键盘；为 true 时遮罩和抽屉都不播放过渡。 */
   instant?: boolean;
@@ -166,7 +160,6 @@ function SheetDescription({
 }
 
 export {
-  isKeyboardTriggered,
   Sheet,
   SheetTrigger,
   SheetContent,

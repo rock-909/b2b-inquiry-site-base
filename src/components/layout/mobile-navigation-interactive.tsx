@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { MobileNavigationLinks } from "@/components/layout/mobile-navigation";
 import { Button } from "@/components/ui/button";
 import {
-  isKeyboardTriggered,
   Sheet,
   SheetContent,
   SheetHeader,
@@ -20,6 +19,12 @@ import {
   SheetDescription,
   SheetTrigger,
 } from "@/components/ui/sheet";
+
+function isKeyboardTriggered(event: Event) {
+  if (event instanceof KeyboardEvent) return true;
+  // 键盘激活按钮或链接时浏览器派发的 click 的 detail 为 0；指针点击和触屏点按为 1 及以上。
+  return event instanceof MouseEvent && event.detail === 0;
+}
 
 interface MobileNavigationInteractiveProps {
   closeMenuLabel: string;
