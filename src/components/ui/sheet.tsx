@@ -5,8 +5,37 @@ import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root {...props} />;
+// 键盘触发（菜单按钮上按 Enter、Escape）时抽屉直接开合，不播放滑动。
+const SheetInstantContext = React.createContext(false);
+
+function isKeyboardTriggered({
+  reason,
+  event,
+}: SheetPrimitive.Root.ChangeEventDetails) {
+  if (reason === "escape-key" || event instanceof KeyboardEvent) return true;
+  // 键盘激活按钮时浏览器派发的 click 的 detail 为 0；指针点击和触屏点按为 1 及以上。
+  return event instanceof MouseEvent && event.detail === 0;
+}
+
+interface SheetProps extends React.ComponentProps<typeof SheetPrimitive.Root> {
+  /** 首次挂载即打开时，打开它的那次操作是否来自键盘。 */
+  defaultInstant?: boolean;
+}
+
+function Sheet({ defaultInstant = false, onOpenChange, ...props }: SheetProps) {
+  const [instant, setInstant] = React.useState(defaultInstant);
+
+  return (
+    <SheetInstantContext.Provider value={instant}>
+      <SheetPrimitive.Root
+        onOpenChange={(open, eventDetails) => {
+          setInstant(isKeyboardTriggered(eventDetails));
+          onOpenChange?.(open, eventDetails);
+        }}
+        {...props}
+      />
+    </SheetInstantContext.Provider>
+  );
 }
 
 function SheetTrigger({
@@ -25,11 +54,14 @@ function SheetOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Backdrop>) {
+  const instant = React.useContext(SheetInstantContext);
+
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
+      data-instant={instant ? "" : undefined}
       className={cn(
-        "absolute inset-0 z-50 bg-[var(--overlay-scrim)] data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
+        "absolute inset-0 z-50 bg-[var(--overlay-scrim)] transition-opacity duration-150 ease-[ease] data-[ending-style]:opacity-0 data-[instant]:transition-none starting:opacity-0",
         className,
       )}
       {...props}
@@ -63,6 +95,7 @@ function SheetContent({
   ...props
 }: SheetContentProps) {
   const closeButtonRef = React.useRef<HTMLButtonElement>(null);
+  const instant = React.useContext(SheetInstantContext);
   const {
     "aria-describedby": ariaDescribedBy,
     initialFocus,
@@ -75,9 +108,13 @@ function SheetContent({
       <SheetViewport>
         <SheetPrimitive.Popup
           data-slot="sheet-content"
+          data-instant={instant ? "" : undefined}
           className={cn(
-            "pointer-events-auto absolute inset-y-0 right-0 flex h-full w-3/4 flex-col gap-4 border-l bg-background p-6 shadow-lg transition ease-in-out data-[closed]:duration-300 data-[closed]:animate-out data-[open]:duration-500 data-[open]:animate-in",
-            "data-[closed]:slide-out-to-right data-[open]:slide-in-from-right sm:max-w-sm",
+            "pointer-events-auto absolute inset-y-0 right-0 flex h-full w-3/4 flex-col gap-4 border-l bg-background p-6 shadow-lg sm:max-w-sm",
+            // 用过渡而不是关键帧：滑入途中关闭时从当前位置原路退回，不先跳到全开。
+            // 入场用原生 @starting-style：懒加载岛首次挂载就是打开状态，Base UI 不会给它 data-starting-style。
+            "transition-[translate] duration-250 ease-(--ease-drawer) data-[ending-style]:translate-x-full data-[ending-style]:duration-200 starting:translate-x-full",
+            "data-[instant]:transition-none motion-reduce:transition-none",
             className,
           )}
           initialFocus={initialFocus ?? closeButtonRef}

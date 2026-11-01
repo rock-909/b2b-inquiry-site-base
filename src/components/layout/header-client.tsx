@@ -162,26 +162,31 @@ export function MobileNavigationIsland({
   siteName,
 }: MobileNavigationIslandProps) {
   const pathname = usePathname();
-  const [activationPathname, setActivationPathname] = useState<string | null>(
-    null,
-  );
+  const [activation, setActivation] = useState<{
+    pathname: string;
+    instant: boolean;
+  } | null>(null);
   const fallback = (
     <MobileNavigationFallback
       openMenuLabel={openMenuLabel}
-      onActivate={() => setActivationPathname(pathname)}
+      // 键盘激活按钮时 click 的 detail 为 0；首次键盘打开同样不播放滑动。
+      onActivate={(event) =>
+        setActivation({ pathname, instant: event.detail === 0 })
+      }
     >
       {children}
     </MobileNavigationFallback>
   );
 
-  if (activationPathname !== null) {
+  if (activation !== null) {
     return (
       <LazyIslandBoundary fallback={fallback}>
         <ActivatedIsland
           load={loadMobileNavigationInteractive}
           pending={fallback}
           props={{
-            initialOpen: activationPathname === pathname,
+            initialOpen: activation.pathname === pathname,
+            initialInstant: activation.instant,
             languageSwitcher,
             openMenuLabel,
             closeMenuLabel,

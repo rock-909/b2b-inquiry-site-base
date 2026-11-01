@@ -23,6 +23,8 @@ import {
 interface MobileNavigationInteractiveProps {
   closeMenuLabel: string;
   initialOpen?: boolean;
+  /** 首次打开来自键盘时为 true，抽屉直接出现。 */
+  initialInstant?: boolean;
   languageSwitcher?: ReactNode;
   openMenuLabel: string;
   siteName: string;
@@ -91,6 +93,7 @@ function MobileNavigationHeader({
 
 export function MobileNavigationInteractive({
   initialOpen = false,
+  initialInstant = false,
   languageSwitcher,
   openMenuLabel,
   closeMenuLabel,
@@ -115,7 +118,11 @@ export function MobileNavigationInteractive({
 
   return (
     <div className="header-mobile-only">
-      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <Sheet
+        defaultInstant={initialInstant}
+        open={isOpen}
+        onOpenChange={handleOpenChange}
+      >
         <SheetTrigger
           render={
             <MobileMenuButton

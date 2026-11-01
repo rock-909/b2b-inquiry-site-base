@@ -11,7 +11,7 @@ export function NavigationPending() {
     <span
       aria-hidden="true"
       data-testid="navigation-pending"
-      className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5 animate-pulse bg-primary motion-reduce:animate-none"
+      className="navigation-pending pointer-events-none fixed inset-x-0 top-0 z-[60] h-0.5 bg-primary"
     />
   );
 }

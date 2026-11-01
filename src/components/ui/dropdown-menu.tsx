@@ -44,12 +44,12 @@ function DropdownMenuContent({
     <MenuPrimitive.Popup
       data-slot="dropdown-menu-content"
       className={cn(
-        "min-w-40 origin-[var(--transform-origin)] rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none",
-        "transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.2,0,0,1)]",
-        "data-[starting-style]:translate-y-1 data-[starting-style]:scale-[0.98] data-[starting-style]:opacity-0",
-        "data-[ending-style]:translate-y-0.5 data-[ending-style]:opacity-0 data-[ending-style]:duration-100",
+        "min-w-40 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg outline-none",
+        // 只淡入淡出；减少动效时同样保留这段短淡入。
+        "transition-opacity duration-150 ease-[cubic-bezier(0.2,0,0,1)]",
+        "data-[starting-style]:opacity-0",
+        "data-[ending-style]:opacity-0 data-[ending-style]:duration-100",
         "data-[instant]:transition-none",
-        "motion-reduce:transform-none motion-reduce:transition-none",
         className,
       )}
       {...props}

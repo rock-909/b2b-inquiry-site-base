@@ -142,7 +142,7 @@ export function LanguageSuggestion({ locale, copy }: LanguageSuggestionProps) {
     >
       <div
         ref={pillRef}
-        className="pointer-events-auto flex max-w-full items-center gap-2 rounded-[var(--card-radius)] border border-border bg-popover/80 py-1.5 pr-1.5 pl-4 text-popover-foreground shadow-lg backdrop-blur-md animate-in [animation-duration:200ms] fade-in-0 slide-in-from-bottom-2 sm:gap-3 sm:rounded-full"
+        className="pointer-events-auto flex max-w-full items-center gap-2 rounded-[var(--card-radius)] border border-border bg-popover/80 py-1.5 pr-1.5 pl-4 text-popover-foreground shadow-lg backdrop-blur-md animate-in [animation-duration:200ms] [animation-timing-function:var(--ease-out-strong)] fade-in-0 slide-in-from-bottom-2 sm:gap-3 sm:rounded-full"
       >
         <p className="min-w-0 text-[13px] leading-5 sm:text-sm">
           {text.message}
