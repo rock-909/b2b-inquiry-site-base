@@ -5,35 +5,24 @@ import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// 键盘触发（菜单按钮上按 Enter、Escape）时抽屉直接开合，不播放滑动。
+// 键盘触发（菜单按钮或链接上按 Enter、Escape）时抽屉直接开合，不播放滑动。
 const SheetInstantContext = React.createContext(false);
 
-function isKeyboardTriggered({
-  reason,
-  event,
-}: SheetPrimitive.Root.ChangeEventDetails) {
-  if (reason === "escape-key" || event instanceof KeyboardEvent) return true;
-  // 键盘激活按钮时浏览器派发的 click 的 detail 为 0；指针点击和触屏点按为 1 及以上。
+function isKeyboardTriggered(event: Event) {
+  if (event instanceof KeyboardEvent) return true;
+  // 键盘激活按钮或链接时浏览器派发的 click 的 detail 为 0；指针点击和触屏点按为 1 及以上。
   return event instanceof MouseEvent && event.detail === 0;
 }
 
 interface SheetProps extends React.ComponentProps<typeof SheetPrimitive.Root> {
-  /** 首次挂载即打开时，打开它的那次操作是否来自键盘。 */
-  defaultInstant?: boolean;
+  /** 本次开合是否来自键盘；为 true 时遮罩和抽屉都不播放过渡。 */
+  instant?: boolean;
 }
 
-function Sheet({ defaultInstant = false, onOpenChange, ...props }: SheetProps) {
-  const [instant, setInstant] = React.useState(defaultInstant);
-
+function Sheet({ instant = false, ...props }: SheetProps) {
   return (
     <SheetInstantContext.Provider value={instant}>
-      <SheetPrimitive.Root
-        onOpenChange={(open, eventDetails) => {
-          setInstant(isKeyboardTriggered(eventDetails));
-          onOpenChange?.(open, eventDetails);
-        }}
-        {...props}
-      />
+      <SheetPrimitive.Root {...props} />
     </SheetInstantContext.Provider>
   );
 }
@@ -174,6 +163,7 @@ function SheetDescription({
 }
 
 export {
+  isKeyboardTriggered,
   Sheet,
   SheetTrigger,
   SheetContent,

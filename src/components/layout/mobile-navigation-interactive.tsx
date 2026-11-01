@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { MobileNavigationLinks } from "@/components/layout/mobile-navigation";
 import { Button } from "@/components/ui/button";
 import {
+  isKeyboardTriggered,
   Sheet,
   SheetContent,
   SheetHeader,
@@ -37,6 +38,7 @@ interface MobileMenuButtonProps extends ComponentProps<"button"> {
 }
 
 interface MobileMenuState {
+  instant: boolean;
   isOpen: boolean;
   pathname: string;
 }
@@ -103,25 +105,28 @@ export function MobileNavigationInteractive({
   const tAccessibility = useTranslations("accessibility");
   const pathname = usePathname();
   const [menuState, setMenuState] = useState<MobileMenuState>(() => ({
+    instant: initialInstant,
     isOpen: initialOpen,
     pathname,
   }));
   const isOpen = menuState.pathname === pathname && menuState.isOpen;
 
-  const handleOpenChange = (open: boolean) => {
-    setMenuState((currentState) => ({
-      ...currentState,
+  const handleOpenChange = (open: boolean, event: Event) => {
+    setMenuState({
+      instant: isKeyboardTriggered(event),
       isOpen: open,
       pathname,
-    }));
+    });
   };
 
   return (
     <div className="header-mobile-only">
       <Sheet
-        defaultInstant={initialInstant}
+        instant={menuState.instant}
         open={isOpen}
-        onOpenChange={handleOpenChange}
+        onOpenChange={(open, eventDetails) =>
+          handleOpenChange(open, eventDetails.event)
+        }
       >
         <SheetTrigger
           render={
@@ -148,7 +153,7 @@ export function MobileNavigationInteractive({
           <MobileNavigationLinks
             currentPathname={pathname}
             languageSwitcher={languageSwitcher}
-            onNavigate={() => handleOpenChange(false)}
+            onNavigate={(event) => handleOpenChange(false, event.nativeEvent)}
           />
         </SheetContent>
       </Sheet>

@@ -160,6 +160,48 @@ test.describe("phone menu drawer", () => {
     await expect(dialog).toHaveCount(0, { timeout: 500 });
     await expect(trigger).toBeFocused();
   });
+
+  test("Enter on a drawer link closes instantly after a tap open", async ({
+    page,
+  }) => {
+    const { dialog, backdrop } = drawerOf(page);
+    await getHeaderMobileMenuButton(page).tap();
+    await expect(dialog).toBeVisible();
+    await expect.poll(() => runningMotion(dialog)).toEqual([]);
+
+    await dialog
+      .getByRole("link", { name: messages.navigation.contactSales })
+      .focus();
+    await page.keyboard.press("Enter");
+    await expect(dialog).toHaveCount(0, { timeout: 500 });
+    await expect(backdrop).toHaveCount(0);
+  });
+
+  test("tapping a drawer link slides closed after a keyboard open", async ({
+    page,
+  }) => {
+    const { dialog, backdrop } = drawerOf(page);
+    await getHeaderMobileMenuButton(page).focus();
+    await page.keyboard.press("Enter");
+    await expect(dialog).toBeVisible();
+
+    await dialog
+      .getByRole("link", { name: messages.navigation.contactSales })
+      .tap();
+    await expect
+      .poll(() => runningMotion(dialog))
+      .toEqual([
+        {
+          property: "translate",
+          duration: 200,
+          easing: "cubic-bezier(0.32, 0.72, 0, 1)",
+        },
+      ]);
+    expect(await runningMotion(backdrop)).toEqual([
+      { property: "opacity", duration: 150, easing: "ease" },
+    ]);
+    await expect(dialog).toHaveCount(0);
+  });
 });
 
 test.describe("reduced motion", () => {
