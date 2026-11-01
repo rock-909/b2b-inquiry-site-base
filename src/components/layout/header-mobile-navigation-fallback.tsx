@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import type { MouseEventHandler, ReactNode } from "react";
 
 interface MobileNavigationFallbackProps {
   children?: ReactNode;
-  onActivate: () => void;
+  onActivate: MouseEventHandler<HTMLElement>;
   openMenuLabel: string;
 }
 

@@ -54,7 +54,7 @@ export function Header({
   mainNavItems = EMPTY_MAIN_NAV_ITEMS,
 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md transition-[background-color,border-color] duration-200 has-[[data-nav-panel]:not([hidden])]:bg-background">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md has-[[data-nav-panel]:not([hidden])]:bg-background">
       <div className="mx-auto max-w-[1080px] px-6">
         <div className="header-nav-layout">
           {/* Left section: Logo */}

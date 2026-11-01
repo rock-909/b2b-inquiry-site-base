@@ -5,8 +5,20 @@ import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root {...props} />;
+// 键盘触发（菜单按钮或链接上按 Enter、Escape）时抽屉直接开合，不播放滑动。
+const SheetInstantContext = React.createContext(false);
+
+interface SheetProps extends React.ComponentProps<typeof SheetPrimitive.Root> {
+  /** 本次开合是否来自键盘；为 true 时遮罩和抽屉都不播放过渡。 */
+  instant?: boolean;
+}
+
+function Sheet({ instant = false, ...props }: SheetProps) {
+  return (
+    <SheetInstantContext.Provider value={instant}>
+      <SheetPrimitive.Root {...props} />
+    </SheetInstantContext.Provider>
+  );
 }
 
 function SheetTrigger({
@@ -25,11 +37,14 @@ function SheetOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Backdrop>) {
+  const instant = React.useContext(SheetInstantContext);
+
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
+      data-instant={instant ? "" : undefined}
       className={cn(
-        "absolute inset-0 z-50 bg-[var(--overlay-scrim)] data-[closed]:animate-out data-[closed]:fade-out-0 data-[open]:animate-in data-[open]:fade-in-0",
+        "absolute inset-0 z-50 bg-[var(--overlay-scrim)] transition-opacity duration-150 ease-[ease] data-[ending-style]:opacity-0 data-[instant]:transition-none starting:opacity-0",
         className,
       )}
       {...props}
@@ -63,6 +78,7 @@ function SheetContent({
   ...props
 }: SheetContentProps) {
   const closeButtonRef = React.useRef<HTMLButtonElement>(null);
+  const instant = React.useContext(SheetInstantContext);
   const {
     "aria-describedby": ariaDescribedBy,
     initialFocus,
@@ -75,9 +91,16 @@ function SheetContent({
       <SheetViewport>
         <SheetPrimitive.Popup
           data-slot="sheet-content"
+          data-instant={instant ? "" : undefined}
           className={cn(
-            "pointer-events-auto absolute inset-y-0 right-0 flex h-full w-3/4 flex-col gap-4 border-l bg-background p-6 shadow-lg transition ease-in-out data-[closed]:duration-300 data-[closed]:animate-out data-[open]:duration-500 data-[open]:animate-in",
-            "data-[closed]:slide-out-to-right data-[open]:slide-in-from-right sm:max-w-sm",
+            "pointer-events-auto absolute inset-y-0 right-0 flex h-full w-3/4 flex-col gap-4 border-l bg-background p-6 shadow-lg sm:max-w-sm",
+            // 用过渡而不是关键帧：滑入途中关闭时从当前位置原路退回，不先跳到全开。
+            // 入场用原生 @starting-style：懒加载岛首次挂载就是打开状态，Base UI 不会给它 data-starting-style。
+            "transition-[translate] duration-250 ease-(--ease-drawer) data-[ending-style]:translate-x-full data-[ending-style]:duration-200 starting:translate-x-full",
+            // 减少动效：去掉滑动，改为与遮罩同长的淡入淡出，Base UI 才会等它结束再卸载遮罩。
+            "motion-reduce:transition-opacity motion-reduce:duration-150 motion-reduce:ease-[ease] motion-reduce:data-[ending-style]:duration-150",
+            "motion-reduce:data-[ending-style]:translate-x-0 motion-reduce:data-[ending-style]:opacity-0 motion-reduce:starting:translate-x-0 motion-reduce:starting:opacity-0",
+            "data-[instant]:transition-none motion-reduce:data-[instant]:transition-none",
             className,
           )}
           initialFocus={initialFocus ?? closeButtonRef}

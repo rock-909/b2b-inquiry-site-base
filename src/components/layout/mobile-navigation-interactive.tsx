@@ -20,9 +20,17 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
+function isKeyboardTriggered(event: Event) {
+  if (event instanceof KeyboardEvent) return true;
+  // 键盘激活按钮或链接时浏览器派发的 click 的 detail 为 0；指针点击和触屏点按为 1 及以上。
+  return event instanceof MouseEvent && event.detail === 0;
+}
+
 interface MobileNavigationInteractiveProps {
   closeMenuLabel: string;
   initialOpen?: boolean;
+  /** 首次打开来自键盘时为 true，抽屉直接出现。 */
+  initialInstant?: boolean;
   languageSwitcher?: ReactNode;
   openMenuLabel: string;
   siteName: string;
@@ -35,6 +43,7 @@ interface MobileMenuButtonProps extends ComponentProps<"button"> {
 }
 
 interface MobileMenuState {
+  instant: boolean;
   isOpen: boolean;
   pathname: string;
 }
@@ -91,6 +100,7 @@ function MobileNavigationHeader({
 
 export function MobileNavigationInteractive({
   initialOpen = false,
+  initialInstant = false,
   languageSwitcher,
   openMenuLabel,
   closeMenuLabel,
@@ -100,22 +110,29 @@ export function MobileNavigationInteractive({
   const tAccessibility = useTranslations("accessibility");
   const pathname = usePathname();
   const [menuState, setMenuState] = useState<MobileMenuState>(() => ({
+    instant: initialInstant,
     isOpen: initialOpen,
     pathname,
   }));
   const isOpen = menuState.pathname === pathname && menuState.isOpen;
 
-  const handleOpenChange = (open: boolean) => {
-    setMenuState((currentState) => ({
-      ...currentState,
+  const handleOpenChange = (open: boolean, event: Event) => {
+    setMenuState({
+      instant: isKeyboardTriggered(event),
       isOpen: open,
       pathname,
-    }));
+    });
   };
 
   return (
     <div className="header-mobile-only">
-      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+      <Sheet
+        instant={menuState.instant}
+        open={isOpen}
+        onOpenChange={(open, eventDetails) =>
+          handleOpenChange(open, eventDetails.event)
+        }
+      >
         <SheetTrigger
           render={
             <MobileMenuButton
@@ -141,7 +158,7 @@ export function MobileNavigationInteractive({
           <MobileNavigationLinks
             currentPathname={pathname}
             languageSwitcher={languageSwitcher}
-            onNavigate={() => handleOpenChange(false)}
+            onNavigate={(event) => handleOpenChange(false, event.nativeEvent)}
           />
         </SheetContent>
       </Sheet>

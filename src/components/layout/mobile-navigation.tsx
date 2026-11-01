@@ -1,5 +1,5 @@
 import { NavigationPending } from "@/components/navigation/navigation-pending";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps, MouseEventHandler, ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown } from "lucide-react";
 import { PATHS_CONFIG } from "@/config/paths/paths-config";
@@ -19,7 +19,7 @@ export interface MobileNavigationLinksProps extends Omit<
   contactSalesLabel?: string;
   currentPathname?: string;
   languageSwitcher?: ReactNode;
-  onNavigate?: () => void;
+  onNavigate?: MouseEventHandler<HTMLAnchorElement>;
 }
 
 export function MobileNavigationLinks({
@@ -110,7 +110,7 @@ function MobileNavigationGroups({
 }: {
   item: Extract<SiteNavigationItem, { groups: readonly unknown[] }>;
   currentPathname?: string | undefined;
-  onNavigate?: (() => void) | undefined;
+  onNavigate?: MouseEventHandler<HTMLAnchorElement> | undefined;
 }) {
   const t = useTranslations("navigation");
 

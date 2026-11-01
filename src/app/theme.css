@@ -101,6 +101,10 @@
     "Microsoft YaHei", sans-serif;
   --tracking-normal: 0em;
 
+  /* 动效曲线：抽屉起步快、收尾慢；一次性浮层入场用强 ease-out。 */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+
   /* Component-facing aliases kept stable while the theme materials change. */
   --button-radius: var(--control-radius);
   --button-height-sm: var(--control-height-sm);

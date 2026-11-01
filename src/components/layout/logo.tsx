@@ -24,7 +24,7 @@ export function Logo() {
         alt={`${SINGLE_SITE_CONFIG.name} Logo`}
         width={logo.width}
         height={logo.height}
-        className="h-8 w-auto transition-[filter,opacity] duration-200 dark:invert"
+        className="h-8 w-auto dark:invert"
         decoding="async"
         loading="eager"
         unoptimized
