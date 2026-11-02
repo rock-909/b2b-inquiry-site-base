@@ -2,12 +2,10 @@
  * @vitest-environment jsdom
  */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CookieConsentController } from "@/components/cookie/cookie-consent-controller";
-import { OPEN_CONSENT_EVENT } from "@/lib/cookie-consent/types";
 import {
   LanguageSuggestion,
   type LanguageSuggestionCopy,
@@ -32,18 +30,6 @@ vi.mock("@/i18n/routing", () => ({
     />
   ),
   usePathname: () => "/contact",
-}));
-
-vi.mock("@/components/cookie/cookie-banner", () => ({
-  CookieBanner: ({ onReject }: { onReject: () => void }) => (
-    <button type="button" onClick={onReject}>
-      reject
-    </button>
-  ),
-}));
-
-vi.mock("@/components/monitoring/enterprise-analytics-island", () => ({
-  EnterpriseAnalyticsIsland: () => null,
 }));
 
 // fixture 的 locale 联合与真实配置不同，在这里转换一次。
@@ -74,6 +60,11 @@ function addAlternate(hreflang: string) {
   document.head.append(link);
 }
 
+// 横条的标记总在页面里（默认 hidden），“不显示”指没有可见的提示区域。
+function visibleSuggestion() {
+  return screen.queryByRole("region");
+}
+
 function renderSuggestion() {
   return render(<LanguageSuggestion locale={DEFAULT_LOCALE} copy={COPY} />);
 }
@@ -93,7 +84,6 @@ describe("LanguageSuggestion", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
-    vi.unstubAllEnvs();
   });
 
   it("suggests the first browser language the site has, in that language, keeping query and hash", async () => {
@@ -115,7 +105,7 @@ describe("LanguageSuggestion", () => {
     renderSuggestion();
 
     await Promise.resolve();
-    expect(screen.queryByTestId("language-suggestion")).toBeNull();
+    expect(visibleSuggestion()).toBeNull();
   });
 
   it("stays hidden when the page has no version in the suggested language", async () => {
@@ -124,7 +114,7 @@ describe("LanguageSuggestion", () => {
     renderSuggestion();
 
     await Promise.resolve();
-    expect(screen.queryByTestId("language-suggestion")).toBeNull();
+    expect(visibleSuggestion()).toBeNull();
   });
 
   it("closing remembers the current language so the prompt does not return", async () => {
@@ -134,7 +124,7 @@ describe("LanguageSuggestion", () => {
 
     await user.click(await screen.findByRole("button", { name: "Schließen" }));
 
-    expect(screen.queryByTestId("language-suggestion")).toBeNull();
+    expect(visibleSuggestion()).toBeNull();
     expect(window.localStorage.getItem(PREFERRED_LOCALE_STORAGE_KEY)).toBe(
       "en",
     );
@@ -142,7 +132,7 @@ describe("LanguageSuggestion", () => {
     unmount();
     renderSuggestion();
     await Promise.resolve();
-    expect(screen.queryByTestId("language-suggestion")).toBeNull();
+    expect(visibleSuggestion()).toBeNull();
   });
 
   it("switching remembers the suggested language", async () => {
@@ -182,36 +172,8 @@ describe("LanguageSuggestion", () => {
 
     await user.click(await screen.findByRole("button", { name: "Schließen" }));
     await waitFor(() => {
-      expect(screen.queryByTestId("language-suggestion")).toBeNull();
+      expect(visibleSuggestion()).toBeNull();
     });
-  });
-
-  it("appears after the cookie choice even when storage cannot save it, and hides again when settings reopen", async () => {
-    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
-    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new Error("quota");
-    });
-    setBrowserLanguages(["de"]);
-    render(
-      <>
-        <CookieConsentController />
-        <LanguageSuggestion locale={DEFAULT_LOCALE} copy={COPY} />
-      </>,
-    );
-
-    const reject = await screen.findByRole("button", { name: "reject" });
-    expect(screen.queryByTestId("language-suggestion")).toBeNull();
-
-    fireEvent.click(reject);
-    expect(
-      await screen.findByRole("region", { name: "Sprachvorschlag" }),
-    ).toBeInTheDocument();
-
-    fireEvent(window, new Event(OPEN_CONSENT_EVENT));
-    await waitFor(() => {
-      expect(screen.queryByTestId("language-suggestion")).toBeNull();
-    });
-    expect(screen.getByRole("button", { name: "reject" })).toBeInTheDocument();
   });
 
   it("the language menu writes the same remembered choice", async () => {

@@ -148,6 +148,11 @@ async function AsyncLocaleLayoutContent({
           {/* P1-1 Fix: Single attribution initialization for UTM tracking */}
           <AttributionBootstrap />
 
+          {/* 语言建议条：页面最顶部、页头之上 */}
+          {LOCALES_CONFIG.locales.length > 1 ? (
+            <LanguageSuggestion locale={locale} copy={languageSuggestionCopy} />
+          ) : null}
+
           {/* 导航栏 */}
           <Header
             locale={locale}
@@ -171,9 +176,6 @@ async function AsyncLocaleLayoutContent({
           />
 
           <CookieConsentIsland />
-          {LOCALES_CONFIG.locales.length > 1 ? (
-            <LanguageSuggestion locale={locale} copy={languageSuggestionCopy} />
-          ) : null}
         </ThemeProvider>
       </NextIntlClientProvider>
     </>
@@ -192,6 +194,10 @@ export default async function LocaleLayout({ children }: LocaleLayoutProps) {
 
   return (
     <html lang={typedLocale} suppressHydrationWarning>
+      <head>
+        {/* 首屏等页头（含语言建议条）解析完再绘制：浏览器在解析中途让出时，半截页头的右侧控件会随后续节点长高、左移，造成布局偏移。 */}
+        <link rel="expect" href="#main-content" blocking="render" />
+      </head>
       <body className="flex min-h-dvh flex-col antialiased">
         <AsyncLocaleLayoutContent>{children}</AsyncLocaleLayoutContent>
       </body>

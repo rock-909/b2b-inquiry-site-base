@@ -1,22 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { FinalUrlLink, usePathname } from "@/i18n/routing";
-import type { ConfiguredLocale } from "@/config/paths/locales-config";
+import {
+  LOCALES_CONFIG,
+  type ConfiguredLocale,
+} from "@/config/paths/locales-config";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { useLocaleSwitchHref } from "@/components/layout/use-locale-switch-href";
 import {
+  findSuggestedLocale,
+  PREFERRED_LOCALE_STORAGE_KEY,
   rememberPreferredLocale,
-  resolvePreferredLocale,
 } from "@/lib/i18n/preferred-locale";
-import { isConsentBannerEnabled } from "@/lib/cookie-consent/banner";
-import { loadConsent } from "@/lib/cookie-consent/storage";
-import {
-  CONSENT_CHANGE_EVENT,
-  CONSENT_STORAGE_KEY,
-  type ConsentChangeDetail,
-} from "@/lib/cookie-consent/types";
 import { cn } from "@/lib/utils";
 
 export interface LanguageSuggestionCopy {
@@ -32,145 +29,101 @@ interface LanguageSuggestionProps {
   copy: Record<ConfiguredLocale, LanguageSuggestionCopy>;
 }
 
-const CSS_VAR_SUGGESTION_SPACE = "--language-suggestion-space";
-// 页脚为提示条额外留出的空白：条高加上它距视口底部的最大偏移，页面滚到底时不挡住页脚控件。
-const SUGGESTION_EDGE_SPACE_PX = 40;
+const BAR_ID_PREFIX = "language-suggestion-";
 
-// 当前页面声明了该语言的 hreflang 备用地址，才算真的有这个语言版本（404 页没有）。
-function pageHasLocaleVersion(locale: ConfiguredLocale): boolean {
-  return (
-    document.head.querySelector(
-      `link[rel="alternate"][hreflang="${CSS.escape(locale)}"]`,
-    ) !== null
+function decide(locale: ConfiguredLocale): ConfiguredLocale | null {
+  return findSuggestedLocale(
+    locale,
+    LOCALES_CONFIG.locales,
+    PREFERRED_LOCALE_STORAGE_KEY,
   );
 }
 
-// 同意卡片还在等访客选择时不出提示，避免两个浮层叠在一起；站点没有同意卡片时不受影响。
-function findSuggestedLocale(
-  currentLocale: ConfiguredLocale,
-  consentChoiceMade: boolean,
-): ConfiguredLocale | null {
-  if (isConsentBannerEnabled() && !consentChoiceMade) return null;
-  const preferred = resolvePreferredLocale();
-  return preferred &&
-    preferred !== currentLocale &&
-    pageHasLocaleVersion(preferred)
-    ? preferred
-    : null;
+// 首屏绘制前运行：用客户端同一个判断函数，把该显示的那一条去掉 hidden。
+// 只在服务端生成；客户端渲染的 <script> 不会执行，用 text/plain 避免 React 的开发警告。
+function prePaintScript(locale: ConfiguredLocale): string {
+  const args = [locale, LOCALES_CONFIG.locales, PREFERRED_LOCALE_STORAGE_KEY]
+    .map((value) => JSON.stringify(value).replaceAll("<", "\\u003c"))
+    .join(",");
+  return `try{var s=(${findSuggestedLocale.toString()})(${args});if(s){var b=document.getElementById(${JSON.stringify(BAR_ID_PREFIX)}+s);if(b){var a=b.querySelector("a[hreflang]");if(a)a.setAttribute("href",a.getAttribute("href")+location.search+location.hash);b.hidden=false}}}catch(e){}`;
 }
 
 /**
- * 语言建议条：只在浏览器里判断，服务端与无 JS 页面不输出任何内容，
- * 也不做任何重定向。固定在底部居中，不占文档流，不会引起布局偏移。
+ * 语言建议条：页面最顶部、页头之上的整宽横条，占文档流，不覆盖内容。
+ * 服务端为每种可建议的语言各输出一条（默认 hidden），紧随其后的内联脚本在首屏绘制前
+ * 显示应该出现的那一条，所以显示与否不会引起布局偏移。无 JS 时不显示，也不做任何重定向。
  */
 export function LanguageSuggestion({ locale, copy }: LanguageSuggestionProps) {
   const pathname = usePathname();
   const localeSwitchHref = useLocaleSwitchHref(pathname);
-  const [suggested, setSuggested] = useState<ConfiguredLocale | null>(null);
-  const pillRef = useRef<HTMLDivElement>(null);
-  // 挂载时与其他标签页改动后以存储为准；本页的选择以同意卡片的通知为准，存储写入失败也不丢。
-  const consentChoiceMadeRef = useRef<boolean | null>(null);
+  // 水合时与内联脚本读同一来源，初始状态与脚本改过的 DOM 一致。
+  const [suggested, setSuggested] = useState<ConfiguredLocale | null>(() =>
+    typeof window === "undefined" ? null : decide(locale),
+  );
 
   useEffect(() => {
-    // 浏览器语言与存储只能在挂载后读取；换路由后按新页面的备用地址重新判断。
-    const decide = () => {
-      if (consentChoiceMadeRef.current === null) {
-        consentChoiceMadeRef.current = loadConsent() !== null;
-      }
-      setSuggested(findSuggestedLocale(locale, consentChoiceMadeRef.current));
-    };
-    queueMicrotask(decide);
-    // 访客在本页或其他标签页做出（或撤回）同意选择后重新判断。
-    const decideOnConsentChange = (event: Event) => {
-      consentChoiceMadeRef.current = (
-        event as CustomEvent<ConsentChangeDetail>
-      ).detail.choiceMade;
-      decide();
-    };
-    const decideOnConsentStorage = (event: StorageEvent) => {
-      if (event.key === null || event.key === CONSENT_STORAGE_KEY) {
-        consentChoiceMadeRef.current = loadConsent() !== null;
-        decide();
-      }
-    };
-    window.addEventListener(CONSENT_CHANGE_EVENT, decideOnConsentChange);
-    window.addEventListener("storage", decideOnConsentStorage);
-    return () => {
-      window.removeEventListener(CONSENT_CHANGE_EVENT, decideOnConsentChange);
-      window.removeEventListener("storage", decideOnConsentStorage);
-    };
+    // 换路由后按新页面的备用地址重新判断。
+    queueMicrotask(() => setSuggested(decide(locale)));
   }, [locale, pathname]);
 
-  useEffect(() => {
-    const pill = pillRef.current;
-    if (!pill) return undefined;
-
-    const root = document.documentElement;
-    const updateSpace = () => {
-      root.style.setProperty(
-        CSS_VAR_SUGGESTION_SPACE,
-        `${pill.getBoundingClientRect().height + SUGGESTION_EDGE_SPACE_PX}px`,
-      );
-    };
-    updateSpace();
-
-    const observer = new ResizeObserver(updateSpace);
-    observer.observe(pill);
-    return () => {
-      observer.disconnect();
-      root.style.setProperty(CSS_VAR_SUGGESTION_SPACE, "0px");
-    };
-  }, [suggested]);
-
-  if (suggested === null) return null;
-
-  const text = copy[suggested];
-  const dismiss = () => {
-    rememberPreferredLocale(locale);
-    setSuggested(null);
-  };
+  const candidates = LOCALES_CONFIG.locales.filter(
+    (candidate) => candidate !== locale,
+  );
 
   return (
-    <div
-      role="region"
-      aria-label={text.label}
-      lang={suggested}
-      data-testid="language-suggestion"
-      // 叠放：同意卡片显示时整条抬到卡片上方（--cookie-banner-height 由卡片写入），
-      // 移动端卡片贴底，sm 起卡片距底 1.25rem；卡片不在时变量为 0，回到默认位置。
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--cookie-banner-height)+0.75rem)] z-40 flex justify-center px-4 sm:bottom-[calc(var(--cookie-banner-height)+min(var(--cookie-banner-height),0.75rem)+1.25rem)]"
-    >
-      <div
-        ref={pillRef}
-        className="pointer-events-auto flex max-w-full items-center gap-2 rounded-[var(--card-radius)] border border-border bg-popover/80 py-1.5 pr-1.5 pl-4 text-popover-foreground shadow-lg backdrop-blur-md animate-in [animation-duration:200ms] [animation-timing-function:var(--ease-out-strong)] fade-in-0 slide-in-from-bottom-2 sm:gap-3 sm:rounded-full"
-      >
-        <p className="min-w-0 text-[13px] leading-5 sm:text-sm">
-          {text.message}
-        </p>
-        <FinalUrlLink
-          href={localeSwitchHref(suggested)}
-          hrefLang={suggested}
-          onClick={() => rememberPreferredLocale(suggested)}
-          className={buttonVariants({
-            variant: "outline",
-            size: "sm",
-            className: "rounded-full",
-          })}
-        >
-          {text.switchAction}
-        </FinalUrlLink>
-        <button
-          type="button"
-          aria-label={text.dismiss}
-          onClick={dismiss}
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "icon" }),
-            "size-8 rounded-full text-muted-foreground",
-          )}
-        >
-          <X aria-hidden="true" />
-        </button>
-      </div>
-    </div>
+    <>
+      {candidates.map((candidate) => {
+        const text = copy[candidate];
+        return (
+          <div
+            key={candidate}
+            id={`${BAR_ID_PREFIX}${candidate}`}
+            hidden={suggested !== candidate}
+            suppressHydrationWarning
+            role="region"
+            aria-label={text.label}
+            lang={candidate}
+            className="border-b border-border bg-muted pt-[env(safe-area-inset-top,0px)] text-foreground"
+          >
+            <div className="mx-auto flex max-w-[1080px] items-center gap-3 px-6 py-1.5">
+              <p className="min-w-0 flex-1 text-sm leading-6">
+                {text.message}{" "}
+                <FinalUrlLink
+                  href={localeSwitchHref(candidate)}
+                  hrefLang={candidate}
+                  suppressHydrationWarning
+                  onClick={() => rememberPreferredLocale(candidate)}
+                  className="text-link whitespace-nowrap"
+                >
+                  {text.switchAction}
+                </FinalUrlLink>
+              </p>
+              <button
+                type="button"
+                aria-label={text.dismiss}
+                onClick={() => {
+                  rememberPreferredLocale(locale);
+                  setSuggested(null);
+                }}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "icon" }),
+                  "-mr-2 size-8 shrink-0 text-muted-foreground",
+                )}
+              >
+                <X aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        );
+      })}
+      {/* nosemgrep: nextjs-unsafe-dangerouslySetInnerHTML -- 首屏前判断语言建议条的内联脚本；内容由本模块的函数源码和语言配置生成，不含访客输入，参数里的 < 已转义 */}
+      <script
+        type={typeof window === "undefined" ? "text/javascript" : "text/plain"}
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: typeof window === "undefined" ? prePaintScript(locale) : "",
+        }}
+      />
+    </>
   );
 }
