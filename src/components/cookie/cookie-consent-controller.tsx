@@ -43,7 +43,7 @@ export function CookieConsentController() {
     };
   }, []);
 
-  // 预绘制脚本只看有没有存储记录就先显示了卡片；读完存储后由这里决定，同一帧内交还。
+  // 预绘制脚本没找到有效记录时先显示了卡片；读完存储后由这里决定，同一帧内交还。
   useLayoutEffect(() => {
     if (consent !== undefined) {
       delete document.documentElement.dataset[CONSENT_PENDING_DATASET_KEY];
