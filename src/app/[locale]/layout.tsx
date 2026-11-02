@@ -130,6 +130,7 @@ async function AsyncLocaleLayoutContent({
 
   return (
     <>
+      {/* nosemgrep: nextjs-unsafe-dangerouslySetInnerHTML -- CONSENT_PENDING_SCRIPT 是仅由代码常量拼成的构建期字符串，不含任何用户输入 */}
       {isConsentBannerEnabled() ? (
         // body 的第一个元素，在页面内容之前同步运行；CSP 按现有内联脚本的方式放行（script-src-elem）。
         <script dangerouslySetInnerHTML={{ __html: CONSENT_PENDING_SCRIPT }} />
