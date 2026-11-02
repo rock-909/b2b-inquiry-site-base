@@ -130,9 +130,11 @@ const CASES: { name: string; pending: boolean; arrange: () => void }[] = [
 ];
 
 function runPendingScript(): boolean {
-  // 与 layout 中 <script> 的内容完全相同，在 jsdom 里同步执行一次。
-  // eslint-disable-next-line no-new-func -- 测试要执行的正是这段内联脚本字符串
-  new Function(CONSENT_PENDING_SCRIPT)();
+  // 与 layout 一样作为内联 <script> 插入；jsdom 插入时同步执行一次。
+  const script = document.createElement("script");
+  script.textContent = CONSENT_PENDING_SCRIPT;
+  document.body.append(script);
+  script.remove();
   return (
     document.documentElement.dataset[CONSENT_PENDING_DATASET_KEY] !== undefined
   );
