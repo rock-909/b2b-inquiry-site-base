@@ -60,6 +60,15 @@ const CASES: { name: string; pending: boolean; arrange: () => void }[] = [
       }),
   },
   {
+    name: "current version without advertising",
+    pending: true,
+    arrange: () =>
+      store({
+        ...CURRENT,
+        consent: { necessary: true, analytics: true },
+      }),
+  },
+  {
     name: "older version with every field",
     pending: true,
     arrange: () => store({ ...CURRENT, version: CONSENT_VERSION - 1 }),
