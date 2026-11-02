@@ -9,10 +9,13 @@ const CSS_VAR_BANNER_HEIGHT = "--cookie-banner-height";
 const CATEGORY_PANEL_ID = "cookie-category-choices";
 
 export function CookieBanner({
+  hidden = false,
   onAccept,
   onReject,
   onSave,
 }: {
+  /** 服务端输出时隐藏，html[data-consent-pending] 可在首帧让它显示。 */
+  hidden?: boolean;
   onAccept: () => void;
   onReject: () => void;
   onSave: (choice: { analytics: boolean; advertising: boolean }) => void;
@@ -50,7 +53,12 @@ export function CookieBanner({
       ref={bannerRef}
       role="region"
       aria-label={t("title")}
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-popover text-popover-foreground shadow-lg animate-in [animation-duration:200ms] [animation-timing-function:var(--ease-out-strong)] fade-in-0 slide-in-from-bottom-2 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[30rem] sm:rounded-[var(--card-radius)] sm:border lg:right-auto lg:left-5"
+      hidden={hidden}
+      data-cookie-banner=""
+      // 在 body 的文档流里贴住窗口底部：短页面上卡片自己的盒子把页脚托在它上方，
+      // 首帧就占好位置，不再由脚本量高后给页脚加内边距。sm 起 -mt-5/mb-5 抵消，
+      // 占位仍等于卡片高度，卡片离窗口底 20px、上沿盖住页脚底部 20px 的留白。
+      className="sticky bottom-0 z-40 shrink-0 border-t border-border bg-popover text-popover-foreground shadow-lg animate-in [animation-duration:200ms] [animation-timing-function:var(--ease-out-strong)] fade-in-0 slide-in-from-bottom-2 sm:bottom-5 sm:-mt-5 sm:mr-5 sm:mb-5 sm:w-[30rem] sm:self-end sm:rounded-[var(--card-radius)] sm:border lg:mr-0 lg:ml-5 lg:self-start"
     >
       <div className="flex flex-col gap-2 p-3 sm:gap-3 sm:p-4">
         <p className="text-[13px] leading-5 text-muted-foreground">

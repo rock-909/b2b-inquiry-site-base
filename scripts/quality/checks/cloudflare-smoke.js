@@ -258,6 +258,7 @@ function collectProbeFields(pathname, response, body, retries) {
     nosniff: response.headers.get("x-content-type-options"),
     referrerPolicy: response.headers.get("referrer-policy"),
     csp: response.headers.get("content-security-policy"),
+    poweredBy: response.headers.get("x-powered-by"),
     robotsTag: response.headers.get("x-robots-tag"),
     body,
     ...(retries !== undefined ? { retries } : {}),
@@ -422,6 +423,8 @@ function pushSecurityHeaderChecks(response, failures) {
     `Expected ${response.pathname} to carry a non-empty content-security-policy`,
     failures,
   );
+  const exposed = `Expected ${response.pathname} not to carry x-powered-by`;
+  pushFailureUnless(response.poweredBy === null, exposed, failures);
 }
 
 function pushHealthyHtmlResponse(response, failures) {

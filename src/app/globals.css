@@ -167,6 +167,18 @@
     overflow: visible;
     white-space: normal;
   }
+
+  /* 预绘制脚本没找到同意记录时，服务端输出的隐藏卡片从首帧显示；客户端读完存储后移除标记。
+     须与 Tailwind 预检里 [hidden] 的 !important 规则同在 base 层，靠更高的优先级胜出。 */
+  html[data-consent-pending] [data-cookie-banner][hidden] {
+    display: block !important;
+  }
+
+  /* HTML 流式到达时，页脚可能先于后面的卡片被绘制，卡片一到页脚就上移。
+     卡片要显示而它的标记还没到时先不排版页脚，等卡片到了两者一起出现。 */
+  html[data-consent-pending] footer:not(:has(~ [data-cookie-banner])) {
+    display: none;
+  }
 }
 
 /* Tailwind v4 injects ::selection theme tokens in @layer base.
@@ -247,9 +259,7 @@
   }
 
   footer {
-    padding-bottom: calc(
-      var(--cookie-banner-height, 0px) + var(--language-suggestion-space, 0px)
-    );
+    padding-bottom: var(--language-suggestion-space, 0px);
   }
 }
 

@@ -228,6 +228,23 @@ describe.each(GATE_LANES)("$name gate failures", (lane) => {
     },
   );
 
+  it("fails when a page advertises its framework in x-powered-by", async () => {
+    const consoleError = captureExpectedConsoleErrors(
+      `${lane.logTag} Failures detected:`,
+      "  - ",
+    );
+    stubRouteResponse(lane, "/contact", 200, {
+      ...SECURITY_HEADERS,
+      "x-powered-by": "Next.js",
+    });
+
+    await expect(lane.run()).resolves.toBe(false);
+    expect(consoleError.mock.calls).toEqual([
+      [`${lane.logTag} Failures detected:`],
+      ["  - Expected /contact not to carry x-powered-by"],
+    ]);
+  });
+
   it.each([
     ["x-content-type-options", " NoSniff "],
     ["x-frame-options", "deny"],

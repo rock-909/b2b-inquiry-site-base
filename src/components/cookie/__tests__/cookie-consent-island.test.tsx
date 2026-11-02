@@ -16,13 +16,15 @@ vi.mock(
 
 vi.mock("@/components/cookie/cookie-banner", () => ({
   CookieBanner: ({
+    hidden,
     onAccept,
     onSave,
   }: {
+    hidden: boolean;
     onAccept: () => void;
     onSave: (choice: { analytics: boolean; advertising: boolean }) => void;
   }) => (
-    <>
+    <div hidden={hidden}>
       <button type="button" onClick={onAccept}>
         allow
       </button>
@@ -32,7 +34,7 @@ vi.mock("@/components/cookie/cookie-banner", () => ({
       >
         analytics only
       </button>
-    </>
+    </div>
   ),
 }));
 

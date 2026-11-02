@@ -48,6 +48,9 @@ const nextConfig: NextConfig = {
     PUBLIC_ASSET_PATHS: JSON.stringify(publicAssetPaths),
   },
 
+  // Do not advertise the framework in an X-Powered-By response header.
+  poweredByHeader: false,
+
   // Exclude test/report artifacts from OpenNext bundle
   outputFileTracingExcludes: {
     "/*": [
