@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { CookieBanner } from "@/components/cookie/cookie-banner";
 import { EnterpriseAnalyticsIsland } from "@/components/monitoring/enterprise-analytics-island";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/lib/cookie-consent/storage";
 import {
   CONSENT_CHANGE_EVENT,
+  CONSENT_PENDING_DATASET_KEY,
   CONSENT_STORAGE_KEY,
   OPEN_CONSENT_EVENT,
   type ConsentChangeDetail,
@@ -53,9 +54,12 @@ export function CookieConsentController() {
     };
   }, []);
 
-  if (consent === undefined) {
-    return null;
-  }
+  // 预绘制脚本只看有没有存储记录就先显示了卡片；读完存储后由这里决定，同一帧内交还。
+  useLayoutEffect(() => {
+    if (consent !== undefined) {
+      delete document.documentElement.dataset[CONSENT_PENDING_DATASET_KEY];
+    }
+  }, [consent]);
 
   const choose = (nextConsent: CookieConsent) => {
     saveConsent(nextConsent);
@@ -63,19 +67,23 @@ export function CookieConsentController() {
     notifyConsentChange(true);
   };
 
+  // 卡片随服务端 HTML 输出，先隐藏；还没读存储时只有预绘制脚本能让它显示。
   return (
     <>
-      {consent === null ? (
+      {consent === undefined || consent === null ? (
         <CookieBanner
+          hidden={consent === undefined}
           onAccept={() => choose(createAcceptAllConsent())}
           onReject={() => choose(createRejectAllConsent())}
           onSave={(choice) => choose({ necessary: true, ...choice })}
         />
       ) : null}
-      <EnterpriseAnalyticsIsland
-        analyticsAllowed={consent?.analytics === true}
-        advertisingAllowed={consent?.advertising === true}
-      />
+      {consent === undefined ? null : (
+        <EnterpriseAnalyticsIsland
+          analyticsAllowed={consent?.analytics === true}
+          advertisingAllowed={consent?.advertising === true}
+        />
+      )}
     </>
   );
 }

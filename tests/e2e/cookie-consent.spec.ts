@@ -147,3 +147,88 @@ test.describe("on a laptop-sized window", () => {
       .toBe(true);
   });
 });
+
+// 首页较短，页脚贴在窗口底部。同意卡片若在客户端才出现、再把高度加到页脚上，
+// 页脚会整体上移（曾测得手机 CLS 0.08、桌面 0.045）。首访和回访都不能有这次位移。
+const FOOTER_SHIFT_VIEWPORTS = [
+  { name: "phone", viewport: { width: 390, height: 844 } },
+  { name: "desktop", viewport: { width: 1350, height: 940 } },
+] as const;
+
+interface LayoutShift {
+  value: number;
+  sources: string[];
+}
+
+type ShiftWindow = Window & { layoutShifts?: LayoutShift[] };
+
+// 页面脚本运行前装好观察器，把每次 layout-shift 记到 window 上（每次加载重新开始）。
+function recordLayoutShifts() {
+  const shifts: LayoutShift[] = [];
+  (window as ShiftWindow).layoutShifts = shifts;
+  new PerformanceObserver((list) => {
+    for (const entry of list.getEntries() as (PerformanceEntry & {
+      value: number;
+      sources?: { node?: Node | null }[];
+    })[]) {
+      shifts.push({
+        value: entry.value,
+        sources: (entry.sources ?? []).map(
+          (source) => source.node?.nodeName ?? "unknown",
+        ),
+      });
+    }
+  }).observe({ type: "layout-shift", buffered: true });
+}
+
+// 等两帧和一个任务，让最近一次布局的记录送达观察器，再取出全部记录。
+function readLayoutShifts(): Promise<LayoutShift[]> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        setTimeout(() => resolve((window as ShiftWindow).layoutShifts ?? [])),
+      ),
+    );
+  });
+}
+
+for (const { name, viewport } of FOOTER_SHIFT_VIEWPORTS) {
+  test.describe(`home page layout on ${name}`, () => {
+    test.use({ viewport });
+
+    test("nothing shifts on a first visit with the cookie card or on a returning visit", async ({
+      page,
+    }) => {
+      const messages = getLocaleMessages(DEFAULT_LOCALE);
+      const banner = page.getByRole("region", { name: messages.cookie.title });
+      const themeButton = page.getByRole("button", {
+        name: messages.theme.switchToSystem,
+      });
+      const readShifts = () => page.evaluate(readLayoutShifts);
+      const totalShift = (shifts: LayoutShift[]) =>
+        shifts.reduce((sum, shift) => sum + shift.value, 0);
+
+      await page.addInitScript(recordLayoutShifts);
+      await page.goto("/");
+      await expect(banner).toBeVisible();
+      // 等客户端接管（主题按钮在 hydration 后启用），卡片此时已按存储状态定下来。
+      await expect(themeButton).toBeEnabled();
+      const firstVisit = await readShifts();
+      expect(totalShift(firstVisit), JSON.stringify(firstVisit)).toBeLessThan(
+        0.01,
+      );
+
+      await banner
+        .getByRole("button", { name: messages.cookie.rejectAll })
+        .click();
+      await page.reload();
+      await expect(themeButton).toBeEnabled();
+      await expect(banner).toBeHidden();
+      const returningVisit = await readShifts();
+      expect(
+        totalShift(returningVisit),
+        JSON.stringify(returningVisit),
+      ).toBeLessThan(0.01);
+    });
+  });
+}
