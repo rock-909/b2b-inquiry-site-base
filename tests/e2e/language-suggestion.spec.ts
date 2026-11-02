@@ -93,8 +93,15 @@ async function makeCookieChoice(page: Page): Promise<void> {
 for (const viewport of VIEWPORTS) {
   test(`on a ${viewport.name}, a first visit shows the bar above the header before scripts load, with no layout shift`, async ({
     page,
+    browserName,
   }) => {
     await page.setViewportSize(viewport);
+    if (browserName === "chromium") {
+      // 放慢 CPU（CDP，仅 Chromium），模拟冷启动或低端机：解析中途让出时，浏览器若先绘制半截页头，
+      // 右侧控件随后长高、左移就会计入偏移。首屏须等页头解析完才绘制。
+      const session = await page.context().newCDPSession(page);
+      await session.send("Emulation.setCPUThrottlingRate", { rate: 30 });
+    }
     await trackLayoutShift(page);
     const releaseScripts = await holdScripts(page);
     // 用完整长度的页面：模板首页很短，页脚落在首屏内，首次访问时同意卡片给页脚加底部留白
