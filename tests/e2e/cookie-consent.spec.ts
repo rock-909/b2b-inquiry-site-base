@@ -232,6 +232,43 @@ for (const { name, viewport } of FOOTER_SHIFT_VIEWPORTS) {
         JSON.stringify(returningVisit),
       ).toBeLessThan(0.01);
     });
+
+    // 同意版本升级后，回访者存着旧版本记录：客户端读到后会丢弃它并重新显示卡片，
+    // 预绘制脚本必须同样把它当作无效记录，让卡片从首帧占位。
+    test("nothing shifts on a returning visit with an older consent version stored", async ({
+      page,
+    }) => {
+      const messages = getLocaleMessages(DEFAULT_LOCALE);
+      const banner = page.getByRole("region", { name: messages.cookie.title });
+      const themeButton = page.getByRole("button", {
+        name: messages.theme.switchToSystem,
+      });
+
+      await page.addInitScript(() => {
+        // 版本 2 的记录还没有 advertising 字段。
+        window.localStorage.setItem(
+          "cookie-consent",
+          JSON.stringify({
+            consent: { necessary: true, analytics: true },
+            updatedAt: "2026-01-01T00:00:00.000Z",
+            version: 2,
+          }),
+        );
+      });
+      await page.addInitScript(recordLayoutShifts);
+      await page.goto("/");
+      await expect(themeButton).toBeEnabled();
+      await expect(banner).toBeVisible();
+      // 控制器读过存储并删掉了旧记录，卡片的去留此时已定。
+      await expect
+        .poll(() =>
+          page.evaluate(() => window.localStorage.getItem("cookie-consent")),
+        )
+        .toBeNull();
+      const shifts = await page.evaluate(readLayoutShifts);
+      const total = shifts.reduce((sum, shift) => sum + shift.value, 0);
+      expect(total, JSON.stringify(shifts)).toBeLessThan(0.01);
+    });
   });
 }
 
