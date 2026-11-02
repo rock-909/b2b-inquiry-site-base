@@ -45,7 +45,7 @@ function prePaintScript(locale: ConfiguredLocale): string {
   const args = [locale, LOCALES_CONFIG.locales, PREFERRED_LOCALE_STORAGE_KEY]
     .map((value) => JSON.stringify(value).replaceAll("<", "\\u003c"))
     .join(",");
-  return `try{var s=(${findSuggestedLocale.toString()})(${args});if(s){var b=document.getElementById(${JSON.stringify(BAR_ID_PREFIX)}+s);if(b)b.hidden=false}}catch(e){}`;
+  return `try{var s=(${findSuggestedLocale.toString()})(${args});if(s){var b=document.getElementById(${JSON.stringify(BAR_ID_PREFIX)}+s);if(b){var a=b.querySelector("a[hreflang]");if(a)a.setAttribute("href",a.getAttribute("href")+location.search+location.hash);b.hidden=false}}}catch(e){}`;
 }
 
 /**
@@ -91,6 +91,7 @@ export function LanguageSuggestion({ locale, copy }: LanguageSuggestionProps) {
                 <FinalUrlLink
                   href={localeSwitchHref(candidate)}
                   hrefLang={candidate}
+                  suppressHydrationWarning
                   onClick={() => rememberPreferredLocale(candidate)}
                   className="text-link whitespace-nowrap"
                 >

@@ -211,6 +211,30 @@ test("the bar comes before the header in tab order", async ({ page }) => {
   ).toBeFocused();
 });
 
+test("before scripts load, the switch link already keeps the query and hash", async ({
+  page,
+}) => {
+  const releaseScripts = await holdScripts(page);
+  await page.goto(`/contact${CONTACT_QUERY}`, {
+    waitUntil: "domcontentloaded",
+  });
+  const link = suggestion(page).getByRole("link", {
+    name: SECOND_COPY.switchAction,
+  });
+  await expect(link).toHaveAttribute(
+    "href",
+    `${localePrefix(SECOND)}/contact${CONTACT_QUERY}`,
+  );
+
+  releaseScripts();
+  await page.waitForLoadState("load");
+  await waitForHydration(page);
+  await expect(link).toHaveAttribute(
+    "href",
+    `${localePrefix(SECOND)}/contact${CONTACT_QUERY}`,
+  );
+});
+
 test("switching reaches the equivalent page, keeps the inquiry draft and the bar stays away", async ({
   page,
 }) => {
