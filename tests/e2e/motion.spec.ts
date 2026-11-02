@@ -19,30 +19,34 @@ async function slowDownAnimations(page: Page) {
 interface RunningMotion {
   property: string;
   duration: number;
-  easing: string;
 }
 
 function runningMotion(locator: Locator): Promise<RunningMotion[]> {
   return locator.evaluate((element) =>
-    element.getAnimations().map((animation) => {
-      const timing = animation.effect?.getTiming();
-      return {
-        property:
-          animation instanceof CSSTransition
-            ? animation.transitionProperty
-            : (animation as CSSAnimation).animationName,
-        duration: Number(timing?.duration ?? 0),
-        // 关键帧动画的曲线写在每个关键帧上，效果层恒为 linear。
-        easing:
-          animation instanceof CSSTransition
-            ? String(timing?.easing ?? "")
-            : String(
-                (animation.effect as KeyframeEffect).getKeyframes()[0]
-                  ?.easing ?? "",
-              ),
-      };
-    }),
+    element.getAnimations().map((animation) => ({
+      property:
+        animation instanceof CSSTransition
+          ? animation.transitionProperty
+          : (animation as CSSAnimation).animationName,
+      duration: Number(animation.effect?.getTiming().duration ?? 0),
+    })),
   );
+}
+
+// 只断言动的是哪些属性、时长大于 0；具体毫秒数和曲线是 theme.css 与组件里的设计值，派生站会调。
+async function waitForMotion(
+  locator: Locator,
+  properties: string[],
+): Promise<RunningMotion[]> {
+  let motion: RunningMotion[] = [];
+  await expect
+    .poll(async () => {
+      motion = await runningMotion(locator);
+      return motion.map((entry) => entry.property);
+    })
+    .toEqual(properties);
+  for (const entry of motion) expect(entry.duration).toBeGreaterThan(0);
+  return motion;
 }
 
 function drawerOf(page: Page) {
@@ -65,36 +69,20 @@ test.describe("phone menu drawer", () => {
     await slowDownAnimations(page);
   });
 
-  test("slides in over 250 ms and out over 200 ms on the drawer curve", async ({
+  test("slides in on tap and slides out no slower than it slid in", async ({
     page,
   }) => {
     const { dialog, backdrop } = drawerOf(page);
     await getHeaderMobileMenuButton(page).tap();
     await expect(dialog).toBeVisible();
-    await expect
-      .poll(() => runningMotion(dialog))
-      .toEqual([
-        {
-          property: "translate",
-          duration: 250,
-          easing: "cubic-bezier(0.32, 0.72, 0, 1)",
-        },
-      ]);
-    expect(await runningMotion(backdrop)).toEqual([
-      { property: "opacity", duration: 150, easing: "ease" },
-    ]);
+    const [opening] = await waitForMotion(dialog, ["translate"]);
+    await waitForMotion(backdrop, ["opacity"]);
 
     await expect.poll(() => runningMotion(dialog)).toEqual([]);
     await page.touchscreen.tap(20, 420);
-    await expect
-      .poll(() => runningMotion(dialog))
-      .toEqual([
-        {
-          property: "translate",
-          duration: 200,
-          easing: "cubic-bezier(0.32, 0.72, 0, 1)",
-        },
-      ]);
+    const [closing] = await waitForMotion(dialog, ["translate"]);
+    // 出比进快（或一样快）是规则；具体时长交给设计值。
+    expect(closing!.duration).toBeLessThanOrEqual(opening!.duration);
     await expect(dialog).toHaveCount(0);
   });
 
@@ -188,18 +176,8 @@ test.describe("phone menu drawer", () => {
     await dialog
       .getByRole("link", { name: messages.navigation.contactSales })
       .tap();
-    await expect
-      .poll(() => runningMotion(dialog))
-      .toEqual([
-        {
-          property: "translate",
-          duration: 200,
-          easing: "cubic-bezier(0.32, 0.72, 0, 1)",
-        },
-      ]);
-    expect(await runningMotion(backdrop)).toEqual([
-      { property: "opacity", duration: 150, easing: "ease" },
-    ]);
+    await waitForMotion(dialog, ["translate"]);
+    await waitForMotion(backdrop, ["opacity"]);
     await expect(dialog).toHaveCount(0);
   });
 });
@@ -210,24 +188,25 @@ test.describe("reduced motion", () => {
   test.describe("on a phone", () => {
     test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
-    test("swaps the drawer slide for a short fade on open and close", async ({
+    test("swaps the drawer slide for a fade on open and close", async ({
       page,
     }) => {
       await page.goto("/", { waitUntil: "networkidle" });
       await slowDownAnimations(page);
       const { dialog, backdrop } = drawerOf(page);
-      const fade = [{ property: "opacity", duration: 150, easing: "ease" }];
+      // 只剩 opacity：没有 translate 滑动。
+      const fade = ["opacity"];
       await getHeaderMobileMenuButton(page).tap();
       await expect(dialog).toBeVisible();
-      expect(await runningMotion(dialog)).toEqual(fade);
-      expect(await runningMotion(backdrop)).toEqual(fade);
+      await waitForMotion(dialog, fade);
+      await waitForMotion(backdrop, fade);
 
       await expect.poll(() => runningMotion(dialog)).toEqual([]);
       await expect.poll(() => runningMotion(backdrop)).toEqual([]);
       await page.touchscreen.tap(20, 420);
       // 抽屉自身也淡出，遮罩的淡出才不会被提前卸载截断。
-      await expect.poll(() => runningMotion(dialog)).toEqual(fade);
-      expect(await runningMotion(backdrop)).toEqual(fade);
+      await waitForMotion(dialog, fade);
+      await waitForMotion(backdrop, fade);
       await expect(dialog).toHaveCount(0);
       await expect(backdrop).toHaveCount(0);
     });
@@ -256,13 +235,7 @@ test.describe("reduced motion", () => {
     await page.goto("/");
     const card = page.getByRole("region", { name: messages.cookie.title });
     await expect(card).toBeVisible();
-    expect(await runningMotion(card)).toEqual([
-      {
-        property: "enter",
-        duration: 200,
-        easing: "cubic-bezier(0.23, 1, 0.32, 1)",
-      },
-    ]);
+    await waitForMotion(card, ["enter"]);
     const frame = await card.evaluate((element) => {
       const style = getComputedStyle(element);
       return { opacity: Number(style.opacity), transform: style.transform };
@@ -292,12 +265,6 @@ test.describe("reduced motion", () => {
     await expect(menu).toHaveCount(0);
     await trigger.hover();
     await expect(menu).toBeVisible();
-    expect(await runningMotion(menu)).toEqual([
-      {
-        property: "opacity",
-        duration: 150,
-        easing: "cubic-bezier(0.2, 0, 0, 1)",
-      },
-    ]);
+    await waitForMotion(menu, ["opacity"]);
   });
 });

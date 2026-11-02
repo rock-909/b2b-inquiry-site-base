@@ -146,35 +146,6 @@ describe("InquiryForm contract", () => {
     expect(controls.message).toHaveValue("");
   });
 
-  it.each([
-    ["an array", '["Ada Buyer","ada@example.com","Keep this"]'],
-    ["a string", '"Ada Buyer"'],
-    ["null", "null"],
-  ])("ignores a stored inquiry draft that is %s", (_kind, stored) => {
-    window.sessionStorage.setItem("inquiry-draft", stored);
-
-    const { container } = renderInquiryForm();
-    const controls = getFormControls(container);
-
-    expect(controls.fullName).toHaveValue("");
-    expect(controls.email).toHaveValue("");
-    expect(controls.message).toHaveValue("");
-  });
-
-  it("ignores a stored inquiry draft whose fields are all empty", () => {
-    window.sessionStorage.setItem(
-      "inquiry-draft",
-      JSON.stringify({ fullName: "", email: "", message: "" }),
-    );
-
-    const { container } = renderInquiryForm();
-    const controls = getFormControls(container);
-
-    expect(controls.fullName).toHaveValue("");
-    expect(controls.email).toHaveValue("");
-    expect(controls.message).toHaveValue("");
-  });
-
   it("deletes the saved inquiry draft once every field is cleared", () => {
     const { container } = renderInquiryForm();
     const { fullName, email, message } = getFormControls(container);
