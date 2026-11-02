@@ -1,3 +1,5 @@
+import { createServer, type Server } from "node:http";
+import type { AddressInfo } from "node:net";
 import { expect, test } from "@playwright/test";
 import { getHeaderMobileMenuButton } from "./helpers/navigation";
 import { DEFAULT_LOCALE, getLocaleMessages } from "./site-page-cases";
@@ -232,3 +234,63 @@ for (const { name, viewport } of FOOTER_SHIFT_VIEWPORTS) {
     });
   });
 }
+
+// Workers 流式输出 HTML，浏览器可能在页脚已到、同意卡片还没到时先绘制一帧。
+// 这里用本地代理把首页 HTML 在 </footer> 之后切成两块、间隔发送，复现那一帧。
+test.describe("home page streamed in two chunks split after the footer", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  let proxy: Server;
+  let proxyUrl = "";
+
+  test.beforeAll(async ({}, testInfo) => {
+    const upstream = String(testInfo.project.use.baseURL);
+    proxy = createServer(async (request, response) => {
+      const upstreamResponse = await fetch(new URL(request.url ?? "/", upstream), {
+        headers: { accept: request.headers.accept ?? "*/*" },
+        redirect: "manual",
+      });
+      const body = Buffer.from(await upstreamResponse.arrayBuffer());
+      const headers: Record<string, string> = {};
+      upstreamResponse.headers.forEach((value, key) => {
+        if (!["content-length", "content-encoding", "transfer-encoding"].includes(key)) {
+          headers[key] = value;
+        }
+      });
+      response.writeHead(upstreamResponse.status, headers);
+      const html = body.toString("utf8");
+      const split = html.indexOf("</footer>");
+      if (request.url !== "/" || split === -1) {
+        response.end(body);
+        return;
+      }
+      const cut = split + "</footer>".length;
+      response.write(html.slice(0, cut));
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      response.end(html.slice(cut));
+    });
+    await new Promise<void>((resolve) => proxy.listen(0, "localhost", resolve));
+    proxyUrl = `http://localhost:${(proxy.address() as AddressInfo).port}`;
+  });
+
+  test.afterAll(async () => {
+    await new Promise((resolve) => proxy.close(resolve));
+  });
+
+  test("the footer does not shift when the cookie card arrives in the second chunk", async ({
+    page,
+  }) => {
+    const messages = getLocaleMessages(DEFAULT_LOCALE);
+    await page.addInitScript(recordLayoutShifts);
+    await page.goto(`${proxyUrl}/`);
+    await expect(
+      page.getByRole("region", { name: messages.cookie.title }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: messages.theme.switchToSystem }),
+    ).toBeEnabled();
+    const shifts = await page.evaluate(readLayoutShifts);
+    const total = shifts.reduce((sum, shift) => sum + shift.value, 0);
+    expect(total, JSON.stringify(shifts)).toBeLessThan(0.01);
+  });
+});
