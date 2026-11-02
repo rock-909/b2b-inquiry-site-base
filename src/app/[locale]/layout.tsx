@@ -148,6 +148,11 @@ async function AsyncLocaleLayoutContent({
           {/* P1-1 Fix: Single attribution initialization for UTM tracking */}
           <AttributionBootstrap />
 
+          {/* 语言建议条：页面最顶部、页头之上 */}
+          {LOCALES_CONFIG.locales.length > 1 ? (
+            <LanguageSuggestion locale={locale} copy={languageSuggestionCopy} />
+          ) : null}
+
           {/* 导航栏 */}
           <Header
             locale={locale}
@@ -171,9 +176,6 @@ async function AsyncLocaleLayoutContent({
           />
 
           <CookieConsentIsland />
-          {LOCALES_CONFIG.locales.length > 1 ? (
-            <LanguageSuggestion locale={locale} copy={languageSuggestionCopy} />
-          ) : null}
         </ThemeProvider>
       </NextIntlClientProvider>
     </>

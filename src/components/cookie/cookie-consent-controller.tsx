@@ -11,21 +11,11 @@ import {
   saveConsent,
 } from "@/lib/cookie-consent/storage";
 import {
-  CONSENT_CHANGE_EVENT,
   CONSENT_PENDING_DATASET_KEY,
   CONSENT_STORAGE_KEY,
   OPEN_CONSENT_EVENT,
-  type ConsentChangeDetail,
   type CookieConsent,
 } from "@/lib/cookie-consent/types";
-
-function notifyConsentChange(choiceMade: boolean) {
-  window.dispatchEvent(
-    new CustomEvent<ConsentChangeDetail>(CONSENT_CHANGE_EVENT, {
-      detail: { choiceMade },
-    }),
-  );
-}
 
 export function CookieConsentController() {
   const [consent, setConsent] = useState<CookieConsent | null | undefined>(
@@ -38,7 +28,6 @@ export function CookieConsentController() {
     const reopen = () => {
       clearConsent();
       setConsent(null);
-      notifyConsentChange(false);
     };
     // 其他标签页改动或撤回选择时，本标签页重新读取，保证撤回立即生效
     const syncFromOtherTab = (event: StorageEvent) => {
@@ -64,7 +53,6 @@ export function CookieConsentController() {
   const choose = (nextConsent: CookieConsent) => {
     saveConsent(nextConsent);
     setConsent(nextConsent);
-    notifyConsentChange(true);
   };
 
   // 卡片随服务端 HTML 输出，先隐藏；还没读存储时只有预绘制脚本能让它显示。
