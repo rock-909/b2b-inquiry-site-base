@@ -243,17 +243,24 @@ test.describe("home page streamed in two chunks split after the footer", () => {
   let proxy: Server;
   let proxyUrl = "";
 
-  test.beforeAll(async ({}, testInfo) => {
-    const upstream = String(testInfo.project.use.baseURL);
+  test.beforeAll(async () => {
+    const upstream = String(test.info().project.use.baseURL);
     proxy = createServer(async (request, response) => {
-      const upstreamResponse = await fetch(new URL(request.url ?? "/", upstream), {
-        headers: { accept: request.headers.accept ?? "*/*" },
-        redirect: "manual",
-      });
+      const upstreamResponse = await fetch(
+        new URL(request.url ?? "/", upstream),
+        {
+          headers: { accept: request.headers.accept ?? "*/*" },
+          redirect: "manual",
+        },
+      );
       const body = Buffer.from(await upstreamResponse.arrayBuffer());
       const headers: Record<string, string> = {};
       upstreamResponse.headers.forEach((value, key) => {
-        if (!["content-length", "content-encoding", "transfer-encoding"].includes(key)) {
+        if (
+          !["content-length", "content-encoding", "transfer-encoding"].includes(
+            key,
+          )
+        ) {
           headers[key] = value;
         }
       });
