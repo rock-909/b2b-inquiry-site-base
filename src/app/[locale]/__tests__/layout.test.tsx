@@ -23,6 +23,12 @@ vi.mock("@/i18n/locale-utils", () => ({
   isLocale: (locale: string) => locale === "en",
 }));
 
+function findBody(page: Awaited<ReturnType<typeof LocaleLayout>>) {
+  return (page.props.children as ReactElement<{ children: any }>[]).find(
+    (child) => child?.type === "body",
+  )!;
+}
+
 describe("LocaleLayout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -50,14 +56,13 @@ describe("LocaleLayout", () => {
       children: <div>Child</div>,
       params: Promise.resolve({ locale: "en" }),
     });
-    const body = page.props.children;
+    const body = findBody(page);
 
     expect(page.type).toBe("html");
     expect(page.props).toMatchObject({
       lang: "en",
       suppressHydrationWarning: true,
     });
-    expect(body.type).toBe("body");
     expect(body.props.children.props.children).toEqual(<div>Child</div>);
   });
 
@@ -70,7 +75,7 @@ describe("LocaleLayout", () => {
       params: Promise.resolve({ locale: "en" }),
     });
     // body 里是异步内容组件；直接调用它拿到渲染树，不为测试新增导出。
-    const content = page.props.children.props.children;
+    const content = findBody(page).props.children;
     const tree = await content.type(content.props);
     const provider = (tree.props.children as ReactElement[]).find(
       (child) => child?.type === NextIntlClientProvider,
@@ -88,7 +93,7 @@ describe("LocaleLayout", () => {
       children: <div>Child</div>,
       params: Promise.resolve({ locale: "en" }),
     });
-    const content = page.props.children.props.children;
+    const content = findBody(page).props.children;
     const tree = await content.type(content.props);
     const provider = (tree.props.children as ReactElement[]).find(
       (child) => child?.type === NextIntlClientProvider,
