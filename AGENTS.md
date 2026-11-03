@@ -1,6 +1,6 @@
 # AGENTS.md
 
-这是一个英文 B2B 询盘站模板，使用 Next.js App Router 和
+这是一个以英语为默认语言、内置西班牙语示例的 B2B 询盘站模板，使用 Next.js App Router 和
 Cloudflare/OpenNext，默认提供首页、联系与法务骨架和询盘链路；业务页面按派生需求建立。
 
 ## 默认实现策略
@@ -22,13 +22,13 @@ Cloudflare/OpenNext，默认提供首页、联系与法务骨架和询盘链路�
 | 修改范围 | 规则文件 |
 | --- | --- |
 | TypeScript、命名、import、复杂度、lint | `.claude/rules/coding-standards.md` |
-| 路由、layout、metadata、缓存、client 边界 | `.claude/rules/conventions.md` |
+| 路由、layout、缓存、client 边界 | `.claude/rules/conventions.md` |
 | 组件、页面 UI、Tailwind、设计 token | `.claude/rules/ui.md` |
 | 测试、fixture、mock、行为证明 | `.claude/rules/testing.md` |
 | API、安全配置、lead schema、Next 配置 | `.claude/rules/security.md` |
 | middleware、OpenNext、Wrangler、部署 | `.claude/rules/cloudflare.md` |
 | 内容、messages、站点配置、内容查询 | `.claude/rules/content.md` |
-| 翻译 key、locale 路由、i18n 管道 | `.claude/rules/i18n.md` |
+| 翻译 key、locale 路由、metadata、i18n 管道 | `.claude/rules/i18n.md` |
 | JSON-LD、FAQ schema、SEO 组件 | `.claude/rules/structured-data.md` |
 
 ## 验证边界

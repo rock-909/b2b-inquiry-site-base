@@ -2,7 +2,7 @@
 
 B2B 询盘站模板，提供联系和询盘转化基础能力，内置英语/西班牙语多语言示例。
 
-当前业务真相以本仓页面、内容、配置和上线证明为准。多 profile runtime 和 materialize 工具已经退役；旧说明需要追溯时看 Git 历史。
+当前业务真相以本仓页面、内容、配置和上线证明为准。
 
 ## 当前站点范围
 
@@ -13,7 +13,7 @@ B2B 询盘站模板，提供联系和询盘转化基础能力，内置英语/西
 
 模板默认保留可运行的公共页面和询盘链路；产品、服务和关于页由派生站按真实需求建立，不预先增加业务模型或产品/服务运行时 mode。
 
-品牌与站点身份只有一份配置：`src/config/single-site.ts` 的 `SINGLE_SITE_CONFIG`。公司、电话、WhatsApp（国际格式，显示为 wa.me 链接）、地址、成立年份、社交链接和 logo 均可省略；目前头部在配置 logo 后显示 logo，站点名出现在移动端导航菜单中；页脚始终显示「© 年份 公司名」（未填公司名时用站名），已填写的邮箱、电话、WhatsApp、地址和社交链接显示在页脚，联系卡显示已填写的邮箱、电话、WhatsApp 和地址，均与结构化数据同源。填写公司名才会生成 Organization JSON-LD，留空的字段不输出，未配置时不输出组织引用；已填写的值原样上线；格式在 `SINGLE_SITE_CONFIG` 加载时校验（格式错误会让 `pnpm build` 失败），占位值只由严格上线门禁拦截。公开域名、真实邮箱、部署资源与询盘运行安全配置仍须在上线前完成；法务骨架默认不索引。
+品牌与站点身份只有一份配置：`src/config/single-site.ts` 的 `SINGLE_SITE_CONFIG`。目前头部在配置 logo 后显示 logo，站点名出现在移动端导航菜单中；页脚始终显示「© 年份 公司名」（未填公司名时用站名），已填写的邮箱、电话、WhatsApp（国际格式，显示为 wa.me 链接）、地址和社交链接显示在页脚，联系卡显示已填写的邮箱、电话、WhatsApp 和地址，均与结构化数据同源。填写公司名才会生成 Organization JSON-LD，未配置时不输出组织引用。哪些字段可省略、格式校验和占位值拦截见[派生项目交接的设计与内容继承边界](docs/派生项目交接.md#设计与内容继承边界)。公开域名、真实邮箱、部署资源与询盘运行安全配置仍须在上线前完成；法务骨架默认不索引。
 
 ## 快速开始
 
@@ -48,7 +48,7 @@ pnpm website:check
 pnpm website:build:cf
 ```
 
-CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、Semgrep 和 Cloudflare/OpenNext build proof。
+完整 CI 检查见[质量门禁](docs/质量门禁.md)。
 
 ## 主要维护入口
 
@@ -61,7 +61,7 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 | 创建、fork 或接手派生站 | [派生项目交接](docs/派生项目交接.md) |
 | 调整视觉或比较参考 | [设计真相](docs/design/设计真相.md) → 按任务查[设计参考](docs/design/设计参考.md) |
 
-派生站研究从 [派生站工作流](docs/派生站工作流.md) 开始；整体换肤从 `src/app/theme.css` 开始，询盘通知邮件的颜色另有一份 sRGB 快照 `src/config/static-theme-colors.ts`，换主色时要一起改；组件结构和 variant 看 `.claude/rules/ui.md` 与 `src/components/ui/*`；单页特殊设计直接改对应页面或领域组件。
+派生站研究从 [派生站工作流](docs/派生站工作流.md) 开始；换肤、组件结构和单页设计的入口见 `.claude/rules/ui.md` 的 Design tokens；换主色步骤（含询盘通知邮件的 sRGB 快照）见[派生项目交接的第一轮替换](docs/派生项目交接.md#第一轮替换)。
 
 创建、fork 或接手派生站时，从 [派生项目交接](docs/派生项目交接.md) 开始；不要继承模板或另一个站点的 provider、部署和 Owner 证据。
 
@@ -71,11 +71,7 @@ CI 当前保留类型、lint、测试、Dependency Cruiser、Playwright smoke、
 
 ## 当前内容和配置真相
 
-- 品牌事实：`src/config/single-site.ts`
-- SEO / crawl：`src/config/single-site-seo.ts`
-- 导航编写入口：见 `.claude/rules/content.md` 的 Authoring sources；首页普通联系链接使用现有路径配置
-- 页面正文：`src/content/pages/{locale}/*.ts`
-- UI 文案 authoring truth：`messages/base/{locale}/messages.json`
+- 品牌事实、页面正文、SEO / crawl、导航和 UI 文案的编写入口：见 `.claude/rules/content.md` 的 Authoring sources；首页普通联系链接使用现有路径配置
 
 修改 locale message pack 后运行 `pnpm content:check`。消息叶子值必须是字符串，允许有意义的空字符串；数字、布尔值、`null` 和数组会使检查失败，并输出对应语言文件和消息路径。
 

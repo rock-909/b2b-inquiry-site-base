@@ -29,10 +29,7 @@ the proof table; do not add phase-named wrappers without a real repeated workflo
 | Local Cloudflare preview behavior | `pnpm exec opennextjs-cloudflare preview --env preview` + `node scripts/quality/checks/cloudflare-smoke.js cf-preview-smoke` |
 | Cloudflare deploy-artifact proof | `pnpm exec wrangler deploy --dry-run --env preview` after `pnpm website:build:cf` and `pnpm exec opennextjs-cloudflare populateCache local --env preview` and `node scripts/quality/checks/cloudflare-artifact-config.js --static-assets-cache` (`opennextjs-cloudflare deploy`/`preview` populate it themselves; plain `wrangler deploy` does not, and a build that skipped populate still passes dry-run and smoke) |
 | Deployed Cloudflare behavior | `node scripts/quality/checks/cloudflare-smoke.js deployed-smoke --base-url <url>` |
-| Public submission routes or compatibility actions | related route/action/IP tests + `pnpm build` + `pnpm website:build:cf` |
-
-Never run `pnpm build` and `pnpm website:build:cf` in parallel. They both write to
-`.next`.
+| Public submission routes | related route/action/IP tests + `pnpm build` + `pnpm website:build:cf` |
 
 ## Build ownership
 
@@ -49,14 +46,11 @@ Never run `pnpm build` and `pnpm website:build:cf` in parallel. They both write 
 ## Runtime entry
 
 `src/middleware.ts` (edge runtime, `export function middleware`) is the runtime
-entrypoint as a transitional choice: OpenNext supports edge middleware, while its
-Node.js `proxy.ts` bundling is marked experimental and not maintained by the
-OpenNext maintainers. Next.js 16 deprecates the `middleware` file convention and
-prints a build warning; that warning is expected. Move back to `src/proxy.ts`
-only when stable OpenNext officially supports Node.js middleware or Next.js
-schedules the removal of edge middleware, with the build, preview, and deployed
-proof rows above. Keep the middleware to Web APIs; do not add Node.js-only
-imports to it.
+entrypoint. The reason, the expected Next.js 16 deprecation warning, and the
+conditions for moving back to `src/proxy.ts` are in
+[技术栈](../../docs/技术栈.md#cloudflare-能力评估2026-10-17) (中间件入口); a move
+back uses the build, preview, and deployed proof rows above. Keep the middleware
+to Web APIs; do not add Node.js-only imports to it.
 
 Keep `nodejs_compat` enabled, and do not replace the stable OpenNext package
 with `pkg.pr.new`, a canary, or a local package patch without a separate
@@ -69,31 +63,20 @@ proof rows above.
 
 ## Public submission identity
 
-Browser lead submissions go through the `/api/inquiry` route handler only.
-Middleware must not inject internal client-IP headers for public form flows.
-
-There is no live `'use server'` Server Action contact path. Any server-side
-submission code must validate internally and fail closed when request identity
-is unavailable rather than relying on middleware-provided trusted IP headers. For the
-inquiry rate limiter's fail-open exception, follow
-[Lead-family behavior](security.md#lead-family-behavior); unavailable rate-limit
-identity is not an authorization failure.
+Middleware must not pass identity, client IP, or auth decisions to public write
+flows; see [Server-only code](security.md#server-only-code).
 
 ## Cache and runtime bindings
 
-- Do not add `cacheTag()`, `revalidateTag()`, `revalidatePath()`, or
-  `updateTag()` to production code without a new Cloudflare proof plan.
 - The incremental cache is OpenNext's read-only Static Assets cache
   (`open-next.config.ts`); `wrangler.jsonc` binds no R2 bucket. Only a derived
   site that needs runtime revalidation switches back to R2, with separate
   Preview and Production buckets (`NEXT_INC_CACHE_R2_BUCKET`).
-- Cache Components and Partial Prefetching stay off until a formal stable
-  OpenNext release supports them and passes the project runtime proof lanes.
-- Do not add production `"use cache"` boundaries without that stable adapter
-  support, route-level cache behavior, and deployed Cloudflare proof.
-- Content updates flow through rebuild/redeploy.
-- Do not add KV, D1, Durable Objects, tag cache, queue overrides, or split
-  functions without a separate production requirement and proof plan.
+- Do not add a tag cache, queue overrides, or split functions to
+  `open-next.config.ts` without a separate production requirement and proof
+  plan.
+- Code-level cache APIs and KV, D1, or Durable Objects are governed by the
+  Cache section of [conventions.md](conventions.md#cache).
 
 Add platform bindings only for a real requirement, with proof of the deployed
 Cloudflare/OpenNext runtime path.

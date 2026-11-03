@@ -53,7 +53,8 @@ through convenience barrels.
 
 - Treat lint and complexity reports as review signals, not mechanical rewrite
   targets. Split only at a real behavior, data, platform, or security boundary.
-- Keep ESLint disables narrow and name the exact rule and current reason.
+- Keep ESLint disables narrow and name the exact rule and current reason
+  (enforced by eslint `eslint-comments/require-description`).
 - Name numeric values that carry domain meaning; keep incidental language,
   layout, and configuration literals inline when that is clearer.
 - Do not add broad `memo`, `useMemo`, or `useCallback` without measured need.
@@ -75,7 +76,8 @@ through convenience barrels.
 ## Quality boundaries
 
 - Do not weaken current TypeScript, ESLint, or build gates incidentally.
-- Production code must not import `src/test/**`.
+- Production code must not import `src/test/**` (enforced by dependency-cruiser
+  `no-test-support-imports-in-production`).
 - Prefer deleting stale compatibility code over wrapping obsolete behavior.
 
 ## Logging
@@ -88,10 +90,11 @@ logger.warn("Rate limit approaching", { remaining });
 ```
 
 Server and client production code import `logger` from `@/lib/logger`; PII
-sanitizers are server-use helpers and must not be called from Client Components.
+sanitizers are server-use helpers and must not be called from Client Components
+(enforced by semgrep `client-no-server-env-or-pii`).
 
 No bare `console.*` in production code unless the file is explicitly a logger,
-script, or test utility.
+script, or test utility (enforced by eslint `no-console`).
 
 ## Runtime assumptions
 

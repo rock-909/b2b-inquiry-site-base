@@ -32,7 +32,7 @@ function toSitemapStaticPath(path: string): string {
   return path === "/" ? "" : path;
 }
 
-// The only place a static page is registered: PageType, the proxy allowlist,
+// The only place a static page is registered: PageType, the middleware allowlist,
 // next-intl pathnames, sitemap, navigation, footer, lighthouserc.js and the
 // deploy smoke route list all derive from this array.
 // Node scripts require this file directly (no build step, no node_modules in

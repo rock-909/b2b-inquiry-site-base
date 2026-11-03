@@ -17,8 +17,6 @@ guidance.
 - Use the installed async request API shape for page/layout request props.
 - Locale URL, metadata and language-addition contracts are owned by `i18n.md`;
   do not maintain a second routing policy here.
-- Keep layouts and non-interactive sections as Server Components.
-- Push `"use client"` down to interactive leaf components.
 
 ## Client boundaries and lazy loading
 
@@ -33,24 +31,8 @@ guidance.
 
 ## Preserved route state
 
-Shared Client Components under layouts, headers, navigation, progress bars,
-cookie/attribution islands, or other persistent shells must not assume they
-unmount on App Router navigation.
-
-When a shared client island owns open, pending, expanded, selected, or progress
-state:
-
-- tie the state to the route identity when it should reset after navigation;
-- derive closed or inactive state during render when possible instead of
-  copying it through `useEffect`;
-- use the real browser pathname from `next/navigation` when route identity
-  matters;
-- treat same pathname plus same search as the same route for route-progress UI;
-- do not treat hash-only changes as route navigation.
-
-For lazy client islands opened by user intent, do not pass stale `initialOpen`
-or pending state after navigation. Store the pathname where activation happened
-and only auto-open when the current pathname still matches.
+Shared client islands under persistent layouts follow
+[Shared island state](ui.md#shared-island-state) in `ui.md`.
 
 ## Error boundaries
 
@@ -60,7 +42,7 @@ The inquiry form handles expected validation and provider failures locally.
 Do not add another boundary solely because a route has parameters or a form.
 
 User-interaction-triggered lazy loading is the exception: an `import()` island
-(`ActivatedIsland`, no Suspense) that loads on scroll, hover or click (mobile navigation,
+(`ActivatedIsland`, no Suspense) that loads on hover or click (mobile navigation,
 language menu) sits under a `[locale]` layout, so a failed `import()` would
 otherwise reach `global-error` and replace the whole page. Wrap each such island
 in `LazyIslandBoundary` and fall back to usable static markup (the island's
@@ -70,12 +52,18 @@ is cached, so only a page reload retries the chunk.
 ## Cache
 
 - Use `React.cache()` for request-level dedupe only.
-- Production cache boundaries and tag invalidation require Cloudflare/OpenNext
-  runtime proof.
 - Reserve `*Cached` suffix for exported helpers that actually define a cache
   boundary.
-- Do not add new `unstable_cache` usage or Cache Components without separate
-  Cloudflare/OpenNext proof.
+- Content updates flow through rebuild/redeploy.
+- Do not add `cacheTag()`, `revalidateTag()`, `revalidatePath()`, or
+  `updateTag()` to production code without a new Cloudflare proof plan.
+- Do not add new `unstable_cache` usage or production `"use cache"` boundaries
+  without stable OpenNext adapter support, route-level cache behavior, and
+  deployed Cloudflare proof.
+- Cache Components and Partial Prefetching stay off until a formal stable
+  OpenNext release supports them and passes the project runtime proof lanes.
+- Do not add KV, D1, or Durable Objects without a separate production
+  requirement and proof plan.
 
 ## Route addition
 
@@ -89,9 +77,10 @@ or it will 404.
 When removing a route:
 
 1. Delete the route directory under `src/app/[locale]/`.
-2. Remove path/config entries.
-3. Remove sitemap generation for the route.
-4. Remove navigation links.
-5. Remove param helpers.
-6. Remove or update tests.
-7. Run `pnpm type-check`.
+2. For a static page, remove its `src/config/pages.config.ts` entry and its
+   `src/content/pages/<locale>/` modules with their `src/lib/content/static-pages.ts`
+   registrations; sitemap, navigation, and the middleware allowlist follow from
+   `pages.config.ts`. For a dynamic route, also remove its middleware match,
+   sitemap and `/llms.txt` entries, and param helper.
+3. Remove or update tests.
+4. Run `pnpm type-check`.
