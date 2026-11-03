@@ -92,34 +92,27 @@ Base UI state attributes such as `data-open` and `data-closed`, plus its
 positioning and sizing CSS variables, are runtime interaction data. They are
 not brand design tokens.
 
-## Mobile navigation boundaries
+## Shared island state
 
-Keep mobile navigation interaction state inside the smallest client island. Do
-not turn the whole header, navigation shell, or static fallback into a Client
-Component only to support drawer state.
-
-When changing header or mobile navigation, preserve the server-rendered/no-JS
-fallback, accessible labels, stable links, and the smallest client boundary.
-
-## Header and shared island state
-
-Header, language switcher, mobile sheet, dropdown menu, route progress, and
-similar shared UI must keep interaction state inside the smallest client island.
+Header, language switcher, mobile navigation sheet, dropdown menu,
+cookie/attribution islands, and similar shared UI under persistent layouts must
+keep interaction state inside the smallest client island. Do not turn the whole
+header, navigation shell, layout, or static fallback into a Client Component
+only to support or reset drawer or dropdown state.
 
 Do not rely on route unmounting to close shared UI. If a stateful surface should
 close after navigation, bind its open state to the route identity or derive the
-closed state from the current pathname.
+closed state from the current pathname during render instead of copying it
+through `useEffect`. Use the real browser pathname from `next/navigation` when
+route identity matters; a hash-only change is not route navigation.
 
 For lazy-loaded stateful UI:
 
-- keep the server/no-JS fallback stable;
-- record where the user activation happened when `initialOpen` or pending UI is
-  used;
-- do not let a late-loaded island open on a different route;
-- preserve accessible labels and stable locators.
-
-Do not move the whole header or layout to a Client Component just to reset
-dropdown, drawer, or progress state.
+- keep the server-rendered/no-JS fallback stable;
+- when `initialOpen` or pending UI is used, record the pathname where the user
+  activation happened and only auto-open while the current pathname still
+  matches, so a late-loaded island never opens on a different route;
+- preserve accessible labels, stable links, and stable locators.
 
 ## Design tokens
 

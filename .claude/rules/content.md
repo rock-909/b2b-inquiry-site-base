@@ -20,7 +20,7 @@ Every content field has one authoring source.
 | --- | --- | --- |
 | Company-wide facts | `src/config/single-site.ts` | Page prose |
 | Page prose, FAQ, page SEO | `src/content/pages/{locale}/*.ts` | Translation JSON |
-| Page route, content slug, main navigation, and footer navigation column | `src/config/pages.config.ts` (`navigationKey` selects pages in definition order); main-navigation sub-menus (`groups`) in `src/config/single-site-navigation.ts` | Page modules or independent navigation lists |
+| Page route, content slug, main navigation, and footer navigation column | `src/config/pages.config.ts` (`navigationKey` selects pages in definition order; contact stays out of the main navigation and is reached through the header CTA, see `src/config/single-site-navigation.ts`); main-navigation sub-menus (`groups`) in `src/config/single-site-navigation.ts` | Page modules or independent navigation lists |
 | Crawl/indexing policy | `src/config/single-site-seo.ts` | Page components |
 | Shared labels/nav/buttons/form chrome | `messages/base/{locale}/messages.json` | Page metadata |
 

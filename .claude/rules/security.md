@@ -23,7 +23,8 @@ Browser-exposed write endpoints need:
 - Zod validation;
 - Turnstile or equivalent browser anti-abuse check;
 - small route-local or shared rate limit when currently wired;
-- stable machine-readable error codes.
+- stable machine-readable error codes (enforced by semgrep
+  `api-route-free-text-error-response`).
 
 The existing distributed rate limiter is wired to public write routes; do not
 replace it or add body hashing, replay detection, fingerprinting, or similar
@@ -43,18 +44,19 @@ classification logic unless the route has a documented business reason.
 - Missing server configuration, network failure, or timeout means service
   unavailable.
 - Public write routes must expose stable machine-readable error codes for these
-  categories.
+  categories (enforced by semgrep `api-route-free-text-error-response`).
 
 ## Lead-family behavior
 
 Canonical behavior for contact and inquiry:
 
 ```text
-browser form -> route handler (exact application/json content type -> 415, same-origin -> 403) -> rate limit -> honeypot -> Zod -> Turnstile -> process lead -> owner email + Airtable record (parallel)
+browser form -> route handler (exact application/json content type -> 415, same-origin -> 403) -> rate limit -> body parse/size (safeParseJson, 64 KiB) -> honeypot -> Zod -> Turnstile -> process lead -> owner email + Airtable record (parallel)
 ```
 
 - The content-type and origin checks deliberately precede the rate limiter so
-  cross-site junk cannot consume a real buyer IP's quota.
+  cross-site junk cannot consume a real buyer IP's quota. A request without an
+  `Origin` header passes the origin check.
 - Owner email and Airtable are independent parallel deliveries sharing one reference ID.
   Airtable does not claim whether the email arrived. The owner must periodically
   review backup records, not only records marked as notification failures.
@@ -111,7 +113,8 @@ would consume the token before the real submission.
 
 Public write routes parse request bodies through `safeParseJson`
 (`src/lib/api/safe-parse-json.ts`) instead of hand-rolling body reads, so size,
-empty-body, and top-level-array policy stay consistent.
+empty-body, and top-level-array policy stay consistent (enforced by semgrep
+`no-raw-request-json-in-api` and `starter-lead-route-missing-safe-json-body`).
 
 ### Inquiry anti-abuse (active public writer)
 
@@ -139,7 +142,8 @@ errors or markers in the public JSON.
   justifies the trade-off.
 - Do not mix nonce-based CSP into ordinary security cleanup; it needs a separate
   dynamic-rendering and Cloudflare/OpenNext proof.
-- Do not use unfiltered `dangerouslySetInnerHTML`.
+- Do not use unfiltered `dangerouslySetInnerHTML` (enforced by semgrep
+  `nextjs-unsafe-dangerouslySetInnerHTML`).
 - URL values must allow only `https://`, `http://`, or site-relative `/`.
 
 ## Env boundaries
@@ -147,9 +151,10 @@ errors or markers in the public JSON.
 - App/runtime code reads server values through `@/lib/env`: runtime reads use
   `getRuntimeEnvString` / `getRuntimeEnvBoolean`, which validate the raw value
   against its schema; do not add `?? env.X` fallbacks (see the top of `env.ts`).
+  (Enforced by eslint `no-process-env` and semgrep `env-access-bypass-in-config`.)
 - Client Components read only allowlisted `NEXT_PUBLIC_*` values through
-  `@/lib/public-runtime-env`, never `@/lib/env`.
+  `@/lib/public-runtime-env`, never `@/lib/env` (enforced by semgrep
+  `client-no-server-env-or-pii`).
 - Do not expose server secrets through `NEXT_PUBLIC_*`.
 - Sensitive keys include `AIRTABLE_API_KEY`, `RESEND_API_KEY`,
-  `TURNSTILE_SECRET_KEY`, Cloudflare API tokens, and owner dashboard access
-  keys.
+  `TURNSTILE_SECRET_KEY`, and Cloudflare API tokens.

@@ -44,7 +44,7 @@ overrides:
   minimatch@<3.1.5: '>=3.1.5'
   # version floor; reached via minimatch
   brace-expansion@<1.1.13: '>=1.1.13'
-  # @opennextjs/aws declares ^8.0.6, whose glob 10.3.3 is in the glob@10.2-10.5 vulnerable range; 9.x uses glob 10.5.0
+  # @opennextjs/aws@4.1.14 declares ^9.0.2; 9.0.2 pins glob 10.3.3 (in the glob@10.2-10.5 vulnerable range), which the glob version floor below raises to 10.5.0
   '@opennextjs/aws>@node-minify/core': 9.0.2
   # same reason as @node-minify/core above
   '@opennextjs/aws>@node-minify/terser': 9.0.1

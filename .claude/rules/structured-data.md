@@ -32,8 +32,8 @@ escaping behavior covered by tests.
   and empty optional fields are omitted from the node; placeholder values are
   never guessed at runtime (the launch gate blocks them). Do not require company
   details merely to populate schema.
-- Page: page-specific schemas such as FAQPage, Article, Product, WebPage,
-  ItemList, and BreadcrumbList.
+- Page: page-specific schemas; the shared generators currently produce WebPage,
+  BreadcrumbList, and FAQPage (see below for derived-site `Product`).
 - Component shell: only when the shell owns page-level rendering, and the
   schema still comes from the shared generators.
 
