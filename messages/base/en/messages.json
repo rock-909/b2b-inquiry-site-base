@@ -26,7 +26,7 @@
     "rejectAll": "Reject all",
     "settings": "Cookie settings"
   },
-  "structured-data": {
+  "structuredData": {
     "website": {
       "description": "B2B inquiry site reference"
     }

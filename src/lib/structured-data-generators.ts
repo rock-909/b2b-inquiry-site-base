@@ -4,7 +4,7 @@ import { routing } from "@/i18n/routing";
 
 const FALLBACK_BASE_URL = SINGLE_SITE_CONFIG.baseUrl;
 type StructuredDataTranslator = Awaited<
-  ReturnType<typeof getTranslations<"structured-data">>
+  ReturnType<typeof getTranslations<"structuredData">>
 >;
 
 interface WebPageSchemaInput {
