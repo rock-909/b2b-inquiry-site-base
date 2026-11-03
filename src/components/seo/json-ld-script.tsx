@@ -59,7 +59,7 @@ export async function JsonLdGraphScript({
   try {
     const t = await getTranslations({
       locale,
-      namespace: "structured-data",
+      namespace: "structuredData",
     });
     const organization = generateOrganizationData();
     identity = [

@@ -21,7 +21,7 @@ const mockTranslator = ((key: string) => {
   return values[key] ?? key;
 }) as Awaited<
   ReturnType<
-    typeof import("next-intl/server").getTranslations<"structured-data">
+    typeof import("next-intl/server").getTranslations<"structuredData">
   >
 >;
 
