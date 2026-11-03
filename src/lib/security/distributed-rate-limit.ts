@@ -7,6 +7,8 @@
  * Store implementations are in ./stores/rate-limit-store.ts.
  */
 
+import "server-only";
+
 import {
   getRuntimeAppEnv,
   getRuntimeEnvString,
