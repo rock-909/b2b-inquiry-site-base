@@ -9,6 +9,8 @@
  * (easily spoofed).
  */
 
+import "server-only";
+
 import { getRuntimeEnvString, isRuntimeProduction } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { generateHMAC } from "@/lib/security/crypto";

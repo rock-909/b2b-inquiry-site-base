@@ -6,6 +6,8 @@
  * 失败分类和诊断日志都在这里完成：每次失败只在分类处记一条日志。
  */
 
+import "server-only";
+
 import {
   INQUIRY_TURNSTILE_ACTION,
   TURNSTILE_ALWAYS_PASS_TEST_SECRET,
