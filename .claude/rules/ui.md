@@ -101,9 +101,11 @@ header, navigation shell, layout, or static fallback into a Client Component
 only to support or reset drawer or dropdown state.
 
 Do not rely on route unmounting to close shared UI. If a stateful surface should
-close after navigation, bind its open state to the route identity or derive the
-closed state from the current pathname during render instead of copying it
-through `useEffect`. Use the real browser pathname from `next/navigation` when
+close after navigation, bind its open state to the route identity: reset the
+stored open state when the pathname changes, during render instead of through
+`useEffect`. Only hiding a stored open state while the pathname differs is not
+enough, because it reopens when history navigation returns to that pathname.
+Use the real browser pathname from `next/navigation` when
 route identity matters; a hash-only change is not route navigation.
 
 For lazy-loaded stateful UI:
