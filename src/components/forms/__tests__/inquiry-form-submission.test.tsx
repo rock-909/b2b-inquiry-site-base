@@ -119,6 +119,40 @@ describe("InquiryForm submission lifecycle", () => {
     expect(fullName).toHaveValue("Grace");
   });
 
+  it("keeps a newer draft when an earlier form's request succeeds late", async () => {
+    let resolveFetch: (value: Response) => void = () => undefined;
+    vi.mocked(fetch).mockImplementationOnce(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+
+    // 买家提交后在请求落定前离开联系页，再回来写一段新的、尚未发送的需求。
+    const oldForm = renderInquiryForm();
+    const { form } = fillRequiredFields(oldForm.container);
+    await act(async () => {
+      fireEvent.submit(form);
+    });
+    oldForm.unmount();
+
+    const newForm = renderInquiryForm();
+    fireEvent.input(getFormControls(newForm.container).message, {
+      target: { value: "New unsent requirements" },
+    });
+
+    // 旧请求的成功只能清掉它自己发出的那份草稿，不能清掉新写的。
+    await act(async () => {
+      resolveFetch(successResponse());
+    });
+    newForm.unmount();
+
+    const returned = renderInquiryForm();
+    expect(getFormControls(returned.container).message).toHaveValue(
+      "New unsent requirements",
+    );
+  });
+
   it("requires a fresh Turnstile token for the next submit", async () => {
     const { container, copy } = renderInquiryForm();
     const { form } = fillRequiredFields(container);
