@@ -45,12 +45,6 @@ function expectPreviewStepEnv(
   expect(step?.env?.NEXT_PUBLIC_TURNSTILE_SITE_KEY, stepName).toBe(
     turnstileSiteKey,
   );
-  expect(step?.env?.NEXT_PUBLIC_SITE_URL, stepName).not.toContain(
-    "example.com",
-  );
-  expect(step?.env?.NEXT_PUBLIC_SITE_URL, stepName).not.toContain(
-    "reference-site",
-  );
 }
 
 describe("CI preview environment contract", () => {

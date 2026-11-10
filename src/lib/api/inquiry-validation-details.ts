@@ -28,26 +28,12 @@ function isBlankSourceValue(value: unknown): boolean {
   return typeof value === "string" && value.trim().length === 0;
 }
 
-function readCustomReason(issue: ZodIssue): unknown {
-  if (
-    !("params" in issue) ||
-    typeof issue.params !== "object" ||
-    !issue.params
-  ) {
-    return undefined;
-  }
-
-  if (!("reason" in issue.params)) return undefined;
-  return issue.params.reason;
-}
-
 /**
  * 与既有 wire 行为逐条对齐的分类规则：
  * - too_small：minimum<=1 或 source 缺失/空白 → required，否则 tooLong 之外的
  *   tooSmall 场景在 inquiryLeadSchema 下不存在（各字段均为 min(1)/max(N)）；
  * - too_big → tooLong；
  * - invalid_type：source 缺失或空白 → required，否则 invalid；
- * - custom：显式 reason==="required"，或 source 缺失/空白 → required，否则 invalid；
  * - 其余 code（含 email 格式 invalid_format 等）：source 缺失/空白 → required，否则 invalid。
  */
 function classifyIssue(
@@ -67,9 +53,6 @@ function classifyIssue(
     case "too_big":
       return "tooLong";
     case "invalid_type":
-      return missingOrBlank ? "required" : "invalid";
-    case "custom":
-      if (readCustomReason(issue) === "required") return "required";
       return missingOrBlank ? "required" : "invalid";
     default:
       return missingOrBlank ? "required" : "invalid";

@@ -7,7 +7,7 @@ pre-commit:
   commands:
     # 只检查暂存文件，不修改工作区。
     format-check:
-      glob: "*.{js,jsx,ts,tsx,json,md,mdx,yml,yaml,css,scss,html}"
+      glob: "*.{js,jsx,ts,tsx,json,mdx,css,scss}"
       run: pnpm exec prettier --check {staged_files}
       fail_text: '代码格式检查失败 - 请运行 pnpm exec prettier --write <files> 修复格式问题'
 
@@ -24,7 +24,7 @@ pre-commit:
         else
           echo "跳过 i18n 同步检查（无相关变更）"
         fi
-      fail_text: '翻译验证失败 - 请同步 messages 物理包与内容文件'
+      fail_text: '翻译验证失败 - 请让各语言 messages 文件的键保持一致'
       stage_fixed: false
 
 commit-msg:

@@ -25,7 +25,7 @@
 const isFullCoverage = process.env.CI_FULL_COVERAGE === "true";
 
 // 本站 localePrefix 为 'as-needed'（src/config/paths/locales-config.ts），正式 URL
-// 不带 locale 段：`/en/x` 会 302 到 `/x`。直接请求无前缀地址，才不会把每一页都
+// 不带 locale 段：`/en/x` 会永久重定向到 `/x`。直接请求无前缀地址，才不会把每一页都
 // 变成一次重定向测量。owner 确认后续加语种时，再按当时的前缀策略调整。
 
 // Deliberately not 3000. That port is shared by `pnpm dev`, `pnpm start`, the

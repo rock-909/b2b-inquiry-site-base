@@ -96,9 +96,6 @@
   --font-mono:
     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
     monospace;
-  --font-chinese:
-    "Source Han Sans SC", "Noto Sans SC", "PingFang SC", "Hiragino Sans GB",
-    "Microsoft YaHei", sans-serif;
   --tracking-normal: 0em;
 
   /* 动效曲线：抽屉起步快、收尾慢；一次性浮层入场用强 ease-out。 */

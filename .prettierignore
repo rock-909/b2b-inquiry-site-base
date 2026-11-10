@@ -5,8 +5,6 @@ node_modules/
 # Build outputs
 .next/
 .next-lighthouse/
-out/
-dist/
 build/
 
 # Conductor local collaboration artifacts
@@ -15,7 +13,6 @@ build/
 # Generated files
 *.min.js
 *.min.css
-*.generated.ts
 
 # Reports and generated content
 reports/
@@ -108,9 +105,6 @@ docs/
 
 # Content files
 content/
-
-# Local MCP config (may contain comments / non-standard JSON)
-.mcp.json
 
 # Claude Code local settings
 .claude/

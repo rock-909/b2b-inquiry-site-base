@@ -36,6 +36,19 @@ export interface ApiSuccessResponse<T> {
  */
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
+function createApiErrorBody(
+  errorCode: ApiErrorCode,
+  options?: ApiErrorResponseOptions,
+): ApiErrorResponse {
+  const body: ApiErrorResponse = { success: false, errorCode };
+
+  if (options?.details && options.details.length > 0) {
+    body.details = options.details;
+  }
+
+  return body;
+}
+
 /**
  * Create a standardized error response
  *
@@ -52,19 +65,6 @@ export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
  * return createApiErrorResponse(API_ERROR_CODES.INVALID_JSON_BODY, HTTP_BAD_REQUEST);
  * ```
  */
-function createApiErrorBody(
-  errorCode: ApiErrorCode,
-  options?: ApiErrorResponseOptions,
-): ApiErrorResponse {
-  const body: ApiErrorResponse = { success: false, errorCode };
-
-  if (options?.details && options.details.length > 0) {
-    body.details = options.details;
-  }
-
-  return body;
-}
-
 export function createApiErrorResponse(
   errorCode: ApiErrorCode,
   status: number,

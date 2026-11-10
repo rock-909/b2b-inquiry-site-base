@@ -33,8 +33,6 @@ import type {
 } from "@/config/site-types";
 import { LOCALES_CONFIG, type ConfiguredLocale } from "@/config/paths";
 
-// Client analytics are rendered as an island to avoid impacting LCP
-
 // 重新导出元数据生成函数
 export const generateMetadata = generateLocaleMetadata;
 
@@ -145,7 +143,7 @@ async function AsyncLocaleLayoutContent({
           enableSystem
           disableTransitionOnChange
         >
-          {/* P1-1 Fix: Single attribution initialization for UTM tracking */}
+          {/* UTM 归因只在这里初始化一次 */}
           <AttributionBootstrap />
 
           {/* 语言建议条：页面最顶部、页头之上 */}

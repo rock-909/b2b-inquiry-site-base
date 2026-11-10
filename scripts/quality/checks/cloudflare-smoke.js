@@ -122,7 +122,7 @@ function parseSmokeArgs(args, optionSpecs, initial) {
     if (arg === "--") continue;
 
     const spec = optionSpecs[arg];
-    // 与原实现一致：未知参数与"缺值"场景共用同一错误合同。
+    // 未知参数与"缺值"场景共用同一错误合同。
     if (!spec) {
       throw new Error(`Unknown argument: ${arg}`);
     }
@@ -267,7 +267,7 @@ function collectProbeFields(pathname, response, body, retries) {
 
 /**
  * 单条路由探测。所有 smoke lane 共用这一份 fetch/text/超时/重试实现；
- * 无重试需求的 lane 传 retries=0（默认），行为与旧版完全一致。
+ * 无重试需求的 lane 传 retries=0（默认），即只探测一次。
  */
 async function probePathname(
   baseUrl,
@@ -314,7 +314,7 @@ async function probePathname(
       return collectProbeFields(pathname, response, body, retries);
     } catch (error) {
       lastError = error;
-      // 与旧实现一致的三段语义：
+      // 三段语义：
       // 1) 不可重试错误立即原样冒泡；
       // 2) 可重试错误且仍有预算 -> 重试；
       // 3) 可重试错误且预算耗尽 -> deployed lane 包装为 retry-loop 失败。
@@ -347,7 +347,7 @@ async function probePathname(
 }
 
 // ---------------------------------------------------------------------------
-// 统一的评估器：按 lane 能力开关逐项核对，失败消息与旧实现逐字一致。
+// 统一的评估器：按 lane 能力开关逐项核对。
 // ---------------------------------------------------------------------------
 
 function pushFailureUnless(condition, message, failures) {
@@ -385,7 +385,7 @@ function getEffectiveReferrerPolicy(value) {
   return recognized.at(-1);
 }
 
-// F-05：安全 header 必须真的到达浏览器——配置存在不等于生效，
+// 安全 header 必须真的到达浏览器——配置存在不等于生效，
 // 部署管线（CDN/Worker/静态资产分流）任何一环丢失都只能在这里发现。
 // 按策略语义判断“实际生效的值”，而不是子串包含：被改写或被覆盖的值不能算通过。
 function pushSecurityHeaderChecks(response, failures) {
@@ -480,7 +480,7 @@ function pushCacheControlCheck(response, expectation, failures) {
 
 /**
  * 按 lane 能力开关评估单条探针结果。html=true 时隐含 body 错误检查，
- * 与旧实现的检查集合完全一致；bodyErrors 显式开启供 external lane 使用。
+ * bodyErrors 显式开启供 external lane 使用。
  */
 function evaluateProbe(
   response,
@@ -585,7 +585,7 @@ async function runCloudflarePreviewSmoke(args = []) {
     );
   }
 
-  // 与旧实现一致：middleware cookie 泄漏先于其余检查整体输出。
+  // middleware cookie 泄漏先于其余检查整体输出。
   for (const response of responses) {
     pushLeakedMiddlewareCookieCheck(response, failures);
   }
@@ -627,7 +627,7 @@ function buildDeployedSmokeHeaders(headerName, headerValue) {
 async function runDeployedSmoke(args = []) {
   const { baseUrl, headerName, headerValue } = parseDeployedSmokeArgs(args);
   // buildDeployedSmokeHeaders 携带的默认 UA 与探针一致；自定义 proof header
-  // 通过展开传入，若显式覆盖 user-agent 也与旧实现一样生效。
+  // 通过展开传入，显式覆盖 user-agent 时以自定义值为准。
   const extraHeaders = buildDeployedSmokeHeaders(headerName, headerValue);
   const failures = [];
   const retryEvents = [];
@@ -895,9 +895,8 @@ async function runCloudflarePreviewDeployedProof(args) {
     );
   }
 
-  // Proof adapter 保持与旧实现一致的子进程边界：deployed-smoke 以独立进程
-  // 运行，崩溃域隔离且 CLI/proof JSON 语义 100% 不变；这是审计建议中
-  // "可控 fixture/subprocess 验证"的最强形式。
+  // Proof adapter 以独立子进程运行 deployed-smoke，崩溃域隔离，
+  // CLI 与 proof JSON 语义和直接调用相同。
   const smokeArgs = [
     "scripts/quality/checks/cloudflare-smoke.js",
     "deployed-smoke",

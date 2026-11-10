@@ -17,7 +17,6 @@ export const LOCALES_CONFIG = {
   defaultLocale: "en",
   localePrefix: "as-needed",
   displayNames: { en: "English", de: "Deutsch" },
-  triggerLabels: { en: "English", de: "Deutsch" },
   timeZones: { en: "UTC", de: "Europe/Berlin" },
 } as const;
 

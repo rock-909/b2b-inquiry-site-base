@@ -10,10 +10,6 @@ export const LOCALES_CONFIG = Object.freeze({
     en: "English",
     es: "Español",
   }),
-  triggerLabels: Object.freeze({
-    en: "English",
-    es: "Español",
-  }),
   timeZones: Object.freeze({
     en: "UTC",
     es: "Europe/Madrid",

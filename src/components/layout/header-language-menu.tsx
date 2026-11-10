@@ -74,7 +74,7 @@ export function HeaderLanguageMenu({
       >
         <Globe aria-hidden="true" className="size-4" />
         <span data-testid="language-current-label" translate="no">
-          {LOCALES_CONFIG.triggerLabels[currentLocale]}
+          {LOCALES_CONFIG.displayNames[currentLocale]}
         </span>
         <ChevronDown
           aria-hidden="true"

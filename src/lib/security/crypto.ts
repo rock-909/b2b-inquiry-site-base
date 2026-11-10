@@ -1,6 +1,6 @@
 /**
- * 加密和密码哈希工具
- * Cryptography and password hashing utilities
+ * 加密工具
+ * Cryptography utilities
  */
 
 const HEX_PAD_LENGTH = 2;
