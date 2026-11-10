@@ -24,7 +24,7 @@ function isValidLogLevel(value: string): value is LogLevel {
 }
 
 function getLogLevel(): LogLevel {
-  const rawLevel = process.env.NEXT_PUBLIC_LOG_LEVEL ?? process.env.LOG_LEVEL;
+  const rawLevel = process.env.LOG_LEVEL;
   const level = rawLevel?.toLowerCase() as LogLevel | undefined;
   if (level && isValidLogLevel(level)) {
     return level;

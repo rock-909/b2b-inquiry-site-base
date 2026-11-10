@@ -13,6 +13,9 @@ import {
   createStaticPageMetadataConfig,
 } from "@/lib/seo-metadata";
 
+// 内容只依赖构建期配置和消息，构建时生成一次，与 robots.txt、sitemap.xml 一致。
+export const dynamic = "force-static";
+
 // llmstxt.org 格式：H1 站名、引用块摘要、按语言分组的页面链接；标题与描述沿用各页 metadata 的来源。
 function pageLink(page: PublicStaticPageDefinition, locale: Locale): string {
   const { title, description } =
