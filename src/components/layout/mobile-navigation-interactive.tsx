@@ -114,6 +114,11 @@ export function MobileNavigationInteractive({
     isOpen: initialOpen,
     pathname,
   }));
+  // 路由身份变化时把保存的展开状态一并清掉：不经抽屉链接离开（如浏览器后退/前进）
+  // 再回到原路径时，旧的 isOpen 不能复活。
+  if (menuState.pathname !== pathname) {
+    setMenuState({ instant: menuState.instant, isOpen: false, pathname });
+  }
   const isOpen = menuState.pathname === pathname && menuState.isOpen;
 
   const handleOpenChange = (open: boolean, event: Event) => {

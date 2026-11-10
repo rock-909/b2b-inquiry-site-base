@@ -234,6 +234,14 @@ describe("MobileNavigationInteractive", () => {
       );
 
       expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+      // 不经抽屉链接离开（如浏览器后退/前进）再回到原路径，抽屉不能自行重新打开。
+      mockPathname.current = "/";
+      rerender(
+        <MobileNavigation siteName="Test Site" {...MOBILE_NAV_LABELS} />,
+      );
+
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
     });
 
     it("marks the current route's item with aria-current", () => {
