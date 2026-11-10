@@ -5,11 +5,9 @@
 @source "../components";
 @source "../lib/content";
 
-/* Tailwind v4 Plugins (order: animate before typography)
-   - tailwindcss-animate: UI animation keyframes (animate-in, fade-in, slide-in-*)
-   - @tailwindcss/typography: prose styles for rich content */
+/* Tailwind v4 Plugins
+   - tailwindcss-animate: UI animation keyframes (animate-in, fade-in, slide-in-*) */
 @plugin "tailwindcss-animate";
-@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

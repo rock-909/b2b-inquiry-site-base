@@ -33,9 +33,7 @@ export function generateCSP(): string {
     "default-src": ["'self'"],
     "script-src": [
       "'self'",
-      ...(isDevelopment
-        ? ["'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com"]
-        : []),
+      ...(isDevelopment ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
       // Cloudflare Turnstile
       "https://challenges.cloudflare.com",
       // Google Analytics (if enabled)
@@ -48,7 +46,7 @@ export function generateCSP(): string {
     "script-src-elem": [
       "'self'",
       ...(isDevelopment
-        ? ["'unsafe-inline'", "'unsafe-eval'", "https://unpkg.com"]
+        ? ["'unsafe-inline'", "'unsafe-eval'"]
         : ["'unsafe-inline'"]),
       "https://challenges.cloudflare.com",
       "https://www.googletagmanager.com",
@@ -169,7 +167,6 @@ export function getSecurityHeaders(): SecurityHeader[] {
         "camera=()",
         "microphone=()",
         "geolocation=()",
-        "interest-cohort=()",
         "payment=()",
         "usb=()",
       ].join(", "),

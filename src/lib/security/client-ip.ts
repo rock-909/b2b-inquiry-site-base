@@ -28,8 +28,9 @@ interface TrustedProxyConfig {
   secondaryHeader?: TrustedHeaderName;
 }
 
-const FALLBACK_IP = "0.0.0.0";
-const LOCALHOST_IP = "127.0.0.1";
+// 取不到可信 IP 时的占位值，不是访客真实地址；turnstile.ts 据此不发 remoteip。
+export const FALLBACK_IP = "0.0.0.0";
+export const LOCALHOST_IP = "127.0.0.1";
 
 const CLOUDFLARE_TRUSTED_PROXY_CONFIG: TrustedProxyConfig = {
   primaryHeader: "cf-connecting-ip",

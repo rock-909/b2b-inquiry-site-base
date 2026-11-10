@@ -23,7 +23,7 @@ const resolvedBaseUrl =
 
 // 本地默认不复用已占用端口上的服务器：孤儿 next-server（上次运行未被清理）
 // 会被 Playwright 静默信任——它可能缺少测试环境变量（Turnstile 测试 key、
-// NEXT_PUBLIC_APP_ENV=preview）或跑着过期构建，导致 contact-submit / embedded
+// APP_ENV=preview）或跑着过期构建，导致 contact-submit / embedded
 // / no-js 等契约用例集体失败且极具误导性。确需复用时显式开启本开关。
 const shouldReuseExistingServer =
   !isCI && process.env.PLAYWRIGHT_REUSE_EXISTING_SERVER === "true";
@@ -187,10 +187,6 @@ export default defineConfig({
             SECURITY_HEADERS_ENABLED: "false",
             SKIP_ENV_VALIDATION: "true",
             APP_ENV: "preview",
-            // Turnstile 的测试模式读的是 NEXT_PUBLIC_APP_ENV。只设 APP_ENV 时，
-            // NODE_ENV=production 会让 isTestMode 判成 false，渲染真实控件而不是
-            // 测试占位——等待 turnstile-mock 的用例因此全部超时。
-            NEXT_PUBLIC_APP_ENV: "preview",
           },
         },
       }),
