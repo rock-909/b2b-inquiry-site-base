@@ -151,7 +151,7 @@ function HeaderUtilityControls({
         </Link>
       </div>
       {hasLanguageSwitch ? (
-        <div className="header-full-desktop-only h-10 items-center">
+        <div className="header-desktop-only h-10 items-center">
           <LanguageToggleIsland ariaLabel={languageAriaLabel} locale={locale} />
         </div>
       ) : null}

@@ -6,7 +6,6 @@
   },
   "include": [
     "next-env.d.ts",
-    "env.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "tests/**/*.ts",
@@ -14,5 +13,5 @@
     "scripts/**/*.ts",
     "*.config.ts"
   ],
-  "exclude": ["node_modules", ".next", ".next-lighthouse", "backups"]
+  "exclude": ["node_modules", ".next", ".next-lighthouse"]
 }

@@ -16,10 +16,6 @@ import {
   isPublicRuntimeProduction,
 } from "@/lib/public-runtime-env";
 
-/**
- * 使用全局 logger（开发环境输出，生产环境静默）
- */
-
 type TurnstileDegradedKind = "unavailable" | "failed";
 
 /**

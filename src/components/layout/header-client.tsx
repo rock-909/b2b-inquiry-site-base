@@ -105,7 +105,7 @@ function LanguageToggleTrigger({
     >
       <Globe aria-hidden="true" className="size-4" />
       <span data-testid="language-current-label" translate="no">
-        {LOCALES_CONFIG.triggerLabels[locale]}
+        {LOCALES_CONFIG.displayNames[locale]}
       </span>
       <ChevronDown aria-hidden="true" className="size-4" />
     </button>
@@ -130,7 +130,7 @@ function LanguageToggleStaticFallback({
         className="inline-flex h-8 cursor-pointer list-none items-center justify-center gap-1.5 rounded-[var(--control-radius)] px-3 text-sm font-medium text-muted-foreground transition-colors duration-150 ease-out hover:text-foreground [&::-webkit-details-marker]:hidden"
       >
         <Globe aria-hidden="true" className="size-4" />
-        <span>{LOCALES_CONFIG.triggerLabels[locale]}</span>
+        <span>{LOCALES_CONFIG.displayNames[locale]}</span>
         <ChevronDown aria-hidden="true" className="size-4" />
       </summary>
       <div className="absolute top-full right-0 z-50 mt-2 min-w-40 rounded-xl border border-border bg-popover p-1.5 text-popover-foreground shadow-lg">

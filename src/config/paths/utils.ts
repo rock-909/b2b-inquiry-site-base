@@ -44,6 +44,5 @@ export function getCanonicalPath<T extends PageType>(
  * 获取所有页面的路径映射（用于next-intl routing）
  *
  * 使用标准路径方案，所有语言使用相同路径
- * 包含静态路径和动态路由模式
  */
 export const PATHNAMES = createPathnames();

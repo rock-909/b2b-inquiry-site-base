@@ -135,10 +135,12 @@ describe("exact wire contract for inquiry field errors", () => {
   it("suppresses .invalid when .required exists on the same field and keeps the remaining order", () => {
     const issues = [
       {
-        code: "custom",
+        code: "too_small",
         path: ["email"],
-        message: "synthetic",
-        params: { reason: "required" },
+        minimum: 1,
+        type: "string",
+        inclusive: true,
+        message: "synthetic required",
       },
       {
         code: "invalid_string",

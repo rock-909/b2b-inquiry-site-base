@@ -153,6 +153,12 @@ function compareLocales(localeData) {
 
     if (missing.length > 0 || extra.length > 0) {
       console.error(`   Error: ${locale} does not match ${firstLocale}`);
+      for (const key of missing) {
+        console.error(`      - missing in ${locale}: ${key}`);
+      }
+      for (const key of extra) {
+        console.error(`      - extra in ${locale}: ${key}`);
+      }
       allMatch = false;
     }
   }

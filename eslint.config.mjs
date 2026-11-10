@@ -162,28 +162,20 @@ const eslintConfig = [
   {
     name: "ignores",
     ignores: [
-      "performance-audit/**",
       "reports/**",
       ".next/**",
       ".next-*/**",
-      ".trash-next-artifacts/**",
       ".context/**",
       ".stryker-tmp/**",
       "coverage/**",
-      "dist/**",
       "build/**",
       ".codex/**",
       ".omx/**",
-      ".eslintcache-audit",
-      // Auto-generated files
-      "src/lib/*.generated.ts",
       "node_modules/**",
-      "out/**",
       ".conductor/**",
       "public/**",
       ".env*",
       "*.d.ts",
-      "backups/**", // 忽略备份文件，减少非目标代码噪声
       ".worktrees/**", // local dependency-lane worktrees and their generated build output
       ".dependency-cruiser.js", // 工具配置文件
       ".claude/skills/**", // agent skill 参考脚本，非生产代码
@@ -270,7 +262,7 @@ const eslintConfig = [
     },
   },
 
-  // 安全模块加强规则（禁 any、需显式错误处理）
+  // 安全模块：Promise 须显式处理（catch 或 return）
   {
     name: "security-hardened",
     files: ["src/lib/security/**/*.{ts,tsx}"],
@@ -280,7 +272,6 @@ const eslintConfig = [
     rules: {
       "promise/always-return": "off",
       "promise/catch-or-return": ["error", { allowFinally: true }],
-      "no-console": ["error", { allow: ["warn", "error"] }],
     },
   },
 
@@ -532,8 +523,9 @@ const eslintConfig = [
     files: [
       "src/app/api/inquiry/route.ts",
       "src/app/api/health/route.ts",
-      "src/app/[locale]/contact/page.tsx",
-      "src/app/[locale]/contact/contact-page-sections.tsx",
+      // files 是 glob：方括号须转义，否则 [locale] 被当成字符类，匹配不到字面目录
+      "src/app/\\[locale\\]/contact/page.tsx",
+      "src/app/\\[locale\\]/contact/contact-page-sections.tsx",
     ],
     rules: {
       "no-restricted-imports": ["error", criticalRouteRestrictedImports],
@@ -771,20 +763,6 @@ const eslintConfig = [
       "require-await": "off",
       "default-case": "off",
       "no-process-exit": "off",
-    },
-  },
-
-  // 对当前较大的质量脚本使用文件级结构阈值。
-  {
-    name: "script-structural-baselines",
-    files: ["scripts/quality/checks/release-verify.js"],
-    rules: {
-      complexity: ["warn", 30],
-      "max-lines": [
-        "warn",
-        { max: 1000, skipBlankLines: true, skipComments: true },
-      ],
-      "max-statements": ["warn", 45],
     },
   },
 

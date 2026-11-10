@@ -16,18 +16,13 @@ export const COLORS = {
 } as const;
 
 export const SPACING = {
-  xs: "6px",
   sm: "10px",
   md: "15px",
   lg: "20px",
-  xl: "24px",
 } as const;
 
 export const FONT_SIZES = {
   xs: "12px",
-  sm: "14px",
-  md: "16px",
-  lg: "18px",
   xl: "24px",
 } as const;
 

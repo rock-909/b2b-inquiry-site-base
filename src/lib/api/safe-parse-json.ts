@@ -88,7 +88,7 @@ async function readBodyWithinLimit(
  *
  * - 仅当解析结果为非 null 对象且不是数组时视为成功；
  * - 解析失败或结果不是对象时，返回 { ok: false, errorCode: API_ERROR_CODES.INVALID_JSON_BODY }；
- * - 不直接决定 HTTP 状态码，由调用方根据结果返回 400 等响应；
+ * - 失败结果带建议的 statusCode，由调用方据此返回 400 等响应；
  * - 使用统一日志格式记录解析失败，便于观察和告警。
  */
 export async function safeParseJson<T>(

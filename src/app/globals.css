@@ -25,7 +25,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-chinese: var(--font-chinese);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -65,7 +64,7 @@
     @apply bg-background text-foreground;
     position: relative;
     isolation: isolate;
-    font-family: var(--font-sans), var(--font-chinese);
+    font-family: var(--font-sans);
     letter-spacing: var(--tracking-normal);
   }
 
@@ -105,19 +104,6 @@
     [role="button"] {
       border-width: 2px !important;
     }
-  }
-
-  /* Screen reader only */
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
   }
 
   /* Focus management */
@@ -255,7 +241,6 @@
 }
 
 /* ==================== HEADER RESPONSIVE CONTRACT ==================== */
-/* Retained for existing layout components — will be refactored with nav redesign */
 
 @layer utilities {
   .header-mobile-only {
@@ -266,13 +251,6 @@
   }
 
   .header-desktop-only {
-    @apply hidden;
-    @media (min-width: 840px) {
-      @apply flex;
-    }
-  }
-
-  .header-full-desktop-only {
     @apply hidden;
     @media (min-width: 840px) {
       @apply flex;

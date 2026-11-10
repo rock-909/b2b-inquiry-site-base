@@ -39,7 +39,7 @@ export function JsonLdScript({ data }: JsonLdScriptProps) {
     return null;
   }
 
-  // nosemgrep: nextjs-unsafe-dangerouslySetInnerHTML -- 单一可审计的 JSON-LD 注入点；jsonLd 来自 generateJSONLD，已将 < 转义为 < 防脚本注入
+  // nosemgrep: nextjs-unsafe-dangerouslySetInnerHTML -- 单一可审计的 JSON-LD 注入点；jsonLd 来自 generateJSONLD，已将 < 转义为 \u003c 防脚本注入
   return (
     <script
       type="application/ld+json"

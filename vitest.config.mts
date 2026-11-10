@@ -57,17 +57,14 @@ export default defineConfig({
       // 将覆盖率输出目录统一至 reports/coverage，便于与其它报告汇总
       reportsDirectory: "./reports/coverage",
       reporter: ["text", "html", "json-summary"],
-      // Vitest v4: coverage.exclude only filters files already matched by
-      // `include` (src/**); coverage.all was removed, so non-src globs never
-      // match. Keep only src-relevant excludes.
+      // coverage.exclude 只过滤已被 `include`（src/**）命中的文件；
+      // coverage.all 已移除，非 src 的 glob 永远匹配不到，这里只保留 src 内的排除项。
       exclude: [
         "**/*.d.ts",
         "**/*.test.{js,jsx,ts,tsx}",
         "**/*.spec.{js,jsx,ts,tsx}",
         "src/test/**",
         "src/middleware.ts",
-        // 排除自动生成的文件
-        "**/*.generated.*",
       ],
       // 覆盖率为报告用途，不设阈值门禁；质量门禁是 type-check / lint / test / 架构测试
     },
