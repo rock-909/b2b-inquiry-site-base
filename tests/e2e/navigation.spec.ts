@@ -148,6 +148,25 @@ test.describe("Preserved navigation state", () => {
         "aria-expanded",
         "false",
       );
+
+      // 抽屉打开时直接用浏览器历史离开，不经抽屉链接；回到原页面后必须仍关闭。
+      await getHeaderMobileMenuButton(page).click();
+      await expect(dialog).toBeVisible();
+
+      await page.goBack({ waitUntil: "domcontentloaded" });
+      await expect(page).toHaveURL(/\/$/);
+      await expect(getHeaderMobileMenuButton(page)).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+
+      await page.goForward({ waitUntil: "domcontentloaded" });
+      await expect(page).toHaveURL(/\/contact$/);
+      await expect(getHeaderMobileMenuButton(page)).toHaveAttribute(
+        "aria-expanded",
+        "false",
+      );
+      await expect(dialog).not.toBeVisible();
     });
   });
 });
