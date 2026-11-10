@@ -133,9 +133,23 @@ function restoreInquiryDraft(form: HTMLFormElement | null) {
   }
 }
 
-function clearInquiryDraft() {
+function readStoredInquiryDraft(): string | null {
   try {
-    window.sessionStorage.removeItem(INQUIRY_DRAFT_STORAGE_KEY);
+    return window.sessionStorage.getItem(INQUIRY_DRAFT_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 只在存储里仍是提交时那份草稿时才清理：请求在途时买家可能离页再回来，
+ * 新的表单实例已经写入了尚未发送的新草稿，旧请求迟到的成功不能把它删掉。
+ */
+function clearSubmittedInquiryDraft(draftAtSubmit: string | null) {
+  try {
+    if (readStoredInquiryDraft() === draftAtSubmit) {
+      window.sessionStorage.removeItem(INQUIRY_DRAFT_STORAGE_KEY);
+    }
   } catch {
     // 存储被禁用不能影响已经成功的询盘提交。
   }
@@ -377,6 +391,7 @@ function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
     }
     isSubmittingRef.current = true;
     setDisplayState({ status: "submitting" });
+    const draftAtSubmit = readStoredInquiryDraft();
 
     try {
       const decoded = await postInquiry(formData, turnstile.token, locale);
@@ -391,7 +406,7 @@ function InquiryFormLive({ copy }: { copy: InquiryFormCopy }) {
       if (decoded.status === "success") {
         trackGenerateLead();
         clearSubmittedFields(formRef.current);
-        clearInquiryDraft();
+        clearSubmittedInquiryDraft(draftAtSubmit);
       }
     } catch {
       setDisplayState({ status: "error", errorKind: "server" });
