@@ -13,7 +13,6 @@ describe("logger", () => {
     // 让结果取决于本机环境。
     vi.stubEnv("NODE_ENV", "test");
     vi.stubEnv("LOG_LEVEL", undefined);
-    vi.stubEnv("NEXT_PUBLIC_LOG_LEVEL", undefined);
     consoleSpies = {
       debug: vi.spyOn(console, "debug").mockImplementation(() => undefined),
       info: vi.spyOn(console, "info").mockImplementation(() => undefined),
