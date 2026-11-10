@@ -15,6 +15,7 @@ import {
 } from "@/constants/turnstile-constants";
 import { getRuntimeEnvBoolean, getRuntimeEnvString } from "@/lib/env";
 import { logger, sanitizeIP } from "@/lib/logger";
+import { FALLBACK_IP, LOCALHOST_IP } from "@/lib/security/client-ip";
 import {
   getAllowedTurnstileHosts,
   isAllowedTurnstileHostname,
@@ -46,7 +47,8 @@ function buildTurnstilePayload(
     response: token,
   });
 
-  if (ip && ip !== "unknown") {
+  // getClientIP 的占位值不是访客地址，发给 Cloudflare 只会干扰它的判断。
+  if (ip && ip !== FALLBACK_IP && ip !== LOCALHOST_IP) {
     payload.set("remoteip", ip);
   }
 

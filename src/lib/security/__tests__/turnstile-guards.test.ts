@@ -1,6 +1,8 @@
+import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { INQUIRY_TURNSTILE_ACTION } from "@/constants/turnstile-constants";
 import { logger } from "@/lib/logger";
+import { getClientIP } from "@/lib/security/client-ip";
 import { verifyLeadTurnstile } from "@/lib/security/lead-turnstile";
 import { verifyTurnstileDetailed } from "@/lib/security/turnstile";
 
@@ -22,8 +24,23 @@ vi.mock("@/lib/env", async (importOriginal) => {
 const ALLOWED_HOST = "buyer-site.example";
 const SECRET_KEY = "test-secret-not-the-official-dummy";
 
+function sentRemoteIP(fetchMock: ReturnType<typeof stubSiteverify>) {
+  const body = fetchMock.mock.calls[0]?.[1]?.body;
+  if (!(body instanceof URLSearchParams)) {
+    throw new Error("siteverify was not called with a form body");
+  }
+  return body.get("remoteip");
+}
+
+function inquiryRequest(headers: Record<string, string> = {}): NextRequest {
+  return new NextRequest("https://buyer-site.example/api/inquiry", {
+    method: "POST",
+    headers,
+  });
+}
+
 function stubSiteverify(result: Record<string, unknown>) {
-  const fetchMock = vi.fn(async () => Response.json(result));
+  const fetchMock = vi.fn<typeof fetch>(async () => Response.json(result));
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
 }
@@ -165,6 +182,48 @@ describe("verifyTurnstileDetailed server-side guards", () => {
     await expect(
       verifyTurnstileDetailed("widget-token", "203.0.113.10"),
     ).resolves.toEqual({ status: "failed" });
+  });
+
+  // 取不到真实 IP 时 getClientIP 返回占位地址；把占位地址当 remoteip 发给
+  // Cloudflare 只会误导它的风险判断，所以这时不发 remoteip。
+  it.each([
+    { name: "deployment platform unresolved", platform: undefined },
+    { name: "Cloudflare without cf-connecting-ip", platform: "cloudflare" },
+    { name: "development without forwarded headers", platform: "development" },
+  ])(
+    "omits remoteip when no client IP is available ($name)",
+    async ({ platform }) => {
+      vi.stubEnv("DEPLOYMENT_PLATFORM", platform);
+      const fetchMock = stubSiteverify({
+        success: true,
+        hostname: ALLOWED_HOST,
+        action: INQUIRY_TURNSTILE_ACTION,
+      });
+
+      await verifyTurnstileDetailed(
+        "widget-token",
+        getClientIP(inquiryRequest()),
+      );
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(sentRemoteIP(fetchMock)).toBeNull();
+    },
+  );
+
+  it("forwards the trusted client IP as remoteip", async () => {
+    vi.stubEnv("DEPLOYMENT_PLATFORM", "cloudflare");
+    const fetchMock = stubSiteverify({
+      success: true,
+      hostname: ALLOWED_HOST,
+      action: INQUIRY_TURNSTILE_ACTION,
+    });
+
+    await verifyTurnstileDetailed(
+      "widget-token",
+      getClientIP(inquiryRequest({ "cf-connecting-ip": "203.0.113.10" })),
+    );
+
+    expect(sentRemoteIP(fetchMock)).toBe("203.0.113.10");
   });
 
   // 同一个失败只在分类处记一次日志：运维看到的每次失败恰好一条。

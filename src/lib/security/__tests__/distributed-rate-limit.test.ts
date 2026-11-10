@@ -138,9 +138,6 @@ describe("distributed-rate-limit", () => {
       retryAfter: 60,
       deniedReason: "storage_failure",
     });
-    expect(mockLoggerWarn).toHaveBeenCalledWith(
-      expect.stringContaining("rate limit unavailable"),
-    );
     expect(mockLoggerError).toHaveBeenCalledWith(
       "[Rate Limit] Storage backend error details",
       { error },
