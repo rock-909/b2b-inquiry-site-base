@@ -449,7 +449,7 @@ rules:
       category: correctness
       technology: [nextjs]
 
-  - id: starter-lead-route-missing-safe-json-body
+  - id: inquiry-route-missing-safe-json-body
     message: '公开 inquiry lead-writing route 必须显式使用 safeParseJson()，保留 JSON body size gate 和统一错误码'
     languages: [generic]
     severity: ERROR

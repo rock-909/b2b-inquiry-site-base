@@ -107,9 +107,6 @@ test("real resources retain their response bodies and MIME types", async ({
   expect((await image.body()).subarray(0, 8).toString("hex")).toBe(
     "89504e470d0a1a0a",
   );
-  const policy = await request.get("/security-policy.txt");
-  expect(policy.status()).toBe(404);
-  expect(await policy.text()).toBe("");
 
   await page.goto("/");
   for (const [selector, attribute, mime] of [

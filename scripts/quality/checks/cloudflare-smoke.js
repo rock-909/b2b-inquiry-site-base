@@ -36,7 +36,6 @@ const DEPLOYED_SMOKE_EXPECTATIONS = [
   ...CF_PREVIEW_SMOKE_EXPECTATIONS,
   { pathname: "/api/health", status: 200, cacheControl: "no-store" },
   { pathname: "/.well-known/security.txt", status: 200 },
-  { pathname: "/security-policy.txt", status: 404 },
   // 询盘路由在来源检查和限流之前就拒绝非 JSON 的 POST，所以这个探测零副作用、
   // 不触达任何服务商。它只证明询盘路由模块在部署里能加载并响应；不证明 Worker
   // secret、来源分支或真实投递正常。

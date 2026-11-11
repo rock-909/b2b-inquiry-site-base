@@ -117,7 +117,7 @@ would consume the token before the real submission.
 Public write routes parse request bodies through `safeParseJson`
 (`src/lib/api/safe-parse-json.ts`) instead of hand-rolling body reads, so size,
 empty-body, and top-level-array policy stay consistent (enforced by semgrep
-`no-raw-request-json-in-api` and `starter-lead-route-missing-safe-json-body`).
+`no-raw-request-json-in-api` and `inquiry-route-missing-safe-json-body`).
 
 ### Inquiry anti-abuse (active public writer)
 

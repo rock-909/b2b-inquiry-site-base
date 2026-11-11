@@ -50,25 +50,6 @@ export default defineConfig({
       "**/test-utils.{js,jsx,ts,tsx}",
     ],
 
-    // 覆盖率配置 - 最简配置
-    coverage: {
-      provider: "v8",
-      include: ["src/**/*.{js,jsx,ts,tsx}"],
-      // 将覆盖率输出目录统一至 reports/coverage，便于与其它报告汇总
-      reportsDirectory: "./reports/coverage",
-      reporter: ["text", "html", "json-summary"],
-      // coverage.exclude 只过滤已被 `include`（src/**）命中的文件；
-      // coverage.all 已移除，非 src 的 glob 永远匹配不到，这里只保留 src 内的排除项。
-      exclude: [
-        "**/*.d.ts",
-        "**/*.test.{js,jsx,ts,tsx}",
-        "**/*.spec.{js,jsx,ts,tsx}",
-        "src/test/**",
-        "src/middleware.ts",
-      ],
-      // 覆盖率为报告用途，不设阈值门禁；质量门禁是 type-check / lint / test / 架构测试
-    },
-
     // 测试超时设置 - 适应 CI 环境
     testTimeout: 12000, // 从 8000ms 增加到 12000ms，适应 CI 环境资源限制
     hookTimeout: 6000, // 从 4000ms 增加到 6000ms

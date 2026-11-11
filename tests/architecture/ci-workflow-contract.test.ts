@@ -171,7 +171,7 @@ describe("CI workflow contract", () => {
   it("scopes safeParseJson enforcement to the inquiry lead writer only", () => {
     const semgrepConfig = readSemgrepConfig();
     const rule = (semgrepConfig.rules ?? []).find(
-      (entry) => entry.id === "starter-lead-route-missing-safe-json-body",
+      (entry) => entry.id === "inquiry-route-missing-safe-json-body",
     );
     const includes = rule?.paths?.include ?? [];
 

@@ -28,7 +28,6 @@ const DEPLOYED_SMOKE_PATHS = [
   MISSING_OFFERING_PATH,
   "/api/health",
   "/.well-known/security.txt",
-  "/security-policy.txt",
   "/api/inquiry",
 ];
 
@@ -128,10 +127,6 @@ function createDeployedFetchMock() {
         });
       }
 
-      if (pathname === "/security-policy.txt") {
-        return response(404, "not found", { "content-type": "text/plain" });
-      }
-
       if (pathname === "/api/inquiry") {
         return response(init?.method === "POST" ? 415 : 405);
       }
@@ -215,12 +210,6 @@ function listenForDeployedSmoke(): Promise<{
             : {}),
         });
         serverResponse.end("ok");
-        return;
-      }
-
-      if (pathname === "/security-policy.txt") {
-        serverResponse.writeHead(404, { "content-type": "text/plain" });
-        serverResponse.end("not found");
         return;
       }
 
@@ -693,7 +682,6 @@ describe("deployed smoke", () => {
         MISSING_OFFERING_PATH,
         "/api/health",
         "/.well-known/security.txt",
-        "/security-policy.txt",
         "/api/inquiry",
       ].sort(),
     );

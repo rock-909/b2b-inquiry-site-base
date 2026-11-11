@@ -110,14 +110,6 @@ const nextConfig: NextConfig = {
   headers() {
     const securityHeaders = getSecurityHeaders();
 
-    // CDN 缓存策略
-    // 为静态资源设置长期缓存，提升性能和 LCP
-    const cdnCacheHeaders = [
-      {
-        key: "Cache-Control",
-        value: "public, max-age=31536000, immutable",
-      },
-    ];
     const nonProductionNoindexHeaders = [
       {
         key: "X-Robots-Tag",
@@ -148,11 +140,6 @@ const nextConfig: NextConfig = {
             },
           ]
         : []),
-      // CDN 缓存策略应用到静态资源
-      {
-        source: "/:all*(svg|jpg|jpeg|png|webp|pdf|woff|woff2|ttf|otf)",
-        headers: cdnCacheHeaders,
-      },
     ];
 
     return headerConfigs;
