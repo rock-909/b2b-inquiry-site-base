@@ -4,7 +4,11 @@ paths:
   - "open-next.config.ts"
   - "wrangler.jsonc"
   - "next.config.ts"
-  - "scripts/quality/checks/cloudflare-smoke.js"
+  - "scripts/quality/checks/cloudflare-*"
+  - "scripts/quality/checks/release-verify.js"
+  - "scripts/quality/checks/production-config.js"
+  - ".github/workflows/ci.yml"
+  - ".github/workflows/cloudflare-deploy.yml"
 ---
 
 # Cloudflare / OpenNext Rules
