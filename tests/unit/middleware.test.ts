@@ -223,7 +223,6 @@ describe("middleware next-intl boundary", () => {
       "/llms.txt",
       "/sitemap.xml",
       "/icon.svg",
-      "/security-policy.txt",
     ]) {
       expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
     }

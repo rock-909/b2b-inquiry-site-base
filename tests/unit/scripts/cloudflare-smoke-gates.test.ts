@@ -68,10 +68,6 @@ function createHealthyFetchMock() {
         return response(200, "ok", { "content-type": "text/plain" });
       }
 
-      if (pathname === "/security-policy.txt") {
-        return response(404, "not found", { "content-type": "text/plain" });
-      }
-
       if (pathname === "/api/inquiry") {
         return response(init?.method === "POST" ? 415 : 405);
       }
