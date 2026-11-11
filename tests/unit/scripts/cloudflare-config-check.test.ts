@@ -505,15 +505,15 @@ describe("Cloudflare config source contract", () => {
       ]);
     });
 
-    it("does not trip on donor forbidden tokens inside comments or longer identifiers", () => {
+    it("does not trip on forbidden tokens inside comments or longer identifiers", () => {
       const rootDir = createFixture();
       writeWiredConfig(rootDir, [
-        "// historical note: apiLead, apiOps and /api/cache/invalidate were never wired here",
-        'const myapiLeadNote = "mentions /api/cache/invalidation in prose";',
+        "// historical note: functions and doQueue were never wired here",
+        'const myfunctionsNote = "mentions doQueue in prose";',
         'import { defineCloudflareConfig } from "@opennextjs/cloudflare";',
         'import staticAssetsIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/static-assets-incremental-cache";',
         "export default defineCloudflareConfig({ incrementalCache: staticAssetsIncrementalCache });",
-        "void myapiLeadNote;",
+        "void myfunctionsNote;",
         "",
       ]);
 

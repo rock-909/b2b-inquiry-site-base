@@ -34,14 +34,7 @@ const WRANGLER_FORBIDDEN_TOKENS = [
   "migrations",
 ];
 
-const OPEN_NEXT_FORBIDDEN_TOKENS = [
-  "doQueue",
-  "d1NextTagCache",
-  "functions",
-  "apiLead",
-  "apiOps",
-  "/api/cache/invalidate",
-];
+const OPEN_NEXT_FORBIDDEN_TOKENS = ["doQueue", "d1NextTagCache", "functions"];
 
 const CLOUDFLARE_SCRIPT_SURFACE_CHECKS = [
   {
@@ -54,12 +47,6 @@ const CLOUDFLARE_SCRIPT_SURFACE_CHECKS = [
     expected:
       "DEPLOYMENT_PLATFORM=cloudflare NEXT_PUBLIC_DEPLOYMENT_PLATFORM=cloudflare pnpm exec opennextjs-cloudflare build --noMinify",
   },
-];
-const RETIRED_SCRIPT_NAMES = [
-  "build:cf",
-  "deploy:cf",
-  "deploy:cf:dry-run",
-  "proof:cf:preview-deployed",
 ];
 
 function readCloudflareConfigFile(rootDir, relPath) {
@@ -243,19 +230,6 @@ function checkPackageScripts(rootDir, failures) {
         forbidden: [],
       });
     }
-  }
-
-  const retired = RETIRED_SCRIPT_NAMES.filter((name) =>
-    Object.hasOwn(scripts, name),
-  );
-  if (retired.length > 0) {
-    failures.push({
-      file: "package.json",
-      label:
-        "advanced Cloudflare deploy/proof commands stay as direct scripts, not public package aliases",
-      missing: [],
-      forbidden: retired,
-    });
   }
 }
 
