@@ -6,6 +6,9 @@ paths:
   - "src/lib/lead-pipeline/**"
   - "src/lib/airtable/**"
   - "src/components/forms/**"
+  - "src/components/security/**"
+  - "src/lib/env.ts"
+  - "src/lib/resend-core.ts"
   - "src/config/security.ts"
   - "next.config.ts"
 ---
