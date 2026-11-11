@@ -65,26 +65,33 @@ export function generateCSP(): string {
     // Static CSP intentionally keeps style attributes allowed for framework and
     // runtime-rendered style attributes used by server/client components.
     "style-src-attr": ["'unsafe-inline'"],
+    // Google 主机照抄 Google tag CSP 指南 "Google Analytics" 一节（含广告功能，
+    // 横幅提供广告同意）：https://developers.google.com/tag-platform/security/guides/csp
+    // 指南里的 https://*.google.<TLD> 须逐个列出国家域名，这里不预置；
+    // 派生站按目标市场需要再补。
     "img-src": [
       "'self'",
       "data:",
-      // Google Analytics
-      "https://www.google-analytics.com",
       "https://www.googletagmanager.com",
+      "https://*.google-analytics.com",
+      "https://*.google.com",
+      "https://*.g.doubleclick.net",
     ],
     "font-src": ["'self'", "data:"],
     "connect-src": [
       "'self'",
       // API endpoints
       ...(isDevelopment ? ["http://localhost:*", "ws://localhost:*"] : []),
-      // Google Analytics
-      "https://www.google-analytics.com",
-      "https://analytics.google.com",
-      "https://region1.google-analytics.com",
+      "https://www.googletagmanager.com",
+      "https://*.google-analytics.com",
+      "https://*.google.com",
+      "https://*.g.doubleclick.net",
+      "https://pagead2.googlesyndication.com",
     ],
     "frame-src": [
       // Cloudflare Turnstile (removed 'none' - conflicts with allowlist)
       "https://challenges.cloudflare.com",
+      "https://www.googletagmanager.com",
     ],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],

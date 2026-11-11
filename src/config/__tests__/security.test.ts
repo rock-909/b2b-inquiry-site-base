@@ -81,7 +81,7 @@ describe("Security Configuration", () => {
         "https://www.googletagmanager.com",
       );
       expect(directives.get("connect-src")).toContain(
-        "https://www.google-analytics.com",
+        "https://*.google-analytics.com",
       );
     });
 
@@ -100,21 +100,32 @@ describe("Security Configuration", () => {
     });
 
     // 精确 allowlist 才是安全契约：新增任何图片或上报主机都必须改这里。
-    it("allows only the reviewed image and connect hosts in production CSP", () => {
+    // Google 主机照抄 Google tag CSP 指南的 "Google Analytics" 一节（含广告功能），
+    // 横幅的广告同意会授予 ad_storage / ad_user_data / ad_personalization：
+    // https://developers.google.com/tag-platform/security/guides/csp
+    it("allows only the reviewed image, connect and frame hosts in production CSP", () => {
       vi.stubEnv("NODE_ENV", "production");
       const directives = parseCsp(generateCSP());
 
       expect(directives.get("img-src")).toEqual([
         "'self'",
         "data:",
-        "https://www.google-analytics.com",
         "https://www.googletagmanager.com",
+        "https://*.google-analytics.com",
+        "https://*.google.com",
+        "https://*.g.doubleclick.net",
       ]);
       expect(directives.get("connect-src")).toEqual([
         "'self'",
-        "https://www.google-analytics.com",
-        "https://analytics.google.com",
-        "https://region1.google-analytics.com",
+        "https://www.googletagmanager.com",
+        "https://*.google-analytics.com",
+        "https://*.google.com",
+        "https://*.g.doubleclick.net",
+        "https://pagead2.googlesyndication.com",
+      ]);
+      expect(directives.get("frame-src")).toEqual([
+        TURNSTILE_ORIGIN,
+        "https://www.googletagmanager.com",
       ]);
     });
 
