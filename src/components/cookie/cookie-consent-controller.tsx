@@ -16,6 +16,7 @@ import {
   OPEN_CONSENT_EVENT,
   type CookieConsent,
 } from "@/lib/cookie-consent/types";
+import { syncClickIdConsent } from "@/lib/marketing/utm";
 
 export function CookieConsentController() {
   const [consent, setConsent] = useState<CookieConsent | null | undefined>(
@@ -23,11 +24,16 @@ export function CookieConsentController() {
   );
 
   useEffect(() => {
-    const hydrateConsent = () => setConsent(loadConsent()?.consent ?? null);
+    // 读取、撤回和跨标签页变更后，归因里的点击 ID 都按最新的广告同意同步。
+    const hydrateConsent = () => {
+      setConsent(loadConsent()?.consent ?? null);
+      syncClickIdConsent();
+    };
     queueMicrotask(hydrateConsent);
     const reopen = () => {
       clearConsent();
       setConsent(null);
+      syncClickIdConsent();
     };
     // 其他标签页改动或撤回选择时，本标签页重新读取，保证撤回立即生效
     const syncFromOtherTab = (event: StorageEvent) => {
@@ -53,6 +59,7 @@ export function CookieConsentController() {
   const choose = (nextConsent: CookieConsent) => {
     saveConsent(nextConsent);
     setConsent(nextConsent);
+    syncClickIdConsent();
   };
 
   // 卡片随服务端 HTML 输出，先隐藏；还没读存储时只有预绘制脚本能让它显示。
