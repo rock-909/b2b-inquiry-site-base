@@ -271,7 +271,11 @@ describe("UTM attribution", () => {
       setAdvertisingConsent(false);
       sessionStorage.setItem(
         "inquiry_attribution",
-        JSON.stringify({ utmSource: "google", landingPage: "/es", gclid: "Cj0KCQjw" }),
+        JSON.stringify({
+          utmSource: "google",
+          landingPage: "/es",
+          gclid: "Cj0KCQjw",
+        }),
       );
 
       storeAttributionData();
