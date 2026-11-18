@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CookieConsentIsland } from "@/components/cookie/cookie-consent-island";
 import { CookieSettingsButton } from "@/components/cookie/cookie-settings-button";
+import { storeAttributionData } from "@/lib/marketing/utm";
 
 const { controllerLoaded } = vi.hoisted(() => ({ controllerLoaded: vi.fn() }));
 
@@ -147,5 +148,73 @@ describe("CookieConsentIsland", () => {
       "data-allowed",
       "false",
     );
+  });
+
+  describe("Google Ads click id from an ad landing", () => {
+    function readStoredAttribution(): Record<string, unknown> {
+      return JSON.parse(sessionStorage.getItem("inquiry_attribution") ?? "{}");
+    }
+
+    beforeEach(() => {
+      sessionStorage.clear();
+      vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
+      window.history.replaceState({}, "", "/?utm_source=google&gclid=Cj0KCQjw");
+      storeAttributionData();
+      window.history.replaceState({}, "", "/contact");
+    });
+
+    it("is stored only after the buyer allows advertising on the card", async () => {
+      render(<CookieConsentIsland />);
+      const allow = await screen.findByRole("button", { name: "allow" });
+      expect(readStoredAttribution()).toEqual(
+        expect.not.objectContaining({ gclid: expect.anything() }),
+      );
+
+      fireEvent.click(allow);
+
+      expect(readStoredAttribution()).toMatchObject({
+        utmSource: "google",
+        gclid: "Cj0KCQjw",
+      });
+    });
+
+    it("is cleared, keeping the source, when the buyer withdraws from cookie settings", async () => {
+      render(
+        <>
+          <CookieConsentIsland />
+          <CookieSettingsButton label="Cookie settings" />
+        </>,
+      );
+      fireEvent.click(await screen.findByRole("button", { name: "allow" }));
+      expect(readStoredAttribution()).toMatchObject({ gclid: "Cj0KCQjw" });
+
+      fireEvent.click(screen.getByRole("button", { name: "Cookie settings" }));
+
+      expect(readStoredAttribution()).toEqual({
+        utmSource: "google",
+        landingPage: "/",
+        capturedAt: expect.any(String),
+      });
+    });
+
+    it("is cleared when another tab withdraws the choice", async () => {
+      render(<CookieConsentIsland />);
+      fireEvent.click(await screen.findByRole("button", { name: "allow" }));
+      expect(readStoredAttribution()).toMatchObject({ gclid: "Cj0KCQjw" });
+
+      localStorage.removeItem("cookie-consent");
+      act(() => {
+        window.dispatchEvent(
+          new StorageEvent("storage", {
+            key: "cookie-consent",
+            oldValue: "{}",
+            newValue: null,
+          }),
+        );
+      });
+
+      expect(readStoredAttribution()).not.toHaveProperty("gclid");
+      expect(readStoredAttribution()).toMatchObject({ utmSource: "google" });
+    });
   });
 });

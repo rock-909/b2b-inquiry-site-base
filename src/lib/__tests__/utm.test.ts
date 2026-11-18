@@ -1,10 +1,32 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createInquiryPayload } from "@/components/forms/inquiry-payload";
-import {
-  captureUtmParams,
-  getAttributionSnapshot,
-  storeAttributionData,
-} from "@/lib/marketing/utm";
+import { clearConsent, saveConsent } from "@/lib/cookie-consent/storage";
+import { inquiryLeadSchema } from "@/lib/lead-pipeline/lead-schema";
+import * as utm from "@/lib/marketing/utm";
+
+const { captureUtmParams, getAttributionSnapshot, storeAttributionData } = utm;
+
+function setAdvertisingConsent(advertising: boolean) {
+  saveConsent({ necessary: true, analytics: advertising, advertising });
+}
+
+function readStoredAttribution(): Record<string, unknown> {
+  return JSON.parse(sessionStorage.getItem("inquiry_attribution") ?? "{}");
+}
+
+function buyerPayload() {
+  const formData = new FormData();
+  formData.set("fullName", "Ana López");
+  formData.set("email", "ana@example.com");
+  return createInquiryPayload(formData, "token", "es");
+}
+
+// 询盘照常可提交：真实 lead schema 接受这份 payload。
+function expectSubmittable(payload: ReturnType<typeof buyerPayload>) {
+  expect(
+    inquiryLeadSchema.safeParse({ type: "inquiry", ...payload }).success,
+  ).toBe(true);
+}
 
 describe("UTM attribution", () => {
   it.each([
@@ -24,6 +46,8 @@ describe("UTM attribution", () => {
   );
   beforeEach(() => {
     sessionStorage.clear();
+    localStorage.clear();
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TEST");
     window.history.replaceState({}, "", "/");
   });
 
@@ -69,6 +93,7 @@ describe("UTM attribution", () => {
   });
 
   it("sends a gclid-only ad click with the inquiry", () => {
+    setAdvertisingConsent(true);
     window.history.replaceState({}, "", "/es?gclid=Cj0KCQjw");
     storeAttributionData();
     window.history.replaceState({}, "", "/es/contact");
@@ -79,6 +104,7 @@ describe("UTM attribution", () => {
   });
 
   it("sends an iOS ad click tagged with wbraid and gbraid with the inquiry", () => {
+    setAdvertisingConsent(true);
     window.history.replaceState(
       {},
       "",
@@ -90,5 +116,108 @@ describe("UTM attribution", () => {
     expect(payload.wbraid).toBe("test-w");
     expect(payload.gbraid).toBe("test-g");
     expect(payload.landingPage).toBe("/es/contact");
+  });
+
+  describe("Google Ads click ids follow the advertising consent", () => {
+    const AD_LANDING = "/es?utm_source=google&utm_medium=cpc&gclid=Cj0KCQjw";
+
+    function landFromAdThenOpenContact() {
+      window.history.replaceState({}, "", AD_LANDING);
+      storeAttributionData();
+      window.history.replaceState({}, "", "/es/contact");
+    }
+
+    function expectSourceWithoutClickId() {
+      const payload = buyerPayload();
+      expect(payload).toMatchObject({
+        utmSource: "google",
+        utmMedium: "cpc",
+        landingPage: "/es",
+      });
+      expect(payload.gclid).toBeUndefined();
+      expect(readStoredAttribution()).not.toHaveProperty("gclid");
+      expectSubmittable(payload);
+    }
+
+    it("keeps the source but not the click id before the buyer chooses", () => {
+      landFromAdThenOpenContact();
+      expectSourceWithoutClickId();
+    });
+
+    it("keeps the source but not the click id after the buyer rejects", () => {
+      setAdvertisingConsent(false);
+      landFromAdThenOpenContact();
+      expectSourceWithoutClickId();
+    });
+
+    it("stores and sends the click id when advertising is allowed", () => {
+      setAdvertisingConsent(true);
+      landFromAdThenOpenContact();
+
+      const payload = buyerPayload();
+      expect(payload).toMatchObject({
+        utmSource: "google",
+        landingPage: "/es",
+        gclid: "Cj0KCQjw",
+      });
+      expect(readStoredAttribution()).toMatchObject({ gclid: "Cj0KCQjw" });
+      expectSubmittable(payload);
+    });
+
+    it("adds the click id held in page memory when the buyer allows advertising later", () => {
+      landFromAdThenOpenContact();
+      setAdvertisingConsent(true);
+      utm.syncClickIdConsent();
+
+      expect(readStoredAttribution()).toMatchObject({
+        utmSource: "google",
+        landingPage: "/es",
+        gclid: "Cj0KCQjw",
+      });
+      const payload = buyerPayload();
+      expect(payload.gclid).toBe("Cj0KCQjw");
+      expectSubmittable(payload);
+    });
+
+    it("drops the held click id when the buyer rejects, even if they allow advertising afterwards", () => {
+      landFromAdThenOpenContact();
+      setAdvertisingConsent(false);
+      utm.syncClickIdConsent();
+      setAdvertisingConsent(true);
+      utm.syncClickIdConsent();
+
+      const payload = buyerPayload();
+      expect(payload.utmSource).toBe("google");
+      expect(payload.gclid).toBeUndefined();
+      expect(readStoredAttribution()).not.toHaveProperty("gclid");
+    });
+
+    it("clears only the stored click id when the buyer withdraws consent", () => {
+      setAdvertisingConsent(true);
+      landFromAdThenOpenContact();
+      clearConsent();
+      utm.syncClickIdConsent();
+
+      expect(readStoredAttribution()).toMatchObject({
+        utmSource: "google",
+        utmMedium: "cpc",
+        landingPage: "/es",
+      });
+      expectSourceWithoutClickId();
+    });
+
+    it("never collects click ids on a site without GA, even with a stale consent record", () => {
+      vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "");
+      setAdvertisingConsent(true);
+      landFromAdThenOpenContact();
+      expectSourceWithoutClickId();
+    });
+
+    it("drops the click id from the current-URL fallback without advertising consent", () => {
+      setAdvertisingConsent(false);
+      window.history.replaceState({}, "", `/es/contact?utm_source=google&gclid=Cj0KCQjw`);
+
+      expect(getAttributionSnapshot()).toEqual({ utmSource: "google" });
+    });
   });
 });
