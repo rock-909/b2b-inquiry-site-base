@@ -65,6 +65,15 @@ function readStoredRecord(): Record<string, unknown> | null {
   }
 }
 
+// 浏览器拒绝写入（配额满、隐私模式）时放弃这次保存，读取来源和提交询盘照常进行。
+function writeStoredRecord(record: object): void {
+  try {
+    sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(record));
+  } catch {
+    // 来源记录只是可选信息，写不进去就不存。
+  }
+}
+
 /**
  * 按当前广告同意同步点击 ID：同意时补存页面内存里暂存的点击 ID；
  * 拒绝时丢掉暂存；拒绝或撤回时从已保存的来源记录里只删点击 ID，来源信息保留。
@@ -75,10 +84,7 @@ export function syncClickIdConsent(): void {
   const stored = readStoredRecord();
   if (isAdvertisingAllowed()) {
     if (stored && Object.keys(pendingClickIds).length > 0) {
-      sessionStorage.setItem(
-        UTM_STORAGE_KEY,
-        JSON.stringify({ ...stored, ...pendingClickIds }),
-      );
+      writeStoredRecord({ ...stored, ...pendingClickIds });
     }
     pendingClickIds = {};
     return;
@@ -94,7 +100,7 @@ function removeStoredClickIds(stored: Record<string, unknown> | null): void {
   if (stored && CLICK_ID_FIELD_NAMES.some((fieldName) => fieldName in stored)) {
     const sourceOnly = { ...stored };
     for (const fieldName of CLICK_ID_FIELD_NAMES) delete sourceOnly[fieldName];
-    sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(sourceOnly));
+    writeStoredRecord(sourceOnly);
   }
 }
 
@@ -171,7 +177,7 @@ export function storeAttributionData(): void {
     capturedAt: new Date().toISOString(),
   };
 
-  sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(data));
+  writeStoredRecord(data);
 }
 
 export function getAttributionSnapshot(): MarketingAttributionFields {
