@@ -86,11 +86,20 @@ export function syncClickIdConsent(): void {
 
   // 还没选择时保留暂存，等买家同意；已经拒绝（或站点没有同意卡）就丢掉。
   if (!isConsentBannerEnabled() || hasConsentDecision()) pendingClickIds = {};
+  removeStoredClickIds(stored);
+}
+
+// 只从已保存的来源记录里删点击 ID，来源信息和落地页保留。
+function removeStoredClickIds(stored: Record<string, unknown> | null): void {
   if (stored && CLICK_ID_FIELD_NAMES.some((fieldName) => fieldName in stored)) {
     const sourceOnly = { ...stored };
     for (const fieldName of CLICK_ID_FIELD_NAMES) delete sourceOnly[fieldName];
     sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(sourceOnly));
   }
+}
+
+function removeStoredClickIdsUnlessAllowed(): void {
+  if (!isAdvertisingAllowed()) removeStoredClickIds(readStoredRecord());
 }
 
 function sanitizeParam(value: string | null): string | undefined {
@@ -135,6 +144,8 @@ export function captureUtmParams(): MarketingAttributionFields {
 export function storeAttributionData(): void {
   if (typeof window === "undefined") return;
 
+  removeStoredClickIdsUnlessAllowed();
+
   // First-touch: only store if no existing data
   const existing = sessionStorage.getItem(UTM_STORAGE_KEY);
   if (existing) return;
@@ -165,6 +176,8 @@ export function storeAttributionData(): void {
 
 export function getAttributionSnapshot(): MarketingAttributionFields {
   if (typeof window === "undefined") return {};
+
+  removeStoredClickIdsUnlessAllowed();
 
   try {
     const parsed: unknown = JSON.parse(

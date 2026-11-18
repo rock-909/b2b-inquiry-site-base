@@ -246,6 +246,42 @@ describe("UTM attribution", () => {
       },
     );
 
+    it("removes a click id left in storage on a site without GA, keeping the source and landing page", () => {
+      vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "");
+      sessionStorage.setItem(
+        "inquiry_attribution",
+        JSON.stringify({
+          utmSource: "google",
+          landingPage: "/es",
+          gclid: "Cj0KCQjw",
+          wbraid: "WbR-1",
+          gbraid: "GbR-1",
+        }),
+      );
+
+      getAttributionSnapshot();
+
+      expect(readStoredAttribution()).toEqual({
+        utmSource: "google",
+        landingPage: "/es",
+      });
+    });
+
+    it("removes a click id left in storage when a page loads without advertising consent", () => {
+      setAdvertisingConsent(false);
+      sessionStorage.setItem(
+        "inquiry_attribution",
+        JSON.stringify({ utmSource: "google", landingPage: "/es", gclid: "Cj0KCQjw" }),
+      );
+
+      storeAttributionData();
+
+      expect(readStoredAttribution()).toEqual({
+        utmSource: "google",
+        landingPage: "/es",
+      });
+    });
+
     it("drops the click id from the current-URL fallback without advertising consent", () => {
       setAdvertisingConsent(false);
       window.history.replaceState(
