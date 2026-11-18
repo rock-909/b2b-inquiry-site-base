@@ -296,5 +296,28 @@ describe("UTM attribution", () => {
 
       expect(getAttributionSnapshot()).toEqual({ utmSource: "google" });
     });
+
+    it("still submits the inquiry without the click id when the browser refuses storage writes", () => {
+      setAdvertisingConsent(false);
+      sessionStorage.setItem(
+        "inquiry_attribution",
+        JSON.stringify({ utmSource: "google", gclid: "Cj0KCQjw" }),
+      );
+      // 模拟配额满或隐私模式：浏览器拒绝任何存储写入。
+      const setItem = vi
+        .spyOn(Storage.prototype, "setItem")
+        .mockImplementation(() => {
+          throw new DOMException("refused", "QuotaExceededError");
+        });
+      try {
+        const payload = buyerPayload();
+        expectSubmittable(payload);
+        expect(payload).toMatchObject({ utmSource: "google" });
+        expect(payload).not.toHaveProperty("gclid");
+        expect(() => storeAttributionData()).not.toThrow();
+      } finally {
+        setItem.mockRestore();
+      }
+    });
   });
 });
