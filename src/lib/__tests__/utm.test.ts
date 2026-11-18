@@ -213,9 +213,46 @@ describe("UTM attribution", () => {
       expectSourceWithoutClickId();
     });
 
+    it.each([
+      ["before the buyer chooses", () => undefined],
+      ["after the buyer rejects", () => setAdvertisingConsent(false)],
+      [
+        "on a site without GA",
+        () => {
+          vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "");
+          setAdvertisingConsent(true);
+        },
+      ],
+    ])(
+      "does not read a click id left in the stored record %s",
+      (_state, arrange) => {
+        sessionStorage.setItem(
+          "inquiry_attribution",
+          JSON.stringify({
+            utmSource: "google",
+            landingPage: "/es",
+            gclid: "Cj0KCQjw",
+          }),
+        );
+        arrange();
+
+        const payload = buyerPayload();
+        expect(payload).toMatchObject({
+          utmSource: "google",
+          landingPage: "/es",
+        });
+        expect(payload.gclid).toBeUndefined();
+        expectSubmittable(payload);
+      },
+    );
+
     it("drops the click id from the current-URL fallback without advertising consent", () => {
       setAdvertisingConsent(false);
-      window.history.replaceState({}, "", `/es/contact?utm_source=google&gclid=Cj0KCQjw`);
+      window.history.replaceState(
+        {},
+        "",
+        `/es/contact?utm_source=google&gclid=Cj0KCQjw`,
+      );
 
       expect(getAttributionSnapshot()).toEqual({ utmSource: "google" });
     });
