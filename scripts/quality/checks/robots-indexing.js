@@ -80,15 +80,14 @@ function isRootAllowedFor(groups, token) {
   return best?.allow ?? true;
 }
 
-// 指令按逗号分项整项匹配；X-Robots-Tag 可带 `googlebot:` 前缀，`max-image-preview: none` 不算禁止收录。
-function hasBlockingDirective(value) {
-  return value
-    .split(",")
-    .some((item) =>
-      /^(?:(?!max-image-preview\s*:)[^:]+:)?\s*(?:noindex|none)$/iu.test(
-        item.trim(),
-      ),
-    );
+// 指令按逗号分项整项匹配，`max-image-preview: none` 不算禁止收录。
+// 只有 X-Robots-Tag 可带 `googlebot:` 前缀；HTML meta 由 name 指定爬虫。
+const HTML_BLOCKING_DIRECTIVE = /^(?:noindex|none)$/iu;
+const HEADER_BLOCKING_DIRECTIVE =
+  /^(?:(?!max-image-preview\s*:)[^:]+:)?\s*(?:noindex|none)$/iu;
+
+function hasBlockingDirective(value, directive) {
+  return value.split(",").some((item) => directive.test(item.trim()));
 }
 
 const NAMED_CHARACTER_REFERENCES = {
@@ -135,7 +134,7 @@ function findBlockingRobotsMeta(html) {
     const content = values.get("content");
     if (
       values.get("name")?.toLowerCase() === "robots" &&
-      hasBlockingDirective(content ?? "")
+      hasBlockingDirective(content ?? "", HTML_BLOCKING_DIRECTIVE)
     ) {
       return content;
     }
@@ -158,7 +157,7 @@ function findIndexingFailures(response, expectation) {
   }
   if (expectation.indexable) {
     const { robotsTag, body } = response;
-    if (hasBlockingDirective(robotsTag ?? "")) {
+    if (hasBlockingDirective(robotsTag ?? "", HEADER_BLOCKING_DIRECTIVE)) {
       failures.push(
         `Expected ${response.pathname} to be indexable, got X-Robots-Tag: ${robotsTag}`,
       );

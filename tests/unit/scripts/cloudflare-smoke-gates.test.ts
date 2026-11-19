@@ -441,6 +441,7 @@ describe("deployed smoke production indexing gate", () => {
       `<!-- ${ROBOTS_NOINDEX_META} -->`,
       `<script type="application/json">${JSON.stringify(ROBOTS_NOINDEX_META)}</script>`,
       '<meta name="robots" content="index, max-image-preview: none">',
+      '<meta name="robots" content="googlebot: noindex">',
       `<template>${ROBOTS_NOINDEX_META}</template>`,
     ].join("");
     stubProductionSite(
