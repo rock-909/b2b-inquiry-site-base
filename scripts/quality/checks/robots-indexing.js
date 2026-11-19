@@ -80,6 +80,32 @@ function isRootAllowedFor(groups, token) {
   return best?.allow ?? true;
 }
 
+function findBlockingRobotsMeta(html) {
+  // 部署后的冒烟步骤没有 node_modules。跳过注释、原始文本和属性值中的标签示例。
+  const tags =
+    /<!--[\s\S]*?(?:-->|$)|<(script|style|title|textarea)(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>[\s\S]*?(?:<\/\1\s*>|$)|<([a-z][\w:-]*)(?=[\s/>])((?:[^"'<>]|"[^"]*"|'[^']*')*)>/giu;
+  const attributes =
+    /([^\s=/"'<>]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s"'=<>]+))?/gu;
+  for (const [, , tagName, source] of html.matchAll(tags)) {
+    if (tagName?.toLowerCase() !== "meta") continue;
+
+    const values = new Map();
+    for (const [, name, value = ""] of source.matchAll(attributes)) {
+      const key = name.toLowerCase();
+      if (!values.has(key)) {
+        values.set(key, value.replace(/^["']|["']$/gu, ""));
+      }
+    }
+    const content = values.get("content");
+    if (
+      values.get("name")?.toLowerCase() === "robots" &&
+      /(?:^|[\s,])(?:noindex|none)(?=$|[\s,])/iu.test(content ?? "")
+    ) {
+      return content;
+    }
+  }
+}
+
 /** 返回该探针违反的收录要求；只对带 robots/indexable 标记的 expectation 生效。 */
 function findIndexingFailures(response, expectation) {
   const failures = [];
@@ -94,11 +120,19 @@ function findIndexingFailures(response, expectation) {
       );
     }
   }
-  const { robotsTag } = response;
-  if (expectation.indexable && /\b(?:noindex|none)\b/iu.test(robotsTag ?? "")) {
-    failures.push(
-      `Expected ${response.pathname} to be indexable, got X-Robots-Tag: ${robotsTag}`,
-    );
+  if (expectation.indexable) {
+    const { robotsTag, body } = response;
+    if (/\b(?:noindex|none)\b/iu.test(robotsTag ?? "")) {
+      failures.push(
+        `Expected ${response.pathname} to be indexable, got X-Robots-Tag: ${robotsTag}`,
+      );
+    }
+    const robotsMeta = findBlockingRobotsMeta(body ?? "");
+    if (robotsMeta !== undefined) {
+      failures.push(
+        `Expected ${response.pathname} to be indexable, got robots meta content: ${robotsMeta}`,
+      );
+    }
   }
   return failures;
 }

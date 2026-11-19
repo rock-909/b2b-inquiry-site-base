@@ -9,6 +9,7 @@ import {
 // 注册表推导出的字面量元组放宽为 string，便于判断任意请求路径。
 const PAGE_PATHS: readonly string[] = CORE_PUBLIC_PAGE_PATHS;
 const HEALTHY_HTML = `<!doctype html><html><body>${"healthy page".repeat(100)}</body></html>`;
+const ROBOTS_NOINDEX_META = '<meta name="robots" content="noindex,follow">';
 const MISSING_OFFERING_PATH = "/products/__smoke-missing-offering__";
 
 const SECURITY_HEADERS = {
@@ -291,8 +292,9 @@ ${[
 
 `;
 
-function stubProductionSite(robotsBody: string, homeHeaders = {}) {
+function stubProductionSite(robotsBody: string, homeHeaders = {}, head = "") {
   const baseFetchMock = createHealthyFetchMock();
+  const homeHtml = HEALTHY_HTML.replace("<body>", `<head>${head}</head><body>`);
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -301,7 +303,7 @@ function stubProductionSite(robotsBody: string, homeHeaders = {}) {
         return response(200, robotsBody, { "content-type": "text/plain" });
       }
       if (pathname === "/") {
-        return response(200, HEALTHY_HTML, {
+        return response(200, homeHtml, {
           "content-type": "text/html; charset=utf-8",
           ...SECURITY_HEADERS,
           ...homeHeaders,
@@ -406,12 +408,44 @@ describe("deployed smoke production indexing gate", () => {
     ]);
   });
 
+  it.each([
+    [ROBOTS_NOINDEX_META, "noindex,follow"],
+    ["<META CONTENT='NoNe' NAME='RoBoTs'>", "NoNe"],
+  ])("fails when / contains %s with no X-Robots-Tag", async (meta, content) => {
+    vi.stubEnv("APP_ENV", "production");
+    const consoleError = captureExpectedConsoleErrors(
+      "[post-deploy-smoke] Failures detected:",
+      "  - ",
+    );
+    stubProductionSite(TEMPLATE_ROBOTS, {}, meta);
+
+    await expect(runProductionDeployedSmoke()).resolves.toBe(false);
+    expect(consoleError.mock.calls).toEqual([
+      ["[post-deploy-smoke] Failures detected:"],
+      [`  - Expected / to be indexable, got robots meta content: ${content}`],
+    ]);
+  });
+
+  it("passes with an indexable robots meta and inactive noindex examples", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    const head = [
+      '<meta name="robots" content="index,follow" data-content="noindex">',
+      `<!-- ${ROBOTS_NOINDEX_META} -->`,
+      `<script type="application/json">${JSON.stringify(ROBOTS_NOINDEX_META)}</script>`,
+    ].join("");
+    stubProductionSite(TEMPLATE_ROBOTS, {}, head);
+
+    await expect(runProductionDeployedSmoke()).resolves.toBe(true);
+  });
+
   // preview proof 也跑 deployed-smoke，而非 production 构建本来就禁止抓取。
-  it("does not apply outside the production lane", async () => {
-    vi.stubEnv("APP_ENV", "preview");
-    stubProductionSite(NON_PRODUCTION_ROBOTS, {
-      "x-robots-tag": "noindex, nofollow",
-    });
+  it.each(["preview", "staging"])("does not apply to %s", async (appEnv) => {
+    vi.stubEnv("APP_ENV", appEnv);
+    stubProductionSite(
+      NON_PRODUCTION_ROBOTS,
+      { "x-robots-tag": "noindex, nofollow" },
+      ROBOTS_NOINDEX_META,
+    );
 
     await expect(runProductionDeployedSmoke()).resolves.toBe(true);
   });
