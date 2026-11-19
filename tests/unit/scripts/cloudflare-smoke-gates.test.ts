@@ -411,6 +411,14 @@ describe("deployed smoke production indexing gate", () => {
   it.each([
     [ROBOTS_NOINDEX_META, "noindex,follow"],
     ["<META CONTENT='NoNe' NAME='RoBoTs'>", "NoNe"],
+    [
+      '<meta name="&#114;obots" content="noindex&#44;follow">',
+      "noindex,follow",
+    ],
+    [
+      `<template>${ROBOTS_NOINDEX_META}</template><meta name="robots" content="none">`,
+      "none",
+    ],
   ])("fails when / contains %s with no X-Robots-Tag", async (meta, content) => {
     vi.stubEnv("APP_ENV", "production");
     const consoleError = captureExpectedConsoleErrors(
@@ -432,8 +440,14 @@ describe("deployed smoke production indexing gate", () => {
       '<meta name="robots" content="index,follow" data-content="noindex">',
       `<!-- ${ROBOTS_NOINDEX_META} -->`,
       `<script type="application/json">${JSON.stringify(ROBOTS_NOINDEX_META)}</script>`,
+      '<meta name="robots" content="index, max-image-preview: none">',
+      `<template>${ROBOTS_NOINDEX_META}</template>`,
     ].join("");
-    stubProductionSite(TEMPLATE_ROBOTS, {}, head);
+    stubProductionSite(
+      TEMPLATE_ROBOTS,
+      { "x-robots-tag": "max-image-preview: none" },
+      head,
+    );
 
     await expect(runProductionDeployedSmoke()).resolves.toBe(true);
   });

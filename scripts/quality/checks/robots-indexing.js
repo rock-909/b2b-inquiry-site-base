@@ -80,10 +80,43 @@ function isRootAllowedFor(groups, token) {
   return best?.allow ?? true;
 }
 
+// 指令按逗号分项整项匹配；X-Robots-Tag 可带 `googlebot:` 前缀，`max-image-preview: none` 不算禁止收录。
+function hasBlockingDirective(value) {
+  return value
+    .split(",")
+    .some((item) =>
+      /^(?:(?!max-image-preview\s*:)[^:]+:)?\s*(?:noindex|none)$/iu.test(
+        item.trim(),
+      ),
+    );
+}
+
+const NAMED_CHARACTER_REFERENCES = {
+  colon: ":",
+  comma: ",",
+  newline: "\n",
+  tab: "\t",
+};
+
+function decodeAttributeValue(value) {
+  return value.replace(
+    /&(?:#(\d+)|#x([\da-f]+)|([a-z]+));?/giu,
+    (reference, decimal, hex, name) => {
+      if (decimal || hex) {
+        const codePoint = Number.parseInt(decimal ?? hex, decimal ? 10 : 16);
+        return codePoint > 0 && codePoint <= 0x10ffff
+          ? String.fromCodePoint(codePoint)
+          : "\ufffd";
+      }
+      return NAMED_CHARACTER_REFERENCES[name.toLowerCase()] ?? reference;
+    },
+  );
+}
+
 function findBlockingRobotsMeta(html) {
-  // 部署后的冒烟步骤没有 node_modules。跳过注释、原始文本和属性值中的标签示例。
+  // 部署后的冒烟步骤没有 node_modules。跳过注释、原始文本、未实例化的 template 和属性值中的标签示例。
   const tags =
-    /<!--[\s\S]*?(?:-->|$)|<(script|style|title|textarea)(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>[\s\S]*?(?:<\/\1\s*>|$)|<([a-z][\w:-]*)(?=[\s/>])((?:[^"'<>]|"[^"]*"|'[^']*')*)>/giu;
+    /<!--[\s\S]*?(?:-->|$)|<(script|style|title|textarea|template)(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>[\s\S]*?(?:<\/\1\s*>|$)|<([a-z][\w:-]*)(?=[\s/>])((?:[^"'<>]|"[^"]*"|'[^']*')*)>/giu;
   const attributes =
     /([^\s=/"'<>]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s"'=<>]+))?/gu;
   for (const [, , tagName, source] of html.matchAll(tags)) {
@@ -93,13 +126,16 @@ function findBlockingRobotsMeta(html) {
     for (const [, name, value = ""] of source.matchAll(attributes)) {
       const key = name.toLowerCase();
       if (!values.has(key)) {
-        values.set(key, value.replace(/^["']|["']$/gu, ""));
+        values.set(
+          key,
+          decodeAttributeValue(value.replace(/^["']|["']$/gu, "")),
+        );
       }
     }
     const content = values.get("content");
     if (
       values.get("name")?.toLowerCase() === "robots" &&
-      /(?:^|[\s,])(?:noindex|none)(?=$|[\s,])/iu.test(content ?? "")
+      hasBlockingDirective(content ?? "")
     ) {
       return content;
     }
@@ -122,7 +158,7 @@ function findIndexingFailures(response, expectation) {
   }
   if (expectation.indexable) {
     const { robotsTag, body } = response;
-    if (/\b(?:noindex|none)\b/iu.test(robotsTag ?? "")) {
+    if (hasBlockingDirective(robotsTag ?? "")) {
       failures.push(
         `Expected ${response.pathname} to be indexable, got X-Robots-Tag: ${robotsTag}`,
       );
