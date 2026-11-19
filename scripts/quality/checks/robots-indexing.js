@@ -93,13 +93,13 @@ function hasBlockingDirective(value, directive) {
 const NAMED_CHARACTER_REFERENCES = {
   colon: ":",
   comma: ",",
-  newline: "\n",
-  tab: "\t",
+  NewLine: "\n",
+  Tab: "\t",
 };
 
 function decodeAttributeValue(value) {
   return value.replace(
-    /&(?:#(\d+)|#x([\da-f]+)|([a-z]+));?/giu,
+    /&(?:#(\d+);?|#[xX]([\da-fA-F]+);?|([A-Za-z]+);)/gu,
     (reference, decimal, hex, name) => {
       if (decimal || hex) {
         const codePoint = Number.parseInt(decimal ?? hex, decimal ? 10 : 16);
@@ -107,7 +107,9 @@ function decodeAttributeValue(value) {
           ? String.fromCodePoint(codePoint)
           : "\ufffd";
       }
-      return NAMED_CHARACTER_REFERENCES[name.toLowerCase()] ?? reference;
+      return Object.hasOwn(NAMED_CHARACTER_REFERENCES, name)
+        ? NAMED_CHARACTER_REFERENCES[name]
+        : reference;
     },
   );
 }
@@ -115,11 +117,19 @@ function decodeAttributeValue(value) {
 function findBlockingRobotsMeta(html) {
   // 部署后的冒烟步骤没有 node_modules。跳过注释、原始文本、未实例化的 template 和属性值中的标签示例。
   const tags =
-    /<!--[\s\S]*?(?:-->|$)|<(script|style|title|textarea|template)(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>[\s\S]*?(?:<\/\1\s*>|$)|<([a-z][\w:-]*)(?=[\s/>])((?:[^"'<>]|"[^"]*"|'[^']*')*)>/giu;
+    /<!--[\s\S]*?(?:-->|$)|<(script|style|title|textarea)(?=[\s/>])(?:[^"'<>]|"[^"]*"|'[^']*')*>[\s\S]*?(?:<\/\1\s*>|$)|<(\/?)([a-z][\w:-]*)(?=[\s/>])((?:[^"'<>]|"[^"]*"|'[^']*')*)>/giu;
   const attributes =
     /([^\s=/"'<>]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s"'=<>]+))?/gu;
-  for (const [, , tagName, source] of html.matchAll(tags)) {
-    if (tagName?.toLowerCase() !== "meta") continue;
+  let templateDepth = 0;
+  for (const [, , closing, tagName, source] of html.matchAll(tags)) {
+    const tag = tagName?.toLowerCase();
+    if (tag === "template") {
+      templateDepth = closing
+        ? Math.max(0, templateDepth - 1)
+        : templateDepth + 1;
+      continue;
+    }
+    if (templateDepth > 0 || closing || tag !== "meta") continue;
 
     const values = new Map();
     for (const [, name, value = ""] of source.matchAll(attributes)) {

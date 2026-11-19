@@ -391,22 +391,23 @@ describe("deployed smoke production indexing gate", () => {
     ]);
   });
 
-  it("fails when / carries X-Robots-Tag noindex", async () => {
-    vi.stubEnv("APP_ENV", "production");
-    const consoleError = captureExpectedConsoleErrors(
-      "[post-deploy-smoke] Failures detected:",
-      "  - ",
-    );
-    stubProductionSite(TEMPLATE_ROBOTS, {
-      "x-robots-tag": "noindex, nofollow",
-    });
+  it.each(["noindex, nofollow", "googlebot: noindex"])(
+    "fails when / carries X-Robots-Tag %s",
+    async (robotsTag) => {
+      vi.stubEnv("APP_ENV", "production");
+      const consoleError = captureExpectedConsoleErrors(
+        "[post-deploy-smoke] Failures detected:",
+        "  - ",
+      );
+      stubProductionSite(TEMPLATE_ROBOTS, { "x-robots-tag": robotsTag });
 
-    await expect(runProductionDeployedSmoke()).resolves.toBe(false);
-    expect(consoleError.mock.calls).toEqual([
-      ["[post-deploy-smoke] Failures detected:"],
-      ["  - Expected / to be indexable, got X-Robots-Tag: noindex, nofollow"],
-    ]);
-  });
+      await expect(runProductionDeployedSmoke()).resolves.toBe(false);
+      expect(consoleError.mock.calls).toEqual([
+        ["[post-deploy-smoke] Failures detected:"],
+        [`  - Expected / to be indexable, got X-Robots-Tag: ${robotsTag}`],
+      ]);
+    },
+  );
 
   it.each([
     [ROBOTS_NOINDEX_META, "noindex,follow"],
@@ -419,6 +420,11 @@ describe("deployed smoke production indexing gate", () => {
       `<template>${ROBOTS_NOINDEX_META}</template><meta name="robots" content="none">`,
       "none",
     ],
+    [
+      `<template><template></template>${ROBOTS_NOINDEX_META}</template><meta name="robots" content="none">`,
+      "none",
+    ],
+    ['<meta name="robots" content="noindex&comma;follow">', "noindex,follow"],
   ])("fails when / contains %s with no X-Robots-Tag", async (meta, content) => {
     vi.stubEnv("APP_ENV", "production");
     const consoleError = captureExpectedConsoleErrors(
@@ -443,6 +449,10 @@ describe("deployed smoke production indexing gate", () => {
       '<meta name="robots" content="index, max-image-preview: none">',
       '<meta name="robots" content="googlebot: noindex">',
       `<template>${ROBOTS_NOINDEX_META}</template>`,
+      `<template><template></template>${ROBOTS_NOINDEX_META}</template>`,
+      `<template><!-- </template> --><script></template></script>${ROBOTS_NOINDEX_META}</template>`,
+      '<meta name="robots" content="noindex&COMMA;follow">',
+      '<meta name="robots" content="noindex&comma follow">',
     ].join("");
     stubProductionSite(
       TEMPLATE_ROBOTS,
