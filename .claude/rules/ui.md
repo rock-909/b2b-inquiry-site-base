@@ -62,9 +62,9 @@ Business code must import UI from local wrappers, for example
 
 Do not:
 
-- import Base UI directly outside `src/components/ui/*` (enforced by eslint:
-  `no-restricted-imports` for static imports, `no-restricted-syntax` for
-  dynamic `import()`);
+- import Base UI directly outside `src/components/ui/*` (enforced by eslint
+  in production `src` files, tests and specs exempt: `no-restricted-imports`
+  for static imports, `no-restricted-syntax` for dynamic `import()`);
 - depend on Base UI internal DOM beyond its documented public attributes and
   CSS variables;
 - use `!important` to solve Base UI/Tailwind conflicts;
@@ -156,9 +156,9 @@ from constants are fine. Use literal maps or inline style for truly dynamic
 values.
 
 Use `cn()` from `@/lib/utils` for conditional classes; importing `clsx` or
-`tailwind-merge` (or their subpaths) elsewhere is an eslint error
-(`no-restricted-imports` for static imports, `no-restricted-syntax` for dynamic
-`import()`).
+`tailwind-merge` (or their subpaths) elsewhere is an eslint error in
+production `src` files, tests and specs exempt (`no-restricted-imports` for
+static imports, `no-restricted-syntax` for dynamic `import()`).
 
 ## Motion and first render
 
