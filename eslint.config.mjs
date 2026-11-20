@@ -574,7 +574,7 @@ const eslintConfig = [
     files: ["src/**/*.{js,jsx,ts,tsx}"],
     ignores: [
       "src/constants/index.ts",
-      "**/*.test.{js,jsx,ts,tsx}",
+      "**/*.{test,spec}.{js,jsx,ts,tsx}",
       "**/__tests__/**/*.{js,jsx,ts,tsx}",
       "src/test/**/*.{js,jsx,ts,tsx}",
     ],
