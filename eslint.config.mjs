@@ -92,6 +92,27 @@ const zodTestRestrictedSyntax = [
   },
 ];
 
+// UI 导入边界的动态 import()：no-restricted-imports 只管静态导入和 export from。
+// 同时匹配字符串和无插值模板字面量（import(`clsx/lite`)）。
+const baseUiImportExpression = {
+  selector:
+    "ImportExpression > :matches(Literal.source[value=/^@base-ui(?:\\/|$)/], TemplateLiteral.source[expressions.length=0][quasis.0.value.cooked=/^@base-ui(?:\\/|$)/])",
+  message:
+    "🚫 Base UI 只在 src/components/ui 的本地 wrapper 里导入；业务代码用 @/components/ui/*。",
+};
+
+const classUtilityImportExpression = {
+  selector:
+    "ImportExpression > :matches(Literal.source[value=/^(?:clsx|tailwind-merge)(?:\\/|$)/], TemplateLiteral.source[expressions.length=0][quasis.0.value.cooked=/^(?:clsx|tailwind-merge)(?:\\/|$)/])",
+  message: '🚫 条件 class 用 { cn } from "@/lib/utils"。',
+};
+
+const productionQualityRestrictedSyntax = [
+  "ForInStatement",
+  "LabeledStatement",
+  "WithStatement",
+];
+
 const architectureRestrictedSyntax = [
   {
     selector: "ExportAllDeclaration",
@@ -101,8 +122,14 @@ const architectureRestrictedSyntax = [
   ...zodProductionRestrictedSyntax,
 ];
 
-const appRestrictedSyntax = [
+const srcArchitectureRestrictedSyntax = [
   ...architectureRestrictedSyntax,
+  baseUiImportExpression,
+  classUtilityImportExpression,
+];
+
+const appRestrictedSyntax = [
+  ...srcArchitectureRestrictedSyntax,
   {
     selector:
       "ImportExpression > Literal.source[value=/^@\\/config\\/paths\\//]",
@@ -133,10 +160,49 @@ const architectureRestrictedImports = {
   ],
 };
 
-const appRestrictedImports = {
+// UI 导入边界（.claude/rules/ui.md）：Base UI 只在 src/components/ui 的 wrapper 里导入，
+// clsx / tailwind-merge 只在 src/lib/utils.ts 里导入。只作用于生产 src；flat config 的
+// rule 选项是整体替换，所以 src 选项在架构选项上追加，app、critical-route 块由它派生；
+// 两处豁免各自只放开一类。
+const baseUiImportPattern = {
+  group: ["@base-ui/*"],
+  message:
+    "🚫 Base UI 只在 src/components/ui 的本地 wrapper 里导入；业务代码用 @/components/ui/*。",
+};
+
+const classUtilityImportPattern = {
+  regex: "^(?:clsx|tailwind-merge)(?:/|$)",
+  message: '🚫 条件 class 用 { cn } from "@/lib/utils"。',
+};
+
+const uiImportRestrictions = {
+  patterns: [baseUiImportPattern, classUtilityImportPattern],
+};
+
+const uiWrapperRestrictedImports = {
   paths: architectureRestrictedImports.paths,
   patterns: [
     ...architectureRestrictedImports.patterns,
+    classUtilityImportPattern,
+  ],
+};
+const classUtilityRestrictedImports = {
+  paths: architectureRestrictedImports.paths,
+  patterns: [...architectureRestrictedImports.patterns, baseUiImportPattern],
+};
+const srcArchitectureRestrictedImports = {
+  paths: architectureRestrictedImports.paths,
+  patterns: [
+    ...architectureRestrictedImports.patterns,
+    baseUiImportPattern,
+    classUtilityImportPattern,
+  ],
+};
+
+const appRestrictedImports = {
+  paths: srcArchitectureRestrictedImports.paths,
+  patterns: [
+    ...srcArchitectureRestrictedImports.patterns,
     {
       group: ["@/config/paths/*"],
       message:
@@ -388,12 +454,7 @@ const eslintConfig = [
       // scripts、config、src/constants 等——在被它排除的文件上，这里这条是唯一
       // 生效的一条，删掉就是真放宽。本块自己的 guard-for-in 也不等价：它只要求
       // for-in 带原型守卫，不禁止 for-in 本身。
-      "no-restricted-syntax": [
-        "error",
-        "ForInStatement",
-        "LabeledStatement",
-        "WithStatement",
-      ],
+      "no-restricted-syntax": ["error", ...productionQualityRestrictedSyntax],
       "no-shadow": "error",
       "no-ternary": "off", // 允许三元运算符，但要谨慎使用
       "no-underscore-dangle": "error",
@@ -509,6 +570,63 @@ const eslintConfig = [
   },
 
   {
+    name: "src-ui-import-boundaries",
+    files: ["src/**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      "src/constants/index.ts",
+      "**/*.{test,spec}.{js,jsx,ts,tsx}",
+      "**/__tests__/**/*.{js,jsx,ts,tsx}",
+      "src/test/**/*.{js,jsx,ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-syntax": ["error", ...srcArchitectureRestrictedSyntax],
+      "no-restricted-imports": ["error", srcArchitectureRestrictedImports],
+    },
+  },
+
+  // 常量聚合入口被 architecture-boundaries 排除，这里单独补上 UI 导入边界
+  {
+    name: "constants-index-ui-imports",
+    files: ["src/constants/index.ts"],
+    rules: {
+      "no-restricted-imports": ["error", uiImportRestrictions],
+      "no-restricted-syntax": [
+        "error",
+        ...productionQualityRestrictedSyntax,
+        baseUiImportExpression,
+        classUtilityImportExpression,
+      ],
+    },
+  },
+
+  {
+    name: "ui-wrapper-base-ui-imports",
+    files: ["src/components/ui/**/*.{js,jsx,ts,tsx}"],
+    ignores: ["**/__tests__/**", "**/*.{test,spec}.{js,jsx,ts,tsx}"],
+    rules: {
+      "no-restricted-imports": ["error", uiWrapperRestrictedImports],
+      "no-restricted-syntax": [
+        "error",
+        ...architectureRestrictedSyntax,
+        classUtilityImportExpression,
+      ],
+    },
+  },
+
+  {
+    name: "class-utility-imports",
+    files: ["src/lib/utils.ts"],
+    rules: {
+      "no-restricted-imports": ["error", classUtilityRestrictedImports],
+      "no-restricted-syntax": [
+        "error",
+        ...architectureRestrictedSyntax,
+        baseUiImportExpression,
+      ],
+    },
+  },
+
+  {
     name: "app-path-facade-boundary",
     files: ["src/app/**/*.{ts,tsx}"],
     ignores: ["**/__tests__/**", "**/*.{test,spec}.{ts,tsx}"],
@@ -600,7 +718,8 @@ const eslintConfig = [
     name: "nextjs-config-files",
     files: ["src/config/security.ts"],
     rules: {
-      "no-restricted-imports": "off", // Next.js配置编译时路径别名不可用
+      // Next.js配置编译时路径别名不可用，只保留 UI 导入边界
+      "no-restricted-imports": ["error", uiImportRestrictions],
     },
   },
 
@@ -611,6 +730,8 @@ const eslintConfig = [
     rules: {
       "no-restricted-syntax": [
         "error",
+        baseUiImportExpression,
+        classUtilityImportExpression,
         {
           // 匹配所有不在白名单内的命名导出：
           // 允许函数：generateMetadata | generateStaticParams | generateViewport | generateImageMetadata

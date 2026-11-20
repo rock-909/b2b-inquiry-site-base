@@ -38,8 +38,9 @@ What eslint actually enforces (`no-restricted-imports`, `no-duplicate-imports`):
   `eslint.config.mjs` are outside this ban, such as test files (`*.test.*`,
   `__tests__/`, `tests/`), `scripts/**/*.{js,ts}` and root
   `*.config.{js,ts,mjs}` files. `src/config/security.ts` is also exempt: `next.config.ts`
-  imports it at build time where the alias is unavailable, so ESLint turns
-  `no-restricted-imports` off for that file (`nextjs-config-files`).
+  imports it at build time where the alias is unavailable, so ESLint drops
+  this ban for that file and keeps only the UI import boundary
+  (`nextjs-config-files`).
   Same-folder relative imports (`./sibling`) are fine.
 - Import locale-aware navigation as `{ Link }` from `@/i18n/routing`, never from
   `next/link` (lint error).

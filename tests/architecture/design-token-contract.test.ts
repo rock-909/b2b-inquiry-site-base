@@ -31,6 +31,13 @@ describe("design token contract", () => {
       ["--primary-text", "--background", 4.5],
       ["--accent-foreground", "--accent", 4.5],
       ["--info-foreground", "--info-muted", 4.5],
+      ["--success-foreground", "--success-muted", 4.5],
+      ["--warning-foreground", "--warning-muted", 4.5],
+      ["--error-foreground", "--error-muted", 4.5],
+      ["--button-outline-fg", "--background", 4.5],
+      ["--button-outline-fg", "--card", 4.5],
+      ["--button-outline-fg", "--popover", 4.5],
+      ["--button-outline-fg", "--button-outline-hover-bg", 4.5],
       ["--muted-foreground", "--background", 4.5],
       ["--muted-foreground", "--card", 4.5],
       ["--muted-foreground", "--muted", 4.5],
@@ -121,10 +128,13 @@ function buildThemeTokenMap(
     }
   }
   if (contrastMode === "more") {
+    const selectors = theme === "dark" ? [":root", ".dark"] : [":root"];
     for (const media of contrastMedia) {
-      for (const body of extractSelectorBodies(media, ":root")) {
-        for (const [name, value] of parseCssDeclarations(body)) {
-          tokens.set(name, value);
+      for (const selector of selectors) {
+        for (const body of extractSelectorBodies(media, selector)) {
+          for (const [name, value] of parseCssDeclarations(body)) {
+            tokens.set(name, value);
+          }
         }
       }
     }
