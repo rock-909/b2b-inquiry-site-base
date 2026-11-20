@@ -45,6 +45,9 @@
   --radius-lg: var(--surface-radius);
   --radius-xl: calc(var(--surface-radius) + 4px);
   --radius-2xl: calc(var(--surface-radius) + 8px);
+  --container-site: var(--layout-site-width);
+  --container-narrow: var(--layout-narrow-width);
+  --container-reading: var(--layout-reading-width);
 }
 
 /* ==================== BASE LAYER ==================== */

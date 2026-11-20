@@ -90,6 +90,11 @@
   --control-radius: 0.5rem;
   --surface-radius: 0.625rem;
 
+  /* 版心宽度：站点宽度由页头、导航菜单、语言提示条、页脚和法务页共用；窄栏用于单栏内容；阅读宽度限制正文行长。 */
+  --layout-site-width: 1080px;
+  --layout-narrow-width: 720px;
+  --layout-reading-width: 72ch;
+
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
