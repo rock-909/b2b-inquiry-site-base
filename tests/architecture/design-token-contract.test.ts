@@ -128,10 +128,13 @@ function buildThemeTokenMap(
     }
   }
   if (contrastMode === "more") {
+    const selectors = theme === "dark" ? [":root", ".dark"] : [":root"];
     for (const media of contrastMedia) {
-      for (const body of extractSelectorBodies(media, ":root")) {
-        for (const [name, value] of parseCssDeclarations(body)) {
-          tokens.set(name, value);
+      for (const selector of selectors) {
+        for (const body of extractSelectorBodies(media, selector)) {
+          for (const [name, value] of parseCssDeclarations(body)) {
+            tokens.set(name, value);
+          }
         }
       }
     }

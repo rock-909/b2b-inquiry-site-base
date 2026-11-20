@@ -114,8 +114,6 @@ const productionQualityRestrictedSyntax = [
 ];
 
 const architectureRestrictedSyntax = [
-  baseUiImportExpression,
-  classUtilityImportExpression,
   {
     selector: "ExportAllDeclaration",
     message:
@@ -124,8 +122,14 @@ const architectureRestrictedSyntax = [
   ...zodProductionRestrictedSyntax,
 ];
 
-const appRestrictedSyntax = [
+const srcArchitectureRestrictedSyntax = [
   ...architectureRestrictedSyntax,
+  baseUiImportExpression,
+  classUtilityImportExpression,
+];
+
+const appRestrictedSyntax = [
+  ...srcArchitectureRestrictedSyntax,
   {
     selector:
       "ImportExpression > Literal.source[value=/^@\\/config\\/paths\\//]",
@@ -157,8 +161,9 @@ const architectureRestrictedImports = {
 };
 
 // UI 导入边界（.claude/rules/ui.md）：Base UI 只在 src/components/ui 的 wrapper 里导入，
-// clsx / tailwind-merge 只在 src/lib/utils.ts 里导入。flat config 的 rule 选项是整体替换，
-// 所以追加到共享选项上，让 app、critical-route 块一并继承；两处豁免各自只放开一类。
+// clsx / tailwind-merge 只在 src/lib/utils.ts 里导入。只作用于生产 src；flat config 的
+// rule 选项是整体替换，所以 src 选项在架构选项上追加，app、critical-route 块由它派生；
+// 两处豁免各自只放开一类。
 const baseUiImportPattern = {
   group: ["@base-ui/*"],
   message:
@@ -185,15 +190,19 @@ const classUtilityRestrictedImports = {
   paths: architectureRestrictedImports.paths,
   patterns: [...architectureRestrictedImports.patterns, baseUiImportPattern],
 };
-architectureRestrictedImports.patterns.push(
-  baseUiImportPattern,
-  classUtilityImportPattern,
-);
-
-const appRestrictedImports = {
+const srcArchitectureRestrictedImports = {
   paths: architectureRestrictedImports.paths,
   patterns: [
     ...architectureRestrictedImports.patterns,
+    baseUiImportPattern,
+    classUtilityImportPattern,
+  ],
+};
+
+const appRestrictedImports = {
+  paths: srcArchitectureRestrictedImports.paths,
+  patterns: [
+    ...srcArchitectureRestrictedImports.patterns,
     {
       group: ["@/config/paths/*"],
       message:
@@ -560,6 +569,21 @@ const eslintConfig = [
     },
   },
 
+  {
+    name: "src-ui-import-boundaries",
+    files: ["src/**/*.{js,jsx,ts,tsx}"],
+    ignores: [
+      "src/constants/index.ts",
+      "**/*.test.{js,jsx,ts,tsx}",
+      "**/__tests__/**/*.{js,jsx,ts,tsx}",
+      "src/test/**/*.{js,jsx,ts,tsx}",
+    ],
+    rules: {
+      "no-restricted-syntax": ["error", ...srcArchitectureRestrictedSyntax],
+      "no-restricted-imports": ["error", srcArchitectureRestrictedImports],
+    },
+  },
+
   // 常量聚合入口被 architecture-boundaries 排除，这里单独补上 UI 导入边界
   {
     name: "constants-index-ui-imports",
@@ -577,15 +601,14 @@ const eslintConfig = [
 
   {
     name: "ui-wrapper-base-ui-imports",
-    files: ["src/components/ui/**/*.{ts,tsx}"],
-    ignores: ["**/__tests__/**", "**/*.{test,spec}.{ts,tsx}"],
+    files: ["src/components/ui/**/*.{js,jsx,ts,tsx}"],
+    ignores: ["**/__tests__/**", "**/*.{test,spec}.{js,jsx,ts,tsx}"],
     rules: {
       "no-restricted-imports": ["error", uiWrapperRestrictedImports],
       "no-restricted-syntax": [
         "error",
-        ...architectureRestrictedSyntax.filter(
-          (entry) => entry !== baseUiImportExpression,
-        ),
+        ...architectureRestrictedSyntax,
+        classUtilityImportExpression,
       ],
     },
   },
@@ -597,9 +620,8 @@ const eslintConfig = [
       "no-restricted-imports": ["error", classUtilityRestrictedImports],
       "no-restricted-syntax": [
         "error",
-        ...architectureRestrictedSyntax.filter(
-          (entry) => entry !== classUtilityImportExpression,
-        ),
+        ...architectureRestrictedSyntax,
+        baseUiImportExpression,
       ],
     },
   },
