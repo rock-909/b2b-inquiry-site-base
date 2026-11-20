@@ -22,7 +22,7 @@ export function FaqSection({ heading, items }: FaqSectionProps): ReactNode {
           <h3 className="mt-6 text-lg font-semibold text-foreground">
             {item.question}
           </h3>
-          <p className="mt-2 max-w-[72ch] whitespace-pre-line text-base leading-7 text-muted-foreground">
+          <p className="mt-2 max-w-reading whitespace-pre-line text-base leading-7 text-muted-foreground">
             {item.answer}
           </p>
         </div>

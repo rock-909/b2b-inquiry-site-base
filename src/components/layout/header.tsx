@@ -55,7 +55,7 @@ export function Header({
 }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md has-[[data-nav-panel]:not([hidden])]:bg-background">
-      <div className="mx-auto max-w-[1080px] px-6">
+      <div className="mx-auto max-w-site px-6">
         <div className="header-nav-layout">
           {/* Left section: Logo */}
           <div className="header-nav-left">

@@ -187,7 +187,7 @@ function MenuPanel({
       hidden={!isOpen}
       className="absolute inset-x-0 top-full border-b border-border bg-background before:absolute before:inset-x-0 before:bottom-full before:h-4 after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-dvh after:bg-background/50"
     >
-      <div className="mx-auto flex max-w-[1080px] flex-wrap gap-x-4 gap-y-6 px-6 pt-1 pb-6">
+      <div className="mx-auto flex max-w-site flex-wrap gap-x-4 gap-y-6 px-6 pt-1 pb-6">
         {groups.map((group) => (
           <div key={group.key} className="min-w-[250px]">
             <div className="text-sm text-muted-foreground" translate="no">

@@ -63,7 +63,7 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
               <button
                 type="button"
                 onClick={retry}
-                className="inline-flex h-[38px] w-full shrink-0 items-center justify-center rounded-[6px] bg-[var(--button-primary-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--button-primary-fg)] transition-colors duration-150 hover:bg-[var(--button-primary-hover-bg)]"
+                className="inline-flex h-[var(--button-height-default)] w-full shrink-0 items-center justify-center rounded-[var(--button-radius)] bg-[var(--button-primary-bg)] px-5 py-2.5 text-sm font-semibold text-[var(--button-primary-fg)] transition-colors duration-150 hover:bg-[var(--button-primary-hover-bg)]"
                 data-testid="try-again-button"
               >
                 {translations.tryAgain}
@@ -71,7 +71,7 @@ export default function GlobalError({ error, retry }: GlobalErrorProps) {
               {/* 根布局已经失败，用整页跳转而不是客户端路由。 */}
               <a
                 href={HOME_HREF}
-                className="inline-flex h-[38px] w-full shrink-0 items-center justify-center rounded-[6px] border-2 border-[var(--button-outline-border)] bg-transparent px-5 py-2.5 text-sm font-semibold text-[var(--button-outline-fg)] transition-colors duration-150 hover:bg-[var(--button-outline-hover-bg)]"
+                className="inline-flex h-[var(--button-height-default)] w-full shrink-0 items-center justify-center rounded-[var(--button-radius)] border-2 border-[var(--button-outline-border)] bg-transparent px-5 py-2.5 text-sm font-semibold text-[var(--button-outline-fg)] transition-colors duration-150 hover:bg-[var(--button-outline-hover-bg)]"
                 data-testid="go-home-button"
               >
                 {translations.goHome}

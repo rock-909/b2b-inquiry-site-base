@@ -146,14 +146,14 @@ export async function LegalPageShell({
 
       {aside ? (
         // Follows vercel.com/contact/sales: text in columns 1-6, form in 8-12, top-aligned.
-        <div className="mx-auto max-w-[720px] px-6 py-8 md:py-12 lg:grid lg:max-w-[1080px] lg:grid-cols-12 lg:items-start lg:gap-x-6">
+        <div className="mx-auto max-w-narrow px-6 py-8 md:py-12 lg:grid lg:max-w-site lg:grid-cols-12 lg:items-start lg:gap-x-6">
           <div className="min-w-0 lg:col-span-6">{content}</div>
           <div className="mt-10 min-w-0 lg:col-span-5 lg:col-start-8 lg:mt-0">
             {aside}
           </div>
         </div>
       ) : (
-        <div className="mx-auto max-w-[720px] px-6 py-8 md:py-12">
+        <div className="mx-auto max-w-narrow px-6 py-8 md:py-12">
           {content}
         </div>
       )}

@@ -74,7 +74,7 @@ export function Footer({ themeToggleSlot, className }: FooterProps) {
   const year = new Date().getFullYear();
   return (
     <footer className={cn("border-t border-border bg-background", className)}>
-      <div className="mx-auto max-w-[1080px] px-6 pt-10 pb-6">
+      <div className="mx-auto max-w-site px-6 pt-10 pb-6">
         <div className="flex flex-col gap-10 md:flex-row md:justify-between">
           <div className="min-w-0 space-y-3">
             <p className={COLUMN_TITLE}>{brandName}</p>

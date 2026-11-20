@@ -85,7 +85,7 @@ export function LanguageSuggestion({ locale, copy }: LanguageSuggestionProps) {
             lang={candidate}
             className="border-b border-border bg-muted pt-[env(safe-area-inset-top,0px)] text-foreground"
           >
-            <div className="mx-auto flex max-w-[1080px] items-center gap-3 px-6 py-1.5">
+            <div className="mx-auto flex max-w-site items-center gap-3 px-6 py-1.5">
               <p className="min-w-0 flex-1 text-sm leading-6">
                 {text.message}{" "}
                 <FinalUrlLink
