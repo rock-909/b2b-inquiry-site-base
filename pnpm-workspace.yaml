@@ -50,7 +50,7 @@ overrides:
   '@opennextjs/aws>@node-minify/terser': 9.0.1
   # version floor; reached via @node-minify/core
   glob@>=10.2.0 <10.5.0: 10.5.0
-  # version floor; reached via eslint, glob, typescript-estree
+  # version floor; reached via glob
   minimatch@>=9.0.0 <10.2.6: 10.2.6
   # version floor; reached via commitlint, ajv-formats, conf
   ajv@>=8.0.0 <8.18.0: '>=8.18.0'
